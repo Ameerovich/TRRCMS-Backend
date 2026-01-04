@@ -126,7 +126,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .IsRowVersion();
 
         // Relationships - ignore for now (we'll add these when we implement related entities)
-        builder.Ignore(b => b.PropertyUnits);
         builder.Ignore(b => b.BuildingAssignments);
         builder.Ignore(b => b.Surveys);
     }

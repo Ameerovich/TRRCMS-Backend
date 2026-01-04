@@ -14,6 +14,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // ============== REPOSITORIES ==============
 builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();
+builder.Services.AddScoped<IPropertyUnitRepository, PropertyUnitRepository>();
 
 // ============== MEDIATOR ==============
 builder.Services.AddMediatR(cfg =>
