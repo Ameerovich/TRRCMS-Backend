@@ -12,9 +12,9 @@ public class ApplicationDbContext : DbContext
 
     // DbSets for entities
     public DbSet<Building> Buildings => Set<Building>();
+    public DbSet<PropertyUnit> PropertyUnits { get; set; }
 
     // TODO: Add other entities later as we implement them
-    // public DbSet<PropertyUnit> PropertyUnits => Set<PropertyUnit>();
     // public DbSet<Person> Persons => Set<Person>();
     // public DbSet<Household> Households => Set<Household>();
     // public DbSet<Claim> Claims => Set<Claim>();
