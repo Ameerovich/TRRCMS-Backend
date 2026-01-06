@@ -39,12 +39,13 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 
 ## ✨ Features
 
-### ✅ Implemented (v0.2 - Current)
+### ✅ Implemented (v0.3 - Current)
 ✅ **Clean Architecture** - Domain-driven design with clear separation of concerns  
 ✅ **Building CRUD** - Complete Create, Read, Update, Delete operations  
 ✅ **Property Unit CRUD** - Apartment/shop/commercial unit management  
-✅ **Person Registry** - Individual registration with Arabic name support ⭐ **NEW**  
-✅ **PostgreSQL Database** - Robust relational data storage with 3 entity tables  
+✅ **Person Registry** - Individual registration with Arabic name support  
+✅ **Household Management** - Family unit tracking with demographics and vulnerability indicators ⭐ **NEW**  
+✅ **PostgreSQL Database** - Robust relational data storage with 4 entity tables  
 ✅ **Entity Framework Core** - Code-first migrations and LINQ queries  
 ✅ **CQRS Pattern** - Command/Query separation with MediatR  
 ✅ **Repository Pattern** - Consistent data access layer  
@@ -52,10 +53,10 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 ✅ **Arabic Support** - Full UTF-8 encoding for Arabic text (names, addresses)  
 ✅ **Audit Trails** - Comprehensive tracking (Created/Modified/Deleted timestamps & users)  
 ✅ **Soft Delete** - Data preservation with IsDeleted flag  
+✅ **Computed Properties** - Dynamic calculations (DependencyRatio, IsVulnerable)  
 
 ### 🚧 In Progress
-🚧 **Household Management** - Family group tracking and demographics  
-🚧 **Person-Property Relations** - Ownership/occupancy linkage  
+🚧 **Person-Property Relations** - Ownership/occupancy linkage (50% complete)
 
 ### 📅 Planned
 📅 **Authentication & Authorization** - JWT-based security with role-based access  
@@ -146,13 +147,13 @@ TRRCMS/
 │   │   ├── Entities/               # Domain entities
 │   │   │   ├── Building.cs         # ✅ Implemented
 │   │   │   ├── PropertyUnit.cs     # ✅ Implemented
-│   │   │   ├── Person.cs           # ✅ Implemented (NEW)
-│   │   │   ├── Household.cs        # 🚧 Schema ready
+│   │   │   ├── Person.cs           # ✅ Implemented
+│   │   │   ├── Household.cs        # ✅ Implemented (NEW)
 │   │   │   ├── PersonPropertyRelation.cs  # 🚧 Schema ready
 │   │   │   ├── Claim.cs            # 📅 Planned
 │   │   │   ├── Evidence.cs         # 📅 Planned
 │   │   │   └── Certificate.cs      # 📅 Planned
-│   │   ├── Enums/                  # Domain enumerations
+│   │   ├── Enums/                  # Domain enumerations (28 enums)
 │   │   └── Common/                 # Base classes (BaseEntity, BaseAuditableEntity)
 │   │
 │   ├── TRRCMS.Application/         # Application business rules
@@ -161,43 +162,54 @@ TRRCMS/
 │   │   │   ├── Queries/            # GetAll, GetById
 │   │   │   └── Dtos/               # BuildingDto
 │   │   ├── PropertyUnits/          # ✅ PropertyUnit use cases
-│   │   ├── Persons/                # ✅ Person use cases (NEW)
+│   │   ├── Persons/                # ✅ Person use cases
 │   │   │   ├── Commands/
 │   │   │   │   └── CreatePerson/   # CreatePersonCommand & Handler
 │   │   │   ├── Queries/
 │   │   │   │   ├── GetAllPersons/  # GetAllPersonsQuery & Handler
 │   │   │   │   └── GetPerson/      # GetPersonQuery & Handler
 │   │   │   └── Dtos/
-│   │   │       └── PersonDto.cs    # DTO with audit fields
+│   │   │       └── PersonDto.cs    # DTO with computed properties
+│   │   ├── Households/             # ✅ Household use cases (NEW)
+│   │   │   ├── Commands/
+│   │   │   │   └── CreateHousehold/  # CreateHouseholdCommand & Handler
+│   │   │   ├── Queries/
+│   │   │   │   ├── GetAllHouseholds/  # GetAllHouseholdsQuery & Handler
+│   │   │   │   └── GetHousehold/      # GetHouseholdQuery & Handler
+│   │   │   └── Dtos/
+│   │   │       └── HouseholdDto.cs    # DTO with vulnerability metrics
 │   │   └── Common/
 │   │       ├── Interfaces/         # Repository interfaces
 │   │       │   ├── IBuildingRepository.cs
 │   │       │   ├── IPropertyUnitRepository.cs
-│   │       │   └── IPersonRepository.cs  # NEW
+│   │       │   ├── IPersonRepository.cs
+│   │       │   └── IHouseholdRepository.cs  # NEW
 │   │       └── Mappings/
 │   │           └── MappingProfile.cs  # AutoMapper configuration
 │   │
 │   ├── TRRCMS.Infrastructure/      # External concerns
 │   │   └── Persistence/
-│   │       ├── ApplicationDbContext.cs  # DbContext with 3 entities
+│   │       ├── ApplicationDbContext.cs  # DbContext with 4 entities
 │   │       ├── Configurations/     # EF Core entity configurations
 │   │       │   ├── BuildingConfiguration.cs
 │   │       │   ├── PropertyUnitConfiguration.cs
-│   │       │   ├── PersonConfiguration.cs  # NEW
-│   │       │   ├── HouseholdConfiguration.cs  # NEW
-│   │       │   ├── PersonPropertyRelationConfiguration.cs  # NEW
-│   │       │   └── ClaimConfiguration.cs  # NEW (temporary)
+│   │       │   ├── PersonConfiguration.cs
+│   │       │   ├── HouseholdConfiguration.cs  # NEW - Comprehensive
+│   │       │   ├── PersonPropertyRelationConfiguration.cs
+│   │       │   └── ClaimConfiguration.cs
 │   │       ├── Repositories/       # Repository implementations
 │   │       │   ├── BuildingRepository.cs
 │   │       │   ├── PropertyUnitRepository.cs
-│   │       │   └── PersonRepository.cs  # NEW
-│   │       └── Migrations/         # Database migrations (3 tables)
+│   │       │   ├── PersonRepository.cs
+│   │       │   └── HouseholdRepository.cs  # NEW
+│   │       └── Migrations/         # Database migrations (4 tables)
 │   │
 │   └── TRRCMS.WebAPI/              # API layer
 │       ├── Controllers/
 │       │   ├── BuildingsController.cs
 │       │   ├── PropertyUnitsController.cs
-│       │   └── PersonsController.cs  # NEW
+│       │   ├── PersonsController.cs
+│       │   └── HouseholdsController.cs  # NEW
 │       ├── Program.cs              # DI configuration
 │       └── appsettings.json        # Configuration template
 │
@@ -214,7 +226,7 @@ TRRCMS/
 
 ## 📚 API Documentation
 
-### Endpoints (v0.2)
+### Endpoints (v0.3)
 
 #### 🏢 Buildings
 - `POST /api/v1/buildings` - Create new building
@@ -226,10 +238,19 @@ TRRCMS/
 - `GET /api/v1/propertyunits` - Get all property units
 - `GET /api/v1/propertyunits/{id}` - Get property unit by ID
 
-#### 👤 Persons ⭐ **NEW**
+#### 👤 Persons
 - `POST /api/v1/persons` - Create new person
 - `GET /api/v1/persons` - Get all persons
 - `GET /api/v1/persons/{id}` - Get person by ID
+
+#### 👨‍👩‍👧‍👦 Households ⭐ **NEW**
+- `POST /api/v1/households` - Create new household
+- `GET /api/v1/households` - Get all households
+- `GET /api/v1/households/{id}` - Get household by ID
+
+**Total Endpoints:** 12
+
+---
 
 ### Example Requests
 
@@ -250,17 +271,18 @@ POST /api/v1/buildings
   "neighborhoodName": "حي الصاخور",
   "buildingType": 0,
   "latitude": 36.2021,
-  "longitude": 37.1343
+  "longitude": 37.1343,
+  "createdByUserId": "00000000-0000-0000-0000-000000000001"
 }
 ```
 
-#### Create Person ⭐ **NEW**
+#### Create Person
 ```json
 POST /api/v1/persons
 {
   "firstNameArabic": "أحمد",
   "fatherNameArabic": "محمد",
-  "lastNameArabic": "الحسن",
+  "familyNameArabic": "الحسن",
   "motherNameArabic": "فاطمة",
   "fullNameEnglish": "Ahmad Mohammed Al-Hassan",
   "nationalId": "123456789",
@@ -268,36 +290,80 @@ POST /api/v1/persons
   "gender": "M",
   "nationality": "Syrian",
   "primaryPhoneNumber": "+963991234567",
-  "secondaryPhoneNumber": "+963992345678",
   "isContactPerson": true,
   "hasIdentificationDocument": true,
   "createdByUserId": "00000000-0000-0000-0000-000000000001"
 }
 ```
 
+#### Create Household ⭐ **NEW**
+```json
+POST /api/v1/households
+{
+  "propertyUnitId": "8aa1ec0c-84f3-48a2-8e3e-bd3ef372c320",
+  "headOfHouseholdName": "أحمد محمد الحسن",
+  "householdSize": 5,
+  "createdByUserId": "00000000-0000-0000-0000-000000000001",
+  "maleCount": 2,
+  "femaleCount": 3,
+  "infantCount": 0,
+  "childCount": 1,
+  "minorCount": 1,
+  "adultCount": 2,
+  "elderlyCount": 1,
+  "personsWithDisabilitiesCount": 0,
+  "isFemaleHeaded": false,
+  "employedPersonsCount": 1,
+  "unemployedPersonsCount": 0,
+  "isDisplaced": true,
+  "originLocation": "حلب القديمة",
+  "arrivalDate": "2023-01-15",
+  "displacementReason": "Conflict",
+  "notes": "Family returned to rehabilitated property",
+  "specialNeeds": "Elderly member requires ground floor access"
+}
+```
+
 **Response (201 Created):**
 ```json
 {
-  "id": "d2c8e6c7-c638-42a8-8587-671bd6024cde",
-  "firstNameArabic": "أحمد",
-  "fatherNameArabic": "محمد",
-  "familyNameArabic": "الحسن",
-  "motherNameArabic": "فاطمة",
-  "fullNameEnglish": "Ahmad Mohammed Al-Hassan",
-  "fullNameArabic": "أحمد محمد الحسن",
-  "nationalId": "123456789",
-  "yearOfBirth": 1985,
-  "age": 41,
-  "gender": "M",
-  "nationality": "Syrian",
-  "primaryPhoneNumber": "+963991234567",
-  "secondaryPhoneNumber": "+963992345678",
-  "isContactPerson": true,
-  "hasIdentificationDocument": true,
-  "createdAtUtc": "2026-01-06T11:29:03.464413Z",
+  "id": "187a613b-bbc8-4a29-b208-6f256d296c14",
+  "propertyUnitId": "8aa1ec0c-84f3-48a2-8e3e-bd3ef372c320",
+  "headOfHouseholdName": "أحمد محمد الحسن",
+  "householdSize": 5,
+  "maleCount": 2,
+  "femaleCount": 3,
+  "infantCount": 0,
+  "childCount": 1,
+  "minorCount": 1,
+  "adultCount": 2,
+  "elderlyCount": 1,
+  "personsWithDisabilitiesCount": 0,
+  "isFemaleHeaded": false,
+  "employedPersonsCount": 1,
+  "unemployedPersonsCount": 0,
+  "isDisplaced": true,
+  "originLocation": "حلب القديمة",
+  "arrivalDate": "2023-01-15T00:00:00Z",
+  "displacementReason": "Conflict",
+  "notes": "Family returned to rehabilitated property",
+  "specialNeeds": "Elderly member requires ground floor access",
+  "dependencyRatio": 1.5,
+  "isVulnerable": true,
+  "createdAtUtc": "2026-01-06T18:55:08.907128Z",
   "createdBy": "00000000-0000-0000-0000-000000000001"
 }
 ```
+
+**Key Features:**
+- ✅ **Arabic name support** - UTF-8 encoding
+- ✅ **Comprehensive demographics** - Gender, age groups, vulnerability indicators
+- ✅ **Displacement tracking** - Origin, arrival date, reason
+- ✅ **Economic indicators** - Employment status, income estimates
+- ✅ **Computed properties** - `dependencyRatio` (dependents/adults), `isVulnerable` (automatic flag)
+- ✅ **Audit trail** - Created timestamp and user tracking
+
+---
 
 ### Interactive Documentation
 Start the application and navigate to: **https://localhost:7204/swagger**
@@ -311,19 +377,21 @@ Start the application and navigate to: **https://localhost:7204/swagger**
 |--------|--------|-------|---------|
 | Building | ✅ Complete | `Buildings` | Production ready |
 | PropertyUnit | ✅ Complete | `PropertyUnits` | Production ready |
-| Person | ✅ Complete | `Persons` | **NEW - Production ready** |
-| Household | 🚧 Schema only | `Households` | API pending |
-| PersonPropertyRelation | 🚧 Schema only | `PersonPropertyRelations` | API pending |
+| Person | ✅ Complete | `Persons` | Production ready |
+| Household | ✅ Complete | `Households` | **NEW - Production ready** |
+| PersonPropertyRelation | 🚧 Schema ready | `PersonPropertyRelations` | API pending |
 | Claim | 📅 Planned | - | Not started |
 | Evidence | 📅 Planned | - | Not started |
 | Certificate | 📅 Planned | - | Not started |
 
+### Implementation Progress: 4/19 Entities (21%)
+
 ### Entity Completion Checklist
 Each entity follows this pattern:
 
-**Person Entity** ✅ (Latest - Jan 6, 2026)
+**Household Entity** ✅ (Latest - Jan 6, 2026)
 - [x] Domain entity with factory methods
-- [x] EF Core configuration with indexes
+- [x] EF Core configuration with comprehensive constraints
 - [x] Repository interface & implementation
 - [x] DTOs with AutoMapper mapping
 - [x] CQRS Commands (Create)
@@ -333,6 +401,15 @@ Each entity follows this pattern:
 - [x] Tested in Swagger
 - [x] Audit trail working
 - [x] Soft delete support
+- [x] Computed properties (DependencyRatio, IsVulnerable)
+- [x] Column comments in database
+- [x] Default values on count fields
+- [x] Composite indexes for performance
+
+**Person Entity** ✅ (Complete - Jan 6, 2026)
+- [x] All checklist items completed
+- [x] Arabic name support with computed FullNameArabic
+- [x] Age calculation from YearOfBirth
 
 **Building Entity** ✅ (Complete)
 - [x] All checklist items completed
@@ -358,7 +435,7 @@ git push origin fix/bug-description
 
 # Documentation
 git checkout -b docs/what-changed
-git commit -m "docs: Update README with Person entity"
+git commit -m "docs: Update README with Household entity"
 git push origin docs/what-changed
 ```
 
@@ -372,7 +449,20 @@ git push origin docs/what-changed
 
 ### Recent Commits
 ```
+feat: Implement Household entity with full CRUD operations (Jan 6, 2026)
+  - Add comprehensive demographics and vulnerability tracking
+  - Implement computed properties (DependencyRatio, IsVulnerable)
+  - Add displacement tracking (origin, arrival date, reason)
+  - Add economic indicators (employment, income)
+  - Add comprehensive EF Core configuration with column comments
+  - Add composite indexes for query performance
+  - Test all endpoints successfully in Swagger
+
 feat: Implement Person entity with full CRUD operations (Jan 6, 2026)
+  - Add Arabic name support with computed FullNameArabic
+  - Implement age calculation from YearOfBirth
+  - Add household relationship support
+
 feat: Add PropertyUnit CRUD endpoints (Dec 2025)
 feat: Add Building CRUD endpoints (Dec 2025)
 chore: Initial project setup with Clean Architecture (Dec 2025)
@@ -402,7 +492,7 @@ This project is developed for UN-Habitat. All rights reserved.
 1. Follow the [Setup Guide](./SETUP_GUIDE.md)
 2. Pick an entity from the development status table
 3. Create a feature branch (`feature/entity-name`)
-4. Implement following the established pattern (see Person entity as reference)
+4. Implement following the established pattern (see Household entity as reference)
 5. Test thoroughly in Swagger
 6. Commit with conventional commit messages
 7. Push and create Pull Request
@@ -414,8 +504,11 @@ This project is developed for UN-Habitat. All rights reserved.
 - ✅ Add comprehensive XML documentation
 - ✅ Include audit fields (Created/Modified/Deleted)
 - ✅ Support soft delete
+- ✅ Add computed properties where applicable
 - ✅ Test all endpoints in Swagger
 - ✅ Follow existing naming conventions
+- ✅ Add column comments in EF Core configuration
+- ✅ Use appropriate indexes for performance
 
 ---
 
@@ -432,13 +525,22 @@ This project is developed for UN-Habitat. All rights reserved.
 
 ### Immediate Priorities
 1. ✅ ~~Person Entity~~ - **COMPLETED Jan 6, 2026**
-2. 🔄 Household Entity - In progress (schema ready)
-3. 🔄 PersonPropertyRelation Entity - Next
+2. ✅ ~~Household Entity~~ - **COMPLETED Jan 6, 2026**
+3. 🔄 PersonPropertyRelation Entity - Next priority (50% complete)
 4. 📅 Evidence & Document entities
 5. 📅 Claims workflow implementation
+
+### Milestone Progress
+- **M2: Core Platform Ready** - 80% complete
+  - ✅ Building management
+  - ✅ Property unit management
+  - ✅ Person registry
+  - ✅ Household tracking
+  - 🚧 Person-property relations (next)
 
 ---
 
 **Last Updated:** January 6, 2026  
-**Version:** 0.2.0  
-**Status:** 🟢 Active Development
+**Version:** 0.3.0  
+**Status:** 🟢 Active Development  
+**Latest Feature:** Household Management with Demographics & Vulnerability Tracking

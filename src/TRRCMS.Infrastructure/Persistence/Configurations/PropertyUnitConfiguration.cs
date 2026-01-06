@@ -128,8 +128,13 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
             .HasForeignKey(p => p.BuildingId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Relationship to Households (One-to-Many)
+        builder.HasMany(p => p.Households)
+            .WithOne(h => h.PropertyUnit)
+            .HasForeignKey(h => h.PropertyUnitId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Navigation properties - ignore for now (will be configured when those entities are implemented)
-        builder.Ignore(p => p.Households);
         builder.Ignore(p => p.PersonRelations);
         builder.Ignore(p => p.Claims);
         builder.Ignore(p => p.Documents);

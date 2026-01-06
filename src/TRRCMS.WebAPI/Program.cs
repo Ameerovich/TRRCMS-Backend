@@ -16,6 +16,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();
 builder.Services.AddScoped<IPropertyUnitRepository, PropertyUnitRepository>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+builder.Services.AddScoped<IHouseholdRepository, HouseholdRepository>();
 // ============== MEDIATOR ==============
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(TRRCMS.Application.Buildings.Commands.CreateBuilding.CreateBuildingCommand).Assembly));
