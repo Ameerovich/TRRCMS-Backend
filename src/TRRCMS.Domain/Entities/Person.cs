@@ -23,7 +23,7 @@ public class Person : BaseAuditableEntity
     /// <summary>
     /// Grandfather's name in Arabic (اسم الجد)
     /// </summary>
-    public string LastNameArabic { get; private set; }
+    public string FamilyNameArabic { get; private set; }
 
     /// <summary>
     /// Mother's name in Arabic (اسم الأم)
@@ -118,7 +118,7 @@ public class Person : BaseAuditableEntity
     private Person() : base()
     {
         FirstNameArabic = string.Empty;
-        LastNameArabic = string.Empty;
+        FamilyNameArabic = string.Empty;
         FatherNameArabic = string.Empty;
         PropertyRelations = new List<PersonPropertyRelation>();
         Evidences = new List<Evidence>();
@@ -138,7 +138,7 @@ public class Person : BaseAuditableEntity
         {
             FirstNameArabic = firstNameArabic,
             FatherNameArabic = fatherNameArabic,
-            LastNameArabic = LastNameArabic,
+            FamilyNameArabic = LastNameArabic,
             MotherNameArabic = motherNameArabic,
             IsContactPerson = false,
             HasIdentificationDocument = false
@@ -229,12 +229,9 @@ public class Person : BaseAuditableEntity
     /// </summary>
     public string GetFullNameArabic()
     {
-        var parts = new List<string> { FirstNameArabic, LastNameArabic, FatherNameArabic };
+        var parts = new List<string> { FirstNameArabic, FatherNameArabic, FamilyNameArabic };
 
-  
-        var fullName = string.Join(" ", parts);
-
-        // Add mother's name in parentheses if available
+        var fullName = string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
         if (!string.IsNullOrWhiteSpace(MotherNameArabic))
             fullName += $" ({MotherNameArabic})";
 

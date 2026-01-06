@@ -18,6 +18,7 @@ A comprehensive system for documenting property ownership, managing displacement
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
 - [API Documentation](#api-documentation)
+- [Development Status](#development-status)
 - [Team](#team)
 - [License](#license)
 
@@ -28,7 +29,7 @@ A comprehensive system for documenting property ownership, managing displacement
 TRRCMS is designed to help UN-Habitat document and verify property rights in post-conflict Aleppo. The system supports:
 
 - **Building & Property Unit Registration** - Comprehensive cadastral data management
-- **Person & Household Records** - Displaced persons and household tracking
+- **Person & Household Records** - Displaced persons and household tracking with Arabic name support
 - **Ownership Claims** - Documentation and verification of property claims
 - **Field Surveys** - Mobile data collection for on-site verification
 - **Document Management** - Secure storage of legal documents and evidence
@@ -38,23 +39,32 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 
 ## ✨ Features
 
-### Current (v0.1 - MVP)
+### ✅ Implemented (v0.2 - Current)
 ✅ **Clean Architecture** - Domain-driven design with clear separation of concerns  
 ✅ **Building CRUD** - Complete Create, Read, Update, Delete operations  
-✅ **PostgreSQL Database** - Robust relational data storage  
+✅ **Property Unit CRUD** - Apartment/shop/commercial unit management  
+✅ **Person Registry** - Individual registration with Arabic name support ⭐ **NEW**  
+✅ **PostgreSQL Database** - Robust relational data storage with 3 entity tables  
 ✅ **Entity Framework Core** - Code-first migrations and LINQ queries  
+✅ **CQRS Pattern** - Command/Query separation with MediatR  
+✅ **Repository Pattern** - Consistent data access layer  
 ✅ **Swagger/OpenAPI** - Interactive API documentation  
-✅ **Arabic Support** - Full UTF-8 encoding for Arabic text  
-✅ **Audit Trails** - Automatic tracking of created/modified timestamps  
+✅ **Arabic Support** - Full UTF-8 encoding for Arabic text (names, addresses)  
+✅ **Audit Trails** - Comprehensive tracking (Created/Modified/Deleted timestamps & users)  
+✅ **Soft Delete** - Data preservation with IsDeleted flag  
 
-### Planned
-🚧 **Authentication & Authorization** - JWT-based security  
-🚧 **Property Unit Management** - Apartment/shop registration  
-🚧 **Person & Household Registry** - Displaced persons tracking  
-🚧 **Claims Workflow** - Submission, review, verification, and resolution  
-🚧 **Document Upload** - PDF/image attachment system  
-🚧 **Search & Filtering** - Advanced queries across entities  
-🚧 **Reporting** - Statistical reports and data export  
+### 🚧 In Progress
+🚧 **Household Management** - Family group tracking and demographics  
+🚧 **Person-Property Relations** - Ownership/occupancy linkage  
+
+### 📅 Planned
+📅 **Authentication & Authorization** - JWT-based security with role-based access  
+📅 **Claims Workflow** - Submission, review, verification, and resolution  
+📅 **Document Upload** - PDF/image attachment system with versioning  
+📅 **Evidence Management** - Document linking to claims and persons  
+📅 **Search & Filtering** - Advanced queries across entities  
+📅 **Reporting** - Statistical reports and data export  
+📅 **Certificate Generation** - Automated tenure rights certificate creation  
 
 ---
 
@@ -69,11 +79,12 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 - **PostgreSQL 16** - Primary database
 - **Npgsql** - PostgreSQL .NET provider
 
-### Architecture
+### Architecture Patterns
 - **Clean Architecture** - Independent of frameworks, UI, and databases
-- **Domain-Driven Design** - Rich domain models
+- **Domain-Driven Design** - Rich domain models with business logic
 - **CQRS** - Command Query Responsibility Segregation
-- **Repository Pattern** - Data access abstraction
+- **Repository Pattern** - Data access abstraction layer
+- **Factory Pattern** - Entity creation through static factory methods
 
 ### Development Tools
 - **Visual Studio 2022** - Primary IDE
@@ -106,7 +117,7 @@ cd TRRCMS
 # Database name: TRRCMS_Dev
 
 # 3. Configure connection string
-# Copy appsettings.example.json to appsettings.Development.json
+# Copy appsettings.json to appsettings.Development.json
 # Update password in connection string
 
 # 4. Restore packages
@@ -132,54 +143,99 @@ dotnet run
 TRRCMS/
 ├── src/
 │   ├── TRRCMS.Domain/              # Enterprise business rules
-│   │   ├── Entities/               # Domain entities (Building, Person, etc.)
+│   │   ├── Entities/               # Domain entities
+│   │   │   ├── Building.cs         # ✅ Implemented
+│   │   │   ├── PropertyUnit.cs     # ✅ Implemented
+│   │   │   ├── Person.cs           # ✅ Implemented (NEW)
+│   │   │   ├── Household.cs        # 🚧 Schema ready
+│   │   │   ├── PersonPropertyRelation.cs  # 🚧 Schema ready
+│   │   │   ├── Claim.cs            # 📅 Planned
+│   │   │   ├── Evidence.cs         # 📅 Planned
+│   │   │   └── Certificate.cs      # 📅 Planned
 │   │   ├── Enums/                  # Domain enumerations
-│   │   └── Common/                 # Base classes and interfaces
+│   │   └── Common/                 # Base classes (BaseEntity, BaseAuditableEntity)
 │   │
 │   ├── TRRCMS.Application/         # Application business rules
-│   │   ├── Buildings/              # Building use cases
-│   │   │   ├── Commands/           # Write operations (Create, Update, Delete)
-│   │   │   ├── Queries/            # Read operations (Get, List)
-│   │   │   └── Dtos/               # Data transfer objects
-│   │   └── Common/                 # Shared application logic
+│   │   ├── Buildings/              # ✅ Building use cases
+│   │   │   ├── Commands/           # Create, Update, Delete
+│   │   │   ├── Queries/            # GetAll, GetById
+│   │   │   └── Dtos/               # BuildingDto
+│   │   ├── PropertyUnits/          # ✅ PropertyUnit use cases
+│   │   ├── Persons/                # ✅ Person use cases (NEW)
+│   │   │   ├── Commands/
+│   │   │   │   └── CreatePerson/   # CreatePersonCommand & Handler
+│   │   │   ├── Queries/
+│   │   │   │   ├── GetAllPersons/  # GetAllPersonsQuery & Handler
+│   │   │   │   └── GetPerson/      # GetPersonQuery & Handler
+│   │   │   └── Dtos/
+│   │   │       └── PersonDto.cs    # DTO with audit fields
+│   │   └── Common/
 │   │       ├── Interfaces/         # Repository interfaces
-│   │       └── Mappings/           # AutoMapper profiles
+│   │       │   ├── IBuildingRepository.cs
+│   │       │   ├── IPropertyUnitRepository.cs
+│   │       │   └── IPersonRepository.cs  # NEW
+│   │       └── Mappings/
+│   │           └── MappingProfile.cs  # AutoMapper configuration
 │   │
 │   ├── TRRCMS.Infrastructure/      # External concerns
 │   │   └── Persistence/
-│   │       ├── ApplicationDbContext.cs
+│   │       ├── ApplicationDbContext.cs  # DbContext with 3 entities
 │   │       ├── Configurations/     # EF Core entity configurations
+│   │       │   ├── BuildingConfiguration.cs
+│   │       │   ├── PropertyUnitConfiguration.cs
+│   │       │   ├── PersonConfiguration.cs  # NEW
+│   │       │   ├── HouseholdConfiguration.cs  # NEW
+│   │       │   ├── PersonPropertyRelationConfiguration.cs  # NEW
+│   │       │   └── ClaimConfiguration.cs  # NEW (temporary)
 │   │       ├── Repositories/       # Repository implementations
-│   │       └── Migrations/         # Database migrations
+│   │       │   ├── BuildingRepository.cs
+│   │       │   ├── PropertyUnitRepository.cs
+│   │       │   └── PersonRepository.cs  # NEW
+│   │       └── Migrations/         # Database migrations (3 tables)
 │   │
 │   └── TRRCMS.WebAPI/              # API layer
-│       ├── Controllers/            # API endpoints
-│       ├── Program.cs              # Application entry point
-│       └── appsettings.json        # Configuration
+│       ├── Controllers/
+│       │   ├── BuildingsController.cs
+│       │   ├── PropertyUnitsController.cs
+│       │   └── PersonsController.cs  # NEW
+│       ├── Program.cs              # DI configuration
+│       └── appsettings.json        # Configuration template
 │
 ├── docs/                           # Documentation
-│   ├── TRRCMS_Analysis_NextSteps.md    # Full project analysis
-│   └── TRRCMS_HowToExtend.md           # Development guide
+│   ├── TRRCMS_Analysis_NextSteps.md
+│   └── TRRCMS_HowToExtend.md
 │
-├── SETUP_GUIDE.md                  # Team onboarding guide
-├── .gitignore                      # Git ignore rules
-└── README.md                       # This file
+├── .gitignore                      # Excludes appsettings.Development.json
+├── SETUP_GUIDE.md
+└── README.md
 ```
 
 ---
 
 ## 📚 API Documentation
 
-### Endpoints (v0.1)
+### Endpoints (v0.2)
 
-#### Buildings
-- `POST /api/v1/Buildings` - Create new building
-- `GET /api/v1/Buildings` - Get all buildings
-- `GET /api/v1/Buildings/{id}` - Get building by ID
+#### 🏢 Buildings
+- `POST /api/v1/buildings` - Create new building
+- `GET /api/v1/buildings` - Get all buildings
+- `GET /api/v1/buildings/{id}` - Get building by ID
 
-### Example Request
+#### 🏠 Property Units
+- `POST /api/v1/propertyunits` - Create new property unit
+- `GET /api/v1/propertyunits` - Get all property units
+- `GET /api/v1/propertyunits/{id}` - Get property unit by ID
+
+#### 👤 Persons ⭐ **NEW**
+- `POST /api/v1/persons` - Create new person
+- `GET /api/v1/persons` - Get all persons
+- `GET /api/v1/persons/{id}` - Get person by ID
+
+### Example Requests
+
+#### Create Building
 ```json
-POST /api/v1/Buildings
+POST /api/v1/buildings
 {
   "governorateCode": "01",
   "districtCode": "02",
@@ -198,30 +254,129 @@ POST /api/v1/Buildings
 }
 ```
 
-### Interactive Documentation
-Start the application and navigate to: `https://localhost:7204/swagger`
+#### Create Person ⭐ **NEW**
+```json
+POST /api/v1/persons
+{
+  "firstNameArabic": "أحمد",
+  "fatherNameArabic": "محمد",
+  "lastNameArabic": "الحسن",
+  "motherNameArabic": "فاطمة",
+  "fullNameEnglish": "Ahmad Mohammed Al-Hassan",
+  "nationalId": "123456789",
+  "yearOfBirth": 1985,
+  "gender": "M",
+  "nationality": "Syrian",
+  "primaryPhoneNumber": "+963991234567",
+  "secondaryPhoneNumber": "+963992345678",
+  "isContactPerson": true,
+  "hasIdentificationDocument": true,
+  "createdByUserId": "00000000-0000-0000-0000-000000000001"
+}
+```
 
+**Response (201 Created):**
+```json
+{
+  "id": "d2c8e6c7-c638-42a8-8587-671bd6024cde",
+  "firstNameArabic": "أحمد",
+  "fatherNameArabic": "محمد",
+  "familyNameArabic": "الحسن",
+  "motherNameArabic": "فاطمة",
+  "fullNameEnglish": "Ahmad Mohammed Al-Hassan",
+  "fullNameArabic": "أحمد محمد الحسن",
+  "nationalId": "123456789",
+  "yearOfBirth": 1985,
+  "age": 41,
+  "gender": "M",
+  "nationality": "Syrian",
+  "primaryPhoneNumber": "+963991234567",
+  "secondaryPhoneNumber": "+963992345678",
+  "isContactPerson": true,
+  "hasIdentificationDocument": true,
+  "createdAtUtc": "2026-01-06T11:29:03.464413Z",
+  "createdBy": "00000000-0000-0000-0000-000000000001"
+}
+```
+
+### Interactive Documentation
+Start the application and navigate to: **https://localhost:7204/swagger**
 
 ---
 
+## 📊 Development Status
 
-### Git Workflow
+### Database Schema
+| Entity | Status | Table | Records |
+|--------|--------|-------|---------|
+| Building | ✅ Complete | `Buildings` | Production ready |
+| PropertyUnit | ✅ Complete | `PropertyUnits` | Production ready |
+| Person | ✅ Complete | `Persons` | **NEW - Production ready** |
+| Household | 🚧 Schema only | `Households` | API pending |
+| PersonPropertyRelation | 🚧 Schema only | `PersonPropertyRelations` | API pending |
+| Claim | 📅 Planned | - | Not started |
+| Evidence | 📅 Planned | - | Not started |
+| Certificate | 📅 Planned | - | Not started |
+
+### Entity Completion Checklist
+Each entity follows this pattern:
+
+**Person Entity** ✅ (Latest - Jan 6, 2026)
+- [x] Domain entity with factory methods
+- [x] EF Core configuration with indexes
+- [x] Repository interface & implementation
+- [x] DTOs with AutoMapper mapping
+- [x] CQRS Commands (Create)
+- [x] CQRS Queries (GetAll, GetById)
+- [x] API Controller with 3 endpoints
+- [x] Database migration applied
+- [x] Tested in Swagger
+- [x] Audit trail working
+- [x] Soft delete support
+
+**Building Entity** ✅ (Complete)
+- [x] All checklist items completed
+
+**PropertyUnit Entity** ✅ (Complete)
+- [x] All checklist items completed
+
+---
+
+## 🔄 Git Workflow
+
+### Branch Strategy
 ```bash
-# Create feature branch
-git checkout -b feature/property-unit-crud
+# Feature development
+git checkout -b feature/entity-name
+git commit -m "feat: Add EntityName CRUD endpoints"
+git push origin feature/entity-name
 
-# Make changes, commit
-git add .
-git commit -m "feat: Add PropertyUnit CRUD endpoints"
+# Bug fixes
+git checkout -b fix/bug-description
+git commit -m "fix: Resolve issue with X"
+git push origin fix/bug-description
 
-# Push and create Pull Request
-git push origin feature/property-unit-crud
+# Documentation
+git checkout -b docs/what-changed
+git commit -m "docs: Update README with Person entity"
+git push origin docs/what-changed
 ```
 
-### Branch Naming
-- `feature/entity-name` - New features
-- `fix/bug-description` - Bug fixes
-- `docs/what-changed` - Documentation updates
+### Commit Message Convention
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `refactor:` - Code refactoring
+- `test:` - Adding tests
+- `chore:` - Maintenance tasks
+
+### Recent Commits
+```
+feat: Implement Person entity with full CRUD operations (Jan 6, 2026)
+feat: Add PropertyUnit CRUD endpoints (Dec 2025)
+feat: Add Building CRUD endpoints (Dec 2025)
+chore: Initial project setup with Clean Architecture (Dec 2025)
+```
 
 ---
 
@@ -232,7 +387,7 @@ git push origin feature/property-unit-crud
 **Location:** Aleppo, Syria
 
 ### Contributors
-- Ameer Yousef
+- **Ameer Yousef** - Backend Developer
 
 ---
 
@@ -245,11 +400,22 @@ This project is developed for UN-Habitat. All rights reserved.
 ## 🤝 Contributing
 
 1. Follow the [Setup Guide](./SETUP_GUIDE.md)
-2. Pick an entity from the roadmap
-3. Create a feature branch
-4. Implement following the established pattern
+2. Pick an entity from the development status table
+3. Create a feature branch (`feature/entity-name`)
+4. Implement following the established pattern (see Person entity as reference)
 5. Test thoroughly in Swagger
-6. Submit Pull Request
+6. Commit with conventional commit messages
+7. Push and create Pull Request
+
+### Code Quality Standards
+- ✅ Follow Clean Architecture principles
+- ✅ Use CQRS pattern for all operations
+- ✅ Implement Repository pattern
+- ✅ Add comprehensive XML documentation
+- ✅ Include audit fields (Created/Modified/Deleted)
+- ✅ Support soft delete
+- ✅ Test all endpoints in Swagger
+- ✅ Follow existing naming conventions
 
 ---
 
@@ -258,3 +424,21 @@ This project is developed for UN-Habitat. All rights reserved.
 - **Issues:** Use GitHub Issues for bug reports
 - **Questions:** Ask in team chat
 - **Documentation:** Check the `/docs` folder
+- **API Docs:** https://localhost:7204/swagger (when running)
+
+---
+
+## 🎯 Next Steps
+
+### Immediate Priorities
+1. ✅ ~~Person Entity~~ - **COMPLETED Jan 6, 2026**
+2. 🔄 Household Entity - In progress (schema ready)
+3. 🔄 PersonPropertyRelation Entity - Next
+4. 📅 Evidence & Document entities
+5. 📅 Claims workflow implementation
+
+---
+
+**Last Updated:** January 6, 2026  
+**Version:** 0.2.0  
+**Status:** 🟢 Active Development

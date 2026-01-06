@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
+using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.Common.Mappings;
@@ -22,5 +23,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null))
             .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? src.OccupancyType.ToString() : null))
             .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? src.OccupancyNature.ToString() : null));
+       // Person mappings
+        CreateMap<Person, PersonDto>();
     }
+
 }
