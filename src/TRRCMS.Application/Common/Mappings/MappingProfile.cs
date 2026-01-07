@@ -4,6 +4,7 @@ using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Application.PersonPropertyRelations.Dtos;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -33,6 +34,16 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DependencyRatio, opt => opt.MapFrom(src => src.CalculateDependencyRatio()))
             .ForMember(dest => dest.IsVulnerable, opt => opt.MapFrom(src => src.IsVulnerable()));
 
-    }
+        // PersonPropertyRelation mappings
+        CreateMap<PersonPropertyRelation, PersonPropertyRelationDto>()
+            .ForMember(dest => dest.DurationInDays, opt => opt.MapFrom(src =>
+                src.StartDate.HasValue && src.EndDate.HasValue
+                    ? (src.EndDate.Value - src.StartDate.Value).Days
+                    : (int?)null))
+            .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src =>
+                src.StartDate.HasValue && !src.EndDate.HasValue));
+    
+
+}
 
 }

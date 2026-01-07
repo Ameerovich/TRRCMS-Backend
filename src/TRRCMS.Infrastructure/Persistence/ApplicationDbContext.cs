@@ -13,7 +13,7 @@ public class ApplicationDbContext : DbContext
     // DbSets for entities
     public DbSet<Building> Buildings => Set<Building>();
     public DbSet<PropertyUnit> PropertyUnits { get; set; }
-
+    public DbSet<PersonPropertyRelation> PersonPropertyRelations => Set<PersonPropertyRelation>();
     public DbSet<Household> Households => Set<Household>();
     public DbSet<Person> Persons => Set<Person>();
 

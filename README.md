@@ -30,6 +30,7 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 
 - **Building & Property Unit Registration** - Comprehensive cadastral data management
 - **Person & Household Records** - Displaced persons and household tracking with Arabic name support
+- **Person-Property Relations** - Ownership, tenancy, and occupancy documentation ⭐ **NEW**
 - **Ownership Claims** - Documentation and verification of property claims
 - **Field Surveys** - Mobile data collection for on-site verification
 - **Document Management** - Secure storage of legal documents and evidence
@@ -39,13 +40,14 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 
 ## ✨ Features
 
-### ✅ Implemented (v0.3 - Current)
+### ✅ Implemented (v0.4 - Current)
 ✅ **Clean Architecture** - Domain-driven design with clear separation of concerns  
 ✅ **Building CRUD** - Complete Create, Read, Update, Delete operations  
 ✅ **Property Unit CRUD** - Apartment/shop/commercial unit management  
 ✅ **Person Registry** - Individual registration with Arabic name support  
-✅ **Household Management** - Family unit tracking with demographics and vulnerability indicators ⭐ **NEW**  
-✅ **PostgreSQL Database** - Robust relational data storage with 4 entity tables  
+✅ **Household Management** - Family unit tracking with demographics and vulnerability indicators  
+✅ **Person-Property Relations** - Ownership/tenancy linkage with evidence support ⭐ **NEW**  
+✅ **PostgreSQL Database** - Robust relational data storage with 5 entity tables  
 ✅ **Entity Framework Core** - Code-first migrations and LINQ queries  
 ✅ **CQRS Pattern** - Command/Query separation with MediatR  
 ✅ **Repository Pattern** - Consistent data access layer  
@@ -53,10 +55,7 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 ✅ **Arabic Support** - Full UTF-8 encoding for Arabic text (names, addresses)  
 ✅ **Audit Trails** - Comprehensive tracking (Created/Modified/Deleted timestamps & users)  
 ✅ **Soft Delete** - Data preservation with IsDeleted flag  
-✅ **Computed Properties** - Dynamic calculations (DependencyRatio, IsVulnerable)  
-
-### 🚧 In Progress
-🚧 **Person-Property Relations** - Ownership/occupancy linkage (50% complete)
+✅ **Computed Properties** - Dynamic calculations (DependencyRatio, IsVulnerable, DurationInDays, IsOngoing)  
 
 ### 📅 Planned
 📅 **Authentication & Authorization** - JWT-based security with role-based access  
@@ -148,8 +147,8 @@ TRRCMS/
 │   │   │   ├── Building.cs         # ✅ Implemented
 │   │   │   ├── PropertyUnit.cs     # ✅ Implemented
 │   │   │   ├── Person.cs           # ✅ Implemented
-│   │   │   ├── Household.cs        # ✅ Implemented (NEW)
-│   │   │   ├── PersonPropertyRelation.cs  # 🚧 Schema ready
+│   │   │   ├── Household.cs        # ✅ Implemented
+│   │   │   ├── PersonPropertyRelation.cs  # ✅ Implemented (NEW)
 │   │   │   ├── Claim.cs            # 📅 Planned
 │   │   │   ├── Evidence.cs         # 📅 Planned
 │   │   │   └── Certificate.cs      # 📅 Planned
@@ -170,7 +169,7 @@ TRRCMS/
 │   │   │   │   └── GetPerson/      # GetPersonQuery & Handler
 │   │   │   └── Dtos/
 │   │   │       └── PersonDto.cs    # DTO with computed properties
-│   │   ├── Households/             # ✅ Household use cases (NEW)
+│   │   ├── Households/             # ✅ Household use cases
 │   │   │   ├── Commands/
 │   │   │   │   └── CreateHousehold/  # CreateHouseholdCommand & Handler
 │   │   │   ├── Queries/
@@ -178,38 +177,49 @@ TRRCMS/
 │   │   │   │   └── GetHousehold/      # GetHouseholdQuery & Handler
 │   │   │   └── Dtos/
 │   │   │       └── HouseholdDto.cs    # DTO with vulnerability metrics
+│   │   ├── PersonPropertyRelations/  # ✅ PersonPropertyRelation use cases (NEW)
+│   │   │   ├── Commands/
+│   │   │   │   └── CreatePersonPropertyRelation/  # CreatePersonPropertyRelationCommand & Handler
+│   │   │   ├── Queries/
+│   │   │   │   ├── GetAllPersonPropertyRelations/  # GetAllPersonPropertyRelationsQuery & Handler
+│   │   │   │   └── GetPersonPropertyRelation/      # GetPersonPropertyRelationQuery & Handler
+│   │   │   └── Dtos/
+│   │   │       └── PersonPropertyRelationDto.cs    # DTO with computed properties
 │   │   └── Common/
 │   │       ├── Interfaces/         # Repository interfaces
 │   │       │   ├── IBuildingRepository.cs
 │   │       │   ├── IPropertyUnitRepository.cs
 │   │       │   ├── IPersonRepository.cs
-│   │       │   └── IHouseholdRepository.cs  # NEW
+│   │       │   ├── IHouseholdRepository.cs
+│   │       │   └── IPersonPropertyRelationRepository.cs  # NEW
 │   │       └── Mappings/
 │   │           └── MappingProfile.cs  # AutoMapper configuration
 │   │
 │   ├── TRRCMS.Infrastructure/      # External concerns
 │   │   └── Persistence/
-│   │       ├── ApplicationDbContext.cs  # DbContext with 4 entities
+│   │       ├── ApplicationDbContext.cs  # DbContext with 5 entities
 │   │       ├── Configurations/     # EF Core entity configurations
 │   │       │   ├── BuildingConfiguration.cs
 │   │       │   ├── PropertyUnitConfiguration.cs
 │   │       │   ├── PersonConfiguration.cs
-│   │       │   ├── HouseholdConfiguration.cs  # NEW - Comprehensive
-│   │       │   ├── PersonPropertyRelationConfiguration.cs
+│   │       │   ├── HouseholdConfiguration.cs
+│   │       │   ├── PersonPropertyRelationConfiguration.cs  # NEW - Comprehensive
 │   │       │   └── ClaimConfiguration.cs
 │   │       ├── Repositories/       # Repository implementations
 │   │       │   ├── BuildingRepository.cs
 │   │       │   ├── PropertyUnitRepository.cs
 │   │       │   ├── PersonRepository.cs
-│   │       │   └── HouseholdRepository.cs  # NEW
-│   │       └── Migrations/         # Database migrations (4 tables)
+│   │       │   ├── HouseholdRepository.cs
+│   │       │   └── PersonPropertyRelationRepository.cs  # NEW
+│   │       └── Migrations/         # Database migrations (5 tables)
 │   │
 │   └── TRRCMS.WebAPI/              # API layer
 │       ├── Controllers/
 │       │   ├── BuildingsController.cs
 │       │   ├── PropertyUnitsController.cs
 │       │   ├── PersonsController.cs
-│       │   └── HouseholdsController.cs  # NEW
+│       │   ├── HouseholdsController.cs
+│       │   └── PersonPropertyRelationsController.cs  # NEW
 │       ├── Program.cs              # DI configuration
 │       └── appsettings.json        # Configuration template
 │
@@ -226,7 +236,7 @@ TRRCMS/
 
 ## 📚 API Documentation
 
-### Endpoints (v0.3)
+### Endpoints (v0.4)
 
 #### 🏢 Buildings
 - `POST /api/v1/buildings` - Create new building
@@ -243,12 +253,17 @@ TRRCMS/
 - `GET /api/v1/persons` - Get all persons
 - `GET /api/v1/persons/{id}` - Get person by ID
 
-#### 👨‍👩‍👧‍👦 Households ⭐ **NEW**
+#### 👨‍👩‍👧‍👦 Households
 - `POST /api/v1/households` - Create new household
 - `GET /api/v1/households` - Get all households
 - `GET /api/v1/households/{id}` - Get household by ID
 
-**Total Endpoints:** 12
+#### 🔗 Person-Property Relations ⭐ **NEW**
+- `POST /api/v1/personpropertyrelations` - Create new person-property relation
+- `GET /api/v1/personpropertyrelations` - Get all person-property relations
+- `GET /api/v1/personpropertyrelations/{id}` - Get person-property relation by ID
+
+**Total Endpoints:** 15
 
 ---
 
@@ -296,7 +311,7 @@ POST /api/v1/persons
 }
 ```
 
-#### Create Household ⭐ **NEW**
+#### Create Household
 ```json
 POST /api/v1/households
 {
@@ -324,44 +339,63 @@ POST /api/v1/households
 }
 ```
 
+#### Create Person-Property Relation ⭐ **NEW**
+```json
+POST /api/v1/personpropertyrelations
+{
+  "personId": "d2c8e6e7-ce38-42a8-8587-671bd6e24cde",
+  "propertyUnitId": "8aa21e0c-84f1-48a2-8e3e-bd3af172c820",
+  "relationType": "owner",
+  "ownershipShare": 1.0,
+  "startDate": "2020-01-01T00:00:00",
+  "notes": "Original property owner",
+  "createdByUserId": "00000000-0000-0000-0000-000000000001"
+}
+```
+
 **Response (201 Created):**
 ```json
 {
-  "id": "187a613b-bbc8-4a29-b208-6f256d296c14",
-  "propertyUnitId": "8aa1ec0c-84f3-48a2-8e3e-bd3ef372c320",
-  "headOfHouseholdName": "أحمد محمد الحسن",
-  "householdSize": 5,
-  "maleCount": 2,
-  "femaleCount": 3,
-  "infantCount": 0,
-  "childCount": 1,
-  "minorCount": 1,
-  "adultCount": 2,
-  "elderlyCount": 1,
-  "personsWithDisabilitiesCount": 0,
-  "isFemaleHeaded": false,
-  "employedPersonsCount": 1,
-  "unemployedPersonsCount": 0,
-  "isDisplaced": true,
-  "originLocation": "حلب القديمة",
-  "arrivalDate": "2023-01-15T00:00:00Z",
-  "displacementReason": "Conflict",
-  "notes": "Family returned to rehabilitated property",
-  "specialNeeds": "Elderly member requires ground floor access",
-  "dependencyRatio": 1.5,
-  "isVulnerable": true,
-  "createdAtUtc": "2026-01-06T18:55:08.907128Z",
-  "createdBy": "00000000-0000-0000-0000-000000000001"
+  "id": "d5532dce-4cd9-453a-af1b-b5ebcb4a968c",
+  "personId": "d2c8e6e7-ce38-42a8-8587-671bd6e24cde",
+  "propertyUnitId": "8aa21e0c-84f1-48a2-8e3e-bd3af172c820",
+  "relationType": "owner",
+  "relationTypeOtherDesc": null,
+  "ownershipShare": 1.0,
+  "contractDetails": null,
+  "startDate": "2020-01-01T00:00:00Z",
+  "endDate": null,
+  "notes": "Original property owner",
+  "isActive": true,
+  "createdAtUtc": "2026-01-07T19:13:17.471892Z",
+  "createdBy": "00000000-0000-0000-0000-000000000001",
+  "lastModifiedAtUtc": "2026-01-07T19:13:17.189227Z",
+  "lastModifiedBy": "00000000-0000-0000-0000-000000000001",
+  "isDeleted": false,
+  "deletedAtUtc": null,
+  "deletedBy": null,
+  "durationInDays": null,
+  "isOngoing": true
 }
 ```
 
 **Key Features:**
-- ✅ **Arabic name support** - UTF-8 encoding
-- ✅ **Comprehensive demographics** - Gender, age groups, vulnerability indicators
-- ✅ **Displacement tracking** - Origin, arrival date, reason
-- ✅ **Economic indicators** - Employment status, income estimates
-- ✅ **Computed properties** - `dependencyRatio` (dependents/adults), `isVulnerable` (automatic flag)
-- ✅ **Audit trail** - Created timestamp and user tracking
+- ✅ **Relation types** - owner, tenant, occupant, guest, heir, other
+- ✅ **Ownership share tracking** - Percentage or fractional ownership (e.g., 0.5 = 50%)
+- ✅ **Contract details** - Store agreement information
+- ✅ **Date tracking** - Start and end dates for relations
+- ✅ **Active status** - Mark relations as active/inactive
+- ✅ **Computed properties** - `durationInDays` (calculated from dates), `isOngoing` (no end date)
+- ✅ **Other relation type** - Custom description when type is "other"
+- ✅ **Audit trail** - Complete tracking of creation and modifications
+- ✅ **UTC timestamps** - Proper timezone handling for PostgreSQL
+
+**Use Cases:**
+- Document original property owners
+- Track tenant relationships with lease dates
+- Record occupancy arrangements
+- Maintain heir information
+- Support co-ownership scenarios (multiple owners with shares)
 
 ---
 
@@ -378,18 +412,18 @@ Start the application and navigate to: **https://localhost:7204/swagger**
 | Building | ✅ Complete | `Buildings` | Production ready |
 | PropertyUnit | ✅ Complete | `PropertyUnits` | Production ready |
 | Person | ✅ Complete | `Persons` | Production ready |
-| Household | ✅ Complete | `Households` | **NEW - Production ready** |
-| PersonPropertyRelation | 🚧 Schema ready | `PersonPropertyRelations` | API pending |
+| Household | ✅ Complete | `Households` | Production ready |
+| PersonPropertyRelation | ✅ Complete | `PersonPropertyRelations` | **NEW - Production ready** |
 | Claim | 📅 Planned | - | Not started |
 | Evidence | 📅 Planned | - | Not started |
 | Certificate | 📅 Planned | - | Not started |
 
-### Implementation Progress: 4/19 Entities (21%)
+### Implementation Progress: 5/19 Entities (26%)
 
 ### Entity Completion Checklist
 Each entity follows this pattern:
 
-**Household Entity** ✅ (Latest - Jan 6, 2026)
+**PersonPropertyRelation Entity** ✅ (Latest - Jan 7, 2026)
 - [x] Domain entity with factory methods
 - [x] EF Core configuration with comprehensive constraints
 - [x] Repository interface & implementation
@@ -401,10 +435,17 @@ Each entity follows this pattern:
 - [x] Tested in Swagger
 - [x] Audit trail working
 - [x] Soft delete support
-- [x] Computed properties (DependencyRatio, IsVulnerable)
+- [x] Computed properties (DurationInDays, IsOngoing)
 - [x] Column comments in database
-- [x] Default values on count fields
+- [x] Default values (IsActive: true, IsDeleted: false)
 - [x] Composite indexes for performance
+- [x] UTC timestamp handling for PostgreSQL
+
+**Household Entity** ✅ (Complete - Jan 6, 2026)
+- [x] All checklist items completed
+- [x] Comprehensive demographics tracking
+- [x] Vulnerability indicators
+- [x] Displacement tracking
 
 **Person Entity** ✅ (Complete - Jan 6, 2026)
 - [x] All checklist items completed
@@ -435,7 +476,7 @@ git push origin fix/bug-description
 
 # Documentation
 git checkout -b docs/what-changed
-git commit -m "docs: Update README with Household entity"
+git commit -m "docs: Update README with entity changes"
 git push origin docs/what-changed
 ```
 
@@ -449,19 +490,29 @@ git push origin docs/what-changed
 
 ### Recent Commits
 ```
+feat: Implement PersonPropertyRelation entity with full CRUD operations (Jan 7, 2026)
+  - Add relation type tracking (owner, tenant, occupant, guest, heir, other)
+  - Implement ownership share tracking for co-owners
+  - Add contract details and date tracking (start/end dates)
+  - Add computed properties (DurationInDays, IsOngoing)
+  - Add comprehensive EF Core configuration with column comments
+  - Add composite indexes for query performance
+  - Fix UTC timestamp handling for PostgreSQL
+  - Test all endpoints successfully in Swagger
+  Closes TRRCMS-MOB-05
+
 feat: Implement Household entity with full CRUD operations (Jan 6, 2026)
   - Add comprehensive demographics and vulnerability tracking
   - Implement computed properties (DependencyRatio, IsVulnerable)
   - Add displacement tracking (origin, arrival date, reason)
   - Add economic indicators (employment, income)
-  - Add comprehensive EF Core configuration with column comments
-  - Add composite indexes for query performance
-  - Test all endpoints successfully in Swagger
+  Closes TRRCMS-MOB-04
 
 feat: Implement Person entity with full CRUD operations (Jan 6, 2026)
   - Add Arabic name support with computed FullNameArabic
   - Implement age calculation from YearOfBirth
   - Add household relationship support
+  Closes TRRCMS-MOB-03
 
 feat: Add PropertyUnit CRUD endpoints (Dec 2025)
 feat: Add Building CRUD endpoints (Dec 2025)
@@ -492,7 +543,7 @@ This project is developed for UN-Habitat. All rights reserved.
 1. Follow the [Setup Guide](./SETUP_GUIDE.md)
 2. Pick an entity from the development status table
 3. Create a feature branch (`feature/entity-name`)
-4. Implement following the established pattern (see Household entity as reference)
+4. Implement following the established pattern (see PersonPropertyRelation entity as reference)
 5. Test thoroughly in Swagger
 6. Commit with conventional commit messages
 7. Push and create Pull Request
@@ -509,6 +560,7 @@ This project is developed for UN-Habitat. All rights reserved.
 - ✅ Follow existing naming conventions
 - ✅ Add column comments in EF Core configuration
 - ✅ Use appropriate indexes for performance
+- ✅ Handle UTC timestamps correctly for PostgreSQL
 
 ---
 
@@ -526,21 +578,22 @@ This project is developed for UN-Habitat. All rights reserved.
 ### Immediate Priorities
 1. ✅ ~~Person Entity~~ - **COMPLETED Jan 6, 2026**
 2. ✅ ~~Household Entity~~ - **COMPLETED Jan 6, 2026**
-3. 🔄 PersonPropertyRelation Entity - Next priority (50% complete)
-4. 📅 Evidence & Document entities
+3. ✅ ~~PersonPropertyRelation Entity~~ - **COMPLETED Jan 7, 2026**
+4. 📅 Evidence & Document entities - Next priority
 5. 📅 Claims workflow implementation
 
 ### Milestone Progress
-- **M2: Core Platform Ready** - 80% complete
+- **M2: Core Platform Ready** - 90% complete
   - ✅ Building management
   - ✅ Property unit management
   - ✅ Person registry
   - ✅ Household tracking
-  - 🚧 Person-property relations (next)
+  - ✅ Person-property relations
+  - 📅 Evidence & Documents (next)
 
 ---
 
-**Last Updated:** January 6, 2026  
-**Version:** 0.3.0  
+**Last Updated:** January 7, 2026  
+**Version:** 0.4.0  
 **Status:** 🟢 Active Development  
-**Latest Feature:** Household Management with Demographics & Vulnerability Tracking
+**Latest Feature:** Person-Property Relations with Ownership & Tenancy Tracking

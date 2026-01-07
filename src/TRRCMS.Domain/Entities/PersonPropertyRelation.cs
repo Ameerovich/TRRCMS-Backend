@@ -28,9 +28,17 @@ public class PersonPropertyRelation : BaseAuditableEntity
     /// </summary>
     public string RelationType { get; private set; }
 
+   
+    /// <summary>
+    /// Description in case the chosen type is "Other"
+    /// </summary>
+
+    public string? RelationTypeOtherDesc { get; set; }
+
     /// <summary>
     /// Ownership or occupancy share (if applicable)
     /// </summary>
+
     public decimal? OwnershipShare { get; private set; }
 
     /// <summary>
@@ -116,6 +124,7 @@ public class PersonPropertyRelation : BaseAuditableEntity
     /// </summary>
     public void UpdateRelationDetails(
         string relationType,
+        string? relationTypeOtherDesc,  
         decimal? ownershipShare,
         string? contractDetails,
         DateTime? startDate,
@@ -124,6 +133,7 @@ public class PersonPropertyRelation : BaseAuditableEntity
         Guid modifiedByUserId)
     {
         RelationType = relationType;
+        RelationTypeOtherDesc = relationTypeOtherDesc; 
         OwnershipShare = ownershipShare;
         ContractDetails = contractDetails;
         StartDate = startDate;
