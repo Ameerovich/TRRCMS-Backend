@@ -31,25 +31,27 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 - **Building & Property Unit Registration** - Comprehensive cadastral data management
 - **Person & Household Records** - Displaced persons and household tracking with Arabic name support
 - **Person-Property Relations** - Ownership, tenancy, and occupancy documentation
-- **Evidence Management** - Document/photo/file metadata tracking with versioning ⭐ **NEW**
+- **Evidence Management** - File metadata tracking with versioning and entity linking
+- **Document Management** - Official document metadata with verification workflow ⭐ **NEW**
 - **Ownership Claims** - Documentation and verification of property claims
 - **Field Surveys** - Mobile data collection for on-site verification
-- **Document Management** - Secure storage of legal documents and evidence
+- **Secure Document Storage** - Legal document tracking and evidence management
 - **Conflict Resolution** - Tracking disputed claims and resolution processes
 
 ---
 
 ## ✨ Features
 
-### ✅ Implemented (v0.6 - Current)
+### ✅ Implemented (v0.7 - Current)
 ✅ **Clean Architecture** - Domain-driven design with clear separation of concerns  
 ✅ **Building CRUD** - Complete Create, Read, Update, Delete operations  
 ✅ **Property Unit CRUD** - Apartment/shop/commercial unit management  
 ✅ **Person Registry** - Individual registration with Arabic name support  
 ✅ **Household Management** - Family unit tracking with demographics and vulnerability indicators  
 ✅ **Person-Property Relations** - Ownership/tenancy linkage with evidence support  
-✅ **Evidence Management** - File metadata tracking with versioning and entity linking ⭐ **NEW**  
-✅ **PostgreSQL Database** - Robust relational data storage with 6 entity tables  
+✅ **Evidence Management** - File metadata tracking with versioning and entity linking  
+✅ **Document Management** - Official document metadata with verification workflow ⭐ **NEW**  
+✅ **PostgreSQL Database** - Robust relational data storage with 7 entity tables  
 ✅ **Entity Framework Core** - Code-first migrations and LINQ queries  
 ✅ **CQRS Pattern** - Command/Query separation with MediatR  
 ✅ **Repository Pattern** - Consistent data access layer  
@@ -57,12 +59,12 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 ✅ **Arabic Support** - Full UTF-8 encoding for Arabic text (names, addresses)  
 ✅ **Audit Trails** - Comprehensive tracking (Created/Modified/Deleted timestamps & users)  
 ✅ **Soft Delete** - Data preservation with IsDeleted flag  
-✅ **Computed Properties** - Dynamic calculations (DependencyRatio, IsVulnerable, DurationInDays, IsOngoing, IsExpired)  
+✅ **Computed Properties** - Dynamic calculations (DependencyRatio, IsVulnerable, DurationInDays, IsOngoing, IsExpired, IsExpiringSoon)  
 
 ### 📅 Planned
 📅 **Authentication & Authorization** - JWT-based security with role-based access  
 📅 **Claims Workflow** - Submission, review, verification, and resolution  
-📅 **Document Upload** - PDF/image attachment system with versioning  
+📅 **Document Upload** - PDF/image attachment system with actual file storage  
 📅 **Search & Filtering** - Advanced queries across entities  
 📅 **Reporting** - Statistical reports and data export  
 📅 **Certificate Generation** - Automated tenure rights certificate creation  
@@ -150,8 +152,8 @@ TRRCMS/
 │   │   │   ├── Person.cs           # ✅ Implemented
 │   │   │   ├── Household.cs        # ✅ Implemented
 │   │   │   ├── PersonPropertyRelation.cs  # ✅ Implemented
-│   │   │   ├── Evidence.cs         # ✅ Implemented (NEW)
-│   │   │   ├── Document.cs         # 📅 Planned
+│   │   │   ├── Evidence.cs         # ✅ Implemented
+│   │   │   ├── Document.cs         # ✅ Implemented (NEW)
 │   │   │   ├── Claim.cs            # 📅 Planned
 │   │   │   └── Certificate.cs      # 📅 Planned
 │   │   ├── Enums/                  # Domain enumerations (28 enums)
@@ -163,7 +165,7 @@ TRRCMS/
 │   │   ├── Persons/                # ✅ Person use cases
 │   │   ├── Households/             # ✅ Household use cases
 │   │   ├── PersonPropertyRelations/  # ✅ PersonPropertyRelation use cases
-│   │   ├── Evidences/              # ✅ Evidence use cases (NEW)
+│   │   ├── Evidences/              # ✅ Evidence use cases
 │   │   │   ├── Commands/
 │   │   │   │   └── CreateEvidence/   # CreateEvidenceCommand & Handler
 │   │   │   ├── Queries/
@@ -171,6 +173,14 @@ TRRCMS/
 │   │   │   │   └── GetEvidence/      # GetEvidenceQuery & Handler
 │   │   │   └── Dtos/
 │   │   │       └── EvidenceDto.cs    # DTO with IsExpired computed property
+│   │   ├── Documents/              # ✅ Document use cases (NEW)
+│   │   │   ├── Commands/
+│   │   │   │   └── CreateDocument/   # CreateDocumentCommand & Handler
+│   │   │   ├── Queries/
+│   │   │   │   ├── GetAllDocuments/  # GetAllDocumentsQuery & Handler
+│   │   │   │   └── GetDocument/      # GetDocumentQuery & Handler
+│   │   │   └── Dtos/
+│   │   │       └── DocumentDto.cs    # DTO with IsExpired/IsExpiringSoon computed properties
 │   │   └── Common/
 │   │       ├── Interfaces/         # Repository interfaces
 │   │       │   ├── IBuildingRepository.cs
@@ -178,28 +188,31 @@ TRRCMS/
 │   │       │   ├── IPersonRepository.cs
 │   │       │   ├── IHouseholdRepository.cs
 │   │       │   ├── IPersonPropertyRelationRepository.cs
-│   │       │   └── IEvidenceRepository.cs  # NEW
+│   │       │   ├── IEvidenceRepository.cs
+│   │       │   └── IDocumentRepository.cs  # NEW
 │   │       └── Mappings/
 │   │           └── MappingProfile.cs  # AutoMapper configuration
 │   │
 │   ├── TRRCMS.Infrastructure/      # External concerns
 │   │   └── Persistence/
-│   │       ├── ApplicationDbContext.cs  # DbContext with 6 entities
+│   │       ├── ApplicationDbContext.cs  # DbContext with 7 entities
 │   │       ├── Configurations/     # EF Core entity configurations
 │   │       │   ├── BuildingConfiguration.cs
 │   │       │   ├── PropertyUnitConfiguration.cs
 │   │       │   ├── PersonConfiguration.cs
 │   │       │   ├── HouseholdConfiguration.cs
 │   │       │   ├── PersonPropertyRelationConfiguration.cs
-│   │       │   └── EvidenceConfiguration.cs  # NEW - Comprehensive
+│   │       │   ├── EvidenceConfiguration.cs
+│   │       │   └── DocumentConfiguration.cs  # NEW - Comprehensive
 │   │       ├── Repositories/       # Repository implementations
 │   │       │   ├── BuildingRepository.cs
 │   │       │   ├── PropertyUnitRepository.cs
 │   │       │   ├── PersonRepository.cs
 │   │       │   ├── HouseholdRepository.cs
 │   │       │   ├── PersonPropertyRelationRepository.cs
-│   │       │   └── EvidenceRepository.cs  # NEW
-│   │       └── Migrations/         # Database migrations (6 tables)
+│   │       │   ├── EvidenceRepository.cs
+│   │       │   └── DocumentRepository.cs  # NEW
+│   │       └── Migrations/         # Database migrations (7 tables)
 │   │
 │   └── TRRCMS.WebAPI/              # API layer
 │       ├── Controllers/
@@ -208,7 +221,8 @@ TRRCMS/
 │       │   ├── PersonsController.cs
 │       │   ├── HouseholdsController.cs
 │       │   ├── PersonPropertyRelationsController.cs
-│       │   └── EvidencesController.cs  # NEW
+│       │   ├── EvidencesController.cs
+│       │   └── DocumentsController.cs  # NEW
 │       ├── Program.cs              # DI configuration
 │       └── appsettings.json        # Configuration template
 │
@@ -225,7 +239,7 @@ TRRCMS/
 
 ## 📚 API Documentation
 
-### Endpoints (v0.6)
+### Endpoints (v0.7)
 
 #### 🏢 Buildings
 - `POST /api/v1/buildings` - Create new building
@@ -252,122 +266,140 @@ TRRCMS/
 - `GET /api/v1/personpropertyrelations` - Get all person-property relations
 - `GET /api/v1/personpropertyrelations/{id}` - Get person-property relation by ID
 
-#### 📄 Evidences ⭐ **NEW**
+#### 📄 Evidences
 - `POST /api/v1/evidences` - Create new evidence (file metadata)
 - `GET /api/v1/evidences` - Get all evidences
 - `GET /api/v1/evidences/{id}` - Get evidence by ID
 
-**Total Endpoints:** 18
+#### 📋 Documents ⭐ **NEW**
+- `POST /api/documents` - Create new document
+- `GET /api/documents` - Get all documents
+- `GET /api/documents/{id}` - Get document by ID
+
+**Total Endpoints:** 21
 
 ---
 
 ### Example Requests
 
-#### Create Evidence ⭐ **NEW**
+#### Create Document ⭐ **NEW**
 ```json
-POST /api/v1/evidences
+POST /api/documents
 {
-  "evidenceType": "Property Deed",
-  "description": "Original Tabu Green deed for property unit",
-  "originalFileName": "tabu_deed_2024.pdf",
-  "filePath": "/uploads/evidences/2024/01/tabu_deed_2024.pdf",
-  "fileSizeBytes": 2048576,
-  "mimeType": "application/pdf",
-  "fileHash": "abc123def456789",
-  "documentIssuedDate": "2015-03-15T00:00:00",
-  "issuingAuthority": "Aleppo Real Estate Registry",
-  "documentReferenceNumber": "TD-2015-12345",
-  "notes": "Original deed in good condition",
+  "documentType": 0,
+  "documentNumber": "12345/2024",
+  "documentTitle": "سند ملكية أخضر",
+  "issueDate": "2024-01-15T00:00:00Z",
+  "expiryDate": "2034-01-15T00:00:00Z",
+  "issuingAuthority": "مديرية السجل العقاري - حلب",
+  "issuingPlace": "حلب",
+  "notes": "سند ملكية أصلي",
   "createdByUserId": "00000000-0000-0000-0000-000000000001"
 }
 ```
+
+**Document Types (DocumentType enum):**
+- `0` - TabuGreen (Green Tabu - ownership deed)
+- `1` - TabuPink (Pink Tabu - shared ownership)
+- `2` - RentalContract
+- `3` - NationalIdCard
+- `4` - FamilyRegistry
+- `5` - BirthCertificate
+- `6` - DeathCertificate
+- `7` - MarriageCertificate
+- `8` - DivorceCertificate
+- `9` - PowerOfAttorney
+- `10` - CourtRuling
+- `11` - InheritanceDocument
+- `12` - SaleContract
+- `13` - Other
 
 **Response (201 Created):**
 ```json
 {
-  "id": "f4fd3c07-3eaa-44ca-8458-2a56db31b069",
-  "evidenceType": "Property Deed",
-  "description": "Original Tabu Green deed for property unit",
-  "originalFileName": "tabu_deed_2024.pdf",
-  "filePath": "/uploads/evidences/2024/01/tabu_deed_2024.pdf",
-  "fileSizeBytes": 2048576,
-  "mimeType": "application/pdf",
-  "fileHash": "abc123def456789",
-  "documentIssuedDate": "2015-03-15T00:00:00Z",
-  "documentExpiryDate": null,
-  "issuingAuthority": "Aleppo Real Estate Registry",
-  "documentReferenceNumber": "TD-2015-12345",
-  "notes": "Original deed in good condition",
-  "versionNumber": 1,
-  "previousVersionId": null,
-  "isCurrentVersion": true,
+  "id": "ba1fc82b-46a8-4365-a8b7-a2c2b6485d4d",
+  "documentType": "TabuGreen",
+  "documentNumber": "12345/2024",
+  "documentTitle": "سند ملكية أخضر",
+  "issueDate": "2024-01-15T00:00:00Z",
+  "expiryDate": "2034-01-15T00:00:00Z",
+  "issuingAuthority": "مديرية السجل العقاري - حلب",
+  "issuingPlace": "حلب",
+  "isVerified": false,
+  "verificationStatus": "Pending",
+  "verificationDate": null,
+  "verifiedByUserId": null,
+  "verificationNotes": null,
+  "evidenceId": null,
+  "documentHash": null,
+  "notes": "سند ملكية أصلي",
   "personId": null,
+  "propertyUnitId": null,
   "personPropertyRelationId": null,
   "claimId": null,
-  "createdAtUtc": "2026-01-08T03:05:55.762125Z",
+  "isLegallyValid": true,
+  "legalValidityNotes": null,
+  "isOriginal": true,
+  "originalDocumentId": null,
+  "isNotarized": false,
+  "notaryOffice": null,
+  "notarizationDate": null,
+  "notarizationNumber": null,
+  "createdAtUtc": "2026-01-08T12:29:56.782342Z",
   "createdBy": "00000000-0000-0000-0000-000000000001",
-  "lastModifiedAtUtc": "2026-01-08T03:05:55.762125Z",
+  "lastModifiedAtUtc": "2026-01-08T12:29:56.782342Z",
   "lastModifiedBy": "00000000-0000-0000-0000-000000000001",
   "isDeleted": false,
   "deletedAtUtc": null,
   "deletedBy": null,
-  "isExpired": false
+  "isExpired": false,
+  "isExpiringSoon": false
 }
 ```
 
 **Key Features:**
-- ✅ **File metadata tracking** - Name, path, size, MIME type, SHA-256 hash
-- ✅ **Document metadata** - Issue/expiry dates, issuing authority, reference numbers
-- ✅ **Versioning support** - Version number, previous version tracking, current version flag
-- ✅ **Entity linking** - Link to Person (ID documents), PersonPropertyRelation (contracts), Claims (supporting evidence)
-- ✅ **Computed property** - `isExpired` (checks if document has expired)
+- ✅ **Document classification** - Type, number, title tracking
+- ✅ **Issuance information** - Issue/expiry dates, issuing authority and place
+- ✅ **Verification workflow** - Pending/Verified/Rejected status with verification notes
+- ✅ **Document content** - Link to Evidence (file), document hash for integrity
+- ✅ **Entity relationships** - Link to Person, PropertyUnit, PersonPropertyRelation, Claim
+- ✅ **Legal validity** - Legal validity flag with notes
+- ✅ **Original/Copy tracking** - IsOriginal flag with reference to original document
+- ✅ **Notarization** - Notarization status, office, date, and number
+- ✅ **Computed properties** - `isExpired` (checks if expired), `isExpiringSoon` (expires within 30 days)
 - ✅ **Audit trail** - Complete tracking of creation and modifications
 - ✅ **Soft delete** - Data preservation
 
 **Use Cases:**
-- Upload property deed scans (Tabu documents)
-- Store national ID cards and personal identification
-- Track rental contracts and agreements
-- Maintain photograph evidence of properties
-- Version control for updated documents
-- Link supporting evidence to claims
+- Track property ownership documents (Tabu Green/Pink)
+- Manage rental contracts with expiry tracking
+- Store national ID and personal documents metadata
+- Link supporting documents to claims
+- Verify document authenticity and legal validity
+- Track document expiry and alert for renewal
+- Maintain notarization records
+- Support document workflow (pending → verified → rejected)
 
 ---
 
-#### Create Evidence with Person Link ⭐ **NEW**
+#### Create Document with Entity Links ⭐ **NEW**
 ```json
-POST /api/v1/evidences
+POST /api/documents
 {
-  "evidenceType": "National ID Card",
-  "description": "Scanned copy of national ID",
-  "originalFileName": "national_id_ahmad.jpg",
-  "filePath": "/uploads/evidences/ids/national_id_ahmad.jpg",
-  "fileSizeBytes": 512000,
-  "mimeType": "image/jpeg",
-  "documentIssuedDate": "2018-01-01T00:00:00",
-  "documentExpiryDate": "2028-01-01T00:00:00",
-  "issuingAuthority": "Ministry of Interior",
-  "documentReferenceNumber": "ID-2018-67890",
+  "documentType": 0,
+  "documentNumber": "TD-2024-00123",
+  "documentTitle": "سند ملكية شقة رقم 5",
+  "issueDate": "2015-03-15T00:00:00Z",
+  "expiryDate": null,
+  "issuingAuthority": "مديرية السجل العقاري - حلب",
+  "issuingPlace": "حلب",
   "personId": "d2c8e6e7-ce38-42a8-8597-671bd6e24cde",
-  "createdByUserId": "00000000-0000-0000-0000-000000000001"
-}
-```
-
----
-
-#### Create Evidence with Relation Link ⭐ **NEW**
-```json
-POST /api/v1/evidences
-{
-  "evidenceType": "Rental Contract",
-  "description": "Signed rental agreement",
-  "originalFileName": "rental_contract_2024.pdf",
-  "filePath": "/uploads/contracts/rental_contract_2024.pdf",
-  "fileSizeBytes": 1024000,
-  "mimeType": "application/pdf",
-  "documentIssuedDate": "2024-01-01T00:00:00",
-  "notes": "2-year rental contract",
-  "personPropertyRelationId": "d5532dce-4cd9-453a-af1b-b5ebcb4a968c",
+  "propertyUnitId": "a5b3c7d9-1234-5678-90ab-cdef12345678",
+  "evidenceId": "f4fd3c07-3eaa-44ca-8458-2a56db31b069",
+  "isNotarized": true,
+  "notaryOffice": "كاتب العدل الأول - حلب",
+  "notarizationDate": "2015-03-20T00:00:00Z",
+  "notarizationNumber": "NOT-2015-456",
   "createdByUserId": "00000000-0000-0000-0000-000000000001"
 }
 ```
@@ -389,20 +421,20 @@ Start the application and navigate to: **https://localhost:7204/swagger**
 | Person | ✅ Complete | `Persons` | Production ready |
 | Household | ✅ Complete | `Households` | Production ready |
 | PersonPropertyRelation | ✅ Complete | `PersonPropertyRelations` | Production ready |
-| Evidence | ✅ Complete | `Evidences` | **NEW - Production ready** |
-| Document | 📅 Planned | - | Not started |
+| Evidence | ✅ Complete | `Evidences` | Production ready |
+| Document | ✅ Complete | `Documents` | **NEW - Production ready** |
 | Claim | 📅 Planned | - | Not started |
 | Certificate | 📅 Planned | - | Not started |
 
-### Implementation Progress: 6/19 Entities (32%)
+### Implementation Progress: 7/19 Entities (37%)
 
 ### Entity Completion Checklist
 Each entity follows this pattern:
 
-**Evidence Entity** ✅ (Latest - Jan 8, 2026)
-- [x] Domain entity with factory methods
+**Document Entity** ✅ (Latest - Jan 8, 2026)
+- [x] Domain entity with factory methods & 10+ domain methods
 - [x] EF Core configuration with comprehensive constraints
-- [x] Repository interface & implementation (11 methods)
+- [x] Repository interface & implementation (16 methods)
 - [x] DTOs with AutoMapper mapping
 - [x] CQRS Commands (Create)
 - [x] CQRS Queries (GetAll, GetById)
@@ -411,13 +443,21 @@ Each entity follows this pattern:
 - [x] Tested in Swagger
 - [x] Audit trail working
 - [x] Soft delete support
-- [x] Computed property (IsExpired)
+- [x] Computed properties (IsExpired, IsExpiringSoon)
 - [x] Column comments in database
-- [x] Default values (VersionNumber: 1, IsCurrentVersion: true)
-- [x] 8 indexes for performance
+- [x] Default values (IsVerified: false, VerificationStatus: Pending, IsLegallyValid: true, IsOriginal: true, IsNotarized: false)
+- [x] 12 indexes for performance
 - [x] UTC timestamp handling for PostgreSQL
-- [x] Entity linking (Person, PersonPropertyRelation, Claim)
-- [x] Versioning support (PreviousVersionId, version chain tracking)
+- [x] Entity linking (Person, PropertyUnit, PersonPropertyRelation, Evidence, Claim, self-reference)
+- [x] Verification workflow (Pending/Verified/Rejected)
+- [x] Notarization tracking
+- [x] Legal validity assessment
+- [x] Document expiry tracking
+
+**Evidence Entity** ✅ (Complete - Jan 8, 2026)
+- [x] All checklist items completed
+- [x] File metadata tracking
+- [x] Versioning support
 
 **PersonPropertyRelation Entity** ✅ (Complete - Jan 7, 2026)
 - [x] All checklist items completed
@@ -471,6 +511,22 @@ git push origin docs/what-changed
 
 ### Recent Commits
 ```
+feat: Implement Document entity with full CRUD operations (Jan 8, 2026)
+  - Add official document metadata tracking (type, number, title)
+  - Implement issuance information (date, authority, place)
+  - Add verification workflow (pending/verified/rejected status)
+  - Implement notarization tracking (office, date, number)
+  - Add legal validity assessment
+  - Add document expiry tracking with computed properties
+  - Add entity linking (Person, PropertyUnit, PersonPropertyRelation, Evidence, Claim)
+  - Add self-referencing for document copies (original/copy tracking)
+  - Add computed properties (IsExpired, IsExpiringSoon)
+  - Add comprehensive EF Core configuration with 12 indexes
+  - Add 16 repository methods including filtered queries
+  - Implement 10+ domain methods for document lifecycle
+  - Test all endpoints successfully in Swagger
+  Closes TRRCMS-MOB-07
+
 feat: Implement Evidence entity with full CRUD operations (Jan 8, 2026)
   - Add file metadata tracking (filename, path, size, MIME type, hash)
   - Implement document metadata (issued/expiry dates, authority, reference)
@@ -527,7 +583,7 @@ This project is developed for UN-Habitat. All rights reserved.
 1. Follow the [Setup Guide](./SETUP_GUIDE.md)
 2. Pick an entity from the development status table
 3. Create a feature branch (`feature/entity-name`)
-4. Implement following the established pattern (see Evidence entity as reference)
+4. Implement following the established pattern (see Document or Evidence entity as reference)
 5. Test thoroughly in Swagger
 6. Commit with conventional commit messages
 7. Push and create Pull Request
@@ -564,22 +620,24 @@ This project is developed for UN-Habitat. All rights reserved.
 2. ✅ ~~Household Entity~~ - **COMPLETED Jan 6, 2026**
 3. ✅ ~~PersonPropertyRelation Entity~~ - **COMPLETED Jan 7, 2026**
 4. ✅ ~~Evidence Entity~~ - **COMPLETED Jan 8, 2026**
-5. 📅 Document Entity - Next priority
-6. 📅 Claims workflow implementation
+5. ✅ ~~Document Entity~~ - **COMPLETED Jan 8, 2026**
+6. 📅 Claim Entity - Next priority
+7. 📅 Claims workflow implementation
 
 ### Milestone Progress
-- **M2: Core Platform Ready** - 95% complete
+- **M2: Core Platform Ready** - 100% complete ✅
   - ✅ Building management
   - ✅ Property unit management
   - ✅ Person registry
   - ✅ Household tracking
   - ✅ Person-property relations
   - ✅ Evidence management
-  - 📅 Document metadata (next)
+  - ✅ Document metadata
+- **M3: Claims System** - 0% complete 📅 (Next)
 
 ---
 
 **Last Updated:** January 8, 2026  
-**Version:** 0.6.0  
+**Version:** 0.7.0  
 **Status:** 🟢 Active Development  
-**Latest Feature:** Evidence Management with File Metadata Tracking & Versioning
+**Latest Feature:** Document Management with Verification Workflow & Expiry Tracking

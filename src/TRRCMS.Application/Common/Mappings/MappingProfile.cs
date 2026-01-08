@@ -6,6 +6,7 @@ using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Application.Documents.Dtos;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -47,6 +48,11 @@ public class MappingProfile : Profile
         CreateMap<Evidence, EvidenceDto>()
             .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()));
 
+        CreateMap<Document, DocumentDto>()
+            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => src.DocumentType.ToString()))
+            .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => src.VerificationStatus.ToString()))
+            .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()))
+            .ForMember(dest => dest.IsExpiringSoon, opt => opt.MapFrom(src => src.IsExpiringSoon()));
 
 
 }

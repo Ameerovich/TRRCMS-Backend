@@ -12,8 +12,8 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260107235610_AddEvidenceEntity")]
-    partial class AddEvidenceEntity
+    [Migration("20260108123239_AddDocumentEntity")]
+    partial class AddDocumentEntity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -342,125 +342,211 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("ClaimId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to Claim (if document supports a claim)");
 
                     b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("UTC timestamp when record was created");
 
                     b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User ID who created this record");
 
                     b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("UTC timestamp when record was soft deleted");
 
                     b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User ID who soft deleted this record");
 
                     b.Property<string>("DocumentHash")
-                        .HasColumnType("text");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasComment("SHA-256 hash of the document for integrity verification");
 
                     b.Property<string>("DocumentNumber")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Document number/reference (e.g., Tabu number, ID number, contract number)");
 
                     b.Property<string>("DocumentTitle")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasComment("Document title or description in Arabic");
 
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("integer");
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Document type from controlled vocabulary (e.g., TabuGreen, RentalContract, NationalIdCard)");
 
                     b.Property<Guid?>("EvidenceId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to Evidence entity (the actual file/scan)");
 
                     b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when document expires (if applicable)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Soft delete flag");
 
                     b.Property<bool>("IsLegallyValid")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasComment("Indicates if document is legally valid");
 
                     b.Property<bool>("IsNotarized")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if document is notarized");
 
                     b.Property<bool>("IsOriginal")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasComment("Indicates if document is original or a copy");
 
                     b.Property<bool>("IsVerified")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if document has been verified");
 
                     b.Property<DateTime?>("IssueDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when document was issued");
 
                     b.Property<string>("IssuingAuthority")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Issuing authority/organization (e.g., Ministry of Interior, Aleppo Municipality)");
 
                     b.Property<string>("IssuingPlace")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Place where document was issued");
 
                     b.Property<DateTime?>("LastModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("UTC timestamp when record was last modified");
 
                     b.Property<Guid?>("LastModifiedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User ID who last modified this record");
 
                     b.Property<string>("LegalValidityNotes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Legal validity notes (why valid or invalid)");
 
                     b.Property<DateTime?>("NotarizationDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Notarization date");
 
                     b.Property<string>("NotarizationNumber")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Notarization number");
 
                     b.Property<string>("NotaryOffice")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Notary office name/number");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Additional notes about this document");
 
                     b.Property<Guid?>("OriginalDocumentId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("If copy, reference to original document (if in system)");
 
                     b.Property<Guid?>("PersonId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to Person (if document belongs to a person)");
 
                     b.Property<Guid?>("PersonPropertyRelationId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to PersonPropertyRelation (if document proves a relation)");
 
                     b.Property<Guid?>("PropertyUnitId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to PropertyUnit (if document relates to property)");
 
                     b.Property<byte[]>("RowVersion")
                         .HasColumnType("bytea");
 
                     b.Property<DateTime?>("VerificationDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when document was verified");
 
                     b.Property<string>("VerificationNotes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Verification notes or comments");
 
-                    b.Property<int>("VerificationStatus")
-                        .HasColumnType("integer");
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Pending")
+                        .HasComment("Verification status (Pending, Verified, Rejected, RequiresAdditionalInfo)");
 
                     b.Property<Guid?>("VerifiedByUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User who verified the document");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClaimId");
+                    b.HasIndex("ClaimId")
+                        .HasDatabaseName("IX_Documents_ClaimId");
 
-                    b.HasIndex("EvidenceId");
+                    b.HasIndex("DocumentNumber")
+                        .HasDatabaseName("IX_Documents_DocumentNumber");
+
+                    b.HasIndex("DocumentType")
+                        .HasDatabaseName("IX_Documents_DocumentType");
+
+                    b.HasIndex("EvidenceId")
+                        .HasDatabaseName("IX_Documents_EvidenceId");
+
+                    b.HasIndex("ExpiryDate")
+                        .HasDatabaseName("IX_Documents_ExpiryDate");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("IX_Documents_IsDeleted");
+
+                    b.HasIndex("IsVerified")
+                        .HasDatabaseName("IX_Documents_IsVerified");
 
                     b.HasIndex("OriginalDocumentId");
 
-                    b.HasIndex("PersonId");
+                    b.HasIndex("PersonId")
+                        .HasDatabaseName("IX_Documents_PersonId");
 
-                    b.HasIndex("PersonPropertyRelationId");
+                    b.HasIndex("PersonPropertyRelationId")
+                        .HasDatabaseName("IX_Documents_PersonPropertyRelationId");
 
-                    b.HasIndex("PropertyUnitId");
+                    b.HasIndex("PropertyUnitId")
+                        .HasDatabaseName("IX_Documents_PropertyUnitId");
 
-                    b.ToTable("Document");
+                    b.HasIndex("VerificationStatus")
+                        .HasDatabaseName("IX_Documents_VerificationStatus");
+
+                    b.HasIndex("DocumentType", "VerificationStatus")
+                        .HasDatabaseName("IX_Documents_DocumentType_VerificationStatus");
+
+                    b.ToTable("Documents", (string)null);
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Evidence", b =>
@@ -1335,23 +1421,28 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.HasOne("TRRCMS.Domain.Entities.Evidence", "Evidence")
                         .WithMany()
-                        .HasForeignKey("EvidenceId");
+                        .HasForeignKey("EvidenceId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.Document", "OriginalDocument")
                         .WithMany()
-                        .HasForeignKey("OriginalDocumentId");
+                        .HasForeignKey("OriginalDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.Person", "Person")
                         .WithMany()
-                        .HasForeignKey("PersonId");
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.PersonPropertyRelation", "PersonPropertyRelation")
                         .WithMany()
-                        .HasForeignKey("PersonPropertyRelationId");
+                        .HasForeignKey("PersonPropertyRelationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.PropertyUnit", "PropertyUnit")
                         .WithMany()
-                        .HasForeignKey("PropertyUnitId");
+                        .HasForeignKey("PropertyUnitId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Claim");
 
