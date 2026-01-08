@@ -16,6 +16,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<PersonPropertyRelation> PersonPropertyRelations => Set<PersonPropertyRelation>();
     public DbSet<Household> Households => Set<Household>();
     public DbSet<Person> Persons => Set<Person>();
+    public DbSet<Evidence> Evidences => Set<Evidence>();
 
     // TODO: Add other entities later as we implement them
     // public DbSet<Claim> Claims => Set<Claim>();

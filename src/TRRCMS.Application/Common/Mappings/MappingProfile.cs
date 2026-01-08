@@ -5,6 +5,7 @@ using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
+using TRRCMS.Application.Evidences.Dtos;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -42,7 +43,11 @@ public class MappingProfile : Profile
                     : (int?)null))
             .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src =>
                 src.StartDate.HasValue && !src.EndDate.HasValue));
-    
+        // Evidence mappings
+        CreateMap<Evidence, EvidenceDto>()
+            .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()));
+
+
 
 }
 

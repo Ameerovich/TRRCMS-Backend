@@ -18,6 +18,7 @@ builder.Services.AddScoped<IPropertyUnitRepository, PropertyUnitRepository>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 builder.Services.AddScoped<IHouseholdRepository, HouseholdRepository>();
 builder.Services.AddScoped<IPersonPropertyRelationRepository, PersonPropertyRelationRepository>();
+builder.Services.AddScoped<IEvidenceRepository, EvidenceRepository>();
 // ============== MEDIATOR ==============
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(TRRCMS.Application.Buildings.Commands.CreateBuilding.CreateBuildingCommand).Assembly));
