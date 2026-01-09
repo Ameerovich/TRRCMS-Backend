@@ -38,6 +38,11 @@ public interface IPropertyUnitRepository
     void Update(PropertyUnit propertyUnit);
 
     /// <summary>
+    /// Check if exists
+    /// </summary>
+    Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Save changes to database
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

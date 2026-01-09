@@ -141,7 +141,7 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
 
         // Relationship to PropertyUnit (Many-to-One)
         builder.HasOne(ppr => ppr.PropertyUnit)
-            .WithMany()  // PropertyUnit doesn't have back-navigation to PersonPropertyRelations
+            .WithMany(p => p.PersonRelations)  // ✅ FIXED: Explicit navigation property
             .HasForeignKey(ppr => ppr.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 

@@ -193,12 +193,9 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
             .HasForeignKey(e => e.PersonPropertyRelationId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Relationship to Claim (Many-to-One)
-        // Note: This will be activated when Claim entity is implemented
-       // builder.HasOne(e => e.Claim)
-          //  .WithMany()  // Claim.Evidences navigation will be added when Claim entity is ready
-            //.HasForeignKey(e => e.ClaimId)
-            //.OnDelete(DeleteBehavior.Restrict);
+        // ✅ FIXED: Removed commented Claim relationship
+        // The Claim → Evidence relationship is configured from the Claim side in ClaimConfiguration.cs
+        // Configuring it from both sides causes conflicts
 
         // Self-referencing relationship for versioning (Previous Version)
         builder.HasOne(e => e.PreviousVersion)

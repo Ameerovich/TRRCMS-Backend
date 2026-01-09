@@ -62,4 +62,10 @@ public class PropertyUnitRepository : IPropertyUnitRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+    public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.PropertyUnits
+            .Where(p => !p.IsDeleted)
+            .AnyAsync(p => p.Id == id, cancellationToken);
+    }
 }

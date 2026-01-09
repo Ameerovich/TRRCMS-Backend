@@ -16,6 +16,7 @@ A comprehensive system for documenting property ownership, managing displacement
 - [Features](#features)
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
+- [Database Setup](#database-setup)
 - [Project Structure](#project-structure)
 - [API Documentation](#api-documentation)
 - [Development Status](#development-status)
@@ -32,8 +33,9 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 - **Person & Household Records** - Displaced persons and household tracking with Arabic name support
 - **Person-Property Relations** - Ownership, tenancy, and occupancy documentation
 - **Evidence Management** - File metadata tracking with versioning and entity linking
-- **Document Management** - Official document metadata with verification workflow ⭐ **NEW**
-- **Ownership Claims** - Documentation and verification of property claims
+- **Document Management** - Official document metadata with verification workflow
+- **Claims Management** - Full lifecycle claim processing with workflow automation ⭐ **NEW**
+- **Referral System** - Claim routing and reassignment between roles ⭐ **NEW**
 - **Field Surveys** - Mobile data collection for on-site verification
 - **Secure Document Storage** - Legal document tracking and evidence management
 - **Conflict Resolution** - Tracking disputed claims and resolution processes
@@ -42,7 +44,7 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 
 ## ✨ Features
 
-### ✅ Implemented (v0.7 - Current)
+### ✅ Implemented (v0.8 - Current)
 ✅ **Clean Architecture** - Domain-driven design with clear separation of concerns  
 ✅ **Building CRUD** - Complete Create, Read, Update, Delete operations  
 ✅ **Property Unit CRUD** - Apartment/shop/commercial unit management  
@@ -50,24 +52,28 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 ✅ **Household Management** - Family unit tracking with demographics and vulnerability indicators  
 ✅ **Person-Property Relations** - Ownership/tenancy linkage with evidence support  
 ✅ **Evidence Management** - File metadata tracking with versioning and entity linking  
-✅ **Document Management** - Official document metadata with verification workflow ⭐ **NEW**  
-✅ **PostgreSQL Database** - Robust relational data storage with 7 entity tables  
-✅ **Entity Framework Core** - Code-first migrations and LINQ queries  
+✅ **Document Management** - Official document metadata with verification workflow  
+✅ **Claims Management** - Full lifecycle claim processing with 47 fields ⭐ **NEW**  
+✅ **Referral System** - Claim routing between case officers and roles ⭐ **NEW**  
+✅ **PostgreSQL Database** - Robust relational data storage with 10 entity tables  
+✅ **Entity Framework Core** - Code-first migrations with plural table naming convention  
 ✅ **CQRS Pattern** - Command/Query separation with MediatR  
 ✅ **Repository Pattern** - Consistent data access layer  
 ✅ **Swagger/OpenAPI** - Interactive API documentation  
 ✅ **Arabic Support** - Full UTF-8 encoding for Arabic text (names, addresses)  
 ✅ **Audit Trails** - Comprehensive tracking (Created/Modified/Deleted timestamps & users)  
 ✅ **Soft Delete** - Data preservation with IsDeleted flag  
-✅ **Computed Properties** - Dynamic calculations (DependencyRatio, IsVulnerable, DurationInDays, IsOngoing, IsExpired, IsExpiringSoon)  
+✅ **Computed Properties** - Dynamic calculations (HasConflicts, IsOverdue, AwaitingDocuments, DaysActive, DaysInCurrentStage, etc.)  
+✅ **Workflow Automation** - State transitions (Draft→Submitted→UnderReview→Verified→Approved/Rejected)  
 
 ### 📅 Planned
 📅 **Authentication & Authorization** - JWT-based security with role-based access  
-📅 **Claims Workflow** - Submission, review, verification, and resolution  
+📅 **Advanced Claims Workflow** - Automated escalation and conflict resolution  
 📅 **Document Upload** - PDF/image attachment system with actual file storage  
-📅 **Search & Filtering** - Advanced queries across entities  
-📅 **Reporting** - Statistical reports and data export  
+📅 **Advanced Search & Filtering** - Full-text search and complex queries  
+📅 **Reporting & Analytics** - Statistical dashboards and data export  
 📅 **Certificate Generation** - Automated tenure rights certificate creation  
+📅 **Mobile App Integration** - Field data collection interface  
 
 ---
 
@@ -88,6 +94,7 @@ TRRCMS is designed to help UN-Habitat document and verify property rights in pos
 - **CQRS** - Command Query Responsibility Segregation
 - **Repository Pattern** - Data access abstraction layer
 - **Factory Pattern** - Entity creation through static factory methods
+- **State Pattern** - Claim workflow state management
 
 ### Development Tools
 - **Visual Studio 2022** - Primary IDE
@@ -141,6 +148,78 @@ dotnet run
 
 ---
 
+## 🗄️ Database Setup
+
+### First-Time Setup
+
+1. **Create PostgreSQL database:**
+   ```sql
+   CREATE DATABASE "TRRCMS_Dev" 
+   OWNER postgres 
+   ENCODING 'UTF8';
+   ```
+
+2. **Update connection string** in `appsettings.Development.json`:
+   ```json
+   {
+     "ConnectionStrings": {
+       "DefaultConnection": "Host=localhost;Database=TRRCMS_Dev;Username=postgres;Password=YOUR_PASSWORD"
+     }
+   }
+   ```
+
+3. **Apply migrations:**
+   ```bash
+   # In Package Manager Console (Visual Studio)
+   Update-Database -Project TRRCMS.Infrastructure -StartupProject TRRCMS.WebAPI
+   
+   # Or using .NET CLI
+   dotnet ef database update --project src/TRRCMS.Infrastructure --startup-project src/TRRCMS.WebAPI
+   ```
+
+4. **Verify setup:** Database will be created with all tables using plural names and correct defaults.
+
+### Database Naming Conventions
+
+**IMPORTANT:** All tables follow a consistent naming convention to prevent conflicts:
+
+| Component | Convention | Examples |
+|-----------|-----------|----------|
+| **Entity Classes** | Singular | `Claim`, `Person`, `Document`, `Evidence`, `Referral` |
+| **Table Names** | **Plural** | `Claims`, `Persons`, `Documents`, `Evidences`, `Referrals` |
+| **Navigation Collections** | Plural | `public ICollection<Document> Documents` |
+
+**Why this matters:**
+- All entity configurations explicitly specify `.ToTable("PluralName")` to ensure consistency
+- This prevents naming conflicts and migration issues between developers
+- Team members cloning fresh will get correct structure automatically
+- No manual database fixes required
+
+**Implementation:**
+```csharp
+// Example: ClaimConfiguration.cs
+public void Configure(EntityTypeBuilder<Claim> builder)
+{
+    builder.ToTable("Claims"); // Explicit plural table name
+    // ... rest of configuration
+}
+```
+
+### Current Database Tables (v0.8)
+
+1. ✅ `Buildings` - Property building registry
+2. ✅ `PropertyUnits` - Individual units within buildings
+3. ✅ `Persons` - Individual person records
+4. ✅ `Households` - Family/household units
+5. ✅ `PersonPropertyRelations` - Person-property linkages
+6. ✅ `Evidences` - File metadata and versioning
+7. ✅ `Documents` - Official document metadata
+8. ✅ `Claims` - Ownership/tenure claims with full workflow ⭐ **NEW**
+9. ✅ `Referrals` - Claim routing/reassignment ⭐ **NEW**
+10. 📅 `Certificates` - Generated tenure certificates (planned)
+
+---
+
 ## 📁 Project Structure
 ```
 TRRCMS/
@@ -153,11 +232,21 @@ TRRCMS/
 │   │   │   ├── Household.cs        # ✅ Implemented
 │   │   │   ├── PersonPropertyRelation.cs  # ✅ Implemented
 │   │   │   ├── Evidence.cs         # ✅ Implemented
-│   │   │   ├── Document.cs         # ✅ Implemented (NEW)
-│   │   │   ├── Claim.cs            # 📅 Planned
+│   │   │   ├── Document.cs         # ✅ Implemented
+│   │   │   ├── Claim.cs            # ✅ Implemented (NEW - 47 fields, 12+ methods)
+│   │   │   ├── Referral.cs         # ✅ Implemented (NEW - domain layer)
 │   │   │   └── Certificate.cs      # 📅 Planned
-│   │   ├── Enums/                  # Domain enumerations (28 enums)
-│   │   └── Common/                 # Base classes (BaseEntity, BaseAuditableEntity)
+│   │   ├── Enums/                  # Domain enumerations (35+ enums)
+│   │   │   ├── ClaimType.cs
+│   │   │   ├── ClaimSource.cs
+│   │   │   ├── ClaimStatus.cs
+│   │   │   ├── LifecycleStage.cs
+│   │   │   ├── VerificationStatus.cs
+│   │   │   ├── CasePriority.cs
+│   │   │   └── ... (29 more enums)
+│   │   └── Common/                 # Base classes
+│   │       ├── BaseEntity.cs
+│   │       └── BaseAuditableEntity.cs
 │   │
 │   ├── TRRCMS.Application/         # Application business rules
 │   │   ├── Buildings/              # ✅ Building use cases
@@ -173,14 +262,27 @@ TRRCMS/
 │   │   │   │   └── GetEvidence/      # GetEvidenceQuery & Handler
 │   │   │   └── Dtos/
 │   │   │       └── EvidenceDto.cs    # DTO with IsExpired computed property
-│   │   ├── Documents/              # ✅ Document use cases (NEW)
+│   │   ├── Documents/              # ✅ Document use cases
 │   │   │   ├── Commands/
 │   │   │   │   └── CreateDocument/   # CreateDocumentCommand & Handler
 │   │   │   ├── Queries/
 │   │   │   │   ├── GetAllDocuments/  # GetAllDocumentsQuery & Handler
 │   │   │   │   └── GetDocument/      # GetDocumentQuery & Handler
 │   │   │   └── Dtos/
-│   │   │       └── DocumentDto.cs    # DTO with IsExpired/IsExpiringSoon computed properties
+│   │   │       └── DocumentDto.cs    # DTO with computed properties
+│   │   ├── Claims/                 # ✅ Claim use cases (NEW)
+│   │   │   ├── Commands/
+│   │   │   │   ├── CreateClaim/        # CreateClaimCommand & Handler
+│   │   │   │   ├── SubmitClaim/        # SubmitClaimCommand & Handler
+│   │   │   │   ├── AssignClaim/        # AssignClaimCommand & Handler
+│   │   │   │   ├── VerifyClaim/        # VerifyClaimCommand & Handler
+│   │   │   │   ├── ApproveClaim/       # ApproveClaimCommand & Handler
+│   │   │   │   └── RejectClaim/        # RejectClaimCommand & Handler
+│   │   │   ├── Queries/
+│   │   │   │   ├── GetAllClaims/       # GetAllClaimsQuery & Handler (10 filters)
+│   │   │   │   └── GetClaim/           # GetClaimQuery & Handler
+│   │   │   └── Dtos/
+│   │   │       └── ClaimDto.cs         # DTO with 5 computed properties
 │   │   └── Common/
 │   │       ├── Interfaces/         # Repository interfaces
 │   │       │   ├── IBuildingRepository.cs
@@ -189,13 +291,14 @@ TRRCMS/
 │   │       │   ├── IHouseholdRepository.cs
 │   │       │   ├── IPersonPropertyRelationRepository.cs
 │   │       │   ├── IEvidenceRepository.cs
-│   │       │   └── IDocumentRepository.cs  # NEW
+│   │       │   ├── IDocumentRepository.cs
+│   │       │   └── IClaimRepository.cs  # NEW - 30 methods
 │   │       └── Mappings/
 │   │           └── MappingProfile.cs  # AutoMapper configuration
 │   │
 │   ├── TRRCMS.Infrastructure/      # External concerns
 │   │   └── Persistence/
-│   │       ├── ApplicationDbContext.cs  # DbContext with 7 entities
+│   │       ├── ApplicationDbContext.cs  # DbContext with 9 entities
 │   │       ├── Configurations/     # EF Core entity configurations
 │   │       │   ├── BuildingConfiguration.cs
 │   │       │   ├── PropertyUnitConfiguration.cs
@@ -203,7 +306,9 @@ TRRCMS/
 │   │       │   ├── HouseholdConfiguration.cs
 │   │       │   ├── PersonPropertyRelationConfiguration.cs
 │   │       │   ├── EvidenceConfiguration.cs
-│   │       │   └── DocumentConfiguration.cs  # NEW - Comprehensive
+│   │       │   ├── DocumentConfiguration.cs
+│   │       │   ├── ClaimConfiguration.cs         # NEW - 47 fields, 26 indexes
+│   │       │   └── ReferralConfiguration.cs      # NEW - Explicit plural naming
 │   │       ├── Repositories/       # Repository implementations
 │   │       │   ├── BuildingRepository.cs
 │   │       │   ├── PropertyUnitRepository.cs
@@ -211,8 +316,15 @@ TRRCMS/
 │   │       │   ├── HouseholdRepository.cs
 │   │       │   ├── PersonPropertyRelationRepository.cs
 │   │       │   ├── EvidenceRepository.cs
-│   │       │   └── DocumentRepository.cs  # NEW
-│   │       └── Migrations/         # Database migrations (7 tables)
+│   │       │   ├── DocumentRepository.cs
+│   │       │   └── ClaimRepository.cs            # NEW - 30 methods
+│   │       └── Migrations/         # Database migrations (6 migrations)
+│   │           ├── 20260102233937_InitialCreate.cs
+│   │           ├── 20260104104012_AddPropertyUnit.cs
+│   │           ├── 20260106111526_AddPersonEntity.cs
+│   │           ├── 20260106184023_UpdateHouseholdConfiguration.cs
+│   │           ├── 20260107190244_UpdatePersonPropertyRelationConfiguration.cs
+│   │           └── 20260109132855_FixClaimsDefaultsAndRenameAllTablesToPlural.cs  # NEW
 │   │
 │   └── TRRCMS.WebAPI/              # API layer
 │       ├── Controllers/
@@ -222,218 +334,246 @@ TRRCMS/
 │       │   ├── HouseholdsController.cs
 │       │   ├── PersonPropertyRelationsController.cs
 │       │   ├── EvidencesController.cs
-│       │   └── DocumentsController.cs  # NEW
-│       ├── Program.cs              # DI configuration
-│       └── appsettings.json        # Configuration template
+│       │   ├── DocumentsController.cs
+│       │   └── ClaimsController.cs      # NEW - 8 endpoints
+│       ├── appsettings.json
+│       └── Program.cs
 │
 ├── docs/                           # Documentation
-│   ├── TRRCMS_Analysis_NextSteps.md
-│   └── TRRCMS_HowToExtend.md
-│
-├── .gitignore                      # Excludes appsettings.Development.json
-├── SETUP_GUIDE.md
-└── README.md
+├── README.md                       # This file
+└── SETUP_GUIDE.md                  # Team setup instructions
 ```
 
 ---
 
 ## 📚 API Documentation
 
-### Endpoints (v0.7)
+### Available Endpoints (v0.8)
 
-#### 🏢 Buildings
-- `POST /api/v1/buildings` - Create new building
-- `GET /api/v1/buildings` - Get all buildings
-- `GET /api/v1/buildings/{id}` - Get building by ID
+#### Buildings API ✅
+- `GET /api/Buildings` - Get all buildings
+- `GET /api/Buildings/{id}` - Get building by ID
+- `POST /api/Buildings` - Create new building
+- `PUT /api/Buildings/{id}` - Update building
+- `DELETE /api/Buildings/{id}` - Delete building
 
-#### 🏠 Property Units
-- `POST /api/v1/propertyunits` - Create new property unit
-- `GET /api/v1/propertyunits` - Get all property units
-- `GET /api/v1/propertyunits/{id}` - Get property unit by ID
+#### Property Units API ✅
+- `GET /api/PropertyUnits` - Get all units
+- `GET /api/PropertyUnits/{id}` - Get unit by ID
+- `POST /api/PropertyUnits` - Create new unit
+- `PUT /api/PropertyUnits/{id}` - Update unit
+- `DELETE /api/PropertyUnits/{id}` - Delete unit
 
-#### 👤 Persons
-- `POST /api/v1/persons` - Create new person
-- `GET /api/v1/persons` - Get all persons
-- `GET /api/v1/persons/{id}` - Get person by ID
+#### Persons API ✅
+- `GET /api/Persons` - Get all persons
+- `GET /api/Persons/{id}` - Get person by ID
+- `POST /api/Persons` - Create new person
+- `PUT /api/Persons/{id}` - Update person
+- `DELETE /api/Persons/{id}` - Delete person
 
-#### 👨‍👩‍👧‍👦 Households
-- `POST /api/v1/households` - Create new household
-- `GET /api/v1/households` - Get all households
-- `GET /api/v1/households/{id}` - Get household by ID
+#### Households API ✅
+- `GET /api/Households` - Get all households
+- `GET /api/Households/{id}` - Get household by ID
+- `POST /api/Households` - Create new household
+- `PUT /api/Households/{id}` - Update household
+- `DELETE /api/Households/{id}` - Delete household
 
-#### 🔗 Person-Property Relations
-- `POST /api/v1/personpropertyrelations` - Create new person-property relation
-- `GET /api/v1/personpropertyrelations` - Get all person-property relations
-- `GET /api/v1/personpropertyrelations/{id}` - Get person-property relation by ID
+#### Person-Property Relations API ✅
+- `GET /api/PersonPropertyRelations` - Get all relations
+- `GET /api/PersonPropertyRelations/{id}` - Get relation by ID
+- `POST /api/PersonPropertyRelations` - Create new relation
+- `PUT /api/PersonPropertyRelations/{id}` - Update relation
+- `DELETE /api/PersonPropertyRelations/{id}` - Delete relation
 
-#### 📄 Evidences
-- `POST /api/v1/evidences` - Create new evidence (file metadata)
-- `GET /api/v1/evidences` - Get all evidences
-- `GET /api/v1/evidences/{id}` - Get evidence by ID
+#### Evidence API ✅
+- `GET /api/Evidences` - Get all evidence
+- `GET /api/Evidences/{id}` - Get evidence by ID
+- `POST /api/Evidences` - Create new evidence
 
-#### 📋 Documents ⭐ **NEW**
-- `POST /api/documents` - Create new document
-- `GET /api/documents` - Get all documents
-- `GET /api/documents/{id}` - Get document by ID
+#### Documents API ✅
+- `GET /api/Documents` - Get all documents
+- `GET /api/Documents/{id}` - Get document by ID
+- `POST /api/Documents` - Create new document
 
-**Total Endpoints:** 21
+#### Claims API ✅ ⭐ **NEW**
+**Basic Operations:**
+- `POST /api/Claims` - Create new claim
+  - **Request Body:** PropertyUnitId, PrimaryClaimantId, ClaimType, ClaimSource, CreatedByUserId, Priority, TenureContractType, OwnershipShare, ClaimDescription, LegalBasis, SupportingNarrative
+  - **Response:** Created claim with computed properties (201 Created)
+  
+- `GET /api/Claims/{id}` - Get claim by ID
+  - **Response:** Claim with all details + computed properties:
+    - `hasConflicts` - Indicates if conflicts detected
+    - `conflictCount` - Number of conflicts
+    - `evidenceCount` - Number of evidence items
+    - `allRequiredDocumentsSubmitted` - Document completion status
+    - `isOverdue` - True if claim active > 30 days
+    - `awaitingDocuments` - True if documents not submitted
+    - `daysInCurrentStage` - Days since last lifecycle stage change
+    - `daysActive` - Total days since creation (if active)
 
----
+- `GET /api/Claims` - Get all claims with filtering
+  - **Query Parameters:**
+    - `lifecycleStage` - Draft / Active / Completed / Archived
+    - `status` - Pending / UnderReview / Verified / Approved / Rejected / OnHold / RequiresMoreInfo / Withdrawn
+    - `priority` - Low / Medium / High / Urgent
+    - `assignedToUserId` - Filter by assigned case officer
+    - `primaryClaimantId` - Filter by claimant
+    - `propertyUnitId` - Filter by property
+    - `verificationStatus` - Pending / Verified / Rejected / RequiresAdditionalInfo
+    - `hasConflicts` - true/false
+    - `isOverdue` - true/false
+    - `awaitingDocuments` - true/false
+  - **Response:** List of claims with computed properties
 
-### Example Requests
+**Workflow Operations:**
+- `PUT /api/Claims/{id}/submit` - Submit claim for processing
+  - **Request Body:** SubmittedByUserId
+  - **Effect:** Status: Draft → Pending, LifecycleStage: Draft → Active
+  - **Response:** 204 No Content
+  
+- `PUT /api/Claims/{id}/assign` - Assign claim to case officer
+  - **Request Body:** AssignedToUserId, AssignedByUserId, Notes
+  - **Effect:** Assigns case officer, records assignment timestamp
+  - **Response:** 204 No Content
+  
+- `PUT /api/Claims/{id}/verify` - Verify claim
+  - **Request Body:** VerifiedByUserId, VerificationNotes, VerificationOutcome (Verified/Rejected/RequiresAdditionalInfo)
+  - **Effect:** Updates verification status, records verifier & timestamp
+  - **Response:** 204 No Content
+  
+- `PUT /api/Claims/{id}/approve` - Approve claim
+  - **Request Body:** ApprovedByUserId, ApprovalNotes
+  - **Effect:** Status: Verified → Approved, LifecycleStage → Completed, records approval timestamp
+  - **Response:** 204 No Content
+  
+- `PUT /api/Claims/{id}/reject` - Reject claim
+  - **Request Body:** RejectedByUserId, RejectionReason (required)
+  - **Effect:** Status → Rejected, LifecycleStage → Completed, records rejection timestamp
+  - **Response:** 204 No Content
 
-#### Create Document ⭐ **NEW**
-```json
-POST /api/documents
-{
-  "documentType": 0,
-  "documentNumber": "12345/2024",
-  "documentTitle": "سند ملكية أخضر",
-  "issueDate": "2024-01-15T00:00:00Z",
-  "expiryDate": "2034-01-15T00:00:00Z",
-  "issuingAuthority": "مديرية السجل العقاري - حلب",
-  "issuingPlace": "حلب",
-  "notes": "سند ملكية أصلي",
-  "createdByUserId": "00000000-0000-0000-0000-000000000001"
-}
-```
-
-**Document Types (DocumentType enum):**
-- `0` - TabuGreen (Green Tabu - ownership deed)
-- `1` - TabuPink (Pink Tabu - shared ownership)
-- `2` - RentalContract
-- `3` - NationalIdCard
-- `4` - FamilyRegistry
-- `5` - BirthCertificate
-- `6` - DeathCertificate
-- `7` - MarriageCertificate
-- `8` - DivorceCertificate
-- `9` - PowerOfAttorney
-- `10` - CourtRuling
-- `11` - InheritanceDocument
-- `12` - SaleContract
-- `13` - Other
-
-**Response (201 Created):**
-```json
-{
-  "id": "ba1fc82b-46a8-4365-a8b7-a2c2b6485d4d",
-  "documentType": "TabuGreen",
-  "documentNumber": "12345/2024",
-  "documentTitle": "سند ملكية أخضر",
-  "issueDate": "2024-01-15T00:00:00Z",
-  "expiryDate": "2034-01-15T00:00:00Z",
-  "issuingAuthority": "مديرية السجل العقاري - حلب",
-  "issuingPlace": "حلب",
-  "isVerified": false,
-  "verificationStatus": "Pending",
-  "verificationDate": null,
-  "verifiedByUserId": null,
-  "verificationNotes": null,
-  "evidenceId": null,
-  "documentHash": null,
-  "notes": "سند ملكية أصلي",
-  "personId": null,
-  "propertyUnitId": null,
-  "personPropertyRelationId": null,
-  "claimId": null,
-  "isLegallyValid": true,
-  "legalValidityNotes": null,
-  "isOriginal": true,
-  "originalDocumentId": null,
-  "isNotarized": false,
-  "notaryOffice": null,
-  "notarizationDate": null,
-  "notarizationNumber": null,
-  "createdAtUtc": "2026-01-08T12:29:56.782342Z",
-  "createdBy": "00000000-0000-0000-0000-000000000001",
-  "lastModifiedAtUtc": "2026-01-08T12:29:56.782342Z",
-  "lastModifiedBy": "00000000-0000-0000-0000-000000000001",
-  "isDeleted": false,
-  "deletedAtUtc": null,
-  "deletedBy": null,
-  "isExpired": false,
-  "isExpiringSoon": false
-}
-```
-
-**Key Features:**
-- ✅ **Document classification** - Type, number, title tracking
-- ✅ **Issuance information** - Issue/expiry dates, issuing authority and place
-- ✅ **Verification workflow** - Pending/Verified/Rejected status with verification notes
-- ✅ **Document content** - Link to Evidence (file), document hash for integrity
-- ✅ **Entity relationships** - Link to Person, PropertyUnit, PersonPropertyRelation, Claim
-- ✅ **Legal validity** - Legal validity flag with notes
-- ✅ **Original/Copy tracking** - IsOriginal flag with reference to original document
-- ✅ **Notarization** - Notarization status, office, date, and number
-- ✅ **Computed properties** - `isExpired` (checks if expired), `isExpiringSoon` (expires within 30 days)
-- ✅ **Audit trail** - Complete tracking of creation and modifications
-- ✅ **Soft delete** - Data preservation
-
-**Use Cases:**
-- Track property ownership documents (Tabu Green/Pink)
-- Manage rental contracts with expiry tracking
-- Store national ID and personal documents metadata
-- Link supporting documents to claims
-- Verify document authenticity and legal validity
-- Track document expiry and alert for renewal
-- Maintain notarization records
-- Support document workflow (pending → verified → rejected)
+**Swagger UI:** https://localhost:7204/swagger
 
 ---
 
-#### Create Document with Entity Links ⭐ **NEW**
-```json
-POST /api/documents
-{
-  "documentType": 0,
-  "documentNumber": "TD-2024-00123",
-  "documentTitle": "سند ملكية شقة رقم 5",
-  "issueDate": "2015-03-15T00:00:00Z",
-  "expiryDate": null,
-  "issuingAuthority": "مديرية السجل العقاري - حلب",
-  "issuingPlace": "حلب",
-  "personId": "d2c8e6e7-ce38-42a8-8597-671bd6e24cde",
-  "propertyUnitId": "a5b3c7d9-1234-5678-90ab-cdef12345678",
-  "evidenceId": "f4fd3c07-3eaa-44ca-8458-2a56db31b069",
-  "isNotarized": true,
-  "notaryOffice": "كاتب العدل الأول - حلب",
-  "notarizationDate": "2015-03-20T00:00:00Z",
-  "notarizationNumber": "NOT-2015-456",
-  "createdByUserId": "00000000-0000-0000-0000-000000000001"
-}
-```
+## 🔄 Development Status
 
----
+### Entity Implementation Progress
 
-### Interactive Documentation
-Start the application and navigate to: **https://localhost:7204/swagger**
+| Entity | Domain | Application | Infrastructure | API | Tests | Status |
+|--------|--------|-------------|----------------|-----|-------|--------|
+| Building | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** |
+| PropertyUnit | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** |
+| Person | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** |
+| Household | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** |
+| PersonPropertyRelation | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** |
+| Evidence | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** |
+| Document | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** |
+| **Claim** | ✅ | ✅ | ✅ | ✅ | ✅ | **Complete** ⭐ |
+| **Referral** | ✅ | 📅 | ✅ | 📅 | 📅 | **Partial** |
+| Certificate | 📅 | 📅 | 📅 | 📅 | 📅 | **Planned** |
 
----
+### Detailed Implementation Checklist
 
-## 📊 Development Status
+**Claim Entity** ✅ (Complete - Jan 9, 2026) ⭐ **NEW**
+- [x] Domain entity with 47 fields (identification, relationships, description, status tracking, verification, resolution, computed properties, conflict tracking, priority, audit)
+- [x] Rich domain model with 12+ business methods
+  - [x] Create() factory method with initialization
+  - [x] Submit() - Transition Draft → Active/Pending
+  - [x] Assign() - Assign to case officer
+  - [x] MarkAsUnderReview() - Begin review process
+  - [x] Verify() - Complete verification
+  - [x] Approve() - Approve claim
+  - [x] Reject() - Reject with reason
+  - [x] PutOnHold() - Pause processing
+  - [x] RequestMoreInfo() - Request additional information
+  - [x] Withdraw() - Claimant withdrawal
+  - [x] Archive() - Move to archived stage
+  - [x] CalculateDaysInCurrentStage() - Compute duration
+- [x] Computed properties (5 properties)
+  - [x] HasConflicts - Conflict detection
+  - [x] IsOverdue - 30+ days active detection
+  - [x] AwaitingDocuments - Document completion check
+  - [x] DaysInCurrentStage - Stage duration calculation
+  - [x] DaysActive - Total active duration
+- [x] State machine workflow
+  - [x] Lifecycle stages: Draft → Active → Completed → Archived
+  - [x] Statuses: Pending → UnderReview → Verified → Approved/Rejected
+  - [x] Status validations and transitions
+- [x] Repository interface (30 methods)
+  - [x] Basic CRUD (Add, Update, Delete, GetById, GetAll)
+  - [x] Filtered queries (GetByStatus, GetByLifecycleStage, GetByPriority, GetByAssignedUser, GetByClaimant, GetByProperty, GetByVerificationStatus)
+  - [x] Computed queries (GetOverdueClaims, GetClaimsWithConflicts, GetClaimsAwaitingDocuments)
+  - [x] Relationship queries (GetClaimsByClaimant, GetClaimsByProperty)
+  - [x] Specialized queries (GetActiveClaimsCount, GetClaimsByDateRange)
+- [x] Repository implementation (30 methods)
+- [x] DTOs with AutoMapper mapping
+  - [x] ClaimDto with all fields
+  - [x] Computed property mapping
+- [x] CQRS Commands (6 commands)
+  - [x] CreateClaimCommand & Handler
+  - [x] SubmitClaimCommand & Handler
+  - [x] AssignClaimCommand & Handler
+  - [x] VerifyClaimCommand & Handler
+  - [x] ApproveClaimCommand & Handler
+  - [x] RejectClaimCommand & Handler
+- [x] CQRS Queries (2 queries)
+  - [x] GetAllClaimsQuery & Handler (with 10 filters)
+  - [x] GetClaimQuery & Handler
+- [x] API Controller with 8 endpoints
+  - [x] POST /api/Claims
+  - [x] GET /api/Claims/{id}
+  - [x] GET /api/Claims (with filters)
+  - [x] PUT /api/Claims/{id}/submit
+  - [x] PUT /api/Claims/{id}/assign
+  - [x] PUT /api/Claims/{id}/verify
+  - [x] PUT /api/Claims/{id}/approve
+  - [x] PUT /api/Claims/{id}/reject
+- [x] Database migration applied
+  - [x] Claims table created with 47 columns
+  - [x] Default values set (HasConflicts=false, ConflictCount=0, EvidenceCount=0, AllRequiredDocumentsSubmitted=false, IsDeleted=false)
+  - [x] Table renamed to plural: Claims (not Claim)
+- [x] Tested in Swagger ✅
+- [x] Audit trail working (CreatedBy, CreatedAtUtc, LastModifiedBy, LastModifiedAtUtc)
+- [x] Soft delete support (IsDeleted, DeletedBy, DeletedAtUtc)
+- [x] EF Core configuration comprehensive
+  - [x] 26 indexes for performance
+  - [x] Column comments for all fields
+  - [x] Foreign key relationships configured
+  - [x] Cascade delete restrictions
+- [x] Conflict detection and tracking
+- [x] Evidence/document counting
+- [x] Overdue detection (30+ days active)
+- [x] Priority escalation support
+- [x] UTC timestamp handling for PostgreSQL
 
-### Database Schema
-| Entity | Status | Table | Records |
-|--------|--------|-------|---------|
-| Building | ✅ Complete | `Buildings` | Production ready |
-| PropertyUnit | ✅ Complete | `PropertyUnits` | Production ready |
-| Person | ✅ Complete | `Persons` | Production ready |
-| Household | ✅ Complete | `Households` | Production ready |
-| PersonPropertyRelation | ✅ Complete | `PersonPropertyRelations` | Production ready |
-| Evidence | ✅ Complete | `Evidences` | Production ready |
-| Document | ✅ Complete | `Documents` | **NEW - Production ready** |
-| Claim | 📅 Planned | - | Not started |
-| Certificate | 📅 Planned | - | Not started |
+**Referral Entity** ✅ (Partial - Jan 9, 2026) ⭐ **NEW**
+- [x] Domain entity created
+  - [x] Referral number tracking (REF-YYYY-NNNN format)
+  - [x] Claim relationship (ClaimId foreign key)
+  - [x] Referral parties (FromRole, FromUserId, ToRole, ToUserId)
+  - [x] Referral details (Reason, Notes, Priority, Urgency)
+  - [x] Status tracking (Pending, Accepted, Rejected, Completed, Cancelled)
+  - [x] Dates (ReferredDate, AcceptedDate, CompletedDate, ExpectedCompletionDate)
+  - [x] Response tracking (ResponseRequired, ResponseReceivedDate, ResponseNotes)
+  - [x] Escalation support (EscalationLevel, ActionsRequired, DocumentsRequired, TargetResolutionHours)
+  - [x] Overdue detection (IsOverdue computed property)
+  - [x] Version chain support (PreviousReferralId for tracking referral history)
+- [x] EF Core configuration
+  - [x] Explicit `.ToTable("Referrals")` (plural naming)
+  - [x] 50 char max for ReferralNumber
+  - [x] Column comments for all fields
+  - [x] Foreign key relationships
+  - [x] Indexes (ClaimId, ReferralNumber unique, IsDeleted)
+  - [x] Self-referencing relationship (PreviousReferralId)
+- [x] Database table created ✅
+- [ ] Repository interface & implementation
+- [ ] CQRS Commands & Queries
+- [ ] API Controller with endpoints
+- [ ] Tested in Swagger
 
-### Implementation Progress: 7/19 Entities (37%)
-
-### Entity Completion Checklist
-Each entity follows this pattern:
-
-**Document Entity** ✅ (Latest - Jan 8, 2026)
-- [x] Domain entity with factory methods & 10+ domain methods
-- [x] EF Core configuration with comprehensive constraints
+**Document Entity** ✅ (Complete - Jan 8, 2026)
+- [x] Domain entity with all fields
 - [x] Repository interface & implementation (16 methods)
 - [x] DTOs with AutoMapper mapping
 - [x] CQRS Commands (Create)
@@ -511,6 +651,26 @@ git push origin docs/what-changed
 
 ### Recent Commits
 ```
+feat: Implement Claim entity with full lifecycle management (Jan 9, 2026) ⭐
+  - Add comprehensive Claims entity with 47 fields covering all aspects of claim management
+  - Implement full lifecycle workflow (Draft→Submitted→UnderReview→Verified→Approved/Rejected)
+  - Add rich domain model with 12+ business methods for state transitions
+  - Add 30 repository methods including complex filtered queries
+  - Add 8 API endpoints (Create, Get, GetAll with 10 filters, Submit, Assign, Verify, Approve, Reject)
+  - Implement 5 computed properties (HasConflicts, IsOverdue, AwaitingDocuments, DaysActive, DaysInCurrentStage)
+  - Add ReferralConfiguration with explicit .ToTable("Referrals") for consistent naming
+  - Fix BaseAuditableEntity IsDeleted initialization in constructors
+  - Create comprehensive migration to standardize all table names to plural convention
+  - Fix Claims table with default value constraints (HasConflicts=false, ConflictCount=0, EvidenceCount=0, AllRequiredDocumentsSubmitted=false, IsDeleted=false)
+  - Rename Evidence→Evidences, Document→Documents, Referral→Referrals for consistency
+  - Add 26 database indexes for optimal query performance
+  - Implement conflict detection and priority escalation support
+  - Add overdue claim detection (30+ days active)
+  - Add comprehensive EF Core configuration with column comments
+  - Test all 8 endpoints successfully in Swagger
+  - Document database naming conventions in README
+  Closes TRRCMS-MOB-08
+
 feat: Implement Document entity with full CRUD operations (Jan 8, 2026)
   - Add official document metadata tracking (type, number, title)
   - Implement issuance information (date, authority, place)
@@ -583,7 +743,7 @@ This project is developed for UN-Habitat. All rights reserved.
 1. Follow the [Setup Guide](./SETUP_GUIDE.md)
 2. Pick an entity from the development status table
 3. Create a feature branch (`feature/entity-name`)
-4. Implement following the established pattern (see Document or Evidence entity as reference)
+4. Implement following the established pattern (see Claim or Document entity as reference)
 5. Test thoroughly in Swagger
 6. Commit with conventional commit messages
 7. Push and create Pull Request
@@ -594,13 +754,18 @@ This project is developed for UN-Habitat. All rights reserved.
 - ✅ Implement Repository pattern
 - ✅ Add comprehensive XML documentation
 - ✅ Include audit fields (Created/Modified/Deleted)
-- ✅ Support soft delete
+- ✅ Support soft delete with default initialization (IsDeleted = false in constructors)
 - ✅ Add computed properties where applicable
 - ✅ Test all endpoints in Swagger
-- ✅ Follow existing naming conventions
+- ✅ Follow consistent naming conventions:
+  - Entity classes: Singular (e.g., `Claim`, `Person`)
+  - Table names: Plural (e.g., `Claims`, `Persons`)
+  - Always use explicit `.ToTable("PluralName")` in configurations
 - ✅ Add column comments in EF Core configuration
 - ✅ Use appropriate indexes for performance
 - ✅ Handle UTC timestamps correctly for PostgreSQL
+- ✅ Implement default values for non-nullable fields in entity constructors
+- ✅ Configure default values in EF Core for database constraints
 
 ---
 
@@ -621,8 +786,11 @@ This project is developed for UN-Habitat. All rights reserved.
 3. ✅ ~~PersonPropertyRelation Entity~~ - **COMPLETED Jan 7, 2026**
 4. ✅ ~~Evidence Entity~~ - **COMPLETED Jan 8, 2026**
 5. ✅ ~~Document Entity~~ - **COMPLETED Jan 8, 2026**
-6. 📅 Claim Entity - Next priority
-7. 📅 Claims workflow implementation
+6. ✅ ~~Claim Entity~~ - **COMPLETED Jan 9, 2026** ⭐
+7. 📅 Complete Referral entity CRUD operations
+8. 📅 Implement automated Claims workflow
+9. 📅 Add Authentication & Authorization (JWT + Role-based)
+10. 📅 Certificate entity implementation
 
 ### Milestone Progress
 - **M2: Core Platform Ready** - 100% complete ✅
@@ -633,11 +801,22 @@ This project is developed for UN-Habitat. All rights reserved.
   - ✅ Person-property relations
   - ✅ Evidence management
   - ✅ Document metadata
-- **M3: Claims System** - 0% complete 📅 (Next)
+  
+- **M3: Claims System** - 90% complete 🟡 ⭐
+  - ✅ Claims entity with 47 fields
+  - ✅ Claims full CRUD operations
+  - ✅ Claims workflow (Submit, Assign, Verify, Approve, Reject)
+  - ✅ Computed properties (conflicts, overdue, awaiting documents, days tracking)
+  - ✅ Advanced filtering (10 filter options)
+  - ✅ Referral entity (domain layer + database)
+  - ✅ State machine workflow
+  - 📅 Referral CRUD operations (Application + API layers)
+  - 📅 Automated workflow triggers
+  - 📅 Conflict resolution workflow
 
 ---
 
-**Last Updated:** January 8, 2026  
-**Version:** 0.7.0  
+**Last Updated:** January 9, 2026  
+**Version:** 0.8.0  
 **Status:** 🟢 Active Development  
-**Latest Feature:** Document Management with Verification Workflow & Expiry Tracking
+**Latest Feature:** Claims Management with Full Lifecycle Workflow & Computed Properties ⭐

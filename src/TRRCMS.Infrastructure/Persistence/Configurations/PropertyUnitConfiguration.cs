@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
@@ -134,10 +134,25 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
             .HasForeignKey(h => h.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Navigation properties - ignore for now (will be configured when those entities are implemented)
-        builder.Ignore(p => p.PersonRelations);
-        builder.Ignore(p => p.Claims);
-        builder.Ignore(p => p.Documents);
+        // ✅ ADDED: Relationship to PersonRelations (One-to-Many)
+        builder.HasMany(p => p.PersonRelations)
+            .WithOne(ppr => ppr.PropertyUnit)
+            .HasForeignKey(ppr => ppr.PropertyUnitId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ✅ ADDED: Relationship to Claims (One-to-Many)
+        builder.HasMany(p => p.Claims)
+            .WithOne(c => c.PropertyUnit)
+            .HasForeignKey(c => c.PropertyUnitId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ✅ ADDED: Relationship to Documents (One-to-Many)
+        builder.HasMany(p => p.Documents)
+            .WithOne(d => d.PropertyUnit)
+            .HasForeignKey(d => d.PropertyUnitId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Note: Surveys and Certificates relationships will be configured when those entities are implemented
         builder.Ignore(p => p.Surveys);
         builder.Ignore(p => p.Certificates);
     }

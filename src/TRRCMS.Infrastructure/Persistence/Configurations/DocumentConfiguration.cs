@@ -206,7 +206,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 
         // PropertyUnit relationship
         builder.HasOne(d => d.PropertyUnit)
-            .WithMany()
+            .WithMany(p => p.Documents)  // ✅ FIXED: Explicit navigation property
             .HasForeignKey(d => d.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
@@ -216,11 +216,9 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
             .HasForeignKey(d => d.PersonPropertyRelationId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Claim relationship (will be uncommented when Claim entity is implemented)
-        // builder.HasOne(d => d.Claim)
-        //     .WithMany()
-        //     .HasForeignKey(d => d.ClaimId)
-        //     .OnDelete(DeleteBehavior.Restrict);
+        // ✅ FIXED: Removed commented Claim relationship
+        // The Claim → Document relationship is configured from the Claim side in ClaimConfiguration.cs
+        // Configuring it from both sides causes conflicts
 
         // Original Document relationship (self-referencing)
         builder.HasOne(d => d.OriginalDocument)

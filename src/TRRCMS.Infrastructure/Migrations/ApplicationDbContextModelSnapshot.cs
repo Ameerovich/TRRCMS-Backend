@@ -184,150 +184,275 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("AllRequiredDocumentsSubmitted")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if all required documents are submitted (جميع المستندات المطلوبة مقدمة)");
 
                     b.Property<DateTime?>("AssignedDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when assigned to current officer (تاريخ التعيين)");
 
                     b.Property<Guid?>("AssignedToUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Currently assigned case officer (معرف الموظف المسؤول)");
 
                     b.Property<int>("CertificateStatus")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Certificate status: 1=NotRequired, 2=PendingGeneration, 3=Generated, 4=Issued, 5=Collected, 6=Rejected, 7=Revoked (حالة الشهادة)");
 
                     b.Property<string>("ClaimDescription")
-                        .HasColumnType("text");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasComment("Detailed description of the claim (وصف المطالبة)");
 
                     b.Property<string>("ClaimNumber")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("Unique claim identifier - Format: CLM-YYYY-NNNNNNNNN (رقم المطالبة)");
 
                     b.Property<int>("ClaimSource")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Claim source - How claim entered system: 1=FieldCollection, 2=OfficeSubmission, 3=SystemImport, 4=Migration, 5=OnlinePortal, 6=ApiIntegration, 7=ManualEntry (مصدر المطالبة)");
 
                     b.Property<string>("ClaimType")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Claim type from controlled vocabulary - e.g., Ownership Claim, Occupancy Claim (نوع المطالبة)");
 
                     b.Property<int>("ConflictCount")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of conflicting claims detected (عدد المطالبات المتعارضة)");
 
                     b.Property<string>("ConflictResolutionStatus")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Conflict resolution status - e.g., Pending, Resolved (حالة حل التعارض)");
 
                     b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("UTC timestamp when record was created (تاريخ الإنشاء)");
 
                     b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User ID who created this record (معرف المستخدم المنشئ)");
 
                     b.Property<Guid?>("DecisionByUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User who made final decision (معرف المستخدم القرار)");
 
                     b.Property<DateTime?>("DecisionDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when final decision was made (تاريخ القرار)");
 
                     b.Property<string>("DecisionNotes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Decision notes (ملاحظات القرار)");
 
                     b.Property<string>("DecisionReason")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Reason for approval or rejection (سبب القرار)");
 
                     b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("UTC timestamp when record was soft deleted (تاريخ الحذف)");
 
                     b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User ID who soft deleted this record (معرف المستخدم الحاذف)");
 
                     b.Property<int>("EvidenceCount")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of evidence items attached (عدد الأدلة)");
 
                     b.Property<string>("FinalDecision")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Final decision on the claim - e.g., Approved, Rejected (القرار النهائي)");
 
                     b.Property<bool>("HasConflicts")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if there are conflicting claims (وجود تعارضات)");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Soft delete flag (علامة الحذف المنطقي)");
 
                     b.Property<DateTime?>("LastModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("UTC timestamp when record was last modified (تاريخ آخر تعديل)");
 
                     b.Property<Guid?>("LastModifiedBy")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User ID who last modified this record (معرف المستخدم المعدل)");
 
                     b.Property<string>("LegalBasis")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Legal basis for the claim (الأساس القانوني)");
 
                     b.Property<int>("LifecycleStage")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Current lifecycle stage: 1=DraftPendingSubmission, 2=Submitted, 3=InitialScreening, 4=UnderReview, 5=AwaitingDocuments, 6=ConflictDetected, 7=InAdjudication, 8=Approved, 9=Rejected, 10=CertificateIssued, 11=Archived (مرحلة دورة الحياة)");
 
                     b.Property<string>("MissingDocuments")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("List of missing document types - stored as JSON (المستندات المفقودة)");
 
                     b.Property<int?>("OwnershipShare")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Ownership share - Fraction out of 2400 (e.g., 1200 = 50%) (نصيب الملكية)");
 
                     b.Property<Guid?>("PrimaryClaimantId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to Person - Primary claimant (معرف المدعي الأساسي)");
 
                     b.Property<int>("Priority")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Priority level: 1=Low, 2=Normal, 3=Medium, 4=High, 5=Critical, 6=VIP, 7=Escalated (الأولوية)");
 
                     b.Property<string>("ProcessingNotes")
-                        .HasColumnType("text");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasComment("Internal processing notes (ملاحظات المعالجة الداخلية)");
 
                     b.Property<Guid>("PropertyUnitId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to PropertyUnit - Property being claimed (معرف الوحدة العقارية)");
 
                     b.Property<string>("PublicRemarks")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Public remarks visible to claimant (الملاحظات العامة)");
 
                     b.Property<byte[]>("RowVersion")
-                        .HasColumnType("bytea");
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea")
+                        .HasComment("Concurrency token for optimistic locking (رمز التزامن)");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Legacy status: 1=Draft, 2=Finalized, 3=UnderReview, 4=Approved, 5=Rejected, 6=PendingEvidence, 7=Disputed, 99=Archived (الحالة)");
 
                     b.Property<Guid?>("SubmittedByUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User who submitted the claim (معرف المستخدم المقدم)");
 
                     b.Property<DateTime?>("SubmittedDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when claim was submitted (تاريخ التقديم)");
 
                     b.Property<string>("SupportingNarrative")
-                        .HasColumnType("text");
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasComment("Supporting narrative or story (السرد الداعم)");
 
                     b.Property<DateTime?>("TargetCompletionDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Target completion/decision date (تاريخ الإنجاز المستهدف)");
 
                     b.Property<int?>("TenureContractType")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Type of tenure contract: 1=Freehold, 2=Leasehold, 3=SharedOwnership, 4=Rental, 5=Informal, 6=Customary, 7=Usufruct, 99=Other (نوع عقد الحيازة)");
 
                     b.Property<DateTime?>("TenureEndDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when tenure/occupancy ended (تاريخ انتهاء الحيازة)");
 
                     b.Property<DateTime?>("TenureStartDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date from which tenure/occupancy started (تاريخ بدء الحيازة)");
 
                     b.Property<DateTime?>("VerificationDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when verification was completed (تاريخ التحقق)");
 
                     b.Property<string>("VerificationNotes")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Verification notes (ملاحظات التحقق)");
 
                     b.Property<int>("VerificationStatus")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Verification status: 1=Pending, 2=Verified, 3=Rejected, 4=RequiresAdditionalInfo (حالة التحقق)");
 
                     b.Property<Guid?>("VerifiedByUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User who verified the claim (معرف المستخدم المحقق)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PrimaryClaimantId");
+                    b.HasIndex("AssignedToUserId")
+                        .HasDatabaseName("IX_Claims_AssignedToUserId");
 
-                    b.HasIndex("PropertyUnitId");
+                    b.HasIndex("CertificateStatus")
+                        .HasDatabaseName("IX_Claims_CertificateStatus");
+
+                    b.HasIndex("ClaimNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Claims_ClaimNumber");
+
+                    b.HasIndex("DecisionDate")
+                        .HasDatabaseName("IX_Claims_DecisionDate");
+
+                    b.HasIndex("HasConflicts")
+                        .HasDatabaseName("IX_Claims_HasConflicts");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("IX_Claims_IsDeleted");
+
+                    b.HasIndex("LifecycleStage")
+                        .HasDatabaseName("IX_Claims_LifecycleStage");
+
+                    b.HasIndex("PrimaryClaimantId")
+                        .HasDatabaseName("IX_Claims_PrimaryClaimantId");
+
+                    b.HasIndex("Priority")
+                        .HasDatabaseName("IX_Claims_Priority");
+
+                    b.HasIndex("PropertyUnitId")
+                        .HasDatabaseName("IX_Claims_PropertyUnitId");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_Claims_Status");
+
+                    b.HasIndex("SubmittedDate")
+                        .HasDatabaseName("IX_Claims_SubmittedDate");
+
+                    b.HasIndex("TargetCompletionDate")
+                        .HasDatabaseName("IX_Claims_TargetCompletionDate");
+
+                    b.HasIndex("VerificationStatus")
+                        .HasDatabaseName("IX_Claims_VerificationStatus");
+
+                    b.HasIndex("HasConflicts", "LifecycleStage")
+                        .HasDatabaseName("IX_Claims_HasConflicts_LifecycleStage");
+
+                    b.HasIndex("IsDeleted", "LifecycleStage")
+                        .HasDatabaseName("IX_Claims_IsDeleted_LifecycleStage");
+
+                    b.HasIndex("LifecycleStage", "AssignedToUserId")
+                        .HasDatabaseName("IX_Claims_LifecycleStage_AssignedToUserId");
+
+                    b.HasIndex("Priority", "TargetCompletionDate")
+                        .HasDatabaseName("IX_Claims_Priority_TargetCompletionDate");
+
+                    b.HasIndex("PropertyUnitId", "IsDeleted")
+                        .HasDatabaseName("IX_Claims_PropertyUnitId_IsDeleted");
 
                     b.ToTable("Claims", (string)null);
                 });
@@ -1287,7 +1412,8 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<Guid>("ClaimId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to Claim being referred");
 
                     b.Property<DateTime?>("CompletedDate")
                         .HasColumnType("timestamp with time zone");
@@ -1314,10 +1440,12 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("FromRole")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Role referring the claim");
 
                     b.Property<Guid>("FromUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("User who initiated the referral");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -1352,7 +1480,9 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.Property<string>("ReferralNumber")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("Referral number - Format: REF-YYYY-NNNN");
 
                     b.Property<string>("ReferralReason")
                         .IsRequired()
@@ -1379,30 +1509,41 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.Property<int>("ToRole")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasComment("Role receiving the claim");
 
                     b.Property<Guid?>("ToUserId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasComment("Specific user assigned (optional)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClaimId");
+                    b.HasIndex("ClaimId")
+                        .HasDatabaseName("IX_Referrals_ClaimId");
+
+                    b.HasIndex("IsDeleted")
+                        .HasDatabaseName("IX_Referrals_IsDeleted");
 
                     b.HasIndex("PreviousReferralId");
 
-                    b.ToTable("Referral");
+                    b.HasIndex("ReferralNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Referrals_ReferralNumber");
+
+                    b.ToTable("Referrals", (string)null);
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Claim", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.Person", "PrimaryClaimant")
                         .WithMany()
-                        .HasForeignKey("PrimaryClaimantId");
+                        .HasForeignKey("PrimaryClaimantId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.PropertyUnit", "PropertyUnit")
-                        .WithMany()
+                        .WithMany("Claims")
                         .HasForeignKey("PropertyUnitId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("PrimaryClaimant");
@@ -1414,7 +1555,8 @@ namespace TRRCMS.Infrastructure.Migrations
                 {
                     b.HasOne("TRRCMS.Domain.Entities.Claim", "Claim")
                         .WithMany("Documents")
-                        .HasForeignKey("ClaimId");
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.Evidence", "Evidence")
                         .WithMany()
@@ -1437,7 +1579,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.PropertyUnit", "PropertyUnit")
-                        .WithMany()
+                        .WithMany("Documents")
                         .HasForeignKey("PropertyUnitId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -1458,7 +1600,8 @@ namespace TRRCMS.Infrastructure.Migrations
                 {
                     b.HasOne("TRRCMS.Domain.Entities.Claim", "Claim")
                         .WithMany("Evidences")
-                        .HasForeignKey("ClaimId");
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("TRRCMS.Domain.Entities.Person", "Person")
                         .WithMany("Evidences")
@@ -1521,7 +1664,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .IsRequired();
 
                     b.HasOne("TRRCMS.Domain.Entities.PropertyUnit", "PropertyUnit")
-                        .WithMany()
+                        .WithMany("PersonRelations")
                         .HasForeignKey("PropertyUnitId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1547,7 +1690,7 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.HasOne("TRRCMS.Domain.Entities.Claim", "Claim")
                         .WithMany("Referrals")
                         .HasForeignKey("ClaimId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("TRRCMS.Domain.Entities.Referral", "PreviousReferral")
@@ -1592,7 +1735,13 @@ namespace TRRCMS.Infrastructure.Migrations
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.PropertyUnit", b =>
                 {
+                    b.Navigation("Claims");
+
+                    b.Navigation("Documents");
+
                     b.Navigation("Households");
+
+                    b.Navigation("PersonRelations");
                 });
 #pragma warning restore 612, 618
         }

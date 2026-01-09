@@ -18,9 +18,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Evidence> Evidences => Set<Evidence>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<Claim> Claims => Set<Claim>();
 
     // TODO: Add other entities later as we implement them
-    // public DbSet<Claim> Claims => Set<Claim>();
+    // public DbSet<Certificate> Certificates => Set<Certificate>();
     // etc.
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
