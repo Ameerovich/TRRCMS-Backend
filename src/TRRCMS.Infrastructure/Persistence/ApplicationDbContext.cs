@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Evidence> Evidences => Set<Evidence>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<Claim> Claims => Set<Claim>();
+    public DbSet<User> Users => Set<User>();
 
     // TODO: Add other entities later as we implement them
     // public DbSet<Certificate> Certificates => Set<Certificate>();

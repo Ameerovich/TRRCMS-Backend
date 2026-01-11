@@ -7,6 +7,7 @@ using TRRCMS.Domain.Entities;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Documents.Dtos;
+using TRRCMS.Application.Auth.Dtos;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -80,6 +81,11 @@ public class MappingProfile : Profile
                 src.PrimaryClaimant != null ? $"{src.PrimaryClaimant.FirstNameArabic} {src.PrimaryClaimant.FatherNameArabic} {src.PrimaryClaimant.FamilyNameArabic}" : null))
             .ForMember(dest => dest.AssignedToUserName, opt => opt.Ignore()); // Will be populated from user service later
 
+        // User mappings
+        CreateMap<User, UserDto>()
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()))
+            .ForMember(dest => dest.SupervisorName, opt => opt.MapFrom(src =>
+                src.Supervisor != null ? src.Supervisor.FullNameArabic : null));
     }
 
 }

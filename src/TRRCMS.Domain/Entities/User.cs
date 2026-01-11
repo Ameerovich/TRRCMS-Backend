@@ -363,7 +363,7 @@ public class User : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Reactivate user account
+    /// Reactivate user account``````````````````````````````````````````````````````````````````````````````
     /// </summary>
     public void Reactivate(Guid modifiedByUserId)
     {
