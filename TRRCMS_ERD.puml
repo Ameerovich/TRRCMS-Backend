@@ -1,0 +1,569 @@
+@startuml TRRCMS_ERD
+' ========================================
+' TRRCMS - Entity Relationship Diagram
+' Version: 0.9.0
+' Last Updated: January 10, 2026
+' Format: PlantUML
+' ========================================
+
+!define IMPLEMENTED_COLOR #E8F5E9
+!define PLANNED_COLOR #FFF3E0
+
+skinparam linetype ortho
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam ArrowColor #666666
+
+' ==================== IMPLEMENTED ENTITIES ====================
+
+entity "Users" as Users IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **Username** : string <<UK>>
+  **Email** : string <<UK>>
+  PasswordHash : string
+  PasswordSalt : string
+  FullNameArabic : string
+  FullNameEnglish : string
+  EmployeeId : string
+  PhoneNumber : string
+  Organization : string
+  JobTitle : string
+  Role : int
+  HasMobileAccess : bool
+  HasDesktopAccess : bool
+  IsActive : bool
+  IsLockedOut : bool
+  LockoutEndDate : datetime
+  FailedLoginAttempts : int
+  LastLoginDate : datetime
+  LastPasswordChangeDate : datetime
+  MustChangePassword : bool
+  SecurityStamp : string
+  RefreshToken : string
+  RefreshTokenExpiryDate : datetime
+  **SupervisorUserId** : UUID <<FK>>
+  TeamName : string
+  AssignedTabletId : string
+  TabletAssignedDate : datetime
+  PreferredLanguage : string
+  TwoFactorEnabled : bool
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Buildings" as Buildings IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **BuildingId** : string <<UK>>
+  GovernorateCode : string
+  DistrictCode : string
+  SubDistrictCode : string
+  CommunityCode : string
+  NeighborhoodCode : string
+  BuildingNumber : string
+  GovernorateName : string
+  DistrictName : string
+  SubDistrictName : string
+  CommunityName : string
+  NeighborhoodName : string
+  BuildingType : int
+  StreetName : string
+  LocationDescription : string
+  Geometry : geometry
+  Latitude : decimal
+  Longitude : decimal
+  Status : int
+  DamageLevel : int
+  NumberOfFloors : int
+  EstimatedUnits : int
+  YearBuilt : int
+  ConstructionMaterial : string
+  AccessibilityNotes : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "PropertyUnits" as PropertyUnits IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **UnitIdentifier** : string <<UK>>
+  **BuildingId** : UUID <<FK>>
+  UnitNumber : string
+  FloorNumber : int
+  UnitType : int
+  Area : decimal
+  NumberOfRooms : int
+  Status : int
+  DamageLevel : int
+  DamageDescription : string
+  OccupancyType : int
+  OccupancyNature : int
+  **CurrentHouseholdId** : UUID <<FK>>
+  OwnershipDocumentation : string
+  AccessibilityFeatures : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Persons" as Persons IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  FirstNameArabic : string
+  FatherNameArabic : string
+  FamilyNameArabic : string
+  MotherNameArabic : string
+  FirstNameEnglish : string
+  FamilyNameEnglish : string
+  FullNameArabic : string
+  FullNameEnglish : string
+  Gender : string
+  DateOfBirth : date
+  Age : int
+  PlaceOfBirthArabic : string
+  NationalityArabic : string
+  MaritalStatus : string
+  EducationLevel : string
+  Occupation : string
+  **NationalIdNumber** : string <<UK>>
+  PassportNumber : string
+  CivilRegistryNumber : string
+  PhoneNumber : string
+  EmailAddress : string
+  IsDeceased : bool
+  DateOfDeath : date
+  **CurrentHouseholdId** : UUID <<FK>>
+  RelationshipToHead : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Households" as Households IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **HouseholdCode** : string <<UK>>
+  **PropertyUnitId** : UUID <<FK>>
+  Size : int
+  NumberOfAdults : int
+  NumberOfChildren : int
+  NumberOfElderly : int
+  NumberOfDisabled : int
+  MonthlyIncome : decimal
+  IncomeSource : string
+  HasVulnerableMembers : bool
+  VulnerabilityNotes : string
+  ReceivesSocialAssistance : bool
+  SocialAssistanceDetails : string
+  HasDisplacedMembers : bool
+  DisplacementDetails : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "PersonPropertyRelations" as PersonPropertyRelations IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **PersonId** : UUID <<FK>>
+  **PropertyUnitId** : UUID <<FK>>
+  RelationType : string
+  StartDate : date
+  EndDate : date
+  OwnershipPercentage : int
+  DocumentationReference : string
+  Notes : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Claims" as Claims IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **ClaimNumber** : string <<UK>>
+  **PropertyUnitId** : UUID <<FK>>
+  **PrimaryClaimantId** : UUID <<FK>>
+  ClaimType : string
+  ClaimSource : int
+  Priority : int
+  LifecycleStage : int
+  Status : int
+  SubmittedDate : datetime
+  **SubmittedByUserId** : UUID <<FK>>
+  DecisionDate : datetime
+  **DecisionByUserId** : UUID <<FK>>
+  **AssignedToUserId** : UUID <<FK>>
+  AssignedDate : datetime
+  TargetCompletionDate : datetime
+  TenureContractType : int
+  OwnershipShare : int
+  TenureStartDate : date
+  TenureEndDate : date
+  ClaimDescription : string
+  LegalBasis : string
+  SupportingNarrative : string
+  HasConflicts : bool
+  ConflictCount : int
+  ConflictResolutionStatus : string
+  EvidenceCount : int
+  AllRequiredDocumentsSubmitted : bool
+  MissingDocuments : string
+  VerificationStatus : int
+  VerificationDate : datetime
+  **VerifiedByUserId** : UUID <<FK>>
+  VerificationNotes : string
+  FinalDecision : string
+  DecisionReason : string
+  DecisionNotes : string
+  CertificateStatus : int
+  ProcessingNotes : string
+  PublicRemarks : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Evidences" as Evidences IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **ClaimId** : UUID <<FK>>
+  **PersonId** : UUID <<FK>>
+  EvidenceType : string
+  Title : string
+  Description : string
+  PhysicalLocation : string
+  IsAvailable : bool
+  CollectionDate : date
+  **CollectedByUserId** : UUID <<FK>>
+  PreservationStatus : string
+  ExpiryDate : date
+  AuthenticityNotes : string
+  LegalRelevance : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Documents" as Documents IMPLEMENTED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **ClaimId** : UUID <<FK>>
+  **EvidenceId** : UUID <<FK>>
+  **PersonId** : UUID <<FK>>
+  DocumentType : int
+  **DocumentNumber** : string <<UK>>
+  Title : string
+  Description : string
+  FilePath : string
+  FileExtension : string
+  FileSizeBytes : long
+  MimeType : string
+  Checksum : string
+  IssueDate : date
+  ExpiryDate : date
+  IssuingAuthority : string
+  VerificationStatus : int
+  VerificationDate : datetime
+  **VerifiedByUserId** : UUID <<FK>>
+  VerificationNotes : string
+  **UploadedByUserId** : UUID <<FK>>
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+' ==================== PLANNED ENTITIES ====================
+
+entity "Certificates" as Certificates PLANNED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **CertificateNumber** : string <<UK>>
+  **ClaimId** : UUID <<FK>>
+  CertificateType : int
+  IssueDate : datetime
+  ExpiryDate : datetime
+  **IssuedByUserId** : UUID <<FK>>
+  Status : int
+  LegalNotes : string
+  Conditions : string
+  IsRevoked : bool
+  RevokedDate : datetime
+  **RevokedByUserId** : UUID <<FK>>
+  RevocationReason : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Surveys" as Surveys PLANNED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **SurveyCode** : string <<UK>>
+  SurveyType : int
+  **BuildingId** : UUID <<FK>>
+  **PropertyUnitId** : UUID <<FK>>
+  **ConductedByUserId** : UUID <<FK>>
+  SurveyDate : datetime
+  Status : int
+  Notes : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "BuildingAssignments" as BuildingAssignments PLANNED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **BuildingId** : UUID <<FK>>
+  **AssignedToUserId** : UUID <<FK>>
+  **AssignedByUserId** : UUID <<FK>>
+  AssignmentDate : datetime
+  DueDate : datetime
+  Status : int
+  Notes : string
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "ConflictResolutions" as ConflictResolutions PLANNED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **ClaimId** : UUID <<FK>>
+  ConflictType : string
+  Description : string
+  IdentifiedDate : datetime
+  **ResolvedByUserId** : UUID <<FK>>
+  ResolutionDate : datetime
+  ResolutionMethod : string
+  ResolutionNotes : string
+  Status : int
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "Vocabularies" as Vocabularies PLANNED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **VocabularyCode** : string <<UK>>
+  NameArabic : string
+  NameEnglish : string
+  Category : string
+  Version : int
+  IsActive : bool
+  EffectiveDate : datetime
+  **ParentVersionId** : UUID <<FK>>
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "ImportPackages" as ImportPackages PLANNED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  **PackageCode** : string <<UK>>
+  ImportDate : datetime
+  **ImportedByUserId** : UUID <<FK>>
+  FilePath : string
+  Checksum : string
+  Status : int
+  ValidationReport : string
+  RecordsImported : int
+  RecordsFailed : int
+  CreatedAtUtc : datetime
+  CreatedBy : UUID
+  LastModifiedAtUtc : datetime
+  LastModifiedBy : UUID
+  IsDeleted : bool
+}
+
+entity "AuditLogs" as AuditLogs PLANNED_COLOR {
+  **Id** : UUID <<PK>>
+  --
+  Timestamp : datetime
+  **UserId** : UUID <<FK>>
+  Action : string
+  EntityType : string
+  EntityId : UUID
+  Changes : string
+  DeviceId : string
+  IpAddress : string
+}
+
+' ==================== RELATIONSHIPS ====================
+
+' Users relationships
+Users ||--o{ Users : "supervises"
+Users ||--o{ Claims : "creates/verifies/approves"
+Users ||--o{ BuildingAssignments : "receives assignments"
+Users ||--o{ Surveys : "conducts"
+Users ||--o{ Documents : "uploads"
+Users ||--o{ AuditLogs : "generates"
+Users ||--o{ Buildings : "creates"
+Users ||--o{ Evidences : "collects"
+Users ||--o{ Certificates : "issues"
+Users ||--o{ ConflictResolutions : "resolves"
+Users ||--o{ ImportPackages : "imports"
+
+' Buildings relationships
+Buildings ||--o{ PropertyUnits : "contains"
+Buildings ||--o{ BuildingAssignments : "assigned in"
+Buildings ||--o{ Surveys : "surveyed"
+
+' PropertyUnits relationships
+PropertyUnits ||--o{ PersonPropertyRelations : "has occupants"
+PropertyUnits ||--o{ Claims : "subject of"
+PropertyUnits ||--|| Households : "occupied by"
+PropertyUnits }o--|| Buildings : "located in"
+
+' Persons relationships
+Persons ||--o{ PersonPropertyRelations : "occupies properties"
+Persons ||--o{ Claims : "primary claimant"
+Persons }o--o| Households : "member of"
+Persons ||--o{ Documents : "owns documents"
+Persons ||--o{ Evidences : "owns evidence"
+
+' Households relationships
+Households ||--o{ Persons : "has members"
+Households ||--|| PropertyUnits : "resides in"
+
+' PersonPropertyRelations relationships
+PersonPropertyRelations }o--|| Persons : "person"
+PersonPropertyRelations }o--|| PropertyUnits : "property"
+
+' Claims relationships
+Claims }o--|| PropertyUnits : "for property"
+Claims }o--|| Persons : "primary claimant"
+Claims ||--o{ Evidences : "supported by"
+Claims ||--o{ Documents : "attached to"
+Claims }o--|| Users : "submitted by"
+Claims }o--o| Users : "assigned to"
+Claims }o--o| Users : "verified by"
+Claims }o--o| Users : "decided by"
+Claims ||--o| Certificates : "results in"
+Claims ||--o{ ConflictResolutions : "has conflicts"
+
+' Evidences relationships
+Evidences }o--|| Claims : "supports claim"
+Evidences }o--|| Persons : "belongs to person"
+Evidences ||--o{ Documents : "has documents"
+
+' Documents relationships
+Documents }o--o| Claims : "attached to claim"
+Documents }o--o| Evidences : "attached to evidence"
+Documents }o--o| Persons : "belongs to person"
+Documents }o--|| Users : "uploaded by"
+
+' Certificates relationships
+Certificates }o--|| Claims : "issued for"
+Certificates }o--|| Users : "issued by"
+
+' Surveys relationships
+Surveys }o--|| Users : "conducted by"
+Surveys }o--|| Buildings : "for building"
+Surveys }o--o| PropertyUnits : "for unit"
+
+' BuildingAssignments relationships
+BuildingAssignments }o--|| Buildings : "assigns building"
+BuildingAssignments }o--|| Users : "assigned to collector"
+BuildingAssignments }o--|| Users : "assigned by admin"
+
+' ConflictResolutions relationships
+ConflictResolutions }o--|| Claims : "resolves conflict"
+ConflictResolutions }o--|| Users : "resolved by"
+
+' Vocabularies relationships
+Vocabularies ||--o{ Vocabularies : "has versions"
+
+' ImportPackages relationships
+ImportPackages }o--|| Users : "imported by"
+ImportPackages ||--o{ Claims : "imports claims"
+ImportPackages ||--o{ Persons : "imports persons"
+ImportPackages ||--o{ PropertyUnits : "imports units"
+
+' AuditLogs relationships
+AuditLogs }o--|| Users : "performed by"
+
+' Legend
+legend right
+  |= Color |= Status |
+  | <back:#E8F5E9>   </back> | Implemented (in database) |
+  | <back:#FFF3E0>   </back> | Planned (defined, not migrated) |
+endlegend
+
+note top of Users
+  **✅ IMPLEMENTED - v0.9.0**
+  Authentication & RBAC complete
+  6 roles: Administrator, DataManager, 
+  OfficeClerk, FieldCollector,
+  FieldSupervisor, Analyst
+end note
+
+note top of Claims
+  **✅ IMPLEMENTED - v0.8.0**
+  Complete claims lifecycle
+  8 API endpoints tested
+  Status transitions validated
+end note
+
+note top of Certificates
+  **⏳ PLANNED - High Priority**
+  Completes claims workflow
+  Estimate: 3 days
+end note
+
+note top of Surveys
+  **⏳ PLANNED - High Priority**
+  Field & Office survey workflows
+  UC-001, UC-002, UC-004, UC-005
+  Estimate: 4 days
+end note
+
+note top of BuildingAssignments
+  **⏳ PLANNED - High Priority**
+  Field collector assignments
+  UC-012
+  Estimate: 3 days
+end note
+
+note top of ImportPackages
+  **⏳ PLANNED - High Priority**
+  Field-to-office data transfer
+  UC-003 (Export/Import)
+  Estimate: 5 days
+end note
+
+@enduml
