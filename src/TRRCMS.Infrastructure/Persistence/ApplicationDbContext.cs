@@ -20,6 +20,14 @@ public class ApplicationDbContext : DbContext
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
+
+    // ==================== NEW: AUDIT LOG ====================
+    /// <summary>
+    /// Audit logs for comprehensive system action tracking
+    /// Supports 10+ year retention requirement per FSD Section 13
+    /// </summary>
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     // TODO: Add other entities later as we implement them
     // public DbSet<Certificate> Certificates => Set<Certificate>();

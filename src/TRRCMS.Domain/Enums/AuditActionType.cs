@@ -64,6 +64,18 @@ public enum AuditActionType
     /// </summary>
     Refer = 16,
 
+    // ==================== NEW: ADDITIONAL WORKFLOW ACTIONS ====================
+
+    /// <summary>
+    /// Case assigned to user (تعيين)
+    /// </summary>
+    Assign = 17,
+
+    /// <summary>
+    /// Case/document verified (التحقق والمصادقة)
+    /// </summary>
+    Verify = 18,
+
     // ==================== DATA OPERATIONS ====================
 
     /// <summary>
@@ -237,11 +249,35 @@ public enum AuditActionType
 
     /// <summary>
     /// Print action (طباعة)
-    /// </summary>
+    /// </summary   
     Print = 93,
+
+    /// <summary>
+    /// StateTransition action (تغيير الحالة)
+    /// </summary>
+    StateTransition = 94,
+
+    // ==================== NEW: CONFLICT MANAGEMENT ====================
+
+    /// <summary>
+    /// Conflict detected between claims (اكتشاف تعارض)
+    /// </summary>
+    ConflictDetected = 95,
+
+    /// <summary>
+    /// Conflict resolved (حل التعارض)
+    /// </summary>
+    ConflictResolved = 96,
 
     /// <summary>
     /// Other action not categorized
     /// </summary>
-    Other = 999
+    /// 
+
+    /// <summary>
+    /// File/Evidence uploaded (رفع ملف/دليل)
+    /// </summary>
+    Upload = 97,
+
+    Other = 999,
 }

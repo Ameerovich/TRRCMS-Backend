@@ -114,7 +114,7 @@ public class SeedCommandHandler : IRequestHandler<SeedCommand, SeedResult>
             }
         };
 
-        // System user ID for creation tracking (using admin's ID, or Guid.Empty if admin doesn't exist yet)
+        // System user ID for creation tracking
         Guid systemUserId = Guid.Empty;
         var existingAdmin = await _userRepository.GetByUsernameAsync("admin", cancellationToken);
         if (existingAdmin != null)
@@ -158,7 +158,7 @@ public class SeedCommandHandler : IRequestHandler<SeedCommand, SeedResult>
                     hasDesktopAccess: testUser.HasDesktopAccess,
                     email: testUser.Email,
                     phoneNumber: testUser.PhoneNumber,
-                    createdByUserId: systemUserId == Guid.Empty ? Guid.NewGuid() : systemUserId // Use system user or self-reference
+                    createdByUserId: systemUserId == Guid.Empty ? Guid.NewGuid() : systemUserId
                 );
 
                 // Set additional properties
@@ -172,12 +172,14 @@ public class SeedCommandHandler : IRequestHandler<SeedCommand, SeedResult>
                     modifiedByUserId: systemUserId == Guid.Empty ? user.Id : systemUserId
                 );
 
-                // Admin doesn't need to change password
-                if (testUser.Role == UserRole.Administrator)
-                {
-                    // Use reflection or create a method to set MustChangePassword to false
-                    // For now, admin will have MustChangePassword = true by default
-                }
+                // ============== GRANT DEFAULT PERMISSIONS ==============
+                var defaultPermissions = GetDefaultPermissionsForRole(testUser.Role);
+                user.GrantPermissions(
+                    permissions: defaultPermissions,
+                    grantedBy: systemUserId == Guid.Empty ? user.Id : systemUserId,
+                    reason: $"Default {testUser.Role} permissions"
+                );
+                // =======================================================
 
                 await _userRepository.AddAsync(user, cancellationToken);
                 await _userRepository.SaveChangesAsync(cancellationToken);
@@ -202,5 +204,182 @@ public class SeedCommandHandler : IRequestHandler<SeedCommand, SeedResult>
             : $"Seed completed with errors. Created {result.CreatedUsers.Count} users, skipped {result.SkippedUsers.Count}.";
 
         return result;
+    }
+
+    /// <summary>
+    /// Get default permissions for a given role
+    /// This duplicates the logic from PermissionSeeder to avoid circular dependencies
+    /// </summary>
+    private static List<Permission> GetDefaultPermissionsForRole(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.Administrator => new List<Permission>
+            {
+                // Claims permissions (ALL 14)
+                Permission.Claims_ViewAll, Permission.Claims_ViewAssigned, Permission.Claims_Create,
+                Permission.Claims_Update, Permission.Claims_Delete, Permission.Claims_Submit,
+                Permission.Claims_Assign, Permission.Claims_Reassign, Permission.Claims_Verify,
+                Permission.Claims_Approve, Permission.Claims_Reject, Permission.Claims_Transition,
+                Permission.Claims_Export, Permission.Claims_ViewHistory,
+                
+                // Evidence permissions (ALL 4)
+                Permission.Evidence_View, Permission.Evidence_Upload, Permission.Evidence_Verify,
+                Permission.Evidence_Delete,
+                
+                // Documents permissions (ALL 4)
+                Permission.Documents_ViewSensitive, Permission.Documents_Download,
+                Permission.Documents_Upload, Permission.Documents_Delete,
+                
+                // Buildings permissions (ALL 5)
+                Permission.Buildings_View, Permission.Buildings_Create, Permission.Buildings_Update,
+                Permission.Buildings_Assign, Permission.Buildings_Delete,
+                
+                // Persons permissions (ALL 5)
+                Permission.Persons_View, Permission.Persons_Create, Permission.Persons_Update,
+                Permission.Persons_Merge, Permission.Persons_Delete,
+                
+                // PropertyUnits permissions (ALL 5)
+                Permission.PropertyUnits_View, Permission.PropertyUnits_Create,
+                Permission.PropertyUnits_Update, Permission.PropertyUnits_Merge,
+                Permission.PropertyUnits_Delete,
+                
+                // Surveys permissions (ALL 3)
+                Permission.Surveys_Create, Permission.Surveys_View, Permission.Surveys_Export,
+                
+                // Admin permissions (ALL 9)
+                Permission.Users_View, Permission.Users_Create, Permission.Users_Update,
+                Permission.Users_Deactivate, Permission.Roles_Manage, Permission.Vocabularies_Manage,
+                Permission.Security_Settings, Permission.Audit_ViewAll,
+                
+                // System permissions (ALL 4)
+                Permission.System_Import, Permission.System_Export, Permission.System_Backup,
+                Permission.System_Restore
+            },
+
+            UserRole.DataManager => new List<Permission>
+            {
+                // Claims (12 - no Approve/Reject)
+                Permission.Claims_ViewAll, Permission.Claims_Create, Permission.Claims_Update,
+                Permission.Claims_Delete, Permission.Claims_Submit, Permission.Claims_Assign,
+                Permission.Claims_Reassign, Permission.Claims_Verify, Permission.Claims_Transition,
+                Permission.Claims_Export, Permission.Claims_ViewHistory,
+                
+                // Evidence (3 - no Delete)
+                Permission.Evidence_View, Permission.Evidence_Upload, Permission.Evidence_Verify,
+                
+                // Documents (3 - no Delete)
+                Permission.Documents_ViewSensitive, Permission.Documents_Download, Permission.Documents_Upload,
+                
+                // Buildings (4 - no Delete)
+                Permission.Buildings_View, Permission.Buildings_Create, Permission.Buildings_Update,
+                Permission.Buildings_Assign,
+                
+                // Persons (4 - no Delete)
+                Permission.Persons_View, Permission.Persons_Create, Permission.Persons_Update,
+                Permission.Persons_Merge,
+                
+                // PropertyUnits (4 - no Delete)
+                Permission.PropertyUnits_View, Permission.PropertyUnits_Create,
+                Permission.PropertyUnits_Update, Permission.PropertyUnits_Merge,
+                
+                // Surveys (2)
+                Permission.Surveys_View, Permission.Surveys_Export,
+                
+                // Admin (1)
+                Permission.Audit_ViewAll,
+                
+                // System (2)
+                Permission.System_Import, Permission.System_Export
+            },
+
+            UserRole.OfficeClerk => new List<Permission>
+            {
+                // Claims (5)
+                Permission.Claims_ViewAll, Permission.Claims_Create, Permission.Claims_Update,
+                Permission.Claims_Submit, Permission.Claims_Export,
+                
+                // Evidence (2)
+                Permission.Evidence_View, Permission.Evidence_Upload,
+                
+                // Documents (3)
+                Permission.Documents_ViewSensitive, Permission.Documents_Download, Permission.Documents_Upload,
+                
+                // Buildings (1)
+                Permission.Buildings_View,
+                
+                // Persons (3)
+                Permission.Persons_View, Permission.Persons_Create, Permission.Persons_Update,
+                
+                // PropertyUnits (1)
+                Permission.PropertyUnits_View,
+                
+                // Surveys (1)
+                Permission.Surveys_View
+            },
+
+            UserRole.FieldSupervisor => new List<Permission>
+            {
+                // Claims (4)
+                Permission.Claims_ViewAll, Permission.Claims_Submit, Permission.Claims_Export,
+                Permission.Claims_ViewHistory,
+                
+                // Evidence (1)
+                Permission.Evidence_View,
+                
+                // Buildings (1)
+                Permission.Buildings_View,
+                
+                // Persons (1)
+                Permission.Persons_View,
+                
+                // PropertyUnits (1)
+                Permission.PropertyUnits_View,
+                
+                // Surveys (3)
+                Permission.Surveys_Create, Permission.Surveys_View, Permission.Surveys_Export
+            },
+
+            UserRole.FieldCollector => new List<Permission>
+            {
+                // Claims (1)
+                Permission.Claims_ViewAssigned,
+                
+                // Evidence (2)
+                Permission.Evidence_View, Permission.Evidence_Upload,
+                
+                // Surveys (2)
+                Permission.Surveys_Create, Permission.Surveys_Export
+            },
+
+            UserRole.Analyst => new List<Permission>
+            {
+                // Claims (3)
+                Permission.Claims_ViewAll, Permission.Claims_Export, Permission.Claims_ViewHistory,
+                
+                // Evidence (1)
+                Permission.Evidence_View,
+                
+                // Buildings (1)
+                Permission.Buildings_View,
+                
+                // Persons (1)
+                Permission.Persons_View,
+                
+                // PropertyUnits (1)
+                Permission.PropertyUnits_View,
+                
+                // Surveys (2)
+                Permission.Surveys_View, Permission.Surveys_Export,
+                
+                // Admin (1)
+                Permission.Audit_ViewAll,
+                
+                // System (1)
+                Permission.System_Export
+            },
+
+            _ => new List<Permission>()
+        };
     }
 }

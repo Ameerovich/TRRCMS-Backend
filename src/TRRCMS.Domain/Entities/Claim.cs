@@ -297,6 +297,7 @@ public class Claim : BaseAuditableEntity
     /// Create new claim
     /// </summary>
     public static Claim Create(
+        string claimNumber,  // Sequential claim number from ClaimNumberGenerator
         Guid propertyUnitId,
         Guid? primaryClaimantId,
         string claimType,
@@ -305,6 +306,7 @@ public class Claim : BaseAuditableEntity
     {
         var claim = new Claim
         {
+            ClaimNumber = claimNumber,  // Set from parameter (sequential)
             PropertyUnitId = propertyUnitId,
             PrimaryClaimantId = primaryClaimantId,
             ClaimType = claimType,
@@ -319,9 +321,6 @@ public class Claim : BaseAuditableEntity
             EvidenceCount = 0,
             AllRequiredDocumentsSubmitted = false
         };
-
-        // Generate claim number
-        claim.ClaimNumber = GenerateClaimNumber();
 
         claim.MarkAsCreated(createdByUserId);
 
@@ -560,19 +559,6 @@ public class Claim : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
-    // ==================== HELPER METHODS ====================
-
-    /// <summary>
-    /// Generate claim number
-    /// Format: CLM-YYYY-NNNNNNNNN
-    /// </summary>
-    private static string GenerateClaimNumber()
-    {
-        var year = DateTime.UtcNow.Year;
-        var random = new Random();
-        var sequence = random.Next(100000000, 999999999);
-        return $"CLM-{year}-{sequence}";
-    }
 
     /// <summary>
     /// Check if claim is overdue

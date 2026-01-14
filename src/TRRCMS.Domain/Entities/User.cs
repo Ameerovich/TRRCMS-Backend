@@ -211,6 +211,11 @@ public class User : BaseAuditableEntity
     /// </summary>
     public virtual ICollection<User> Supervisees { get; private set; }
 
+    /// <summary>
+    /// Permissions granted to this user
+    /// </summary>
+    public virtual ICollection<UserPermission> Permissions { get; private set; }
+
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>
@@ -232,6 +237,7 @@ public class User : BaseAuditableEntity
         HasMobileAccess = false;
         HasDesktopAccess = false;
         Supervisees = new List<User>();
+        Permissions = new List<UserPermission>();
     }
 
     /// <summary>
@@ -501,4 +507,108 @@ public class User : BaseAuditableEntity
 
         return DateTime.UtcNow > PasswordExpiryDate.Value;
     }
+    // ==================== PERMISSION HELPER METHODS ====================
+
+    /// <summary>
+    /// Check if user has a specific permission
+    /// </summary>
+    public bool HasPermission(Permission permission)
+    {
+        return Permissions
+            .Any(p => p.Permission == permission && p.IsValid());
+    }
+
+    /// <summary>
+    /// Check if user has any of the specified permissions
+    /// </summary>
+    public bool HasAnyPermission(params Permission[] permissions)
+    {
+        return permissions.Any(HasPermission);
+    }
+
+    /// <summary>
+    /// Check if user has all of the specified permissions
+    /// </summary>
+    public bool HasAllPermissions(params Permission[] permissions)
+    {
+        return permissions.All(HasPermission);
+    }
+
+    /// <summary>
+    /// Grant a permission to this user
+    /// </summary>
+    public void GrantPermission(Permission permission, Guid grantedBy, string? reason = null)
+    {
+        // Check if permission already exists and is active
+        var existing = Permissions.FirstOrDefault(p => p.Permission == permission);
+        if (existing != null)
+        {
+            if (existing.IsValid())
+            {
+                // Already has valid permission, nothing to do
+                return;
+            }
+            else
+            {
+                // Reactivate expired/revoked permission
+                existing.Reactivate(grantedBy, reason ?? "Permission re-granted");
+                return;
+            }
+        }
+
+        // Create new permission
+        var userPermission = UserPermission.Create(
+            userId: Id,
+            permission: permission,
+            grantedBy: grantedBy,
+            grantReason: reason);
+
+        Permissions.Add(userPermission);
+    }
+
+    /// <summary>
+    /// Revoke a permission from this user
+    /// </summary>
+    public void RevokePermission(Permission permission, Guid revokedBy, string reason)
+    {
+        var existing = Permissions.FirstOrDefault(p => p.Permission == permission && p.IsActive);
+        if (existing != null)
+        {
+            existing.Revoke(revokedBy, reason);
+        }
+    }
+
+    /// <summary>
+    /// Get all active permissions for this user
+    /// </summary>
+    public IEnumerable<Permission> GetActivePermissions()
+    {
+        return Permissions
+            .Where(p => p.IsValid())
+            .Select(p => p.Permission)
+            .Distinct();
+    }
+
+    /// <summary>
+    /// Grant multiple permissions at once
+    /// </summary>
+    public void GrantPermissions(IEnumerable<Permission> permissions, Guid grantedBy, string? reason = null)
+    {
+        foreach (var permission in permissions)
+        {
+            GrantPermission(permission, grantedBy, reason);
+        }
+    }
+
+    /// <summary>
+    /// Revoke all permissions from this user
+    /// </summary>
+    public void RevokeAllPermissions(Guid revokedBy, string reason)
+    {
+        foreach (var permission in Permissions.Where(p => p.IsActive).ToList())
+        {
+            permission.Revoke(revokedBy, reason);
+        }
+    }
+
 }

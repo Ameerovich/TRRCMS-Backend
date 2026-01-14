@@ -46,13 +46,26 @@ public class PasswordHasher : IPasswordHasher
 
         try
         {
-            // BCrypt.Verify extracts the salt from the hash automatically
-            // The salt parameter is kept for interface consistency but not used here
-            return BCrypt.Net.BCrypt.Verify(password, hash);
+            Console.WriteLine("=== PASSWORD VERIFICATION ===");
+            Console.WriteLine($"Password: {password}");
+            Console.WriteLine($"Hash: {hash.Substring(0, Math.Min(30, hash.Length))}...");
+            Console.WriteLine($"Hash Length: {hash.Length}");
+
+            bool result = BCrypt.Net.BCrypt.Verify(password, hash);
+
+            Console.WriteLine($"Verification Result: {result}");
+            Console.WriteLine("=========================");
+
+            return result;
         }
-        catch
+        catch (Exception ex)
         {
-            // If hash is malformed or verification fails, return false
+            // ⚠️ NOW WE CAN SEE THE ERROR!
+            Console.WriteLine("=== BCrypt VERIFICATION ERROR ===");
+            Console.WriteLine($"Exception Type: {ex.GetType().Name}");
+            Console.WriteLine($"Exception Message: {ex.Message}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+            Console.WriteLine("================================");
             return false;
         }
     }

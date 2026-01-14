@@ -147,37 +147,39 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
 
         // ==================== INDEXES ====================
 
+        // ✅ FIXED: Changed all index names from IX_Evidence_ to IX_Evidences_
+
         // Index for evidence type lookups
         builder.HasIndex(e => e.EvidenceType)
-            .HasDatabaseName("IX_Evidence_EvidenceType");
+            .HasDatabaseName("IX_Evidences_EvidenceType");
 
         // Index for person lookups
         builder.HasIndex(e => e.PersonId)
-            .HasDatabaseName("IX_Evidence_PersonId");
+            .HasDatabaseName("IX_Evidences_PersonId");
 
         // Index for person-property relation lookups
         builder.HasIndex(e => e.PersonPropertyRelationId)
-            .HasDatabaseName("IX_Evidence_PersonPropertyRelationId");
+            .HasDatabaseName("IX_Evidences_PersonPropertyRelationId");
 
         // Index for claim lookups
         builder.HasIndex(e => e.ClaimId)
-            .HasDatabaseName("IX_Evidence_ClaimId");
+            .HasDatabaseName("IX_Evidences_ClaimId");
 
         // Index for current version queries
         builder.HasIndex(e => e.IsCurrentVersion)
-            .HasDatabaseName("IX_Evidence_IsCurrentVersion");
+            .HasDatabaseName("IX_Evidences_IsCurrentVersion");
 
         // Composite index for active, non-deleted evidences
         builder.HasIndex(e => new { e.IsCurrentVersion, e.IsDeleted })
-            .HasDatabaseName("IX_Evidence_IsCurrentVersion_IsDeleted");
+            .HasDatabaseName("IX_Evidences_IsCurrentVersion_IsDeleted");
 
         // Index for soft delete queries
         builder.HasIndex(e => e.IsDeleted)
-            .HasDatabaseName("IX_Evidence_IsDeleted");
+            .HasDatabaseName("IX_Evidences_IsDeleted");
 
         // Index for document expiry date (for expiry checks)
         builder.HasIndex(e => e.DocumentExpiryDate)
-            .HasDatabaseName("IX_Evidence_DocumentExpiryDate");
+            .HasDatabaseName("IX_Evidences_DocumentExpiryDate");
 
         // ==================== RELATIONSHIPS ====================
 

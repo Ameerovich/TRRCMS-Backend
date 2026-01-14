@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TRRCMS.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260111174409_AddPermissionsSystem")]
+    partial class AddPermissionsSystem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,182 +24,6 @@ namespace TRRCMS.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("TRRCMS.Domain.Entities.AuditLog", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ActionDescription")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasComment("Human-readable description of the action");
-
-                    b.Property<string>("ActionResult")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("Result of the action (Success, Failed, Partial)");
-
-                    b.Property<int>("ActionType")
-                        .HasColumnType("integer")
-                        .HasComment("Type of action performed (enum)");
-
-                    b.Property<string>("AdditionalData")
-                        .HasColumnType("jsonb")
-                        .HasComment("Additional contextual information as JSON");
-
-                    b.Property<long>("AuditLogNumber")
-                        .HasColumnType("bigint")
-                        .HasComment("Sequential audit log entry number");
-
-                    b.Property<string>("ChangedFields")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasComment("Comma-separated list of changed fields");
-
-                    b.Property<Guid?>("CorrelationId")
-                        .HasColumnType("uuid")
-                        .HasComment("Correlation ID to group related actions");
-
-                    b.Property<string>("DeviceId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasComment("Device ID for mobile/tablet actions");
-
-                    b.Property<Guid?>("EntityId")
-                        .HasColumnType("uuid")
-                        .HasComment("ID of the entity affected");
-
-                    b.Property<string>("EntityIdentifier")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasComment("Human-readable identifier (e.g., Claim Number)");
-
-                    b.Property<string>("EntityType")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasComment("Type of entity affected (e.g., Claim, Building)");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasComment("Error message if action failed");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("IP address from which action was performed");
-
-                    b.Property<bool>("IsSecuritySensitive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasComment("Indicates if this is a security-sensitive action");
-
-                    b.Property<string>("NewValues")
-                        .HasColumnType("jsonb")
-                        .HasComment("New state stored as JSON");
-
-                    b.Property<string>("OldValues")
-                        .HasColumnType("jsonb")
-                        .HasComment("Previous state stored as JSON");
-
-                    b.Property<Guid?>("ParentAuditLogId")
-                        .HasColumnType("uuid")
-                        .HasComment("Parent audit log ID for nested actions");
-
-                    b.Property<bool>("RequiresLegalRetention")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasComment("Indicates if this action requires legal retention");
-
-                    b.Property<DateTime?>("RetentionEndDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasComment("Retention end date (10+ years for legal hold)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("SessionId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasComment("Session ID");
-
-                    b.Property<string>("SourceApplication")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("Source application (Mobile, Desktop, API)");
-
-                    b.Property<string>("StackTrace")
-                        .HasColumnType("text")
-                        .HasComment("Stack trace if action failed");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone")
-                        .HasComment("When the action occurred (UTC)");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasComment("User agent (browser/app information)");
-
-                    b.Property<string>("UserFullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasComment("Full name of user for historical record");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasComment("User who performed the action");
-
-                    b.Property<string>("UserRole")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("User's role at the time of action");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("Username at the time of action");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActionType");
-
-                    b.HasIndex("AuditLogNumber")
-                        .IsUnique();
-
-                    b.HasIndex("CorrelationId");
-
-                    b.HasIndex("IsSecuritySensitive");
-
-                    b.HasIndex("ParentAuditLogId");
-
-                    b.HasIndex("RetentionEndDate");
-
-                    b.HasIndex("Timestamp");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("ActionResult", "Timestamp");
-
-                    b.HasIndex("EntityType", "EntityId");
-
-                    b.HasIndex("IsSecuritySensitive", "Timestamp");
-
-                    b.HasIndex("UserId", "Timestamp");
-
-                    b.HasIndex("EntityType", "EntityId", "Timestamp");
-
-                    b.ToTable("AuditLogs", (string)null);
-                });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Building", b =>
                 {
@@ -674,9 +501,10 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasComment("Document title or description in Arabic");
 
-                    b.Property<int>("DocumentType")
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("integer")
+                        .HasColumnType("character varying(100)")
                         .HasComment("Document type from controlled vocabulary (e.g., TabuGreen, RentalContract, NationalIdCard)");
 
                     b.Property<Guid?>("EvidenceId")
@@ -791,11 +619,12 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasComment("Verification notes or comments");
 
-                    b.Property<int>("VerificationStatus")
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Pending")
                         .HasComment("Verification status (Pending, Verified, Rejected, RequiresAdditionalInfo)");
 
                     b.Property<Guid?>("VerifiedByUserId")
@@ -1985,16 +1814,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasFilter("\"IsActive\" = true");
 
                     b.ToTable("UserPermissions", (string)null);
-                });
-
-            modelBuilder.Entity("TRRCMS.Domain.Entities.AuditLog", b =>
-                {
-                    b.HasOne("TRRCMS.Domain.Entities.AuditLog", "ParentAuditLog")
-                        .WithMany()
-                        .HasForeignKey("ParentAuditLogId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("ParentAuditLog");
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Claim", b =>

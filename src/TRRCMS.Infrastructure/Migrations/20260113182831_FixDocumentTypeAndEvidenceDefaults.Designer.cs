@@ -12,8 +12,8 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260109132855_FixClaimsDefaultsAndRenameAllTablesToPlural")]
-    partial class FixClaimsDefaultsAndRenameAllTablesToPlural
+    [Migration("20260113182831_FixDocumentTypeAndEvidenceDefaults")]
+    partial class FixDocumentTypeAndEvidenceDefaults
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,182 @@ namespace TRRCMS.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActionDescription")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasComment("Human-readable description of the action");
+
+                    b.Property<string>("ActionResult")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("Result of the action (Success, Failed, Partial)");
+
+                    b.Property<int>("ActionType")
+                        .HasColumnType("integer")
+                        .HasComment("Type of action performed (enum)");
+
+                    b.Property<string>("AdditionalData")
+                        .HasColumnType("jsonb")
+                        .HasComment("Additional contextual information as JSON");
+
+                    b.Property<long>("AuditLogNumber")
+                        .HasColumnType("bigint")
+                        .HasComment("Sequential audit log entry number");
+
+                    b.Property<string>("ChangedFields")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasComment("Comma-separated list of changed fields");
+
+                    b.Property<Guid?>("CorrelationId")
+                        .HasColumnType("uuid")
+                        .HasComment("Correlation ID to group related actions");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Device ID for mobile/tablet actions");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uuid")
+                        .HasComment("ID of the entity affected");
+
+                    b.Property<string>("EntityIdentifier")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Human-readable identifier (e.g., Claim Number)");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Type of entity affected (e.g., Claim, Building)");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Error message if action failed");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("IP address from which action was performed");
+
+                    b.Property<bool>("IsSecuritySensitive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if this is a security-sensitive action");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("jsonb")
+                        .HasComment("New state stored as JSON");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("jsonb")
+                        .HasComment("Previous state stored as JSON");
+
+                    b.Property<Guid?>("ParentAuditLogId")
+                        .HasColumnType("uuid")
+                        .HasComment("Parent audit log ID for nested actions");
+
+                    b.Property<bool>("RequiresLegalRetention")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if this action requires legal retention");
+
+                    b.Property<DateTime?>("RetentionEndDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Retention end date (10+ years for legal hold)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("SessionId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Session ID");
+
+                    b.Property<string>("SourceApplication")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("Source application (Mobile, Desktop, API)");
+
+                    b.Property<string>("StackTrace")
+                        .HasColumnType("text")
+                        .HasComment("Stack trace if action failed");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("When the action occurred (UTC)");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasComment("User agent (browser/app information)");
+
+                    b.Property<string>("UserFullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Full name of user for historical record");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasComment("User who performed the action");
+
+                    b.Property<string>("UserRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("User's role at the time of action");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("Username at the time of action");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionType");
+
+                    b.HasIndex("AuditLogNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("IsSecuritySensitive");
+
+                    b.HasIndex("ParentAuditLogId");
+
+                    b.HasIndex("RetentionEndDate");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ActionResult", "Timestamp");
+
+                    b.HasIndex("EntityType", "EntityId");
+
+                    b.HasIndex("IsSecuritySensitive", "Timestamp");
+
+                    b.HasIndex("UserId", "Timestamp");
+
+                    b.HasIndex("EntityType", "EntityId", "Timestamp");
+
+                    b.ToTable("AuditLogs", (string)null);
+                });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Building", b =>
                 {
@@ -501,10 +677,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasComment("Document title or description in Arabic");
 
-                    b.Property<string>("DocumentType")
-                        .IsRequired()
+                    b.Property<int>("DocumentType")
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasColumnType("integer")
                         .HasComment("Document type from controlled vocabulary (e.g., TabuGreen, RentalContract, NationalIdCard)");
 
                     b.Property<Guid?>("EvidenceId")
@@ -619,12 +794,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasComment("Verification notes or comments");
 
-                    b.Property<string>("VerificationStatus")
-                        .IsRequired()
+                    b.Property<int>("VerificationStatus")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Pending")
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1)
                         .HasComment("Verification status (Pending, Verified, Rejected, RequiresAdditionalInfo)");
 
                     b.Property<Guid?>("VerifiedByUserId")
@@ -1536,6 +1710,296 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.ToTable("Referrals", (string)null);
                 });
 
+            modelBuilder.Entity("TRRCMS.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdditionalRoles")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("AssignedTabletId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("Tablet device ID assigned to this field collector");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Email address (optional, unique if provided)");
+
+                    b.Property<string>("EmployeeId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("FailedLoginAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("FullNameArabic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Full name in Arabic");
+
+                    b.Property<string>("FullNameEnglish")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("HasDesktopAccess")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasMobileAccess")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasComment("Whether the user account is active");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsLockedOut")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Whether the account is locked due to failed login attempts");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("LastFailedLoginDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastLoginDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LastPasswordChangeDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("LockoutEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("MustChangePassword")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Organization")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("PasswordExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PasswordSalt")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Preferences")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("PreferredLanguage")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("ar");
+
+                    b.Property<string>("RefreshToken")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("integer")
+                        .HasComment("Primary user role (1=FieldCollector, 2=FieldSupervisor, 3=OfficeClerk, 4=DataManager, 5=Analyst, 6=Administrator)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("SecurityStamp")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("SupervisorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("TabletAssignedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TeamName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasComment("Unique username for login");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedTabletId");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Role");
+
+                    b.HasIndex("SupervisorUserId");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.HasIndex("IsDeleted", "IsActive");
+
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.UserPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("When permission expires (null = never expires)");
+
+                    b.Property<string>("GrantReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasComment("Reason why permission was granted");
+
+                    b.Property<DateTime>("GrantedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("When permission was granted (UTC)");
+
+                    b.Property<Guid>("GrantedBy")
+                        .HasColumnType("uuid")
+                        .HasComment("User ID who granted this permission");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasComment("Whether this permission is currently active");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Permission")
+                        .HasColumnType("integer")
+                        .HasComment("Permission enum value (see Permission.cs for full list)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to User");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.HasIndex("GrantedBy");
+
+                    b.HasIndex("Permission");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("UserId", "IsActive");
+
+                    b.HasIndex("UserId", "Permission", "IsActive")
+                        .IsUnique()
+                        .HasFilter("\"IsActive\" = true");
+
+                    b.ToTable("UserPermissions", (string)null);
+                });
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.AuditLog", b =>
+                {
+                    b.HasOne("TRRCMS.Domain.Entities.AuditLog", "ParentAuditLog")
+                        .WithMany()
+                        .HasForeignKey("ParentAuditLogId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentAuditLog");
+                });
+
             modelBuilder.Entity("TRRCMS.Domain.Entities.Claim", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.Person", "PrimaryClaimant")
@@ -1705,6 +2169,27 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Navigation("PreviousReferral");
                 });
 
+            modelBuilder.Entity("TRRCMS.Domain.Entities.User", b =>
+                {
+                    b.HasOne("TRRCMS.Domain.Entities.User", "Supervisor")
+                        .WithMany("Supervisees")
+                        .HasForeignKey("SupervisorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Supervisor");
+                });
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.UserPermission", b =>
+                {
+                    b.HasOne("TRRCMS.Domain.Entities.User", "User")
+                        .WithMany("Permissions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("TRRCMS.Domain.Entities.Building", b =>
                 {
                     b.Navigation("PropertyUnits");
@@ -1745,6 +2230,13 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Navigation("Households");
 
                     b.Navigation("PersonRelations");
+                });
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.User", b =>
+                {
+                    b.Navigation("Permissions");
+
+                    b.Navigation("Supervisees");
                 });
 #pragma warning restore 612, 618
         }

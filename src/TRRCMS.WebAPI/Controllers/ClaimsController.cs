@@ -1,9 +1,8 @@
-using MediatR;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TRRCMS.Application.Claims.Commands.ApproveClaim;
 using TRRCMS.Application.Claims.Commands.AssignClaim;
 using TRRCMS.Application.Claims.Commands.CreateClaim;
-using TRRCMS.Application.Claims.Commands.RejectClaim;
 using TRRCMS.Application.Claims.Commands.SubmitClaim;
 using TRRCMS.Application.Claims.Commands.VerifyClaim;
 using TRRCMS.Application.Claims.Dtos;
@@ -16,20 +15,21 @@ namespace TRRCMS.WebAPI.Controllers;
 /// <summary>
 /// Claims management API controller
 /// Provides endpoints for complete claim lifecycle management
+/// All endpoints require authentication and specific permissions
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class ClaimsController : ControllerBase
 {
     private readonly IMediator _mediator;
-    
+
     public ClaimsController(IMediator mediator)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
     }
-    
+
     // ==================== BASIC CRUD OPERATIONS ====================
-    
+
     /// <summary>
     /// Create a new claim
     /// </summary>
@@ -37,38 +37,48 @@ public class ClaimsController : ControllerBase
     /// <returns>Created claim with computed properties</returns>
     /// <response code="201">Claim created successfully</response>
     /// <response code="400">Invalid request</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_Create)</response>
     [HttpPost]
+    [Authorize(Policy = "CanCreateClaims")]
     [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ClaimDto>> CreateClaim([FromBody] CreateClaimCommand command)
     {
         var claim = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetClaim), new { id = claim.Id }, claim);
     }
-    
+
     /// <summary>
     /// Get claim by ID
     /// </summary>
     /// <param name="id">Claim ID</param>
     /// <returns>Claim with all details and computed properties</returns>
     /// <response code="200">Claim found</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_ViewAll)</response>
     /// <response code="404">Claim not found</response>
     [HttpGet("{id}")]
+    [Authorize(Policy = "CanViewAllClaims")]
     [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ClaimDto>> GetClaim(Guid id)
     {
         var query = new GetClaimQuery(id);
         var claim = await _mediator.Send(query);
-        
+
         if (claim == null)
         {
             return NotFound($"Claim with ID {id} not found.");
         }
-        
+
         return Ok(claim);
     }
-    
+
     /// <summary>
     /// Get all claims with optional filtering
     /// </summary>
@@ -84,8 +94,13 @@ public class ClaimsController : ControllerBase
     /// <param name="awaitingDocuments">Filter by awaiting documents</param>
     /// <returns>List of claims matching filter criteria</returns>
     /// <response code="200">Claims retrieved successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_ViewAll)</response>
     [HttpGet]
+    [Authorize(Policy = "CanViewAllClaims")]
     [ProducesResponseType(typeof(IEnumerable<ClaimDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<IEnumerable<ClaimDto>>> GetAllClaims(
         [FromQuery] LifecycleStage? lifecycleStage = null,
         [FromQuery] ClaimStatus? status = null,
@@ -111,23 +126,33 @@ public class ClaimsController : ControllerBase
             IsOverdue = isOverdue,
             AwaitingDocuments = awaitingDocuments
         };
-        
+
         var claims = await _mediator.Send(query);
         return Ok(claims);
     }
-    
+
     // ==================== WORKFLOW OPERATIONS ====================
-    
+    // NOTE: These endpoints are functional but do NOT validate state transitions yet.
+    // State machine implementation is planned for Phase 2.
+    // Use with caution until state validation is added.
+
     /// <summary>
     /// Submit claim for processing
+    /// ⚠️ WARNING: Does not validate state transitions yet (requires Phase 2 state machine)
+    /// Requires: Office Clerk, Data Manager, Field Supervisor, or Administrator role
     /// </summary>
     /// <param name="id">Claim ID</param>
     /// <param name="command">Submission details</param>
     /// <returns>No content</returns>
     /// <response code="204">Claim submitted successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_Submit)</response>
     /// <response code="404">Claim not found</response>
     [HttpPut("{id}/submit")]
+    [Authorize(Policy = "CanSubmitClaims")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> SubmitClaim(Guid id, [FromBody] SubmitClaimCommand command)
     {
@@ -135,17 +160,23 @@ public class ClaimsController : ControllerBase
         await _mediator.Send(command);
         return NoContent();
     }
-    
+
     /// <summary>
     /// Assign claim to case officer
+    /// Requires: Data Manager or Administrator role
     /// </summary>
     /// <param name="id">Claim ID</param>
     /// <param name="command">Assignment details</param>
     /// <returns>No content</returns>
     /// <response code="204">Claim assigned successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_Assign)</response>
     /// <response code="404">Claim not found</response>
     [HttpPut("{id}/assign")]
+    [Authorize(Policy = "CanAssignClaims")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AssignClaim(Guid id, [FromBody] AssignClaimCommand command)
     {
@@ -153,57 +184,26 @@ public class ClaimsController : ControllerBase
         await _mediator.Send(command);
         return NoContent();
     }
-    
+
     /// <summary>
     /// Verify claim
+    /// ⚠️ WARNING: Does not validate state transitions yet (requires Phase 2 state machine)
+    /// Requires: Data Manager or Administrator role
     /// </summary>
     /// <param name="id">Claim ID</param>
     /// <param name="command">Verification details</param>
     /// <returns>No content</returns>
     /// <response code="204">Claim verified successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_Verify)</response>
     /// <response code="404">Claim not found</response>
     [HttpPut("{id}/verify")]
+    [Authorize(Policy = "CanVerifyClaims")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> VerifyClaim(Guid id, [FromBody] VerifyClaimCommand command)
-    {
-        command.ClaimId = id;
-        await _mediator.Send(command);
-        return NoContent();
-    }
-    
-    /// <summary>
-    /// Approve claim
-    /// </summary>
-    /// <param name="id">Claim ID</param>
-    /// <param name="command">Approval details</param>
-    /// <returns>No content</returns>
-    /// <response code="204">Claim approved successfully</response>
-    /// <response code="404">Claim not found</response>
-    [HttpPut("{id}/approve")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ApproveClaim(Guid id, [FromBody] ApproveClaimCommand command)
-    {
-        command.ClaimId = id;
-        await _mediator.Send(command);
-        return NoContent();
-    }
-    
-    /// <summary>
-    /// Reject claim
-    /// </summary>
-    /// <param name="id">Claim ID</param>
-    /// <param name="command">Rejection details (reason required)</param>
-    /// <returns>No content</returns>
-    /// <response code="204">Claim rejected successfully</response>
-    /// <response code="400">Invalid request (missing reason)</response>
-    /// <response code="404">Claim not found</response>
-    [HttpPut("{id}/reject")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RejectClaim(Guid id, [FromBody] RejectClaimCommand command)
     {
         command.ClaimId = id;
         await _mediator.Send(command);

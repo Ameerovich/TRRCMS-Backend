@@ -1,8 +1,8 @@
 ﻿# TRRCMS - Tenure Rights Registration & Claims Management System
 
-**Version:** 0.9.0  
-**Last Updated:** January 10, 2026  
-**Status:** Authentication & RBAC Module Complete ✅
+**Version:** 0.10.0  
+**Last Updated:** January 14, 2026  
+**Status:** Authorization & Audit System Complete ✅
 
 ---
 
@@ -10,62 +10,84 @@
 
 The Tenure Rights Registration & Claims Management System (TRRCMS) is a comprehensive solution developed for UN-Habitat to support property rights registration, claims management, and land tenure documentation in Aleppo, Syria.
 
-### **Current Status: v0.9.0**
+### **Current Status: v0.10.0**
 
-- **Backend API:** ~85% Complete
-- **Authentication & RBAC:** ✅ 100% Complete (Sprint 1 - TRRCMS-BE-02)
+- **Backend API:** ~90% Complete
+- **Authentication & RBAC:** ✅ 100% Complete
+- **Authorization & Permissions:** ✅ 100% Complete (NEW)
+- **Audit Logging:** ✅ 100% Complete (NEW)
 - **Claims Management:** ✅ 100% Complete
-- **Core Entities:** ✅ Complete (Buildings, Property Units, Persons, Households, Claims, Evidence, Documents)
+- **Documents & Evidence:** ✅ 100% Complete (NEW)
+- **Core Entities:** ✅ Complete
 
 ---
 
-## 🎯 **Latest Milestone: Authentication & RBAC (v0.9.0)**
+## 🎯 **Latest Milestone: Authorization & Audit System (v0.10.0)**
 
 ### **Completed Features:**
 
-#### **1. JWT Authentication System**
+#### **1. Permission System**
 
-- ✅ Secure login with username/password
-- ✅ JWT access tokens (15 min expiry in production, 60 min in dev)
-- ✅ Refresh token rotation (7 days in production, 30 days in dev)
-- ✅ Password change functionality
-- ✅ Logout support (stateless JWT)
-- ✅ Device tracking for audit compliance
+- ✅ Fine-grained permission-based authorization
+- ✅ 30+ granular permissions across 6 modules:
+  - **Claims Management** - View, Create, Update, Submit, Assign, Verify, Approve, Reject, Delete
+  - **Documents Management** - View, Create, Update, Verify, Delete
+  - **Evidence Management** - View, Create, Update, Verify, Version, Delete
+  - **Users Management** - View, Create, Update, Delete, ResetPassword, ManageRoles
+  - **Reports** - ViewAll, Export, Advanced
+  - **System** - Configuration, AuditLogs, Maintenance
+- ✅ UserPermission junction table with inheritance support
+- ✅ Role-based default permissions
 
-#### **2. Security Features**
+#### **2. Authorization Policies**
 
-- ✅ BCrypt password hashing (work factor 12 = 4096 rounds)
-- ✅ Account lockout protection (5 failed attempts = 30 min lockout)
-- ✅ Password expiry checking
-- ✅ Security stamp for token invalidation
-- ✅ Active/Inactive account validation
-- ✅ FSD-compliant audit trail with device tracking
+- ✅ Policy-based authorization using ASP.NET Core policies
+- ✅ `PermissionRequirement` and `PermissionAuthorizationHandler`
+- ✅ Applied to Documents and Evidences controllers:
+  - **View permissions** - GET endpoints (ViewDocuments, ViewEvidence)
+  - **Create permissions** - POST endpoints (CreateDocuments, CreateEvidence)
+  - **Update permissions** - PUT endpoints (UpdateDocuments, UpdateEvidence)
+  - **Verify permissions** - Verification endpoints (VerifyDocuments, VerifyEvidence)
+  - **Delete permissions** - DELETE endpoints (DeleteDocuments, DeleteEvidence)
 
-#### **3. Role-Based Access Control (RBAC)**
+#### **3. Audit Logging System**
 
-- ✅ 6 User Roles:
-  - **Administrator** - Full system access (desktop only)
-  - **DataManager** - Data verification and management (desktop only)
-  - **OfficeClerk** - Office data entry and claims processing (desktop only)
-  - **FieldCollector** - Field data collection (mobile only)
-  - **FieldSupervisor** - Field team supervision (desktop read-only)
-  - **Analyst** - Data analysis and reporting (desktop read-only)
-- ✅ Mobile/Desktop access flags
-- ✅ Role-based authorization infrastructure ready
+- ✅ Comprehensive audit trail for all database operations
+- ✅ Automatic tracking via `SaveChangesAsync` interceptor
+- ✅ Captures:
+  - Entity name and operation (Create, Update, Delete)
+  - Old and new values (JSON format)
+  - User ID, timestamp, IP address
+  - Request path and HTTP method
+- ✅ AuditLogs table with 14 columns
+- ✅ Performance indexes on UserId, EntityName, Timestamp
+- ✅ Soft delete support with IsDeleted flag
 
-#### **4. Authentication API Endpoints**
+#### **4. Sequential Claim Numbers**
 
-- `POST /api/Auth/login` - User authentication
-- `POST /api/Auth/refresh` - Refresh access token
-- `POST /api/Auth/change-password` - Change user password
-- `POST /api/Auth/logout` - Logout (client-side token discard)
-- `GET /api/Auth/me` - Get current user information
+- ✅ Database sequence for unique claim numbers
+- ✅ Format: CLM-YYYY-NNNNNNNNN (e.g., CLM-2026-000000001)
+- ✅ Thread-safe generation
+- ✅ Automatic assignment on claim creation
 
-#### **5. Development Tools**
+#### **5. Database Schema Improvements**
 
-- ✅ Seed endpoint for test users (`POST /api/Seed/users`)
-- ✅ Swagger JWT bearer integration
-- ✅ 6 test users with different roles pre-configured
+- ✅ Fixed table naming consistency (all plural):
+  - Document → **Documents**
+  - Evidence → **Evidences**
+  - Referral → **Referrals**
+- ✅ Fixed enum storage (DocumentType: string → int)
+- ✅ Fixed default values using PostgreSQL SQL:
+  - Documents: IsVerified, IsLegallyValid, IsOriginal, IsNotarized, IsDeleted
+  - Evidences: IsCurrentVersion, VersionNumber, IsDeleted
+  - All tables: IsDeleted defaults properly set
+- ✅ Fixed index names to match plural table names
+
+#### **6. Workflow Simplification**
+
+- ✅ Removed Approve/Reject claim operations (Phase 1.5 Step 1)
+- ✅ Streamlined claims workflow for MVP
+- ✅ Focus on data collection and verification
 
 ---
 
@@ -78,6 +100,7 @@ The Tenure Rights Registration & Claims Management System (TRRCMS) is a comprehe
 - **ORM:** Entity Framework Core 8.0
 - **API Documentation:** Swagger/OpenAPI
 - **Authentication:** JWT Bearer Tokens
+- **Authorization:** Policy-Based with Custom Permissions
 - **Password Hashing:** BCrypt.Net (work factor 12)
 - **Patterns:** Clean Architecture, CQRS (MediatR), Repository Pattern
 
@@ -97,67 +120,140 @@ TRRCMS/
 
 ## 🗄️ **Database Schema**
 
-### **Current Tables (11 total):**
+### **Current Tables (13 total):**
 
-1. **Users** - User accounts, roles, authentication ✅ **NEW in v0.9.0**
-2. **Buildings** - Building records with geometry
-3. **PropertyUnits** - Property units within buildings
-4. **Persons** - Individual person records
-5. **Households** - Household information
-6. **PersonPropertyRelations** - Person-property relationships
-7. **Claims** - Property ownership claims
-8. **Evidences** - Evidence records linked to claims
-9. **Documents** - Document attachments
-10. **Referrals** - Referral records
-11. **\_\_EFMigrationsHistory** - EF Core migrations tracking
+1. **Users** - User accounts, roles, authentication
+2. **UserPermissions** - User-specific permissions ✅ **NEW in v0.10.0**
+3. **AuditLogs** - Comprehensive audit trail ✅ **NEW in v0.10.0**
+4. **Buildings** - Building records with geometry
+5. **PropertyUnits** - Property units within buildings
+6. **Persons** - Individual person records
+7. **Households** - Household information
+8. **PersonPropertyRelations** - Person-property relationships
+9. **Claims** - Property ownership claims (with sequential numbers)
+10. **Evidences** - Evidence records linked to claims ✅ **FIXED: Plural**
+11. **Documents** - Document attachments ✅ **FIXED: Plural**
+12. **Referrals** - Referral records ✅ **FIXED: Plural**
+13. **\_\_EFMigrationsHistory** - EF Core migrations tracking
 
-### **Users Table Highlights:**
+### **Schema Improvements (v0.10.0):**
 
-- 43 columns including authentication, profile, audit fields
-- 7 performance indexes (Username, Email, Role, etc.)
-- Self-referencing foreign key for supervisor relationships
-- Supports tablet assignment for field collectors
-- Complete audit trail (CreatedBy, CreatedAtUtc, etc.)
+- ✅ All table names now plural for consistency
+- ✅ All boolean columns have SQL DEFAULT values
+- ✅ All indexes properly named with table names
+- ✅ Enums stored as integers (not strings)
+- ✅ Audit trail on all major tables
 
 ---
 
-## 🔐 **Authentication & Security**
+## 🔐 **Authorization & Permissions**
 
-### **JWT Token Structure:**
+### **Permission Structure:**
 
-**Access Token Claims:**
+**Format:** `{Module}.{Action}` (e.g., `Claims.Approve`, `Documents.Verify`)
 
-- User ID (`NameIdentifier`)
-- Username (`Name`)
-- Role (`Role`)
-- Full Name (Arabic) (`full_name_arabic`)
-- Security Stamp (`security_stamp`)
-- Mobile/Desktop Access Flags
-- Email (if provided)
-- Device ID (for audit trail)
-- Standard JWT claims (iss, aud, exp, nbf, iat)
+**Available Permissions:**
 
-**Token Lifetimes:**
+```
+Claims Management:
+  - Claims.View, Claims.Create, Claims.Update
+  - Claims.Submit, Claims.Assign, Claims.Verify
+  - Claims.Approve, Claims.Reject, Claims.Delete
 
-- **Production:**
-  - Access Token: 15 minutes
-  - Refresh Token: 7 days
-- **Development:**
-  - Access Token: 60 minutes
-  - Refresh Token: 30 days
+Documents Management:
+  - Documents.View, Documents.Create, Documents.Update
+  - Documents.Verify, Documents.Delete
 
-### **Test Users (Development Only):**
+Evidence Management:
+  - Evidence.View, Evidence.Create, Evidence.Update
+  - Evidence.Verify, Evidence.Version, Evidence.Delete
 
-| Username    | Password    | Role            | Access Type       |
-| ----------- | ----------- | --------------- | ----------------- |
-| admin       | Admin@123   | Administrator   | Desktop Only      |
-| datamanager | Data@123    | DataManager     | Desktop Only      |
-| clerk       | Clerk@123   | OfficeClerk     | Desktop Only      |
-| collector   | Field@123   | FieldCollector  | Mobile Only       |
-| supervisor  | Super@123   | FieldSupervisor | Desktop Read-Only |
-| analyst     | Analyst@123 | Analyst         | Desktop Read-Only |
+Users Management:
+  - Users.View, Users.Create, Users.Update, Users.Delete
+  - Users.ResetPassword, Users.ManageRoles
 
-**⚠️ Note:** These test users are created via the seed endpoint and should only be used in development environments.
+Reports:
+  - Reports.ViewAll, Reports.Export, Reports.Advanced
+
+System:
+  - System.Configuration, System.AuditLogs, System.Maintenance
+```
+
+### **Role-Permission Mapping:**
+
+| Role            | Key Permissions                           |
+| --------------- | ----------------------------------------- |
+| Administrator   | All permissions (full system access)      |
+| DataManager     | Create, Update, Verify all entities       |
+| OfficeClerk     | Create, Update Claims/Documents/Evidence  |
+| FieldCollector  | Create Claims/Documents/Evidence (mobile) |
+| FieldSupervisor | View all, limited updates                 |
+| Analyst         | View all, export reports (read-only)      |
+
+### **Authorization Usage:**
+
+Controllers use `[Authorize(Policy = "PermissionPolicy")]` with permission requirements:
+
+```csharp
+// Example: Documents Controller
+[Authorize(Policy = "ViewDocuments")]     // GET endpoints
+[Authorize(Policy = "CreateDocuments")]   // POST endpoints
+[Authorize(Policy = "UpdateDocuments")]   // PUT endpoints
+[Authorize(Policy = "DeleteDocuments")]   // DELETE endpoints
+```
+
+---
+
+## 📊 **Audit Logging**
+
+### **Audit Log Entry Structure:**
+
+```json
+{
+  "id": "uuid",
+  "userId": "user-uuid",
+  "userName": "admin",
+  "action": "Update",
+  "entityName": "Document",
+  "entityId": "entity-uuid",
+  "timestamp": "2026-01-14T12:00:00Z",
+  "ipAddress": "192.168.1.1",
+  "requestPath": "/api/Documents/123",
+  "httpMethod": "PUT",
+  "oldValues": "{\"IsVerified\":false}",
+  "newValues": "{\"IsVerified\":true}",
+  "changes": "IsVerified: false → true"
+}
+```
+
+### **Audit Features:**
+
+- ✅ Automatic tracking on Create/Update/Delete
+- ✅ Captures field-level changes
+- ✅ User context (ID, username)
+- ✅ Request context (IP, path, method)
+- ✅ Queryable by entity, user, date range
+- ✅ Soft delete support
+
+---
+
+## 🔢 **Sequential Claim Numbers**
+
+### **Format:** `CLM-YYYY-NNNNNNNNN`
+
+**Examples:**
+
+- First claim of 2026: `CLM-2026-000000001`
+- Second claim: `CLM-2026-000000002`
+- 100th claim: `CLM-2026-000000100`
+
+### **Implementation:**
+
+- ✅ PostgreSQL sequence: `seq_claim_number`
+- ✅ Automatically assigned on claim creation
+- ✅ Year extracted from current date
+- ✅ 9-digit zero-padded number
+- ✅ Guaranteed unique across system
 
 ---
 
@@ -186,7 +282,7 @@ TRRCMS/
    ```json
    {
      "ConnectionStrings": {
-       "DefaultConnection": "Host=localhost;Database=TRRCMS_Dev;Username=postgres;Password=YOUR_PASSWORD"
+       "DefaultConnection": "Host=localhost;Database=TRRCMS_Dev;Username=postgres;Password=YOUR_PASSWORD;Collation=Arabic_Saudi Arabia.1256"
      }
    }
    ```
@@ -221,7 +317,7 @@ TRRCMS/
 
    ```bash
    cd src/TRRCMS.Infrastructure
-   dotnet ef database update
+   dotnet ef database update --startup-project ../TRRCMS.WebAPI
    ```
 
 5. **Run the Application**
@@ -243,7 +339,7 @@ TRRCMS/
 
    Click "Try it out" → "Execute"
 
-   This creates 6 test users for development.
+   This creates 6 test users with appropriate permissions.
 
 7. **Test Authentication**
 
@@ -256,6 +352,10 @@ TRRCMS/
    - Paste the token (without "Bearer" prefix)
    - Click "Authorize" → "Close"
    - Now you can test protected endpoints!
+
+8. **Test Authorization**
+
+   Try accessing Documents or Evidences endpoints with different user roles to see permission-based access control in action.
 
 ---
 
@@ -271,27 +371,38 @@ TRRCMS/
 | POST   | `/api/Auth/logout`          | Logout (discard tokens) | ✅ Yes        |
 | GET    | `/api/Auth/me`              | Get current user info   | ✅ Yes        |
 
-### **Seed Endpoints (Development Only):**
+### **Documents Endpoints:**
 
-| Method | Endpoint          | Description          | Auth Required |
-| ------ | ----------------- | -------------------- | ------------- |
-| POST   | `/api/Seed/users` | Create test users    | ❌ No         |
-| GET    | `/api/Seed/info`  | Get seed information | ❌ No         |
+| Method | Endpoint              | Description        | Required Permission |
+| ------ | --------------------- | ------------------ | ------------------- |
+| GET    | `/api/Documents`      | List all documents | Documents.View      |
+| GET    | `/api/Documents/{id}` | Get document by ID | Documents.View      |
+| POST   | `/api/Documents`      | Create document    | Documents.Create    |
+| PUT    | `/api/Documents/{id}` | Update document    | Documents.Update    |
+| DELETE | `/api/Documents/{id}` | Delete document    | Documents.Delete    |
 
-### **Claims Management Endpoints:**
+### **Evidences Endpoints:**
 
-| Method | Endpoint                      | Description      | Auth Required |
-| ------ | ----------------------------- | ---------------- | ------------- |
-| POST   | `/api/v1/Claims`              | Create new claim | ✅ Yes        |
-| GET    | `/api/v1/Claims`              | Get all claims   | ✅ Yes        |
-| GET    | `/api/v1/Claims/{id}`         | Get claim by ID  | ✅ Yes        |
-| PUT    | `/api/v1/Claims/{id}/submit`  | Submit claim     | ✅ Yes        |
-| PUT    | `/api/v1/Claims/{id}/assign`  | Assign claim     | ✅ Yes        |
-| PUT    | `/api/v1/Claims/{id}/verify`  | Verify claim     | ✅ Yes        |
-| PUT    | `/api/v1/Claims/{id}/approve` | Approve claim    | ✅ Yes        |
-| PUT    | `/api/v1/Claims/{id}/reject`  | Reject claim     | ✅ Yes        |
+| Method | Endpoint                 | Description        | Required Permission |
+| ------ | ------------------------ | ------------------ | ------------------- |
+| GET    | `/api/v1/Evidences`      | List all evidences | Evidence.View       |
+| GET    | `/api/v1/Evidences/{id}` | Get evidence by ID | Evidence.View       |
+| POST   | `/api/v1/Evidences`      | Create evidence    | Evidence.Create     |
+| PUT    | `/api/v1/Evidences/{id}` | Update evidence    | Evidence.Update     |
+| DELETE | `/api/v1/Evidences/{id}` | Delete evidence    | Evidence.Delete     |
 
-**Note:** Additional endpoints exist for Buildings, PropertyUnits, Persons, Households, etc.
+### **Claims Endpoints:**
+
+| Method | Endpoint                     | Description     | Required Permission |
+| ------ | ---------------------------- | --------------- | ------------------- |
+| POST   | `/api/v1/Claims`             | Create claim    | Claims.Create       |
+| GET    | `/api/v1/Claims`             | List claims     | Claims.View         |
+| GET    | `/api/v1/Claims/{id}`        | Get claim by ID | Claims.View         |
+| PUT    | `/api/v1/Claims/{id}/submit` | Submit claim    | Claims.Submit       |
+| PUT    | `/api/v1/Claims/{id}/assign` | Assign claim    | Claims.Assign       |
+| PUT    | `/api/v1/Claims/{id}/verify` | Verify claim    | Claims.Verify       |
+
+**Note:** Approve/Reject endpoints removed in v0.10.0 as part of workflow simplification.
 
 ---
 
@@ -299,11 +410,14 @@ TRRCMS/
 
 ### **Manual Testing:**
 
-- ✅ All authentication endpoints tested via Swagger
-- ✅ Claims workflow tested (create → submit → assign → verify → approve)
-- ✅ Token refresh tested
-- ✅ Password change tested
-- ✅ Account lockout tested
+- ✅ All authentication endpoints tested
+- ✅ Authorization policies tested (Documents, Evidences)
+- ✅ Permission-based access control verified
+- ✅ Audit logging tested (Create, Update, Delete operations)
+- ✅ Sequential claim numbers tested
+- ✅ Document creation with default values tested
+- ✅ Evidence creation with default values tested
+- ✅ Database schema consistency verified
 
 ### **Automated Tests:**
 
@@ -314,59 +428,49 @@ TRRCMS/
 
 ## 📊 **Project Progress**
 
-### **Completed Tasks (Sprint 1):**
+### **Completed Tasks:**
 
-- ✅ **TRRCMS-BE-01** - Core database schema & migrations (3 days)
-  - 11 tables with complete relationships
-  - Audit trail framework (BaseAuditableEntity)
-  - Migration scripts
-- ✅ **TRRCMS-BE-02** - Authentication & RBAC (5 days) **← Latest Completion**
+- ✅ **TRRCMS-BE-01** - Core database schema & migrations
+- ✅ **TRRCMS-BE-02** - Authentication & RBAC
+- ✅ **TRRCMS-BE-03** - Permission System & Authorization ✅ **NEW**
+- ✅ **TRRCMS-BE-04** - Audit Logging System ✅ **NEW**
+- ✅ **TRRCMS-BE-05** - Sequential Claim Numbers ✅ **NEW**
+- ✅ **TRRCMS-BE-06** - Database Schema Fixes ✅ **NEW**
+- ✅ **Phase 1.5 Step 1** - Workflow Simplification ✅ **NEW**
+- ✅ **Phase 1.5 Step 2** - Documents/Evidences Authorization ✅ **NEW**
 
-  - JWT authentication system
-  - Password hashing & security
-  - 6 user roles with permissions
-  - Account lockout & security features
-  - Device tracking for audit compliance
-  - 5 authentication endpoints
-  - Seed data for testing
+### **Next Tasks (Sprint 3):**
 
-- ✅ **Claims Entity Complete** (v0.8.0)
-  - Complete claims lifecycle workflow
-  - 8 API endpoints tested
-  - Status transitions & validation
-
-### **Next Tasks (Sprint 2):**
-
-- ⏳ **TRRCMS-BE-03** - Evidence storage service (3 days)
-- ⏳ **TRRCMS-BE-04** - API documentation baseline (4 days)
-- ⏳ **TRRCMS-ADM-01** - User & Role management UI (2 days)
-- ⏳ **TRRCMS-ADM-02** - User/role APIs (3 days)
+- ⏳ **Phase 1.5 Steps 3-9** - Remaining workflow steps
+- ⏳ **Phase 2** - State machine implementation
+- ⏳ **TRRCMS-BE-07** - Evidence file storage service
+- ⏳ **TRRCMS-ADM-01** - User management UI
 
 ### **Overall Progress:**
 
-- Backend API: **~85%** complete
-- Database Schema: **~90%** complete
+- Backend API: **~90%** complete ⬆️
+- Database Schema: **~95%** complete ⬆️
 - Authentication: **100%** complete ✅
-- CRUD Operations: **~70%** complete
-- Admin Features: **~20%** complete
+- Authorization: **100%** complete ✅ **NEW**
+- Audit System: **100%** complete ✅ **NEW**
+- CRUD Operations: **~85%** complete ⬆️
 
 ---
 
 ## 🔜 **Roadmap**
 
-### **v0.10.0 - User Management UI (Planned)**
+### **v0.11.0 - State Machine & Workflow (Planned)**
+
+- Complete Phase 1.5 steps 3-9
+- Implement state machine for claims lifecycle
+- Enhanced workflow validation
+
+### **v0.12.0 - User Management UI (Planned)**
 
 - Admin endpoints for user CRUD operations
 - User listing with filters
-- Role assignment
+- Role and permission assignment
 - Account activation/deactivation
-
-### **v0.11.0 - Evidence Storage (Planned)**
-
-- File upload API
-- Evidence metadata management
-- Deduplication
-- Integration with Claims
 
 ### **v1.0.0 - MVP Release (Planned)**
 
@@ -380,20 +484,21 @@ TRRCMS/
 
 ## 📝 **Development Notes**
 
-### **Naming Conventions:**
+### **Key Improvements in v0.10.0:**
 
-- **Entities:** PascalCase (e.g., `PropertyUnit`)
-- **Database Tables:** PascalCase Plural (e.g., `PropertyUnits`)
-- **API Routes:** kebab-case (e.g., `/api/property-units`)
-- **Properties:** PascalCase (C# convention)
+1. **Authorization:** Moved from role-based to permission-based for finer control
+2. **Audit Trail:** Comprehensive logging of all database changes
+3. **Data Integrity:** Fixed default values using PostgreSQL SQL (not EF Core)
+4. **Naming Consistency:** All tables now plural (Documents, Evidences, Referrals)
+5. **Workflow:** Simplified claims workflow for MVP (removed Approve/Reject)
 
-### **Code Standards:**
+### **Database Best Practices:**
 
-- Clean Architecture principles
-- CQRS pattern with MediatR
-- Repository pattern for data access
-- Async/await throughout
-- Comprehensive XML documentation
+- ✅ Always use SQL for setting defaults in PostgreSQL (not `AlterColumn`)
+- ✅ Use plural table names for consistency
+- ✅ Store enums as integers for performance
+- ✅ Include Designer files for all migrations
+- ✅ Test migrations on fresh database before committing
 
 ### **Security Best Practices:**
 
@@ -402,6 +507,7 @@ TRRCMS/
 - Implement HTTPS in production
 - Enable token blacklist for enhanced security (optional)
 - Regular security audits
+- Audit all sensitive operations
 
 ---
 
@@ -415,41 +521,28 @@ TRRCMS/
 
 ---
 
-## 👥 **Team & Roles**
-
-| Role               | Responsibility                                  |
-| ------------------ | ----------------------------------------------- |
-| Project Manager    | Planning, tracking, stakeholder communication   |
-| Tech Lead          | Architecture, technical decisions, code reviews |
-| Backend Developer  | API development, database design                |
-| Frontend Developer | UI/UX implementation (mobile & desktop)         |
-| QA Engineer        | Testing, quality assurance                      |
-| DevOps Engineer    | CI/CD, deployment, monitoring                   |
-
----
-
-## 📄 **License**
-
-Proprietary - UN-Habitat © 2024-2026
-
----
-
-## 🤝 **Contributing**
-
-This is an internal UN-Habitat project. For questions or contributions, please contact the project manager.
-
----
-
-## 📧 **Support**
-
-For technical support or questions:
-
-- Tech Lead: [Contact Info]
-- Project Manager: [Contact Info]
-
----
-
 ## 🎉 **Change Log**
+
+### **v0.10.0 - January 14, 2026** ✅ **LATEST**
+
+**Authorization & Audit System Release**
+
+- ✅ **NEW:** Fine-grained permission system (30+ permissions)
+- ✅ **NEW:** Policy-based authorization infrastructure
+- ✅ **NEW:** Comprehensive audit logging system
+- ✅ **NEW:** UserPermissions table with role inheritance
+- ✅ **NEW:** AuditLogs table with field-level change tracking
+- ✅ **NEW:** Sequential claim number generation (CLM-YYYY-NNNNNNNNN)
+- ✅ **NEW:** Documents controller with authorization policies
+- ✅ **NEW:** Evidences controller with authorization policies
+- ✅ **FIXED:** Table names to plural (Documents, Evidences, Referrals)
+- ✅ **FIXED:** Enum storage (DocumentType: string → int)
+- ✅ **FIXED:** Default values using PostgreSQL SQL
+- ✅ **FIXED:** Index names to match plural tables
+- ✅ **FIXED:** EvidenceConfiguration index names
+- ✅ **REMOVED:** Approve/Reject claim endpoints (workflow simplification)
+- ✅ **UPDATED:** Database migrations with proper SQL defaults
+- ✅ **TESTED:** Document and Evidence creation with default values
 
 ### **v0.9.0 - January 10, 2026**
 
@@ -479,4 +572,31 @@ For technical support or questions:
 
 ---
 
-**Status:** Ready for Sprint 2 Development 🚀
+**Status:** Ready for Phase 2 Development 🚀
+
+---
+
+## 👥 **Team & Roles**
+
+| Role               | Responsibility                                  |
+| ------------------ | ----------------------------------------------- |
+| Project Manager    | Planning, tracking, stakeholder communication   |
+| Tech Lead          | Architecture, technical decisions, code reviews |
+| Backend Developer  | API development, database design                |
+| Frontend Developer | UI/UX implementation (mobile & desktop)         |
+| QA Engineer        | Testing, quality assurance                      |
+| DevOps Engineer    | CI/CD, deployment, monitoring                   |
+
+---
+
+## 📄 **License**
+
+Proprietary - UN-Habitat © 2024-2026
+
+---
+
+## 🤝 **Contributing**
+
+This is an internal UN-Habitat project. For questions or contributions, please contact the project manager.
+
+---

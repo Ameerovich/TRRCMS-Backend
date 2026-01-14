@@ -178,6 +178,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasForeignKey(u => u.SupervisorUserId)
             .OnDelete(DeleteBehavior.Restrict); // Prevent cascading deletes
 
+        // User has many Permissions
+        builder.HasMany(u => u.Permissions)
+            .WithOne(up => up.User)
+            .HasForeignKey(up => up.UserId)
+            .OnDelete(DeleteBehavior.Cascade); // If user deleted, delete their permissions
+
         // ==================== INDEXES FOR PERFORMANCE ====================
 
         // Index on Role for filtering users by role

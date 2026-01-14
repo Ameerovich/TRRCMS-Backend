@@ -75,7 +75,7 @@ namespace TRRCMS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Referral",
+                name: "Referrals",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -116,22 +116,22 @@ namespace TRRCMS.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Referral", x => x.Id);
+                    table.PrimaryKey("PK_Referrals", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Referral_Claims_ClaimId",
+                        name: "FK_Referrals_Claims_ClaimId",
                         column: x => x.ClaimId,
                         principalTable: "Claims",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Referral_Referral_PreviousReferralId",
+                        name: "FK_Referrals_Referral_PreviousReferralId",
                         column: x => x.PreviousReferralId,
-                        principalTable: "Referral",
+                        principalTable: "Referrals",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "Document",
+                name: "Documents",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -173,26 +173,26 @@ namespace TRRCMS.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Document", x => x.Id);
+                    table.PrimaryKey("PK_Documents", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Document_Claims_ClaimId",
+                        name: "FK_Documents_Claims_ClaimId",
                         column: x => x.ClaimId,
                         principalTable: "Claims",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Document_Document_OriginalDocumentId",
+                        name: "FK_Documents_Document_OriginalDocumentId",
                         column: x => x.OriginalDocumentId,
-                        principalTable: "Document",
+                        principalTable: "Documents",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Document_PropertyUnits_PropertyUnitId",
+                        name: "FK_Documents_PropertyUnits_PropertyUnitId",
                         column: x => x.PropertyUnitId,
                         principalTable: "PropertyUnits",
                         principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
-                name: "Evidence",
+                name: "Evidences",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -225,16 +225,16 @@ namespace TRRCMS.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Evidence", x => x.Id);
+                    table.PrimaryKey("PK_Evidences", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Evidence_Claims_ClaimId",
+                        name: "FK_Evidences_Claims_ClaimId",
                         column: x => x.ClaimId,
                         principalTable: "Claims",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Evidence_Evidence_PreviousVersionId",
+                        name: "FK_Evidences_Evidence_PreviousVersionId",
                         column: x => x.PreviousVersionId,
-                        principalTable: "Evidence",
+                        principalTable: "Evidences",
                         principalColumn: "Id");
                 });
 
@@ -380,53 +380,53 @@ namespace TRRCMS.Infrastructure.Migrations
                 column: "PropertyUnitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Document_ClaimId",
-                table: "Document",
+                name: "IX_Documents_ClaimId",
+                table: "Documents",
                 column: "ClaimId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Document_EvidenceId",
-                table: "Document",
+                name: "IX_Documents_EvidenceId",
+                table: "Documents",
                 column: "EvidenceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Document_OriginalDocumentId",
-                table: "Document",
+                name: "IX_Documents_OriginalDocumentId",
+                table: "Documents",
                 column: "OriginalDocumentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Document_PersonId",
-                table: "Document",
+                name: "IX_Documents_PersonId",
+                table: "Documents",
                 column: "PersonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Document_PersonPropertyRelationId",
-                table: "Document",
+                name: "IX_Documents_PersonPropertyRelationId",
+                table: "Documents",
                 column: "PersonPropertyRelationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Document_PropertyUnitId",
-                table: "Document",
+                name: "IX_Documents_PropertyUnitId",
+                table: "Documents",
                 column: "PropertyUnitId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Evidence_ClaimId",
-                table: "Evidence",
+                name: "IX_Evidences_ClaimId",
+                table: "Evidences",
                 column: "ClaimId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Evidence_PersonId",
-                table: "Evidence",
+                name: "IX_Evidences_PersonId",
+                table: "Evidences",
                 column: "PersonId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Evidence_PersonPropertyRelationId",
-                table: "Evidence",
+                name: "IX_Evidences_PersonPropertyRelationId",
+                table: "Evidences",
                 column: "PersonPropertyRelationId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Evidence_PreviousVersionId",
-                table: "Evidence",
+                name: "IX_Evidences_PreviousVersionId",
+                table: "Evidences",
                 column: "PreviousVersionId");
 
             migrationBuilder.CreateIndex(
@@ -495,13 +495,13 @@ namespace TRRCMS.Infrastructure.Migrations
                 column: "PrimaryPhoneNumber");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Referral_ClaimId",
-                table: "Referral",
+                name: "IX_Referrals_ClaimId",
+                table: "Referrals",
                 column: "ClaimId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Referral_PreviousReferralId",
-                table: "Referral",
+                name: "IX_Referrals_PreviousReferralId",
+                table: "Referrals",
                 column: "PreviousReferralId");
 
             migrationBuilder.AddForeignKey(
@@ -512,37 +512,37 @@ namespace TRRCMS.Infrastructure.Migrations
                 principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Document_Evidence_EvidenceId",
-                table: "Document",
+                name: "FK_Documents_Evidence_EvidenceId",
+                table: "Documents",
                 column: "EvidenceId",
-                principalTable: "Evidence",
+                principalTable: "Evidences",
                 principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Document_PersonPropertyRelations_PersonPropertyRelationId",
-                table: "Document",
+                name: "FK_Documents_PersonPropertyRelations_PersonPropertyRelationId",
+                table: "Documents",
                 column: "PersonPropertyRelationId",
                 principalTable: "PersonPropertyRelations",
                 principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Document_Persons_PersonId",
-                table: "Document",
+                name: "FK_Documents_Persons_PersonId",
+                table: "Documents",
                 column: "PersonId",
                 principalTable: "Persons",
                 principalColumn: "Id");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Evidence_PersonPropertyRelations_PersonPropertyRelationId",
-                table: "Evidence",
+                name: "FK_Evidences_PersonPropertyRelations_PersonPropertyRelationId",
+                table: "Evidences",
                 column: "PersonPropertyRelationId",
                 principalTable: "PersonPropertyRelations",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Evidence_Persons_PersonId",
-                table: "Evidence",
+                name: "FK_Evidences_Persons_PersonId",
+                table: "Evidences",
                 column: "PersonId",
                 principalTable: "Persons",
                 principalColumn: "Id",
@@ -565,13 +565,13 @@ namespace TRRCMS.Infrastructure.Migrations
                 table: "Households");
 
             migrationBuilder.DropTable(
-                name: "Document");
+                name: "Documents");
 
             migrationBuilder.DropTable(
-                name: "Referral");
+                name: "Referrals");
 
             migrationBuilder.DropTable(
-                name: "Evidence");
+                name: "Evidences");
 
             migrationBuilder.DropTable(
                 name: "Claims");

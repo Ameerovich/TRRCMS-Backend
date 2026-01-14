@@ -22,7 +22,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 
         builder.Property(d => d.DocumentType)
             .IsRequired()
-            .HasConversion<string>()
+            .HasConversion<int>()
             .HasMaxLength(100)
             .HasComment("Document type from controlled vocabulary (e.g., TabuGreen, RentalContract, NationalIdCard)");
 
@@ -65,7 +65,7 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
 
         builder.Property(d => d.VerificationStatus)
             .IsRequired()
-            .HasConversion<string>()
+            .HasConversion<int>()
             .HasMaxLength(50)
             .HasDefaultValue(VerificationStatus.Pending)
             .HasComment("Verification status (Pending, Verified, Rejected, RequiresAdditionalInfo)");

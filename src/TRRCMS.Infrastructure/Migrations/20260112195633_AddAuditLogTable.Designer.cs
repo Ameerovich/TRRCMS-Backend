@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TRRCMS.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260112195633_AddAuditLogTable")]
+    partial class AddAuditLogTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -674,9 +677,10 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(500)")
                         .HasComment("Document title or description in Arabic");
 
-                    b.Property<int>("DocumentType")
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("integer")
+                        .HasColumnType("character varying(100)")
                         .HasComment("Document type from controlled vocabulary (e.g., TabuGreen, RentalContract, NationalIdCard)");
 
                     b.Property<Guid?>("EvidenceId")
@@ -791,11 +795,12 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasComment("Verification notes or comments");
 
-                    b.Property<int>("VerificationStatus")
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("integer")
-                        .HasDefaultValue(1)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Pending")
                         .HasComment("Verification status (Pending, Verified, Rejected, RequiresAdditionalInfo)");
 
                     b.Property<Guid?>("VerifiedByUserId")
