@@ -569,4 +569,40 @@ public class Claim : BaseAuditableEntity
             && !DecisionDate.HasValue
             && DateTime.UtcNow > TargetCompletionDate.Value;
     }
+    /// <summary>
+    /// Update primary claimant
+    /// UC-006: Update Existing Claim
+    /// </summary>
+    public void UpdatePrimaryClaimant(Guid primaryClaimantId, Guid modifiedByUserId)
+    {
+        PrimaryClaimantId = primaryClaimantId;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update claim classification (type and priority)
+    /// UC-006: Update Existing Claim
+    /// </summary>
+    public void UpdateClassification(string claimType, CasePriority priority, Guid modifiedByUserId)
+    {
+        ClaimType = claimType;
+        Priority = priority;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update tenure contract details (simplified version for UpdateClaim)
+    /// UC-006: Update Existing Claim
+    /// </summary>
+    public void UpdateTenureContract(TenureContractType tenureContractType, string? contractDetails, Guid modifiedByUserId)
+    {
+        TenureContractType = tenureContractType;
+        // Store contract details in ClaimDescription or add a new field if needed
+        if (!string.IsNullOrWhiteSpace(contractDetails))
+        {
+            ClaimDescription = contractDetails;
+        }
+        MarkAsModified(modifiedByUserId);
+    }
+
 }

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Claims.Commands.AssignClaim;
 using TRRCMS.Application.Claims.Commands.CreateClaim;
 using TRRCMS.Application.Claims.Commands.SubmitClaim;
+using TRRCMS.Application.Claims.Commands.UpdateClaim;
 using TRRCMS.Application.Claims.Commands.VerifyClaim;
 using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Claims.Queries.GetAllClaims;
@@ -129,6 +130,35 @@ public class ClaimsController : ControllerBase
 
         var claims = await _mediator.Send(query);
         return Ok(claims);
+    }
+
+    /// <summary>
+    /// Update existing claim
+    /// UC-006: Update Existing Claim
+    /// Requires: Data Manager or Administrator role
+    /// </summary>
+    /// <param name="id">Claim ID</param>
+    /// <param name="command">Update details with reason for modification</param>
+    /// <returns>Updated claim with audit trail</returns>
+    /// <response code="200">Claim updated successfully</response>
+    /// <response code="400">Invalid request or validation failed</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_Update)</response>
+    /// <response code="404">Claim not found</response>
+    [HttpPut("{id}")]
+    [Authorize(Policy = "CanEditClaims")]
+    [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClaimDto>> UpdateClaim(
+        Guid id,
+        [FromBody] UpdateClaimCommand command)
+    {
+        command.ClaimId = id;
+        var claim = await _mediator.Send(command);
+        return Ok(claim);
     }
 
     // ==================== WORKFLOW OPERATIONS ====================
