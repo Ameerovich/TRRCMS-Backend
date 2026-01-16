@@ -23,7 +23,14 @@ public record CreateBuildingCommand : IRequest<Guid>
     // Building Type
     public BuildingType BuildingType { get; init; }
 
-    // Optional fields
+    // Optional Location
     public decimal? Latitude { get; init; }
     public decimal? Longitude { get; init; }
+
+    // Optional Details (NEW!)
+    public int? NumberOfFloors { get; init; }
+    public int? YearOfConstruction { get; init; }
+    public string? Address { get; init; }
+    public string? Landmark { get; init; }
+    public string? Notes { get; init; }
 }

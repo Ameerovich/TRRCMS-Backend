@@ -27,10 +27,18 @@ public class BuildingDto
     public int NumberOfPropertyUnits { get; set; }
     public int NumberOfApartments { get; set; }
     public int NumberOfShops { get; set; }
+    public int? NumberOfFloors { get; set; }
+    public int? YearOfConstruction { get; set; }
 
     // Location
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
+    public string? BuildingGeometryWkt { get; set; }
+
+    // Additional Information - ADDED THESE!
+    public string? Address { get; set; }
+    public string? Landmark { get; set; }
+    public string? Notes { get; set; }
 
     // Audit
     public DateTime CreatedAtUtc { get; set; }

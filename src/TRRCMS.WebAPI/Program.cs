@@ -1,9 +1,12 @@
-using System.Text;
+Ôªøusing FluentValidation;
+using TRRCMS.Application.Common.Behaviors;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Text;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Mappings;
 using TRRCMS.Domain.Entities;
@@ -60,11 +63,21 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IClaimNumberGenerator, ClaimNumberGenerator>();
 
 // ============== MEDIATOR ==============
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(TRRCMS.Application.Buildings.Commands.CreateBuilding.CreateBuildingCommand).Assembly));
 
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(typeof(TRRCMS.Application.Buildings.Commands.CreateBuilding.CreateBuildingCommand).Assembly);
+    // Validation behavior will be added separately via IPipelineBehavior
+});
 // ============== AUTOMAPPER ==============
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+// ============== FLUENT VALIDATION ==============
+// Register all validators from Application assembly
+builder.Services.AddValidatorsFromAssembly(
+    typeof(TRRCMS.Application.Buildings.Commands.CreateBuilding.CreateBuildingCommand).Assembly);
+
+// Add validation pipeline behavior to MediatR
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TRRCMS.Application.Common.Behaviors.ValidationBehavior<,>));
 
 // ============== JWT AUTHENTICATION ==============
 var jwtSecret = builder.Configuration["JwtSettings:Secret"]
@@ -408,7 +421,7 @@ static async Task SeedUsersIfNeeded(
         // FIXED: Correct parameter order matching User.Create() signature
         var admin = User.Create(
             username: "admin",
-            fullNameArabic: "«·„”ƒÊ· «·—∆Ì”Ì",
+            fullNameArabic: "√á√°√£√ì√Ñ√¶√° √á√°√ë√Ü√≠√ì√≠",
             passwordHash: passwordHash,
             passwordSalt: salt,  // Salt passed directly as parameter
             role: UserRole.Administrator,
@@ -421,7 +434,7 @@ static async Task SeedUsersIfNeeded(
 
         // Set English name using UpdateProfile (since Create doesn't accept it)
         admin.UpdateProfile(
-            fullNameArabic: "«·„”ƒÊ· «·—∆Ì”Ì",
+            fullNameArabic: "√á√°√£√ì√Ñ√¶√° √á√°√ë√Ü√≠√ì√≠",
             fullNameEnglish: "System Administrator",
             email: "admin@trrcms.local",
             phoneNumber: null,
@@ -449,7 +462,7 @@ static async Task SeedUsersIfNeeded(
         // FIXED: Correct parameter order matching User.Create() signature
         var analyst = User.Create(
             username: "analyst",
-            fullNameArabic: "«·„Õ·· «·‰Ÿ«„",
+            fullNameArabic: "√á√°√£√ç√°√° √á√°√§√ô√á√£",
             passwordHash: passwordHash,
             passwordSalt: salt,  // Salt passed directly as parameter
             role: UserRole.Analyst,
@@ -462,7 +475,7 @@ static async Task SeedUsersIfNeeded(
 
         // Set English name using UpdateProfile
         analyst.UpdateProfile(
-            fullNameArabic: "«·„Õ·· «·‰Ÿ«„",
+            fullNameArabic: "√á√°√£√ç√°√° √á√°√§√ô√á√£",
             fullNameEnglish: "System Analyst",
             email: "analyst@trrcms.local",
             phoneNumber: null,
