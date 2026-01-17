@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL Database Service
+  # ============================================
+  db:
+    image: postgres:16-alpine
+    container_name: trrcms-db
+    restart: unless-stopped
+    
+    environment:
+      POSTGRES_DB: TRRCMS_Dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: trrcms_dev_password_2024
+      PGDATA: /var/lib/postgresql/data/pgdata
+    
+    ports:
+      - "5432:5432"
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    networks:
+      - trrcms-network
+
+  # ============================================
+  # TRRCMS API Service
+  # ============================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: trrcms-api
+    restart: unless-stopped
+    
+    depends_on:
+      db:
+        condition: service_healthy
+    
+    environment:
+      # ASP.NET Core Configuration
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      
+      # Database Connection (using docker service name 'db')
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=TRRCMS_Dev;Username=postgres;Password=trrcms_dev_password_2024"
+      
+      # JWT Settings
+      JwtSettings__Secret: "docker-dev-jwt-secret-key-minimum-32-characters-long-change-in-production"
+      JwtSettings__Issuer: "TRRCMS.API"
+      JwtSettings__Audience: "TRRCMS.Clients"
+      JwtSettings__AccessTokenExpirationMinutes: "60"
+      JwtSettings__RefreshTokenExpirationDays: "30"
+    
+    ports:
+      - "8080:8080"
+    
+    networks:
+      - trrcms-network
+    
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# ============================================
+# Named Volumes
+# ============================================
+volumes:
+  postgres_data:
+    driver: local
+    name: trrcms-postgres-data
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  trrcms-network:
+    driver: bridge
+    name: trrcms-network

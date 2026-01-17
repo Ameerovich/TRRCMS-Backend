@@ -1,0 +1,84 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+.idea/
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Rider
+.idea/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+**/Dockerfile*
+**/docker-compose*
+**/.dockerignore
+
+# Documentation
+*.md
+docs/
+README.md
+SETUP_GUIDE.md
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets (NEVER include in image)
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/*.pfx
+**/*.p12
+**/.env
+**/.env.*
+**/secrets.json
+
+# Keep appsettings.json (we'll override at runtime)
+!**/appsettings.json

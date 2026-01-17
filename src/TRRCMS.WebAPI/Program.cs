@@ -343,6 +343,12 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        connectionString: builder.Configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Database connection string not configured"),
+        name: "postgresql",
+        tags: new[] { "db", "sql", "postgresql" });
 
 var app = builder.Build();
 
@@ -356,6 +362,12 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
+
+        // Apply pending migrations
+        logger.LogInformation("Checking for pending database migrations...");
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully");
+
         var userRepository = services.GetRequiredService<IUserRepository>();
         var passwordHasher = services.GetRequiredService<IPasswordHasher>();
 
@@ -394,6 +406,9 @@ app.UseAuthentication();
 
 // 2. Authorization comes second (checks what the user can do)
 app.UseAuthorization();
+
+// ============== HEALTH CHECK ENDPOINT ==============
+app.MapHealthChecks("/health");
 
 // 3. Map controllers last
 app.MapControllers();
