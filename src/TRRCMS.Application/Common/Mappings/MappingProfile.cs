@@ -7,7 +7,7 @@ using TRRCMS.Domain.Entities;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Documents.Dtos;
-using TRRCMS.Application.Auth.Dtos;
+using TRRCMS.Application.Users.Dtos;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -28,7 +28,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null))
             .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? src.OccupancyType.ToString() : null))
             .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? src.OccupancyNature.ToString() : null));
-      
+
         // Person mappings
         CreateMap<Person, PersonDto>();
 
@@ -45,6 +45,7 @@ public class MappingProfile : Profile
                     : (int?)null))
             .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src =>
                 src.StartDate.HasValue && !src.EndDate.HasValue));
+
         // Evidence mappings
         CreateMap<Evidence, EvidenceDto>()
             .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()));
@@ -55,7 +56,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => src.VerificationStatus.ToString()))
             .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()))
             .ForMember(dest => dest.IsExpiringSoon, opt => opt.MapFrom(src => src.IsExpiringSoon()));
-       
+
         // Claim mappings
         CreateMap<Claim, TRRCMS.Application.Claims.Dtos.ClaimDto>()
             .ForMember(dest => dest.IsOverdue, opt => opt.MapFrom(src => src.IsOverdue()))
@@ -81,11 +82,38 @@ public class MappingProfile : Profile
                 src.PrimaryClaimant != null ? $"{src.PrimaryClaimant.FirstNameArabic} {src.PrimaryClaimant.FatherNameArabic} {src.PrimaryClaimant.FamilyNameArabic}" : null))
             .ForMember(dest => dest.AssignedToUserName, opt => opt.Ignore()); // Will be populated from user service later
 
-        // User mappings
+        // User mappings - Base DTO
         CreateMap<User, UserDto>()
             .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()))
             .ForMember(dest => dest.SupervisorName, opt => opt.MapFrom(src =>
                 src.Supervisor != null ? src.Supervisor.FullNameArabic : null));
+
+        // User mappings - List DTO (lightweight for GetAllUsers)
+        CreateMap<User, UserListDto>()
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()));
+
+        // User mappings - Detail DTO (includes permissions for GetUser)
+        CreateMap<User, UserDetailDto>()
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()))
+            .ForMember(dest => dest.SupervisorName, opt => opt.MapFrom(src =>
+                src.Supervisor != null ? src.Supervisor.FullNameArabic : null))
+            .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src =>
+                src.Permissions.Where(p => p.IsActive).Select(p => p.Permission.ToString()).ToList()))
+            .ForMember(dest => dest.ActivePermissionsCount, opt => opt.MapFrom(src =>
+                src.Permissions.Count(p => p.IsActive)));
+        // AuditLog mappings (for GetUserAuditLog)
+        CreateMap<AuditLog, AuditLogDto>()
+            .ForMember(dest => dest.Action, opt => opt.MapFrom(src => src.ActionType.ToString()))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Username))
+            .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.ActionDescription))
+            .ForMember(dest => dest.Changes, opt => opt.MapFrom(src =>
+                !string.IsNullOrWhiteSpace(src.ChangedFields)
+                    ? $"Changed Fields: {src.ChangedFields}"
+                    : (!string.IsNullOrWhiteSpace(src.OldValues) || !string.IsNullOrWhiteSpace(src.NewValues))
+                        ? $"{(string.IsNullOrWhiteSpace(src.OldValues) ? "null" : "old")} => {(string.IsNullOrWhiteSpace(src.NewValues) ? "null" : "new")}"
+                        : src.ActionDescription
+            ));
+
     }
 
 }

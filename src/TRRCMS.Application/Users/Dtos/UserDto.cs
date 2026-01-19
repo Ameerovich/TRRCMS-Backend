@@ -1,9 +1,10 @@
 ﻿using TRRCMS.Domain.Enums;
 
-namespace TRRCMS.Application.Auth.Dtos;
+namespace TRRCMS.Application.Users.Dtos;
 
 /// <summary>
-/// Data transfer object for User entity
+/// Base data transfer object for User entity
+/// Used for create/update operations and basic user info
 /// </summary>
 public class UserDto
 {
@@ -23,6 +24,7 @@ public class UserDto
     public bool IsActive { get; set; }
     public bool IsLockedOut { get; set; }
     public DateTime? LockoutEndDate { get; set; }
+    public int FailedLoginAttempts { get; set; } 
     public DateTime? LastLoginDate { get; set; }
     public DateTime? LastPasswordChangeDate { get; set; }
     public bool MustChangePassword { get; set; }

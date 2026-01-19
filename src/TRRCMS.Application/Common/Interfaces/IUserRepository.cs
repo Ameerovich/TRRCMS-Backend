@@ -31,4 +31,9 @@ public interface IUserRepository
     // ==================== TABLET ASSIGNMENT QUERIES ====================
     Task<User?> GetByTabletIdAsync(string tabletId, CancellationToken cancellationToken = default);
     Task<List<User>> GetFieldCollectorsAsync(bool activeOnly = true, CancellationToken cancellationToken = default);
+    // ==================== PERMISSION MANAGEMENT ====================
+    Task<UserPermission?> GetUserPermissionAsync(Guid userId, Permission permission, CancellationToken cancellationToken = default);
+    Task AddUserPermissionAsync(UserPermission userPermission, CancellationToken cancellationToken = default);
+    Task UpdateUserPermissionAsync(UserPermission userPermission, CancellationToken cancellationToken = default);
+
 }

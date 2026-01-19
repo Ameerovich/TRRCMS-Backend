@@ -279,5 +279,17 @@ public enum AuditActionType
     /// </summary>
     Upload = 97,
 
+    /// <summary>
+    /// Grand Permision(s) to a user (منح تصريح)
+    /// </summary>
+    PermissionGrant = 98,
+
+    /// <summary>
+    /// Revoke Permision from a user (سحب تصريح)
+    /// </summary>
+
+    PermissionRevoke = 99,
+
+
     Other = 999,
 }

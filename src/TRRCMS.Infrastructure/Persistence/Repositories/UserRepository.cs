@@ -21,6 +21,7 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .Include(u => u.Supervisor)
             .Include(u => u.Supervisees)
+            .Include(u => u.Permissions) // IMPORTANT: load user permissions
             .FirstOrDefaultAsync(u => u.Id == id && !u.IsDeleted, cancellationToken);
     }
 
@@ -40,7 +41,16 @@ public class UserRepository : IUserRepository
 
     public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
-        _context.Users.Update(user);
+        // IMPORTANT:
+        // Do NOT call _context.Users.Update(user).
+        // That forces a full update and can trigger concurrency exceptions.
+        // If user was loaded via this DbContext (normal case), EF is already tracking changes.
+        // If it's detached, attach without marking Modified.
+        if (_context.Entry(user).State == EntityState.Detached)
+        {
+            _context.Users.Attach(user);
+        }
+
         await Task.CompletedTask;
     }
 
@@ -153,5 +163,25 @@ public class UserRepository : IUserRepository
         return await query
             .OrderBy(u => u.FullNameArabic)
             .ToListAsync(cancellationToken);
+    }
+
+    // ==================== PERMISSION MANAGEMENT ====================
+
+    public async Task<UserPermission?> GetUserPermissionAsync(Guid userId, Permission permission, CancellationToken cancellationToken = default)
+    {
+        // Use DbSet directly (don't rely on user aggregate load)
+        return await _context.Set<UserPermission>()
+            .FirstOrDefaultAsync(up => up.UserId == userId && up.Permission == permission, cancellationToken);
+    }
+
+    public async Task AddUserPermissionAsync(UserPermission userPermission, CancellationToken cancellationToken = default)
+    {
+        await _context.Set<UserPermission>().AddAsync(userPermission, cancellationToken);
+    }
+
+    public async Task UpdateUserPermissionAsync(UserPermission userPermission, CancellationToken cancellationToken = default)
+    {
+        _context.Set<UserPermission>().Update(userPermission);
+        await Task.CompletedTask;
     }
 }

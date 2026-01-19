@@ -8,13 +8,13 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Common.Mappings;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 using TRRCMS.Infrastructure.Authorization;
 using TRRCMS.Infrastructure.Persistence;
 using TRRCMS.Infrastructure.Persistence.Repositories;
-using TRRCMS.Infrastructure.Persistence.SeedData;
 using TRRCMS.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,26 +58,27 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 
 // ============== CLAIM NUMBER GENERATOR ==============
 // Sequential claim number generation using PostgreSQL sequence
-// Format: CLM-YYYY-NNNNNNNNN (e.g., CLM-2026-000000001)
+// Format: CLM-YYYY-NNNNNNNNN (e.g. CLM-2026-000000001)
 // Thread-safe, no collisions, survives app restarts
 builder.Services.AddScoped<IClaimNumberGenerator, ClaimNumberGenerator>();
 
 // ============== MEDIATOR ==============
-
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssembly(typeof(TRRCMS.Application.Buildings.Commands.CreateBuilding.CreateBuildingCommand).Assembly);
     // Validation behavior will be added separately via IPipelineBehavior
 });
+
 // ============== AUTOMAPPER ==============
 builder.Services.AddAutoMapper(typeof(MappingProfile));
+
 // ============== FLUENT VALIDATION ==============
 // Register all validators from Application assembly
 builder.Services.AddValidatorsFromAssembly(
     typeof(TRRCMS.Application.Buildings.Commands.CreateBuilding.CreateBuildingCommand).Assembly);
 
 // Add validation pipeline behavior to MediatR
-builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TRRCMS.Application.Common.Behaviors.ValidationBehavior<,>));
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 // ============== JWT AUTHENTICATION ==============
 var jwtSecret = builder.Configuration["JwtSettings:Secret"]
@@ -134,9 +135,6 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanAssignClaims", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Claims_Assign)));
 
-    options.AddPolicy("CanReassignClaims", policy =>
-        policy.Requirements.Add(new PermissionRequirement(Permission.Claims_Reassign)));
-
     options.AddPolicy("CanVerifyClaims", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Claims_Verify)));
 
@@ -157,7 +155,7 @@ builder.Services.AddAuthorization(options =>
 
     // ==================== EVIDENCE POLICIES ====================
 
-    options.AddPolicy("CanViewAllEvidence", policy =>
+    options.AddPolicy("CanViewEvidence", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Evidence_View)));
 
     options.AddPolicy("CanUploadEvidence", policy =>
@@ -169,13 +167,10 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanDeleteEvidence", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Evidence_Delete)));
 
-    // ==================== DOCUMENTS POLICIES ====================
+    // ==================== DOCUMENT POLICIES ====================
 
-    options.AddPolicy("CanViewAllDocuments", policy =>
+    options.AddPolicy("CanViewSensitiveDocuments", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Documents_ViewSensitive)));
-
-    options.AddPolicy("CanCreateDocuments", policy =>
-        policy.Requirements.Add(new PermissionRequirement(Permission.Documents_Upload)));
 
     options.AddPolicy("CanDownloadDocuments", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Documents_Download)));
@@ -183,7 +178,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanDeleteDocuments", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Documents_Delete)));
 
-    // ==================== BUILDINGS POLICIES ====================
+    // ==================== BUILDING POLICIES ====================
 
     options.AddPolicy("CanViewAllBuildings", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Buildings_View)));
@@ -200,9 +195,9 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanDeleteBuildings", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Buildings_Delete)));
 
-    // ==================== PERSONS POLICIES ====================
+    // ==================== PERSON POLICIES ====================
 
-    options.AddPolicy("CanViewAllPersons", policy =>
+    options.AddPolicy("CanViewPersons", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Persons_View)));
 
     options.AddPolicy("CanCreatePersons", policy =>
@@ -217,30 +212,30 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanDeletePersons", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Persons_Delete)));
 
-    // ==================== PROPERTY UNITS POLICIES ====================
+    // ==================== PROPERTY UNIT POLICIES ====================
 
-    options.AddPolicy("CanViewAllProperties", policy =>
+    options.AddPolicy("CanViewPropertyUnits", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.PropertyUnits_View)));
 
-    options.AddPolicy("CanCreateProperties", policy =>
+    options.AddPolicy("CanCreatePropertyUnits", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.PropertyUnits_Create)));
 
-    options.AddPolicy("CanEditProperties", policy =>
+    options.AddPolicy("CanEditPropertyUnits", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.PropertyUnits_Update)));
 
-    options.AddPolicy("CanMergeProperties", policy =>
+    options.AddPolicy("CanMergePropertyUnits", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.PropertyUnits_Merge)));
 
-    options.AddPolicy("CanDeleteProperties", policy =>
+    options.AddPolicy("CanDeletePropertyUnits", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.PropertyUnits_Delete)));
 
-    // ==================== SURVEYS POLICIES ====================
-
-    options.AddPolicy("CanViewAllSurveys", policy =>
-        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_View)));
+    // ==================== SURVEY POLICIES ====================
 
     options.AddPolicy("CanCreateSurveys", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Create)));
+
+    options.AddPolicy("CanViewSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_View)));
 
     options.AddPolicy("CanExportSurveys", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Export)));
@@ -259,7 +254,13 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanDeactivateUsers", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Users_Deactivate)));
 
+    // Existing role/permission management policy name
     options.AddPolicy("CanManageRoles", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Roles_Manage)));
+
+    // ✅ ADDED: Alias policy used by UsersController for granting/revoking permissions
+    // Keeps backward compatibility (some code may still use "CanManageRoles")
+    options.AddPolicy("CanManageUserRoles", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Roles_Manage)));
 
     // ==================== VOCABULARY POLICIES ====================
@@ -314,7 +315,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer' [space] and then your valid JWT token.\n\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\""
+        Description = "Enter 'Bearer' [space] and then your valid JWT token.\n\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\""
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -343,6 +344,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+
+// ============== HEALTH CHECKS ==============
 builder.Services.AddHealthChecks()
     .AddNpgSql(
         connectionString: builder.Configuration.GetConnectionString("DefaultConnection")
@@ -364,14 +367,14 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<ApplicationDbContext>();
 
         // Apply pending migrations
-        logger.LogInformation("Checking for pending database migrations...");
+        logger.LogInformation("Checking for pending database migrations.");
         await context.Database.MigrateAsync();
         logger.LogInformation("Database migrations applied successfully");
 
         var userRepository = services.GetRequiredService<IUserRepository>();
         var passwordHasher = services.GetRequiredService<IPasswordHasher>();
 
-        logger.LogInformation("Starting user permission synchronization...");
+        logger.LogInformation("Starting user permission synchronization.");
 
         // Ensure database is created
         await context.Database.MigrateAsync();
@@ -427,13 +430,13 @@ static async Task SeedUsersIfNeeded(
     var adminExists = await userRepository.GetByUsernameAsync("admin");
     if (adminExists == null)
     {
-        logger.LogInformation("Creating admin user...");
+        logger.LogInformation("Creating admin user.");
 
         // Hash password with salt
         string salt;
         string passwordHash = passwordHasher.HashPassword("Admin@123", out salt);
 
-        // FIXED: Correct parameter order matching User.Create() signature
+        // Correct parameter order matching User.Create() signature
         var admin = User.Create(
             username: "admin",
             fullNameArabic: "ÇáãÓÄæá ÇáÑÆíÓí",
@@ -468,18 +471,17 @@ static async Task SeedUsersIfNeeded(
     var analystExists = await userRepository.GetByUsernameAsync("analyst");
     if (analystExists == null)
     {
-        logger.LogInformation("Creating analyst user...");
+        logger.LogInformation("Creating analyst user.");
 
         // Hash password with salt
         string salt;
         string passwordHash = passwordHasher.HashPassword("Analyst@123", out salt);
 
-        // FIXED: Correct parameter order matching User.Create() signature
         var analyst = User.Create(
             username: "analyst",
             fullNameArabic: "ÇáãÍáá ÇáäÙÇã",
             passwordHash: passwordHash,
-            passwordSalt: salt,  // Salt passed directly as parameter
+            passwordSalt: salt,
             role: UserRole.Analyst,
             hasMobileAccess: false,
             hasDesktopAccess: true,
@@ -488,7 +490,6 @@ static async Task SeedUsersIfNeeded(
             createdByUserId: Guid.Empty
         );
 
-        // Set English name using UpdateProfile
         analyst.UpdateProfile(
             fullNameArabic: "ÇáãÍáá ÇáäÙÇã",
             fullNameEnglish: "System Analyst",
