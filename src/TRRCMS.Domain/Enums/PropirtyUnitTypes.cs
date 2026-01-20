@@ -28,5 +28,5 @@ public enum PropertyUnitType
     /// <summary>
     /// Other type
     /// </summary>
-    Other = 5
+    Other = 5,
 }

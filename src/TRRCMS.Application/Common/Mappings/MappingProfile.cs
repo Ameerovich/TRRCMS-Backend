@@ -8,6 +8,7 @@ using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Documents.Dtos;
 using TRRCMS.Application.Users.Dtos;
+using TRRCMS.Application.Surveys.Dtos;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -21,14 +22,14 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null));
 
-        // PropertyUnit mappings
+        // PropertyUnit mapping
         CreateMap<PropertyUnit, PropertyUnitDto>()
             .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.UnitType.ToString()))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null))
             .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? src.OccupancyType.ToString() : null))
-            .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? src.OccupancyNature.ToString() : null));
-
+            .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? src.OccupancyNature.ToString() : null))
+            .ForMember(dest => dest.BuildingNumber, opt => opt.Ignore()); // Set manually in handlers
         // Person mappings
         CreateMap<Person, PersonDto>();
 
@@ -113,6 +114,17 @@ public class MappingProfile : Profile
                         ? $"{(string.IsNullOrWhiteSpace(src.OldValues) ? "null" : "old")} => {(string.IsNullOrWhiteSpace(src.NewValues) ? "null" : "new")}"
                         : src.ActionDescription
             ));
+        // Survey mappings
+        CreateMap<Survey, SurveyDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.BuildingNumber, opt => opt.MapFrom(src =>
+                src.Building != null ? src.Building.BuildingNumber : null))
+            .ForMember(dest => dest.BuildingAddress, opt => opt.MapFrom(src =>
+                src.Building != null ? src.Building.Address : null))
+            .ForMember(dest => dest.UnitIdentifier, opt => opt.MapFrom(src =>
+                src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
+            .ForMember(dest => dest.FieldCollectorName, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedByName, opt => opt.Ignore());
 
     }
 

@@ -23,11 +23,17 @@ public class PropertyUnitRepository : IPropertyUnitRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<PropertyUnit?> GetByBuildingAndIdentifierAsync(Guid buildingId, string unitIdentifier, CancellationToken cancellationToken = default)
+    public async Task<PropertyUnit?> GetByBuildingAndIdentifierAsync(
+     Guid buildingId,
+     string unitIdentifier,
+     CancellationToken cancellationToken = default)
     {
         return await _context.PropertyUnits
-            .Where(p => !p.IsDeleted && p.BuildingId == buildingId && p.UnitIdentifier == unitIdentifier)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(
+                pu => pu.BuildingId == buildingId
+                && pu.UnitIdentifier == unitIdentifier
+                && !pu.IsDeleted,
+                cancellationToken);
     }
 
     public async Task<List<PropertyUnit>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -53,11 +59,6 @@ public class PropertyUnitRepository : IPropertyUnitRepository
         await _context.PropertyUnits.AddAsync(propertyUnit, cancellationToken);
     }
 
-    public void Update(PropertyUnit propertyUnit)
-    {
-        _context.PropertyUnits.Update(propertyUnit);
-    }
-
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);
@@ -67,5 +68,13 @@ public class PropertyUnitRepository : IPropertyUnitRepository
         return await _context.PropertyUnits
             .Where(p => !p.IsDeleted)
             .AnyAsync(p => p.Id == id, cancellationToken);
+    }
+    /// <summary>
+    /// Update existing property unit
+    /// </summary>
+    public Task UpdateAsync(PropertyUnit propertyUnit, CancellationToken cancellationToken = default)
+    {
+        _context.PropertyUnits.Update(propertyUnit);
+        return Task.CompletedTask;
     }
 }

@@ -13,7 +13,7 @@ public interface IPropertyUnitRepository
     Task<PropertyUnit?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get property unit by building and unit identifier
+    /// Get property unit by building and unit identifier (for duplicate check)
     /// </summary>
     Task<PropertyUnit?> GetByBuildingAndIdentifierAsync(Guid buildingId, string unitIdentifier, CancellationToken cancellationToken = default);
 
@@ -35,7 +35,7 @@ public interface IPropertyUnitRepository
     /// <summary>
     /// Update existing property unit
     /// </summary>
-    void Update(PropertyUnit propertyUnit);
+    Task UpdateAsync(PropertyUnit propertyUnit, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Check if exists

@@ -21,14 +21,14 @@ public abstract class BaseAuditableEntity : BaseEntity
 
     protected BaseAuditableEntity(Guid id) : base(id)
     {
-        IsDeleted = false;  // ✅ ADD THIS LINE
+        IsDeleted = false; 
     }
 
     public void MarkAsCreated(Guid userId)
     {
         CreatedAtUtc = DateTime.UtcNow;
         CreatedBy = userId;
-        IsDeleted = false;  // ✅ ADD THIS LINE (defensive)
+        IsDeleted = false; 
     }
 
     public void MarkAsModified(Guid userId)

@@ -1,11 +1,12 @@
 ﻿using FluentValidation;
 using TRRCMS.Application.Common.Behaviors;
+using System.Reflection;
+using Microsoft.OpenApi.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using System.Text;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
@@ -36,6 +37,7 @@ builder.Services.AddScoped<IEvidenceRepository, EvidenceRepository>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ISurveyRepository, SurveyRepository>();
 
 // ============== AUTHENTICATION SERVICES ==============
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -291,11 +293,42 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("CanRestoreSystem", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.System_Restore)));
+
+    // ==================== SURVEY POLICIES ====================
+
+    options.AddPolicy("CanCreateSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Create)));
+
+    options.AddPolicy("CanViewOwnSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_ViewOwn)));
+
+    options.AddPolicy("CanViewAllSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_ViewAll)));
+
+    options.AddPolicy("CanEditOwnSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_EditOwn)));
+
+    options.AddPolicy("CanEditAllSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_EditAll)));
+
+    options.AddPolicy("CanDeleteSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Delete)));
+
+    options.AddPolicy("CanFinalizeSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Finalize)));
+
+    options.AddPolicy("CanExportSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Export)));
+
+    options.AddPolicy("CanImportSurveys", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Import)));
 });
 
 // ============== CONTROLLERS ==============
 builder.Services.AddControllers();
 
+// ============== SWAGGER WITH JWT ==============
+builder.Services.AddEndpointsApiExplorer();
 // ============== SWAGGER WITH JWT ==============
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -307,6 +340,11 @@ builder.Services.AddSwaggerGen(c =>
         Description = "UN-Habitat Tenure Rights Registration & Claims Management System"
     });
 
+    // Enable XML comments for Swagger documentation
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);  // Changed 'options' to 'c'
+
     // Add JWT Bearer authentication to Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -317,7 +355,6 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "Enter 'Bearer' [space] and then your valid JWT token.\n\nExample: \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\""
     });
-
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {

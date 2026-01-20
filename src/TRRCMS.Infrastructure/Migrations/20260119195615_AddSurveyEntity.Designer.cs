@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TRRCMS.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119195615_AddSurveyEntity")]
+    partial class AddSurveyEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1500,22 +1503,10 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<decimal?>("EstimatedAreaSqm")
-                        .HasColumnType("numeric");
-
                     b.Property<int?>("FloorNumber")
                         .HasColumnType("integer");
 
                     b.Property<bool?>("HasBalcony")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasElectricity")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasSewage")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasWater")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
@@ -1542,15 +1533,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<string>("OccupancyStatus")
-                        .HasColumnType("text");
-
                     b.Property<string>("OccupancyType")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<string>("PositionOnFloor")
-                        .HasColumnType("text");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -1578,9 +1563,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<string>("UtilitiesNotes")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

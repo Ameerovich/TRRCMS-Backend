@@ -28,6 +28,12 @@ public class PropertyUnit : BaseAuditableEntity
     public int? FloorNumber { get; private set; }
 
     /// <summary>
+    /// Position on floor (e.g., "Left", "Right", "Center", "يمين", "يسار")
+    /// Added for Day 2 - Survey workflow
+    /// </summary>
+    public string? PositionOnFloor { get; private set; }
+
+    /// <summary>
     /// Property unit type (Apartment, Shop, Office, etc.)
     /// </summary>
     public PropertyUnitType UnitType { get; private set; }
@@ -38,6 +44,12 @@ public class PropertyUnit : BaseAuditableEntity
     public PropertyUnitStatus Status { get; private set; }
 
     /// <summary>
+    /// Occupancy status as string (for flexible field survey data)
+    /// Added for Day 2 - Survey workflow to complement Status enum
+    /// </summary>
+    public string? OccupancyStatus { get; private set; }
+
+    /// <summary>
     /// Damage level for this unit
     /// </summary>
     public DamageLevel? DamageLevel { get; private set; }
@@ -46,6 +58,12 @@ public class PropertyUnit : BaseAuditableEntity
     /// Area in square meters
     /// </summary>
     public decimal? AreaSquareMeters { get; private set; }
+
+    /// <summary>
+    /// Estimated area in square meters (for field survey estimates)
+    /// Added for Day 2 - Survey workflow to complement AreaSquareMeters
+    /// </summary>
+    public decimal? EstimatedAreaSqm { get; private set; }
 
     /// <summary>
     /// Number of rooms (for residential units)
@@ -83,6 +101,32 @@ public class PropertyUnit : BaseAuditableEntity
     /// Total occupants count
     /// </summary>
     public int? TotalOccupants { get; private set; }
+
+    // ==================== UTILITIES (Added for Day 2) ====================
+
+    /// <summary>
+    /// Has electricity connection
+    /// Added for Day 2 - Survey workflow
+    /// </summary>
+    public bool HasElectricity { get; private set; }
+
+    /// <summary>
+    /// Has water connection
+    /// Added for Day 2 - Survey workflow
+    /// </summary>
+    public bool HasWater { get; private set; }
+
+    /// <summary>
+    /// Has sewage connection
+    /// Added for Day 2 - Survey workflow
+    /// </summary>
+    public bool HasSewage { get; private set; }
+
+    /// <summary>
+    /// Additional utilities notes
+    /// Added for Day 2 - Survey workflow
+    /// </summary>
+    public string? UtilitiesNotes { get; private set; }
 
     // ==================== ADDITIONAL INFORMATION ====================
 
@@ -148,10 +192,14 @@ public class PropertyUnit : BaseAuditableEntity
         Surveys = new List<Survey>();
         Certificates = new List<Certificate>();
         Status = PropertyUnitStatus.Unknown;
+        // Initialize Day 2 fields
+        HasElectricity = false;
+        HasWater = false;
+        HasSewage = false;
     }
 
     /// <summary>
-    /// Create new property unit
+    /// Create new property unit (original method for Building Management)
     /// </summary>
     public static PropertyUnit Create(
         Guid buildingId,
@@ -166,7 +214,10 @@ public class PropertyUnit : BaseAuditableEntity
             UnitIdentifier = unitIdentifier,
             UnitType = unitType,
             FloorNumber = floorNumber,
-            Status = PropertyUnitStatus.Unknown
+            Status = PropertyUnitStatus.Unknown,
+            HasElectricity = false,
+            HasWater = false,
+            HasSewage = false
         };
 
         unit.MarkAsCreated(createdByUserId);
@@ -174,7 +225,44 @@ public class PropertyUnit : BaseAuditableEntity
         return unit;
     }
 
-    // ==================== DOMAIN METHODS ====================
+    /// <summary>
+    /// Create new property unit with string type (for Survey workflow - Day 2)
+    /// Overload for field surveys where unit type is entered as text
+    /// </summary>
+    public static PropertyUnit Create(
+        Guid buildingId,
+        string unitIdentifier,
+        string unitType,
+        int? floorNumber,
+        string? positionOnFloor,
+        Guid createdByUserId)
+    {
+        // Parse unitType string to enum, default to Unknown if can't parse
+        PropertyUnitType parsedUnitType = PropertyUnitType.Other;
+        if (!string.IsNullOrWhiteSpace(unitType))
+        {
+            Enum.TryParse<PropertyUnitType>(unitType, ignoreCase: true, out parsedUnitType);
+        }
+
+        var unit = new PropertyUnit
+        {
+            BuildingId = buildingId,
+            UnitIdentifier = unitIdentifier,
+            UnitType = parsedUnitType,
+            FloorNumber = floorNumber,
+            PositionOnFloor = positionOnFloor,
+            Status = PropertyUnitStatus.Unknown,
+            HasElectricity = false,
+            HasWater = false,
+            HasSewage = false
+        };
+
+        unit.MarkAsCreated(createdByUserId);
+
+        return unit;
+    }
+
+    // ==================== ORIGINAL DOMAIN METHODS (unchanged) ====================
 
     /// <summary>
     /// Update unit status and damage level
@@ -246,6 +334,71 @@ public class PropertyUnit : BaseAuditableEntity
     public void UpdateDescription(string? description, Guid modifiedByUserId)
     {
         Description = description;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    // ==================== DAY 2 METHODS (new - for Survey workflow) ====================
+
+    /// <summary>
+    /// Update property unit location
+    /// Used in field surveys to update floor and position information
+    /// </summary>
+    public void UpdateLocation(
+        int? floorNumber,
+        string? positionOnFloor,
+        Guid modifiedByUserId)
+    {
+        if (floorNumber.HasValue)
+            FloorNumber = floorNumber.Value;
+
+        if (positionOnFloor != null)
+            PositionOnFloor = positionOnFloor;
+
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update property unit details
+    /// Used in field surveys to update occupancy, rooms, area, and description
+    /// </summary>
+    public void UpdateDetails(
+        string? occupancyStatus,
+        int? numberOfRooms,
+        decimal? estimatedAreaSqm,
+        string? description,
+        Guid modifiedByUserId)
+    {
+        if (occupancyStatus != null)
+            OccupancyStatus = occupancyStatus;
+
+        if (numberOfRooms.HasValue)
+            NumberOfRooms = numberOfRooms.Value;
+
+        if (estimatedAreaSqm.HasValue)
+            EstimatedAreaSqm = estimatedAreaSqm.Value;
+
+        if (description != null)
+            Description = description;
+
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update utilities information
+    /// Used in field surveys to capture utility connections
+    /// </summary>
+    public void UpdateUtilities(
+        bool hasElectricity,
+        bool hasWater,
+        bool hasSewage,
+        string? utilitiesNotes,
+        Guid modifiedByUserId)
+    {
+        HasElectricity = hasElectricity;
+        HasWater = hasWater;
+        HasSewage = hasSewage;
+        UtilitiesNotes = utilitiesNotes;
+
         MarkAsModified(modifiedByUserId);
     }
 }

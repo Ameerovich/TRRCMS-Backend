@@ -240,6 +240,25 @@ public class Survey : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
+    /// <summary>
+    /// Verify survey can be modified (must be Draft)
+    /// </summary>
+    public void EnsureCanModify()
+    {
+        if (Status != SurveyStatus.Draft)
+            throw new InvalidOperationException($"Cannot modify survey in {Status} status. Only Draft surveys can be modified.");
+    }
+
+    /// <summary>
+    /// Link to property unit (UC-001 Stage 2)
+    /// </summary>
+    public void LinkToPropertyUnit(Guid propertyUnitId, Guid modifiedByUserId)
+    {
+        EnsureCanModify();
+        PropertyUnitId = propertyUnitId;
+        MarkAsModified(modifiedByUserId);
+    }
+
     // ==================== HELPER METHODS ====================
 
     /// <summary>

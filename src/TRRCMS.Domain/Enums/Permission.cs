@@ -211,19 +211,60 @@ public enum Permission
     // ==================== SURVEY PERMISSIONS ====================
 
     /// <summary>
-    /// Create surveys (Field Collector via mobile)
+    /// Create new surveys (Field Collector, Data Manager, Admin)
+    /// UC-001 Field Survey, UC-004 Office Survey
     /// </summary>
     Surveys_Create = 7000,
 
     /// <summary>
-    /// View surveys (Field Supervisor, Data Manager, Admin)
+    /// View all surveys in the system (Data Manager, Admin)
     /// </summary>
     Surveys_View = 7001,
 
     /// <summary>
-    /// Export surveys (Field Collector, Field Supervisor)
+    /// Export surveys to .uhc container (Field Collector)
+    /// UC-003 Export surveys
     /// </summary>
     Surveys_Export = 7002,
+
+    /// <summary>
+    /// View own surveys only (Field Collector)
+    /// </summary>
+    Surveys_ViewOwn = 7003,
+
+    /// <summary>
+    /// View all surveys in the system (Data Manager, Admin)
+    /// Alternative naming for Surveys_View for clarity
+    /// </summary>
+    Surveys_ViewAll = 7004,
+
+    /// <summary>
+    /// Edit own surveys (Field Collector)
+    /// UC-002 Save and resume drafts
+    /// </summary>
+    Surveys_EditOwn = 7005,
+
+    /// <summary>
+    /// Edit any survey (Data Manager, Admin)
+    /// </summary>
+    Surveys_EditAll = 7006,
+
+    /// <summary>
+    /// Delete surveys (Admin only)
+    /// </summary>
+    Surveys_Delete = 7007,
+
+    /// <summary>
+    /// Finalize surveys for export (Field Collector, Data Manager)
+    /// UC-002 Complete and finalize
+    /// </summary>
+    Surveys_Finalize = 7008,
+
+    /// <summary>
+    /// Import surveys from .uhc packages (Data Manager, Admin)
+    /// UC-003 Import surveys
+    /// </summary>
+    Surveys_Import = 7009,
 
     // ==================== ADMIN PERMISSIONS ====================
 

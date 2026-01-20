@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
+    public DbSet<Survey> Surveys => Set<Survey>();
 
     // ==================== NEW: AUDIT LOG ====================
     /// <summary>
