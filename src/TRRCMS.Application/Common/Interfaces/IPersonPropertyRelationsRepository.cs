@@ -1,4 +1,6 @@
-﻿using TRRCMS.Domain.Entities;
+﻿using MediatR;
+using System.Threading;
+using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.Common.Interfaces;
 
@@ -32,6 +34,11 @@ public interface IPersonPropertyRelationRepository
     /// </summary>
     Task<IEnumerable<PersonPropertyRelation>> GetActiveRelationsByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Get the relation for a person and a propertyunit
+    /// </summary>
+    Task<PersonPropertyRelation?> GetByPersonAndPropertyUnitAsync(Guid personId, Guid propertyUnitId, CancellationToken cancellationToken = default);
+ 
     /// <summary>
     /// Check if person-property relation exists
     /// </summary>

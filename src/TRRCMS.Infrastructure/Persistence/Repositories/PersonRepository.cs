@@ -41,6 +41,13 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories
             return await _context.Persons
                 .FirstOrDefaultAsync(p => p.NationalId == nationalId && !p.IsDeleted, cancellationToken);
         }
+        public async Task<List<Person>> GetByHouseholdIdAsync(Guid householdId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Persons
+                .Where(p => p.HouseholdId == householdId && !p.IsDeleted)
+                .OrderBy(p => p.CreatedAtUtc)
+                .ToListAsync(cancellationToken);
+        }
 
         public async Task<List<Person>> SearchByNameAsync(
             string? firstName,

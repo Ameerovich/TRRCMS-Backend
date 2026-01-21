@@ -60,6 +60,14 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<PersonPropertyRelation?> GetByPersonAndPropertyUnitAsync(Guid personId, Guid propertyUnitId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<PersonPropertyRelation>()
+            .Include(r => r.Person)
+            .Include(r => r.PropertyUnit)
+            .FirstOrDefaultAsync(r => r.PersonId == personId && r.PropertyUnitId == propertyUnitId && !r.IsDeleted, cancellationToken);
+    }
+
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Set<PersonPropertyRelation>()

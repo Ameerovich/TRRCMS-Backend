@@ -18,6 +18,10 @@ namespace TRRCMS.Application.Common.Interfaces
         Task<List<Person>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Get all persons in a household
+        /// </summary>
+        Task<List<Person>> GetByHouseholdIdAsync(Guid householdId, CancellationToken cancellationToken = default);
+        /// <summary>
         /// Get person by National ID
         /// </summary>
         Task<Person?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
