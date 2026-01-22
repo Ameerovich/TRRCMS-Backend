@@ -53,6 +53,9 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 // Custom authorization handler for permission-based access control
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+// File Storage Service (add after other services)
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+
 // ============== AUDIT SERVICE ==============
 // Comprehensive audit logging for all system actions
 // Supports 10+ year retention requirement (FSD Section 13)
@@ -446,6 +449,11 @@ app.UseAuthentication();
 
 // 2. Authorization comes second (checks what the user can do)
 app.UseAuthorization();
+
+
+// ============== FILES STORAGE ==============
+// Enable serving files from wwwroot
+app.UseStaticFiles(); 
 
 // ============== HEALTH CHECK ENDPOINT ==============
 app.MapHealthChecks("/health");

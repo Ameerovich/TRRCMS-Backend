@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
@@ -9,16 +11,23 @@ using TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 using TRRCMS.Application.Surveys.Commands.CreateFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
+using TRRCMS.Application.Surveys.Commands.DeleteEvidence;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 using TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 using TRRCMS.Application.Surveys.Commands.SetHouseholdHead;
 using TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
+using TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
+using TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
+using TRRCMS.Application.Surveys.Commands.UploadTenureDocument;
 using TRRCMS.Application.Surveys.Dtos;
+using TRRCMS.Application.Surveys.Queries.DownloadEvidence;
 using TRRCMS.Application.Surveys.Queries.GetDraftSurvey;
+using TRRCMS.Application.Surveys.Queries.GetEvidenceById;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdPersons;
 using TRRCMS.Application.Surveys.Queries.GetPropertyUnitsForSurvey;
+using TRRCMS.Application.Surveys.Queries.GetSurveyEvidence;
 
 namespace TRRCMS.WebAPI.Controllers;
 
@@ -736,6 +745,399 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         command.PersonId = personId;
+        await _mediator.Send(command);
+        return NoContent();
+    }
+    // ==================== EVIDENCE MANAGEMENT (DAY 4) ====================
+
+    /// <summary>
+    /// Upload property photo
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 4 - Evidence Collection (Property Photos)
+    /// 
+    /// **Purpose**: Upload photos of property (exterior, interior, damage documentation).
+    /// 
+    /// **What it does**:
+    /// - Uploads photo file to storage
+    /// - Creates Evidence record
+    /// - Links to property unit or person-property relation (optional)
+    /// - Calculates file hash for integrity
+    /// - Validates file type and size
+    /// 
+    /// **When to use**:
+    /// - Document property condition
+    /// - Capture damage or improvements
+    /// - Record exterior and interior views
+    /// - Support tenure claims with visual evidence
+    /// 
+    /// **File Requirements**:
+    /// - Format: JPG, JPEG, PNG
+    /// - Max size: 10MB
+    /// - Required: Photo file, description
+    /// 
+    /// **Optional Linking**:
+    /// - propertyUnitId: Link to specific unit
+    /// - personPropertyRelationId: Link to ownership/tenancy record
+    /// - Can upload first, link later
+    /// 
+    /// **Required permissions**: CanEditOwnSurveys
+    /// 
+    /// **Example** (multipart/form-data):
+    /// ```
+    /// File: property-front.jpg (binary)
+    /// Description: Front facade of building
+    /// PropertyUnitId: unit-guid-here (optional)
+    /// Notes: Photo taken during field visit
+    /// ```
+    /// 
+    /// **Response**: Evidence record with file details and download path
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="command">Upload command with file and metadata (from form)</param>
+    /// <returns>Created evidence record</returns>
+    /// <response code="201">Photo uploaded successfully.</response>
+    /// <response code="400">Invalid file type, size exceeded, or validation error.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only upload to your own surveys.</response>
+    /// <response code="404">Survey or property unit not found.</response>
+    [HttpPost("{surveyId}/evidence/property-photo")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> UploadPropertyPhoto(
+        Guid surveyId,
+        [FromForm] UploadPropertyPhotoCommand command)
+    {
+        command.SurveyId = surveyId;
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(
+            nameof(GetEvidenceById),
+            new { evidenceId = result.Id },
+            result);
+    }
+
+    /// <summary>
+    /// Upload identification document for person
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 4 - Evidence Collection (ID Documents)
+    /// 
+    /// **Purpose**: Upload identification documents for registered persons (ID cards, passports, birth certificates).
+    /// 
+    /// **What it does**:
+    /// - Uploads ID document to storage
+    /// - Links directly to Person entity
+    /// - Records document metadata (issue date, expiry, authority)
+    /// - Marks person as having identification document
+    /// - Validates file type and size
+    /// 
+    /// **When to use**:
+    /// - Document person identity
+    /// - Support claim verification
+    /// - Comply with identification requirements
+    /// - Establish person legitimacy
+    /// 
+    /// **File Requirements**:
+    /// - Format: PDF, JPG, JPEG, PNG
+    /// - Max size: 10MB
+    /// - Required: File, description, person ID
+    /// 
+    /// **Document Metadata** (optional):
+    /// - documentIssuedDate: When document was issued
+    /// - documentExpiryDate: When document expires
+    /// - issuingAuthority: Who issued (e.g., "Ministry of Interior")
+    /// - documentReferenceNumber: Official document number
+    /// 
+    /// **Required permissions**: CanEditOwnSurveys
+    /// 
+    /// **Example** (multipart/form-data):
+    /// ```
+    /// File: national-id.pdf (binary)
+    /// PersonId: person-guid-here
+    /// Description: National ID Card
+    /// DocumentIssuedDate: 2020-01-15
+    /// DocumentExpiryDate: 2030-01-15
+    /// IssuingAuthority: Ministry of Interior
+    /// DocumentReferenceNumber: 123456789
+    /// ```
+    /// 
+    /// **Response**: Evidence record with file details
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="command">Upload command with file and metadata (from form)</param>
+    /// <returns>Created evidence record</returns>
+    /// <response code="201">Document uploaded successfully.</response>
+    /// <response code="400">Invalid file type, size exceeded, or person not in survey.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only upload to your own surveys.</response>
+    /// <response code="404">Survey or person not found.</response>
+    [HttpPost("{surveyId}/evidence/identification/{personId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> UploadIdentificationDocument(
+        Guid surveyId,
+        Guid personId,
+        [FromForm] UploadIdentificationDocumentCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.PersonId = personId;
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(
+            nameof(GetEvidenceById),
+            new { evidenceId = result.Id },
+            result);
+    }
+
+    /// <summary>
+    /// Upload tenure/ownership document
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 4 - Evidence Collection (Tenure Documents)
+    /// 
+    /// **Purpose**: Upload documents proving ownership, tenancy, or other property rights.
+    /// 
+    /// **What it does**:
+    /// - Uploads tenure document to storage
+    /// - Links to PersonPropertyRelation (ownership/tenancy record)
+    /// - Records document metadata
+    /// - Validates file type and size
+    /// - Supports future claims processing
+    /// 
+    /// **When to use**:
+    /// - Document property ownership
+    /// - Prove tenancy arrangements
+    /// - Support inheritance claims
+    /// - Establish tenure rights
+    /// 
+    /// **Document Types**:
+    /// - Property deeds (ownership)
+    /// - Rental contracts (tenancy)
+    /// - Inheritance documents
+    /// - Court orders
+    /// - Municipal records
+    /// 
+    /// **File Requirements**:
+    /// - Format: PDF, JPG, JPEG, PNG
+    /// - Max size: 10MB
+    /// - Required: File, description, person-property relation ID
+    /// 
+    /// **Document Metadata** (optional):
+    /// - documentIssuedDate: When document was issued
+    /// - documentExpiryDate: When document expires (for temporary rights)
+    /// - issuingAuthority: Who issued (e.g., "Real Estate Registry", "Court")
+    /// - documentReferenceNumber: Official registration/deed number
+    /// 
+    /// **Required permissions**: CanEditOwnSurveys
+    /// 
+    /// **Example** (multipart/form-data):
+    /// ```
+    /// File: property-deed.pdf (binary)
+    /// PersonPropertyRelationId: relation-guid-here
+    /// Description: Property Ownership Deed
+    /// DocumentIssuedDate: 2015-06-20
+    /// IssuingAuthority: Real Estate Registry Office
+    /// DocumentReferenceNumber: DEED-2015-123456
+    /// ```
+    /// 
+    /// **Response**: Evidence record with file details
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="command">Upload command with file and metadata (from form)</param>
+    /// <returns>Created evidence record</returns>
+    /// <response code="201">Document uploaded successfully.</response>
+    /// <response code="400">Invalid file type, size exceeded, or relation not in survey.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only upload to your own surveys.</response>
+    /// <response code="404">Survey or person-property relation not found.</response>
+    [HttpPost("{surveyId}/evidence/tenure")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> UploadTenureDocument(
+        Guid surveyId,
+        [FromForm] UploadTenureDocumentCommand command)
+    {
+        command.SurveyId = surveyId;
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(
+            nameof(GetEvidenceById),
+            new { evidenceId = result.Id },
+            result);
+    }
+
+    /// <summary>
+    /// Get all evidence for survey
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 4 - View collected evidence
+    /// 
+    /// **Purpose**: Lists all photos and documents uploaded for the survey.
+    /// 
+    /// **What you get**:
+    /// - All property photos
+    /// - All identification documents
+    /// - All tenure documents
+    /// - File metadata (size, type, hash)
+    /// - Upload timestamps
+    /// - Links to persons/units
+    /// 
+    /// **Optional Filtering**:
+    /// - evidenceType: Filter by type (PropertyPhoto, IdentificationDocument, TenureDocument)
+    /// 
+    /// **Required permissions**: CanViewOwnSurveys
+    /// 
+    /// **Response**: Array of evidence records ordered by upload date
+    /// </remarks>
+    /// <param name="surveyId">Survey ID to get evidence for</param>
+    /// <param name="evidenceType">Optional filter by evidence type</param>
+    /// <returns>List of evidence records</returns>
+    /// <response code="200">Success. Returns array of evidence (may be empty).</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only view evidence for your own surveys.</response>
+    /// <response code="404">Survey not found.</response>
+    [HttpGet("{surveyId}/evidence")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<EvidenceDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<EvidenceDto>>> GetSurveyEvidence(
+        Guid surveyId,
+        [FromQuery] string? evidenceType = null)
+    {
+        var query = new GetSurveyEvidenceQuery
+        {
+            SurveyId = surveyId,
+            EvidenceType = evidenceType
+        };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get evidence details by ID
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 4 - View evidence details
+    /// 
+    /// **Purpose**: Retrieves complete metadata for a specific evidence file.
+    /// 
+    /// **Required permissions**: Authenticated users
+    /// </remarks>
+    /// <param name="evidenceId">Evidence ID to retrieve</param>
+    /// <returns>Evidence details</returns>
+    /// <response code="200">Evidence found. Returns complete details.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="404">Evidence not found.</response>
+    [HttpGet("evidence/{evidenceId}")]
+    [Authorize]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> GetEvidenceById(Guid evidenceId)
+    {
+        var query = new GetEvidenceByIdQuery { EvidenceId = evidenceId };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Download evidence file
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 4 - Download evidence file
+    /// 
+    /// **Purpose**: Downloads the actual file (photo or document).
+    /// 
+    /// **What it does**:
+    /// - Retrieves file from storage
+    /// - Returns file stream with correct MIME type
+    /// - Sets download filename
+    /// 
+    /// **Required permissions**: Authenticated users
+    /// 
+    /// **Response**: Binary file stream (image or PDF)
+    /// </remarks>
+    /// <param name="evidenceId">Evidence ID to download</param>
+    /// <returns>File stream</returns>
+    /// <response code="200">File found. Returns binary stream.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="404">Evidence or file not found.</response>
+    [HttpGet("evidence/{evidenceId}/download")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadEvidence(Guid evidenceId)
+    {
+        var query = new DownloadEvidenceQuery { EvidenceId = evidenceId };
+        var result = await _mediator.Send(query);
+
+        return File(result.FileStream, result.MimeType, result.FileName);
+    }
+
+    /// <summary>
+    /// Delete evidence
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 4 - Remove evidence
+    /// 
+    /// **Purpose**: Deletes evidence record and physical file (soft delete).
+    /// 
+    /// **What it does**:
+    /// - Marks evidence as deleted (soft delete)
+    /// - Removes physical file from storage
+    /// - Creates audit trail
+    /// 
+    /// **When to use**:
+    /// - Remove incorrect uploads
+    /// - Delete duplicate files
+    /// - Remove sensitive information
+    /// 
+    /// **Important**: Only works for Draft surveys
+    /// 
+    /// **Required permissions**: CanEditOwnSurveys
+    /// 
+    /// **Response**: 204 No Content (success)
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="evidenceId">Evidence ID to delete</param>
+    /// <returns>No content on success</returns>
+    /// <response code="204">Evidence deleted successfully.</response>
+    /// <response code="400">Survey not in Draft status.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only delete from your own surveys.</response>
+    /// <response code="404">Survey or evidence not found.</response>
+    [HttpDelete("{surveyId}/evidence/{evidenceId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteEvidence(
+        Guid surveyId,
+        Guid evidenceId)
+    {
+        var command = new DeleteEvidenceCommand
+        {
+            SurveyId = surveyId,
+            EvidenceId = evidenceId
+        };
         await _mediator.Send(command);
         return NoContent();
     }

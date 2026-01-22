@@ -1,569 +1,647 @@
 @startuml TRRCMS_ERD
-' ========================================
-' TRRCMS - Entity Relationship Diagram
-' Version: 0.9.0
-' Last Updated: January 10, 2026
-' Format: PlantUML
-' ========================================
 
-!define IMPLEMENTED_COLOR #E8F5E9
-!define PLANNED_COLOR #FFF3E0
-
+skinparam backgroundColor #FEFEFE
+skinparam roundCorner 10
+skinparam classFontSize 11
+skinparam classAttributeFontSize 10
 skinparam linetype ortho
-skinparam backgroundColor #FAFAFA
-skinparam shadowing false
-skinparam ArrowColor #666666
+skinparam nodesep 50
+skinparam ranksep 60
 
-' ==================== IMPLEMENTED ENTITIES ====================
+title UN-Habitat TRRCMS\nTenure Rights Registration and Claims Management System\nEntity Relationship Diagram
 
-entity "Users" as Users IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Building" as building #E3F2FD {
+  * id : UUID <<PK>>
   --
-  **Username** : string <<UK>>
-  **Email** : string <<UK>>
-  PasswordHash : string
-  PasswordSalt : string
-  FullNameArabic : string
-  FullNameEnglish : string
-  EmployeeId : string
-  PhoneNumber : string
-  Organization : string
-  JobTitle : string
-  Role : int
-  HasMobileAccess : bool
-  HasDesktopAccess : bool
-  IsActive : bool
-  IsLockedOut : bool
-  LockoutEndDate : datetime
-  FailedLoginAttempts : int
-  LastLoginDate : datetime
-  LastPasswordChangeDate : datetime
-  MustChangePassword : bool
-  SecurityStamp : string
-  RefreshToken : string
-  RefreshTokenExpiryDate : datetime
-  **SupervisorUserId** : UUID <<FK>>
-  TeamName : string
-  AssignedTabletId : string
-  TabletAssignedDate : datetime
-  PreferredLanguage : string
-  TwoFactorEnabled : bool
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * building_id : VARCHAR(17) <<UK>>
+  * governorate_code : VARCHAR(2)
+  * district_code : VARCHAR(2)
+  * sub_district_code : VARCHAR(2)
+  * community_code : VARCHAR(3)
+  * neighborhood_code : VARCHAR(3)
+  * building_number : VARCHAR(5)
+  * building_type : VARCHAR(50)
+  * status : VARCHAR(30)
+  damage_level : VARCHAR(30)
+  number_of_floors : INT
+  year_of_construction : INT
+  * number_of_property_units : INT
+  * number_of_apartments : INT
+  * number_of_shops : INT
+  building_geometry : GEOMETRY
+  latitude : DECIMAL(10,8)
+  longitude : DECIMAL(11,8)
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Buildings" as Buildings IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "PropertyUnit" as property_unit #E3F2FD {
+  * id : UUID <<PK>>
+  * building_id : UUID <<FK>>
   --
-  **BuildingId** : string <<UK>>
-  GovernorateCode : string
-  DistrictCode : string
-  SubDistrictCode : string
-  CommunityCode : string
-  NeighborhoodCode : string
-  BuildingNumber : string
-  GovernorateName : string
-  DistrictName : string
-  SubDistrictName : string
-  CommunityName : string
-  NeighborhoodName : string
-  BuildingType : int
-  StreetName : string
-  LocationDescription : string
-  Geometry : geometry
-  Latitude : decimal
-  Longitude : decimal
-  Status : int
-  DamageLevel : int
-  NumberOfFloors : int
-  EstimatedUnits : int
-  YearBuilt : int
-  ConstructionMaterial : string
-  AccessibilityNotes : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * unit_identifier : VARCHAR(50) <<UK>>
+  floor_number : INT
+  position_on_floor : VARCHAR(20)
+  * unit_type : VARCHAR(30)
+  * status : VARCHAR(30)
+  damage_level : VARCHAR(30)
+  area_square_meters : DECIMAL(10,2)
+  estimated_area_sqm : DECIMAL(10,2)
+  number_of_rooms : INT
+  number_of_bathrooms : INT
+  has_balcony : BOOLEAN
+  occupancy_type : VARCHAR(30)
+  occupancy_nature : VARCHAR(30)
+  number_of_households : INT
+  total_occupants : INT
+  * has_electricity : BOOLEAN
+  * has_water : BOOLEAN
+  * has_sewage : BOOLEAN
+  utilities_notes : TEXT
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "PropertyUnits" as PropertyUnits IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Household" as household #FFF8E1 {
+  * id : UUID <<PK>>
+  * property_unit_id : UUID <<FK>>
+  head_of_household_person_id : UUID <<FK>>
   --
-  **UnitIdentifier** : string <<UK>>
-  **BuildingId** : UUID <<FK>>
-  UnitNumber : string
-  FloorNumber : int
-  UnitType : int
-  Area : decimal
-  NumberOfRooms : int
-  Status : int
-  DamageLevel : int
-  DamageDescription : string
-  OccupancyType : int
-  OccupancyNature : int
-  **CurrentHouseholdId** : UUID <<FK>>
-  OwnershipDocumentation : string
-  AccessibilityFeatures : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * household_size : INT
+  * head_of_household_name : VARCHAR(200)
+  * male_count : INT
+  * female_count : INT
+  * infant_count : INT
+  * child_count : INT
+  * minor_count : INT
+  * adult_count : INT
+  * elderly_count : INT
+  * persons_with_disabilities_count : INT
+  * is_female_headed : BOOLEAN
+  * widow_count : INT
+  * orphan_count : INT
+  * single_parent_count : INT
+  * employed_persons_count : INT
+  * unemployed_persons_count : INT
+  primary_income_source : VARCHAR(50)
+  monthly_income_estimate : DECIMAL(12,2)
+  * is_displaced : BOOLEAN
+  origin_location : VARCHAR(200)
+  arrival_date : DATE
+  displacement_reason : VARCHAR(100)
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Persons" as Persons IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Person" as person #FFF8E1 {
+  * id : UUID <<PK>>
+  household_id : UUID <<FK>>
   --
-  FirstNameArabic : string
-  FatherNameArabic : string
-  FamilyNameArabic : string
-  MotherNameArabic : string
-  FirstNameEnglish : string
-  FamilyNameEnglish : string
-  FullNameArabic : string
-  FullNameEnglish : string
-  Gender : string
-  DateOfBirth : date
-  Age : int
-  PlaceOfBirthArabic : string
-  NationalityArabic : string
-  MaritalStatus : string
-  EducationLevel : string
-  Occupation : string
-  **NationalIdNumber** : string <<UK>>
-  PassportNumber : string
-  CivilRegistryNumber : string
-  PhoneNumber : string
-  EmailAddress : string
-  IsDeceased : bool
-  DateOfDeath : date
-  **CurrentHouseholdId** : UUID <<FK>>
-  RelationshipToHead : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * first_name_arabic : VARCHAR(100)
+  * father_name_arabic : VARCHAR(100)
+  * family_name_arabic : VARCHAR(100)
+  mother_name_arabic : VARCHAR(100)
+  national_id : VARCHAR(20)
+  year_of_birth : INT
+  gender : VARCHAR(10)
+  nationality : VARCHAR(50)
+  primary_phone_number : VARCHAR(20)
+  secondary_phone_number : VARCHAR(20)
+  * is_contact_person : BOOLEAN
+  relationship_to_head : VARCHAR(30)
+  * has_identification_document : BOOLEAN
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Households" as Households IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "PersonPropertyRelation" as ppr #E8F5E9 {
+  * id : UUID <<PK>>
+  * person_id : UUID <<FK>>
+  * property_unit_id : UUID <<FK>>
   --
-  **HouseholdCode** : string <<UK>>
-  **PropertyUnitId** : UUID <<FK>>
-  Size : int
-  NumberOfAdults : int
-  NumberOfChildren : int
-  NumberOfElderly : int
-  NumberOfDisabled : int
-  MonthlyIncome : decimal
-  IncomeSource : string
-  HasVulnerableMembers : bool
-  VulnerabilityNotes : string
-  ReceivesSocialAssistance : bool
-  SocialAssistanceDetails : string
-  HasDisplacedMembers : bool
-  DisplacementDetails : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * relation_type : VARCHAR(30)
+  relation_type_other_desc : VARCHAR(100)
+  ownership_share : DECIMAL(5,2)
+  contract_details : TEXT
+  start_date : DATE
+  end_date : DATE
+  * is_active : BOOLEAN
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "PersonPropertyRelations" as PersonPropertyRelations IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Claim" as claim #FCE4EC {
+  * id : UUID <<PK>>
+  * property_unit_id : UUID <<FK>>
+  * primary_claimant_id : UUID <<FK>>
+  assigned_to_user_id : UUID <<FK>>
+  verified_by_user_id : UUID <<FK>>
   --
-  **PersonId** : UUID <<FK>>
-  **PropertyUnitId** : UUID <<FK>>
-  RelationType : string
-  StartDate : date
-  EndDate : date
-  OwnershipPercentage : int
-  DocumentationReference : string
-  Notes : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * claim_number : VARCHAR(20) <<UK>>
+  * claim_type : VARCHAR(30)
+  * claim_source : VARCHAR(30)
+  * priority : VARCHAR(20)
+  * lifecycle_stage : VARCHAR(30)
+  * status : VARCHAR(30)
+  submitted_date : TIMESTAMP
+  assigned_date : TIMESTAMP
+  target_completion_date : DATE
+  tenure_contract_type : VARCHAR(30)
+  ownership_share : DECIMAL(5,2)
+  tenure_start_date : DATE
+  tenure_end_date : DATE
+  * has_conflicts : BOOLEAN
+  * conflict_count : INT
+  conflict_resolution_status : VARCHAR(30)
+  * evidence_count : INT
+  * all_required_documents_submitted : BOOLEAN
+  missing_documents : TEXT
+  * verification_status : VARCHAR(30)
+  verification_date : TIMESTAMP
+
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Claims" as Claims IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Evidence" as evidence #F3E5F5 {
+  * id : UUID <<PK>>
+  person_id : UUID <<FK>>
+  person_property_relation_id : UUID <<FK>>
+  claim_id : UUID <<FK>>
+  previous_version_id : UUID <<FK>>
   --
-  **ClaimNumber** : string <<UK>>
-  **PropertyUnitId** : UUID <<FK>>
-  **PrimaryClaimantId** : UUID <<FK>>
-  ClaimType : string
-  ClaimSource : int
-  Priority : int
-  LifecycleStage : int
-  Status : int
-  SubmittedDate : datetime
-  **SubmittedByUserId** : UUID <<FK>>
-  DecisionDate : datetime
-  **DecisionByUserId** : UUID <<FK>>
-  **AssignedToUserId** : UUID <<FK>>
-  AssignedDate : datetime
-  TargetCompletionDate : datetime
-  TenureContractType : int
-  OwnershipShare : int
-  TenureStartDate : date
-  TenureEndDate : date
-  ClaimDescription : string
-  LegalBasis : string
-  SupportingNarrative : string
-  HasConflicts : bool
-  ConflictCount : int
-  ConflictResolutionStatus : string
-  EvidenceCount : int
-  AllRequiredDocumentsSubmitted : bool
-  MissingDocuments : string
-  VerificationStatus : int
-  VerificationDate : datetime
-  **VerifiedByUserId** : UUID <<FK>>
-  VerificationNotes : string
-  FinalDecision : string
-  DecisionReason : string
-  DecisionNotes : string
-  CertificateStatus : int
-  ProcessingNotes : string
-  PublicRemarks : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * evidence_type : VARCHAR(50)
+  * description : TEXT
+  * original_file_name : VARCHAR(255)
+  * file_path : VARCHAR(500)
+  * file_size_bytes : BIGINT
+  * mime_type : VARCHAR(100)
+  file_hash : VARCHAR(64)
+  document_issued_date : DATE
+  document_expiry_date : DATE
+  issuing_authority : VARCHAR(100)
+  document_reference_number : VARCHAR(50)
+  * version_number : INT
+  * is_current_version : BOOLEAN
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Evidences" as Evidences IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Document" as document #F3E5F5 {
+  * id : UUID <<PK>>
+  evidence_id : UUID <<FK>>
+  person_id : UUID <<FK>>
+  property_unit_id : UUID <<FK>>
+  person_property_relation_id : UUID <<FK>>
+  claim_id : UUID <<FK>>
+  verified_by_user_id : UUID <<FK>>
+  original_document_id : UUID <<FK>>
   --
-  **ClaimId** : UUID <<FK>>
-  **PersonId** : UUID <<FK>>
-  EvidenceType : string
-  Title : string
-  Description : string
-  PhysicalLocation : string
-  IsAvailable : bool
-  CollectionDate : date
-  **CollectedByUserId** : UUID <<FK>>
-  PreservationStatus : string
-  ExpiryDate : date
-  AuthenticityNotes : string
-  LegalRelevance : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * document_type : VARCHAR(50)
+  document_number : VARCHAR(50)
+  document_title : VARCHAR(200)
+  issue_date : DATE
+  expiry_date : DATE
+  issuing_authority : VARCHAR(100)
+  issuing_place : VARCHAR(100)
+  * is_verified : BOOLEAN
+  * verification_status : VARCHAR(30)
+  verification_date : TIMESTAMP
+  document_hash : VARCHAR(64)
+  * is_legally_valid : BOOLEAN
+  legal_validity_notes : TEXT
+  * is_original : BOOLEAN
+  is_notarized : BOOLEAN
+  notary_office : VARCHAR(100)
+  notarization_date : DATE
+  notarization_number : VARCHAR(50)
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Documents" as Documents IMPLEMENTED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Referral" as referral #FCE4EC {
+  * id : UUID <<PK>>
+  * claim_id : UUID <<FK>>
+  * from_user_id : UUID <<FK>>
+  to_user_id : UUID <<FK>>
+  acknowledged_by_user_id : UUID <<FK>>
+  previous_referral_id : UUID <<FK>>
   --
-  **ClaimId** : UUID <<FK>>
-  **EvidenceId** : UUID <<FK>>
-  **PersonId** : UUID <<FK>>
-  DocumentType : int
-  **DocumentNumber** : string <<UK>>
-  Title : string
-  Description : string
-  FilePath : string
-  FileExtension : string
-  FileSizeBytes : long
-  MimeType : string
-  Checksum : string
-  IssueDate : date
-  ExpiryDate : date
-  IssuingAuthority : string
-  VerificationStatus : int
-  VerificationDate : datetime
-  **VerifiedByUserId** : UUID <<FK>>
-  VerificationNotes : string
-  **UploadedByUserId** : UUID <<FK>>
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * referral_number : VARCHAR(20) <<UK>>
+  * referral_type : VARCHAR(30)
+  * from_role : VARCHAR(30)
+  * to_role : VARCHAR(30)
+  * referral_reason : TEXT
+  referral_notes : TEXT
+  * priority : VARCHAR(20)
+  * referral_date : TIMESTAMP
+  expected_response_date : DATE
+  * status : VARCHAR(30)
+  acknowledged_date : TIMESTAMP
+  started_date : TIMESTAMP
+  completed_date : TIMESTAMP
+  response_notes : TEXT
+  outcome : VARCHAR(30)
+  * is_escalation : BOOLEAN
+  escalation_level : INT
+  actions_required : TEXT
+  documents_required : TEXT
+  target_resolution_hours : INT
+  * is_overdue : BOOLEAN
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-' ==================== PLANNED ENTITIES ====================
-
-entity "Certificates" as Certificates PLANNED_COLOR {
-  **Id** : UUID <<PK>>
+entity "ConflictResolution" as conflict #FCE4EC {
+  * id : UUID <<PK>>
+  import_package_id : UUID <<FK>>
+  detected_by_user_id : UUID <<FK>>
+  assigned_to_user_id : UUID <<FK>>
+  resolved_by_user_id : UUID <<FK>>
+  escalated_by_user_id : UUID <<FK>>
   --
-  **CertificateNumber** : string <<UK>>
-  **ClaimId** : UUID <<FK>>
-  CertificateType : int
-  IssueDate : datetime
-  ExpiryDate : datetime
-  **IssuedByUserId** : UUID <<FK>>
-  Status : int
-  LegalNotes : string
-  Conditions : string
-  IsRevoked : bool
-  RevokedDate : datetime
-  **RevokedByUserId** : UUID <<FK>>
-  RevocationReason : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * conflict_number : VARCHAR(20) <<UK>>
+  * conflict_type : VARCHAR(30)
+  * entity_type : VARCHAR(30)
+  * first_entity_id : UUID
+  * second_entity_id : UUID
+  first_entity_identifier : VARCHAR(100)
+  second_entity_identifier : VARCHAR(100)
+  * similarity_score : DECIMAL(5,2)
+  * confidence_level : VARCHAR(20)
+  * conflict_description : TEXT
+  matching_criteria : JSONB
+  data_comparison : JSONB
+  * status : VARCHAR(30)
+  resolution_action : VARCHAR(30)
+  * detected_date : TIMESTAMP
+  assigned_date : TIMESTAMP
+  resolved_date : TIMESTAMP
+  resolution_reason : TEXT
+  resolution_notes : TEXT
+  merged_entity_id : UUID
+  discarded_entity_id : UUID
+  merge_mapping : JSONB
+  * priority : VARCHAR(20)
+  target_resolution_hours : INT
+  * is_overdue : BOOLEAN
+  * is_auto_detected : BOOLEAN
+  * is_auto_resolved : BOOLEAN
+  auto_resolution_rule : VARCHAR(100)
+  * is_escalated : BOOLEAN
+  escalation_reason : TEXT
+  escalated_date : TIMESTAMP
+  * review_attempt_count : INT
+  review_history : JSONB
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Surveys" as Surveys PLANNED_COLOR {
-  **Id** : UUID <<PK>>
+entity "Survey" as survey #E0F2F1 {
+  * id : UUID <<PK>>
+  * building_id : UUID <<FK>>
+  property_unit_id : UUID <<FK>>
+  * field_collector_id : UUID <<FK>>
   --
-  **SurveyCode** : string <<UK>>
-  SurveyType : int
-  **BuildingId** : UUID <<FK>>
-  **PropertyUnitId** : UUID <<FK>>
-  **ConductedByUserId** : UUID <<FK>>
-  SurveyDate : datetime
-  Status : int
-  Notes : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * reference_code : VARCHAR(20) <<UK>>
+  * survey_date : TIMESTAMP
+  * status : VARCHAR(30)
+  * survey_type : VARCHAR(30)
+  gps_coordinates : VARCHAR(50)
+  interviewee_name : VARCHAR(200)
+  interviewee_relationship : VARCHAR(30)
+  duration_minutes : INT
+  exported_date : TIMESTAMP
+  export_package_id : UUID
+  imported_date : TIMESTAMP
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "BuildingAssignments" as BuildingAssignments PLANNED_COLOR {
-  **Id** : UUID <<PK>>
+entity "BuildingAssignment" as assignment #E0F2F1 {
+  * id : UUID <<PK>>
+  * building_id : UUID <<FK>>
+  * field_collector_id : UUID <<FK>>
+  assigned_by_user_id : UUID <<FK>>
+  original_assignment_id : UUID <<FK>>
   --
-  **BuildingId** : UUID <<FK>>
-  **AssignedToUserId** : UUID <<FK>>
-  **AssignedByUserId** : UUID <<FK>>
-  AssignmentDate : datetime
-  DueDate : datetime
-  Status : int
-  Notes : string
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * assigned_date : TIMESTAMP
+  target_completion_date : DATE
+  actual_completion_date : TIMESTAMP
+  * transfer_status : VARCHAR(30)
+  transferred_to_tablet_date : TIMESTAMP
+  synchronized_from_tablet_date : TIMESTAMP
+  units_for_revisit : JSONB
+  revisit_reason : TEXT
+  * is_revisit : BOOLEAN
+  priority : VARCHAR(20)
+  assignment_notes : TEXT
+  * is_active : BOOLEAN
+  * total_property_units : INT
+  * completed_property_units : INT
+  transfer_error_message : TEXT
+  * transfer_retry_count : INT
+  last_transfer_attempt_date : TIMESTAMP
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "ConflictResolutions" as ConflictResolutions PLANNED_COLOR {
-  **Id** : UUID <<PK>>
+entity "ImportPackage" as import_package #E0F2F1 {
+  * id : UUID <<PK>>
+  * exported_by_user_id : UUID <<FK>>
+  imported_by_user_id : UUID <<FK>>
+  committed_by_user_id : UUID <<FK>>
   --
-  **ClaimId** : UUID <<FK>>
-  ConflictType : string
-  Description : string
-  IdentifiedDate : datetime
-  **ResolvedByUserId** : UUID <<FK>>
-  ResolutionDate : datetime
-  ResolutionMethod : string
-  ResolutionNotes : string
-  Status : int
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * package_id : UUID
+  * package_number : VARCHAR(20) <<UK>>
+  * file_name : VARCHAR(255)
+  * file_size_bytes : BIGINT
+  * package_created_date : TIMESTAMP
+  * package_exported_date : TIMESTAMP
+  device_id : VARCHAR(50)
+  * status : VARCHAR(30)
+  imported_date : TIMESTAMP
+  validation_started_date : TIMESTAMP
+  validation_completed_date : TIMESTAMP
+  committed_date : TIMESTAMP
+  * checksum : VARCHAR(64)
+  digital_signature : TEXT
+  * is_signature_valid : BOOLEAN
+  * is_checksum_valid : BOOLEAN
+  * survey_count : INT
+  * building_count : INT
+  * property_unit_count : INT
+  * person_count : INT
+  * claim_count : INT
+  * document_count : INT
+  * total_attachment_size_bytes : BIGINT
+  vocabulary_versions : JSONB
+  * is_vocabulary_compatible : BOOLEAN
+  vocabulary_compatibility_issues : TEXT
+  schema_version : VARCHAR(20)
+  * is_schema_valid : BOOLEAN
+  validation_errors : JSONB
+  validation_warnings : JSONB
+  * validation_error_count : INT
+  * validation_warning_count : INT
+  * person_duplicate_count : INT
+  * property_duplicate_count : INT
+  * conflict_count : INT
+  * are_conflicts_resolved : BOOLEAN
+  * successful_import_count : INT
+  * failed_import_count : INT
+  * skipped_record_count : INT
+  import_summary : TEXT
+  error_message : TEXT
+  error_log : JSONB
+  archive_path : VARCHAR(500)
+  * is_archived : BOOLEAN
+  archived_date : TIMESTAMP
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "Vocabularies" as Vocabularies PLANNED_COLOR {
-  **Id** : UUID <<PK>>
+entity "User" as user #ECEFF1 {
+  * id : UUID <<PK>>
+  supervisor_user_id : UUID <<FK>>
   --
-  **VocabularyCode** : string <<UK>>
-  NameArabic : string
-  NameEnglish : string
-  Category : string
-  Version : int
-  IsActive : bool
-  EffectiveDate : datetime
-  **ParentVersionId** : UUID <<FK>>
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * username : VARCHAR(50) <<UK>>
+  email : VARCHAR(100) <<UK>>
+  * password_hash : VARCHAR(255)
+  * password_salt : VARCHAR(50)
+  * full_name_arabic : VARCHAR(200)
+  full_name_english : VARCHAR(200)
+  employee_id : VARCHAR(20)
+  phone_number : VARCHAR(20)
+  organization : VARCHAR(100)
+  job_title : VARCHAR(100)
+  * role : VARCHAR(30)
+  additional_roles : JSONB
+  * has_mobile_access : BOOLEAN
+  * has_desktop_access : BOOLEAN
+  * is_active : BOOLEAN
+  * is_locked_out : BOOLEAN
+  lockout_end_date : TIMESTAMP
+  * failed_login_attempts : INT
+  last_login_date : TIMESTAMP
+  last_password_change_date : TIMESTAMP
+  * must_change_password : BOOLEAN
+  assigned_tablet_id : VARCHAR(50)
+  tablet_assigned_date : DATE
+  team_name : VARCHAR(100)
+  * preferred_language : VARCHAR(20)
+  * security_stamp : VARCHAR(100)
+  * two_factor_enabled : BOOLEAN
+  refresh_token : VARCHAR(500)
+  refresh_token_expiry_date : TIMESTAMP
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "ImportPackages" as ImportPackages PLANNED_COLOR {
-  **Id** : UUID <<PK>>
+entity "UserPermission" as user_permission #ECEFF1 {
+  * id : UUID <<PK>>
+  * user_id : UUID <<FK>>
+  * granted_by : UUID <<FK>>
   --
-  **PackageCode** : string <<UK>>
-  ImportDate : datetime
-  **ImportedByUserId** : UUID <<FK>>
-  FilePath : string
-  Checksum : string
-  Status : int
-  ValidationReport : string
-  RecordsImported : int
-  RecordsFailed : int
-  CreatedAtUtc : datetime
-  CreatedBy : UUID
-  LastModifiedAtUtc : datetime
-  LastModifiedBy : UUID
-  IsDeleted : bool
+  * permission : VARCHAR(50)
+  grant_reason : TEXT
+  * granted_at_utc : TIMESTAMP
+  expires_at_utc : TIMESTAMP
+  * is_active : BOOLEAN
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
-entity "AuditLogs" as AuditLogs PLANNED_COLOR {
-  **Id** : UUID <<PK>>
+entity "AuditLog" as audit_log #FFEBEE {
+  * id : UUID <<PK>>
+  user_id : UUID <<FK>>
+  parent_audit_log_id : UUID <<FK>>
   --
-  Timestamp : datetime
-  **UserId** : UUID <<FK>>
-  Action : string
-  EntityType : string
-  EntityId : UUID
-  Changes : string
-  DeviceId : string
-  IpAddress : string
+  * audit_log_number : VARCHAR(30)
+  * timestamp : TIMESTAMP
+  * action_type : VARCHAR(30)
+  * action_description : TEXT
+  * action_result : VARCHAR(30)
+  * username : VARCHAR(50)
+  * user_role : VARCHAR(30)
+  * user_full_name : VARCHAR(200)
+  entity_type : VARCHAR(50)
+  entity_id : UUID
+  entity_identifier : VARCHAR(100)
+  old_values : JSONB
+  new_values : JSONB
+  changed_fields : JSONB
+  ip_address : VARCHAR(45)
+  user_agent : VARCHAR(500)
+  source_application : VARCHAR(30)
+  device_id : VARCHAR(50)
+  session_id : VARCHAR(100)
+  correlation_id : UUID
+  * is_security_sensitive : BOOLEAN
+  * requires_legal_retention : BOOLEAN
+  retention_end_date : DATE
+  --
+  row_version : BYTEA
+}
+
+entity "Vocabulary" as vocabulary #ECEFF1 {
+  * id : UUID <<PK>>
+  parent_id : UUID <<FK>>
+  --
+  * vocabulary_type : VARCHAR(50)
+  * display_name_arabic : VARCHAR(200)
+  display_name_english : VARCHAR(200)
+  description : TEXT
+  description_english : TEXT
+  * is_active : BOOLEAN
+  * version : VARCHAR(20)
+  * is_current_version : BOOLEAN
+  * version : VARCHAR(20)
+  category : VARCHAR(20)
+  * values : JSONB
+  * values_count : INT
+  * is_mandatory : BOOLEAN
+  * allow_custom_values : BOOLEAN
+  --
+  created_at_utc : TIMESTAMP
+  created_by : UUID <<FK>>
+  is_deleted : BOOLEAN
 }
 
 ' ==================== RELATIONSHIPS ====================
 
-' Users relationships
-Users ||--o{ Users : "supervises"
-Users ||--o{ Claims : "creates/verifies/approves"
-Users ||--o{ BuildingAssignments : "receives assignments"
-Users ||--o{ Surveys : "conducts"
-Users ||--o{ Documents : "uploads"
-Users ||--o{ AuditLogs : "generates"
-Users ||--o{ Buildings : "creates"
-Users ||--o{ Evidences : "collects"
-Users ||--o{ Certificates : "issues"
-Users ||--o{ ConflictResolutions : "resolves"
-Users ||--o{ ImportPackages : "imports"
+' Building and PropertyUnit
+building ||--|{ property_unit : "contains"
+building ||--o{ assignment : "assigned via"
+building ||--o{ survey : "surveyed in"
 
-' Buildings relationships
-Buildings ||--o{ PropertyUnits : "contains"
-Buildings ||--o{ BuildingAssignments : "assigned in"
-Buildings ||--o{ Surveys : "surveyed"
+' PropertyUnit and Household/Person
+property_unit ||--o{ household : "houses"
+household ||--o{ person : "includes"
+household }o--o| person : "headed by"
 
-' PropertyUnits relationships
-PropertyUnits ||--o{ PersonPropertyRelations : "has occupants"
-PropertyUnits ||--o{ Claims : "subject of"
-PropertyUnits ||--|| Households : "occupied by"
-PropertyUnits }o--|| Buildings : "located in"
+' Person-Property Relations
+person ||--o{ ppr : "has"
+property_unit ||--o{ ppr : "has"
+ppr ||--o{ evidence : "supported by"
+ppr ||--o{ document : "documented by"
 
-' Persons relationships
-Persons ||--o{ PersonPropertyRelations : "occupies properties"
-Persons ||--o{ Claims : "primary claimant"
-Persons }o--o| Households : "member of"
-Persons ||--o{ Documents : "owns documents"
-Persons ||--o{ Evidences : "owns evidence"
+' Claims
+property_unit ||--o{ claim : "subject of"
+person ||--o{ claim : "primary claimant"
+claim ||--o{ evidence : "supported by"
+claim ||--o{ document : "includes"
+claim ||--o{ referral : "referred via"
 
-' Households relationships
-Households ||--o{ Persons : "has members"
-Households ||--|| PropertyUnits : "resides in"
+' Evidence and Document
+evidence }o--o| person : "belongs to"
+evidence ||--o| evidence : "previous version"
+document }o--o| person : "belongs to"
+document }o--o| property_unit : "relates to"
+document }o--o| evidence : "backed by"
+document ||--o| document : "copy of"
 
-' PersonPropertyRelations relationships
-PersonPropertyRelations }o--|| Persons : "person"
-PersonPropertyRelations }o--|| PropertyUnits : "property"
+' Survey and Assignment
+survey }o--o| property_unit : "for unit"
+survey }o--|| user : "conducted by"
 
-' Claims relationships
-Claims }o--|| PropertyUnits : "for property"
-Claims }o--|| Persons : "primary claimant"
-Claims ||--o{ Evidences : "supported by"
-Claims ||--o{ Documents : "attached to"
-Claims }o--|| Users : "submitted by"
-Claims }o--o| Users : "assigned to"
-Claims }o--o| Users : "verified by"
-Claims }o--o| Users : "decided by"
-Claims ||--o| Certificates : "results in"
-Claims ||--o{ ConflictResolutions : "has conflicts"
+assignment }o--|| user : "to collector"
+assignment }o--|| user : "assigned by"
+assignment ||--o| assignment : "revisit of"
 
-' Evidences relationships
-Evidences }o--|| Claims : "supports claim"
-Evidences }o--|| Persons : "belongs to person"
-Evidences ||--o{ Documents : "has documents"
+' Import Package and Conflicts
+import_package }o--|| user : "exported by"
+import_package }o--o| user : "imported by"
+import_package ||--o{ conflict : "triggers"
 
-' Documents relationships
-Documents }o--o| Claims : "attached to claim"
-Documents }o--o| Evidences : "attached to evidence"
-Documents }o--o| Persons : "belongs to person"
-Documents }o--|| Users : "uploaded by"
+' Referral self-reference
+referral ||--o| referral : "escalated from"
 
-' Certificates relationships
-Certificates }o--|| Claims : "issued for"
-Certificates }o--|| Users : "issued by"
+' Conflict Resolution
+conflict }o--o| user : "assigned to"
+conflict }o--o| user : "resolved by"
 
-' Surveys relationships
-Surveys }o--|| Users : "conducted by"
-Surveys }o--|| Buildings : "for building"
-Surveys }o--o| PropertyUnits : "for unit"
+' User relationships
+user ||--o{ user_permission : "has"
+user ||--o| user : "supervised by"
+user ||--o{ audit_log : "performs"
+audit_log ||--o| audit_log : "parent of"
 
-' BuildingAssignments relationships
-BuildingAssignments }o--|| Buildings : "assigns building"
-BuildingAssignments }o--|| Users : "assigned to collector"
-BuildingAssignments }o--|| Users : "assigned by admin"
+' Vocabulary hierarchy
+vocabulary ||--o| vocabulary : "parent of"
 
-' ConflictResolutions relationships
-ConflictResolutions }o--|| Claims : "resolves conflict"
-ConflictResolutions }o--|| Users : "resolved by"
+' User processing relationships
+user ||--o{ claim : "processes"
+user ||--o{ document : "verifies"
 
-' Vocabularies relationships
-Vocabularies ||--o{ Vocabularies : "has versions"
-
-' ImportPackages relationships
-ImportPackages }o--|| Users : "imported by"
-ImportPackages ||--o{ Claims : "imports claims"
-ImportPackages ||--o{ Persons : "imports persons"
-ImportPackages ||--o{ PropertyUnits : "imports units"
-
-' AuditLogs relationships
-AuditLogs }o--|| Users : "performed by"
-
-' Legend
 legend right
-  |= Color |= Status |
-  | <back:#E8F5E9>   </back> | Implemented (in database) |
-  | <back:#FFF3E0>   </back> | Planned (defined, not migrated) |
-endlegend
+  |= Color |= Domain |
+  | <#E3F2FD> | Property Management |
+  | <#FFF8E1> | People and Households |
+  | <#E8F5E9> | Tenure Relations |
+  | <#FCE4EC> | Claims and Workflow |
+  | <#F3E5F5> | Evidence and Documents |
+  | <#E0F2F1> | Survey Operations |
+  | <#ECEFF1> | User and Reference |
+  | <#FFEBEE> | Audit Log |
+  
+  |= Symbol |= Meaning |
+  | * | Required Field |
+  | <<PK>> | Primary Key |
+  | <<FK>> | Foreign Key |
+  | <<UK>> | Unique Key |
+end legend
 
-note top of Users
-  **✅ IMPLEMENTED - v0.9.0**
-  Authentication & RBAC complete
-  6 roles: Administrator, DataManager, 
-  OfficeClerk, FieldCollector,
-  FieldSupervisor, Analyst
+note bottom of building
+  Building ID: 17-digit code
+  GG-DD-SS-CCC-NNN-BBBBB
+  Governorate-District-SubDistrict
+  Community-Neighborhood-Building
 end note
 
-note top of Claims
-  **✅ IMPLEMENTED - v0.8.0**
-  Complete claims lifecycle
-  8 API endpoints tested
-  Status transitions validated
+note bottom of claim
+  Claim Number: CLM-YYYY-NNNNNNNNN
+  Lifecycle: Draft to Completed
+  10+ year audit retention required
 end note
 
-note top of Certificates
-  **⏳ PLANNED - High Priority**
-  Completes claims workflow
-  Estimate: 3 days
+note bottom of ppr
+  Relation Types:
+  Owner, Occupant, Tenant,
+  Guest, Heir, Other
+  
+  Ownership Share: percentage
 end note
 
-note top of Surveys
-  **⏳ PLANNED - High Priority**
-  Field & Office survey workflows
-  UC-001, UC-002, UC-004, UC-005
-  Estimate: 4 days
-end note
-
-note top of BuildingAssignments
-  **⏳ PLANNED - High Priority**
-  Field collector assignments
-  UC-012
-  Estimate: 3 days
-end note
-
-note top of ImportPackages
-  **⏳ PLANNED - High Priority**
-  Field-to-office data transfer
-  UC-003 (Export/Import)
-  Estimate: 5 days
-end note
 
 @enduml

@@ -61,12 +61,61 @@ public class EvidenceRepository : IEvidenceRepository
             .ToListAsync(cancellationToken);
     }
 
+
     public async Task<IEnumerable<Evidence>> GetCurrentVersionsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
             .Include(e => e.Person)
             .Include(e => e.PersonPropertyRelation)
             .Where(e => e.IsCurrentVersion && !e.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+    /// <summary>
+    /// Get all evidence for a survey context (by persons and property relations in survey's building)
+    /// </summary>
+    public async Task<List<Evidence>> GetBySurveyContextAsync(
+        Guid buildingId,
+        string? evidenceType = null,
+        CancellationToken cancellationToken = default)
+    {
+        // Get all person IDs in the building
+        var personIds = await _context.Persons
+            .Where(p => p.HouseholdId.HasValue && !p.IsDeleted)
+            .Where(p => _context.Households
+                .Where(h => h.Id == p.HouseholdId && !h.IsDeleted)
+                .Where(h => _context.PropertyUnits
+                    .Any(pu => pu.Id == h.PropertyUnitId
+                        && pu.BuildingId == buildingId
+                        && !pu.IsDeleted))
+                .Any())
+            .Select(p => p.Id)
+            .ToListAsync(cancellationToken);
+
+        // Get all person-property relation IDs in the building
+        var relationIds = await _context.PersonPropertyRelations
+            .Where(ppr => !ppr.IsDeleted)
+            .Where(ppr => _context.PropertyUnits
+                .Any(pu => pu.Id == ppr.PropertyUnitId
+                    && pu.BuildingId == buildingId
+                    && !pu.IsDeleted))
+            .Select(ppr => ppr.Id)
+            .ToListAsync(cancellationToken);
+
+        // Get all evidence linked to these persons or relations
+        var query = _context.Evidences
+            .Where(e => !e.IsDeleted)
+            .Where(e => (e.PersonId.HasValue && personIds.Contains(e.PersonId.Value))
+                     || (e.PersonPropertyRelationId.HasValue && relationIds.Contains(e.PersonPropertyRelationId.Value)))
+            .Where(e => e.IsCurrentVersion); // Only current versions
+
+        // Apply evidence type filter if provided
+        if (!string.IsNullOrWhiteSpace(evidenceType))
+        {
+            query = query.Where(e => e.EvidenceType == evidenceType);
+        }
+
+        return await query
+            .OrderByDescending(e => e.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
 
