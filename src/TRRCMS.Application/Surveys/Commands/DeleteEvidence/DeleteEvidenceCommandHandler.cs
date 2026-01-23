@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
-using TRRCMS.Application.Common.Services;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.DeleteEvidence;

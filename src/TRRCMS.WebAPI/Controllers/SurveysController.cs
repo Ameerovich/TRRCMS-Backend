@@ -748,7 +748,7 @@ public class SurveysController : ControllerBase
         await _mediator.Send(command);
         return NoContent();
     }
-    // ==================== EVIDENCE MANAGEMENT (DAY 4) ====================
+    // ==================== EVIDENCE MANAGEMENT ======================
 
     /// <summary>
     /// Upload property photo

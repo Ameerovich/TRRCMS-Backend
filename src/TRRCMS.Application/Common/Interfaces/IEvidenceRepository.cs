@@ -37,16 +37,19 @@ public interface IEvidenceRepository
     /// </summary>
     Task<IEnumerable<Evidence>> GetCurrentVersionsAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get evidence history (all versions) for a specific evidence
-    /// </summary>
-    /// /// <summary>
+
     /// Get all evidence for a survey context (by persons and property relations in survey's building)
     /// </summary>
     Task<List<Evidence>> GetBySurveyContextAsync(
         Guid buildingId,
         string? evidenceType = null,
         CancellationToken cancellationToken = default);
+
+
+    /// <summary>
+    /// Get evidence history (all versions) for a specific evidence
+    /// </summary>
+    /// /// <summary>
     Task<IEnumerable<Evidence>> GetVersionHistoryAsync(Guid evidenceId, CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -2,7 +2,6 @@
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
-using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;

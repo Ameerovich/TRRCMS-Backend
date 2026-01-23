@@ -113,7 +113,7 @@ public class FileStorageService : IFileStorageService
         {
             fileStream.Position = 0;
             var hashBytes = await sha256.ComputeHashAsync(fileStream, cancellationToken);
-            fileStream.Position = 0; // Reset position for further use
+            fileStream.Position = 0;
             return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
         }
     }
