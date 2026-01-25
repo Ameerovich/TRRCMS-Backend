@@ -10,12 +10,15 @@ using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 using TRRCMS.Application.Surveys.Commands.CreateFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
+using TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.DeleteEvidence;
+using TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 using TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 using TRRCMS.Application.Surveys.Commands.SetHouseholdHead;
+using TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 using TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
@@ -26,6 +29,9 @@ using TRRCMS.Application.Surveys.Queries.GetDraftSurvey;
 using TRRCMS.Application.Surveys.Queries.GetEvidenceById;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdPersons;
+using TRRCMS.Application.Surveys.Queries.GetOfficeDraftSurveys;
+using TRRCMS.Application.Surveys.Queries.GetOfficeSurveyById;
+using TRRCMS.Application.Surveys.Queries.GetOfficeSurveys;
 using TRRCMS.Application.Surveys.Queries.GetPropertyUnitsForSurvey;
 using TRRCMS.Application.Surveys.Queries.GetSurveyEvidence;
 
@@ -33,7 +39,7 @@ namespace TRRCMS.WebAPI.Controllers;
 
 /// <summary>
 /// Surveys controller for field and office survey operations
-/// Supports UC-001 (Field Survey) and UC-004 (Office Survey)
+/// Supports UC-001 (Field Survey), UC-004 (Office Survey), and UC-005 (Draft Survey Management)
 /// </summary>
 [Route("api/[controller]")]
 [ApiController]
@@ -47,7 +53,7 @@ public class SurveysController : ControllerBase
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
     }
 
-    // ==================== SURVEY MANAGEMENT ====================
+    // ==================== FIELD SURVEY MANAGEMENT ====================
 
     /// <summary>
     /// Create a new field survey
@@ -65,38 +71,10 @@ public class SurveysController : ControllerBase
     /// - Records interviewee information
     /// - Automatically assigns the survey to the current user (field collector)
     /// 
-    /// **When to use**:
-    /// - When starting a new field survey for a building
-    /// - At the beginning of the field data collection process
-    /// 
     /// **Required permissions**: CanCreateSurveys
-    /// 
-    /// **Example**:
-    /// ```json
-    /// {
-    ///   "buildingId": "12345678-1234-1234-1234-123456789012",
-    ///   "surveyDate": "2026-01-20T10:00:00Z",
-    ///   "gpsCoordinates": "36.2021,37.1343",
-    ///   "intervieweeName": "محمد أحمد السيد",
-    ///   "intervieweeRelationship": "مالك العقار",
-    ///   "notes": "First field survey for this building"
-    /// }
-    /// ```
-    /// 
-    /// **Response**: Returns the created survey with auto-generated reference code
-    /// 
-    /// **Next steps**: 
-    /// 1. Use the returned survey ID to create/link property units
-    /// 2. Continue with household and person data collection
-    /// 3. Save draft periodically to preserve work
     /// </remarks>
     /// <param name="command">Field survey creation data</param>
     /// <returns>Created survey with reference code and status</returns>
-    /// <response code="201">Survey created successfully. Returns survey details with reference code.</response>
-    /// <response code="400">Invalid input. Check building ID, GPS format, or date validity.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. User lacks CanCreateSurveys permission.</response>
-    /// <response code="404">Building not found. Verify the building ID exists.</response>
     [HttpPost("field")]
     [Authorize(Policy = "CanCreateSurveys")]
     [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status201Created)]
@@ -111,46 +89,328 @@ public class SurveysController : ControllerBase
         return CreatedAtAction(nameof(GetSurvey), new { id = result.Id }, result);
     }
 
+    // ==================== OFFICE SURVEY MANAGEMENT (UC-004/UC-005) ====================
+
     /// <summary>
-    /// Save survey progress as draft
+    /// Create a new office survey
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-002 - Save draft and exit safely
+    /// **Use Case**: UC-004 - Office Survey for Walk-in Claimants
     /// 
-    /// **Purpose**: Saves current survey progress without finalizing. Allows field collectors to safely exit and resume later.
+    /// **Purpose**: Initiates a new office survey when a claimant visits the office to submit a claim. This is the desktop alternative to field surveys.
     /// 
     /// **What it does**:
-    /// - Updates survey fields with current progress
-    /// - Keeps survey in Draft status
-    /// - Records survey duration
-    /// - Preserves all entered data
-    /// - Updates last modified timestamp
+    /// - Creates a new survey record in Draft status with Type=Office
+    /// - Generates a unique reference code (format: OFC-YYYY-NNNNN)
+    /// - Records office location and registration details
+    /// - Links the survey to a building
+    /// - Records contact information for follow-up
+    /// - Automatically assigns the survey to the current user (office clerk)
     /// 
     /// **When to use**:
-    /// - Periodically during data collection to prevent data loss
-    /// - When pausing work to resume later
-    /// - When network connectivity is restored after offline work
-    /// - Before closing the application
+    /// - When a claimant visits the office in person
+    /// - When processing walk-in claims
+    /// - When receiving claims remotely via documentation
     /// 
-    /// **Required permissions**: CanEditOwnSurveys
+    /// **Required permissions**: CanCreateSurveys
     /// 
     /// **Example**:
     /// ```json
     /// {
-    ///   "notes": "Updated survey notes after visiting 3 units",
-    ///   "durationMinutes": 45,
-    ///   "gpsCoordinates": "36.2025,37.1350"
+    ///   "buildingId": "12345678-1234-1234-1234-123456789012",
+    ///   "surveyDate": "2026-01-24T10:00:00Z",
+    ///   "officeLocation": "UN-Habitat Aleppo Office",
+    ///   "registrationNumber": "REG-2026-001234",
+    ///   "inPersonVisit": true,
+    ///   "intervieweeName": "محمد أحمد السيد",
+    ///   "intervieweeRelationship": "مالك العقار",
+    ///   "contactPhone": "+963912345678",
+    ///   "contactEmail": "example@email.com",
+    ///   "notes": "Walk-in claimant with property deed documentation"
     /// }
     /// ```
+    /// 
+    /// **Response**: Returns the created survey with auto-generated reference code (OFC-YYYY-NNNNN)
+    /// 
+    /// **Next steps**: 
+    /// 1. Link or create property unit using POST /api/surveys/{surveyId}/property-units
+    /// 2. Add household and person data
+    /// 3. Upload evidence documents
+    /// 4. Finalize to create claim using POST /api/surveys/office/{id}/finalize
+    /// </remarks>
+    /// <param name="command">Office survey creation data</param>
+    /// <returns>Created survey with reference code and status</returns>
+    /// <response code="201">Survey created successfully. Returns survey details with reference code.</response>
+    /// <response code="400">Invalid input. Check building ID, phone format, email format, or date validity.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. User lacks CanCreateSurveys permission.</response>
+    /// <response code="404">Building not found. Verify the building ID exists.</response>
+    [HttpPost("office")]
+    [Authorize(Policy = "CanCreateSurveys")]
+    [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SurveyDto>> CreateOfficeSurvey(
+        [FromBody] CreateOfficeSurveyCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetOfficeSurveyById), new { id = result.Id }, result);
+    }
+
+    /// <summary>
+    /// Get all office surveys with filtering and pagination
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004/UC-005 - List and search office surveys
+    /// 
+    /// **Purpose**: Lists office surveys with flexible filtering options for clerks and supervisors.
+    /// 
+    /// **What it does**:
+    /// - Returns paginated list of office surveys only (excludes field surveys)
+    /// - Supports multiple filter criteria
+    /// - Allows sorting by various fields
+    /// - Includes related building and property unit information
+    /// 
+    /// **Available Filters**:
+    /// - status: Filter by status (Draft, Completed, Finalized)
+    /// - buildingId: Filter by specific building
+    /// - clerkId: Filter by office clerk who created the survey
+    /// - fromDate/toDate: Date range filter for survey date
+    /// - referenceCode: Search by reference code (partial match)
+    /// - intervieweeName: Search by interviewee name (partial match)
+    /// 
+    /// **Sorting Options**:
+    /// - SurveyDate (default), ReferenceCode, Status, CreatedAtUtc
+    /// - Direction: asc or desc (default: desc)
+    /// 
+    /// **Required permissions**: CanViewOwnSurveys
+    /// 
+    /// **Example Request**:
+    /// ```
+    /// GET /api/surveys/office?status=Draft&amp;fromDate=2026-01-01&amp;page=1&amp;pageSize=20&amp;sortBy=SurveyDate&amp;sortDirection=desc
+    /// ```
+    /// 
+    /// **Response**: Paginated list with survey summaries and pagination metadata
+    /// </remarks>
+    /// <param name="status">Filter by survey status (Draft, Completed, Finalized)</param>
+    /// <param name="buildingId">Filter by building ID</param>
+    /// <param name="clerkId">Filter by office clerk ID</param>
+    /// <param name="fromDate">Filter surveys from this date</param>
+    /// <param name="toDate">Filter surveys up to this date</param>
+    /// <param name="referenceCode">Search by reference code (partial match)</param>
+    /// <param name="intervieweeName">Search by interviewee name (partial match)</param>
+    /// <param name="page">Page number (default: 1)</param>
+    /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
+    /// <param name="sortBy">Sort field (SurveyDate, ReferenceCode, Status, CreatedAtUtc)</param>
+    /// <param name="sortDirection">Sort direction (asc or desc)</param>
+    /// <returns>Paginated list of office surveys</returns>
+    /// <response code="200">Success. Returns paginated list of surveys.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. User lacks CanViewOwnSurveys permission.</response>
+    [HttpGet("office")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(GetOfficeSurveysResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<GetOfficeSurveysResponse>> GetOfficeSurveys(
+        [FromQuery] string? status = null,
+        [FromQuery] Guid? buildingId = null,
+        [FromQuery] Guid? clerkId = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] string? referenceCode = null,
+        [FromQuery] string? intervieweeName = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string sortBy = "SurveyDate",
+        [FromQuery] string sortDirection = "desc")
+    {
+        var query = new GetOfficeSurveysQuery
+        {
+            Status = status,
+            BuildingId = buildingId,
+            ClerkId = clerkId,
+            FromDate = fromDate,
+            ToDate = toDate,
+            ReferenceCode = referenceCode,
+            IntervieweeName = intervieweeName,
+            Page = page,
+            PageSize = pageSize,
+            SortBy = sortBy,
+            SortDirection = sortDirection
+        };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get current clerk's draft office surveys
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-005 - Resume draft office survey
+    /// 
+    /// **Purpose**: Retrieves all draft office surveys created by the current user, allowing them to resume incomplete work.
+    /// 
+    /// **What it does**:
+    /// - Filters surveys by current user ID
+    /// - Only returns surveys with Type=Office and Status=Draft
+    /// - Sorted by last modified date (most recent first)
+    /// - Includes building and property unit information
+    /// 
+    /// **When to use**:
+    /// - When logging in to continue previous work
+    /// - To view incomplete surveys that need attention
+    /// - For the "My Drafts" view in the desktop application
+    /// 
+    /// **Required permissions**: CanViewOwnSurveys
+    /// 
+    /// **Response**: List of draft surveys owned by the current user (may be empty)
+    /// </remarks>
+    /// <returns>List of draft office surveys</returns>
+    [HttpGet("office/drafts")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<SurveyDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<List<SurveyDto>>> GetOfficeDraftSurveys()
+    {
+        var query = new GetOfficeDraftSurveysQuery();
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get office survey details by ID
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004/UC-005 - View full office survey details
+    /// 
+    /// **Purpose**: Retrieves complete office survey with all related data.
+    /// 
+    /// **What you get**:
+    /// - Survey details including office-specific fields
+    /// - Building and property unit info
+    /// - Linked households and persons
+    /// - Person-property relations
+    /// - Uploaded evidence
+    /// - Linked claim info (if any)
+    /// - Data summary counts
+    /// 
+    /// **Required permissions**: CanViewOwnSurveys
+    /// </remarks>
+    /// <param name="id">Office survey ID</param>
+    /// <returns>Complete office survey details</returns>
+    [HttpGet("office/{id}")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(OfficeSurveyDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OfficeSurveyDetailDto>> GetOfficeSurveyById(Guid id)
+    {
+        var query = new GetOfficeSurveyByIdQuery { SurveyId = id };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Update office survey
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004/UC-005 - Update office survey details
+    /// 
+    /// **Purpose**: Updates office survey fields (only for Draft surveys).
+    /// 
+    /// **Updateable fields**:
+    /// - PropertyUnitId, IntervieweeName, IntervieweeRelationship, Notes, DurationMinutes
+    /// - Office-specific: OfficeLocation, RegistrationNumber, AppointmentReference, ContactPhone, ContactEmail, InPersonVisit
+    /// 
+    /// **Required permissions**: CanEditOwnSurveys
+    /// </remarks>
+    /// <param name="id">Office survey ID</param>
+    /// <param name="command">Update data</param>
+    /// <returns>Updated survey</returns>
+    [HttpPut("office/{id}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SurveyDto>> UpdateOfficeSurvey(
+        Guid id,
+        [FromBody] UpdateOfficeSurveyCommand command)
+    {
+        command.SurveyId = id;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Finalize office survey and optionally create claim
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004 S21 / UC-005 - Finalize office survey
+    /// 
+    /// **Purpose**: Marks survey as finalized and optionally creates a claim.
+    /// 
+    /// **What it does**:
+    /// - Validates survey has required data (property unit linked)
+    /// - Collects data summary (households, persons, relations, evidence)
+    /// - Marks survey as Finalized
+    /// - If AutoCreateClaim=true AND ownership relations exist:
+    ///   - Generates claim number (CLM-YYYY-NNNNNNNNN)
+    ///   - Creates claim with ClaimSource=OfficeSubmission
+    ///   - Links claim to survey
+    /// - Returns finalization result with summary
+    /// 
+    /// **Required permissions**: CanFinalizeSurveys
+    /// 
+    /// **Example**:
+    /// ```json
+    /// {
+    ///   "finalNotes": "Survey completed successfully",
+    ///   "durationMinutes": 45,
+    ///   "autoCreateClaim": true
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="id">Office survey ID</param>
+    /// <param name="command">Finalization options</param>
+    /// <returns>Finalization result with claim info</returns>
+    [HttpPost("office/{id}/finalize")]
+    [Authorize(Policy = "CanFinalizeSurveys")]
+    [ProducesResponseType(typeof(OfficeSurveyFinalizationResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OfficeSurveyFinalizationResultDto>> FinalizeOfficeSurvey(
+        Guid id,
+        [FromBody] FinalizeOfficeSurveyCommand command)
+    {
+        command.SurveyId = id;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    // ==================== COMMON SURVEY OPERATIONS ====================
+
+    /// <summary>
+    /// Save survey progress as draft (works for both field and office surveys)
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-002/UC-005 - Save draft and exit safely
+    /// 
+    /// **Purpose**: Saves current survey progress without finalizing.
+    /// 
+    /// **Required permissions**: CanEditOwnSurveys
     /// </remarks>
     /// <param name="id">Survey ID to update</param>
     /// <param name="command">Draft update data (all fields optional)</param>
     /// <returns>Updated survey details</returns>
-    /// <response code="200">Draft saved successfully. Returns updated survey.</response>
-    /// <response code="400">Invalid input or survey not in Draft status.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Can only edit your own surveys.</response>
-    /// <response code="404">Survey not found. Verify the survey ID.</response>
     [HttpPut("{id}/draft")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status200OK)]
@@ -168,29 +428,17 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Get survey by ID
+    /// Get survey by ID (works for both field and office surveys)
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-002 - Resume draft survey
     /// 
     /// **Purpose**: Retrieves complete survey details to resume work or view progress.
     /// 
-    /// **What it does**:
-    /// - Fetches complete survey information
-    /// - Includes building details (number, address)
-    /// - Includes linked property unit information (if any)
-    /// - Shows current survey status
-    /// - Displays field collector name
-    /// - Shows all timestamps (created, modified)
-    /// 
     /// **Required permissions**: CanViewOwnSurveys
     /// </remarks>
     /// <param name="id">Survey ID to retrieve</param>
     /// <returns>Complete survey details</returns>
-    /// <response code="200">Survey found. Returns complete survey details.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Can only view your own surveys.</response>
-    /// <response code="404">Survey not found. Verify the survey ID.</response>
     [HttpGet("{id}")]
     [Authorize(Policy = "CanViewOwnSurveys")]
     [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status200OK)]
@@ -204,7 +452,7 @@ public class SurveysController : ControllerBase
         return Ok(result);
     }
 
-    // ==================== PROPERTY UNIT MANAGEMENT ====================
+    //// ==================== PROPERTY UNIT MANAGEMENT ====================
 
     /// <summary>
     /// Get all property units for survey's building
@@ -214,7 +462,16 @@ public class SurveysController : ControllerBase
     /// 
     /// **Purpose**: Lists all property units in the building being surveyed.
     /// 
+    /// **What you get**:
+    /// - List of all property units in the survey's building
+    /// - Unit identifiers and types
+    /// - Current status of each unit
+    /// - Damage level assessments
+    /// - Occupancy information
+    /// 
     /// **Required permissions**: CanViewOwnSurveys
+    /// 
+    /// **Response**: Array of property units ordered by unit identifier
     /// </remarks>
     /// <param name="surveyId">Survey ID to get property units for</param>
     /// <returns>List of property units in the building</returns>
@@ -243,7 +500,26 @@ public class SurveysController : ControllerBase
     /// 
     /// **Purpose**: Creates a new property unit and automatically links it to the survey.
     /// 
+    /// **What it does**:
+    /// - Creates property unit record in survey's building
+    /// - Generates unique unit identifier
+    /// - Links the unit to the survey
+    /// - Records unit type and characteristics
+    /// 
     /// **Required permissions**: CanEditOwnSurveys
+    /// 
+    /// **Example**:
+    /// ```json
+    /// {
+    ///   "unitIdentifier": "A-101",
+    ///   "unitType": "Apartment",
+    ///   "floor": 1,
+    ///   "area": 120.5,
+    ///   "roomCount": 3,
+    ///   "occupancyType": "Occupied",
+    ///   "damageLevel": "Minor"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID to create the property unit for</param>
     /// <param name="command">Property unit creation data</param>
@@ -266,10 +542,7 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(
-            nameof(GetSurvey),
-            new { id = surveyId },
-            result);
+        return CreatedAtAction(nameof(GetSurvey), new { id = surveyId }, result);
     }
 
     /// <summary>
@@ -279,6 +552,17 @@ public class SurveysController : ControllerBase
     /// **Use Case**: UC-001 Stage 2 - Update property unit details during survey
     /// 
     /// **Purpose**: Updates existing property unit details.
+    /// 
+    /// **What it does**:
+    /// - Updates property unit fields
+    /// - Validates unit belongs to survey's building
+    /// - Records changes in audit trail
+    /// 
+    /// **Updateable fields**:
+    /// - unitType, floor, area, roomCount
+    /// - occupancyType, occupancyNature
+    /// - damageLevel, status
+    /// - notes
     /// 
     /// **Required permissions**: CanEditOwnSurveys
     /// </remarks>
@@ -315,19 +599,29 @@ public class SurveysController : ControllerBase
     /// <remarks>
     /// **Use Case**: UC-001 Stage 2 - Select existing property unit
     /// 
-    /// **Purpose**: Links an existing property unit to the survey.
+    /// **Purpose**: Links an existing property unit to the survey without creating a new one.
+    /// 
+    /// **What it does**:
+    /// - Links property unit to survey
+    /// - Validates unit belongs to survey's building
+    /// - Updates survey's PropertyUnitId
+    /// 
+    /// **When to use**:
+    /// - When the property unit already exists in the system
+    /// - To select from previously created units
+    /// - For office surveys selecting existing units
     /// 
     /// **Required permissions**: CanEditOwnSurveys
     /// </remarks>
-    /// <param name="surveyId">Survey ID to link the property unit to</param>
-    /// <param name="command">Link command with property unit ID</param>
-    /// <returns>Updated survey with linked property unit</returns>
+    /// <param name="surveyId">Survey ID to link to</param>
+    /// <param name="unitId">Property unit ID to link</param>
+    /// <returns>Updated survey details</returns>
     /// <response code="200">Property unit linked successfully to survey.</response>
     /// <response code="400">Invalid input or unit doesn't belong to survey's building.</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only link units to your own surveys.</response>
     /// <response code="404">Survey or property unit not found.</response>
-    [HttpPost("{surveyId}/link-property-unit")]
+    [HttpPost("{surveyId}/property-units/{unitId}/link")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -336,14 +630,18 @@ public class SurveysController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SurveyDto>> LinkPropertyUnitToSurvey(
         Guid surveyId,
-        [FromBody] LinkPropertyUnitToSurveyCommand command)
+        Guid unitId)
     {
-        command.SurveyId = surveyId;
+        var command = new LinkPropertyUnitToSurveyCommand
+        {
+            SurveyId = surveyId,
+            PropertyUnitId = unitId
+        };
         var result = await _mediator.Send(command);
         return Ok(result);
     }
 
-    // ==================== HOUSEHOLD MANAGEMENT (DAY 3) ====================
+    // ==================== HOUSEHOLD MANAGEMENT ====================
 
     /// <summary>
     /// Create household in survey context
@@ -400,7 +698,7 @@ public class SurveysController : ControllerBase
     /// 
     /// **Next steps**: 
     /// - Add individual persons: POST /{surveyId}/households/{householdId}/persons
-    /// - Set household head: POST /{surveyId}/households/{householdId}/set-head
+    /// - Set household head: PUT /{surveyId}/households/{householdId}/head/{personId}
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="command">Household creation data</param>
@@ -423,10 +721,7 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(
-            nameof(GetHouseholdInSurvey),
-            new { surveyId, householdId = result.Id },
-            result);
+        return CreatedAtAction(nameof(GetHouseholdInSurvey), new { surveyId, householdId = result.Id }, result);
     }
 
     /// <summary>
@@ -477,64 +772,51 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Set household head
+    /// Get all persons in household
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - Designate household head
+    /// **Use Case**: UC-001 Stage 3 - View household members
     /// 
-    /// **Purpose**: Links a Person entity as the official head of household.
+    /// **Purpose**: Lists all registered persons/members in a household.
     /// 
-    /// **What it does**:
-    /// - Designates a person as head of household
-    /// - Updates household's HeadOfHouseholdPersonId
-    /// - Creates audit trail
+    /// **What you get**:
+    /// - List of all household members
+    /// - Full Arabic names (3-part + mother's name)
+    /// - Computed full names and ages
+    /// - Demographics (gender, nationality, birth year)
+    /// - Relationships to household head
+    /// - Contact information
+    /// - Identification details
     /// 
-    /// **When to use**:
-    /// - After adding persons to household
-    /// - To officially designate the household head
-    /// - Person must already be member of this household
+    /// **Required permissions**: CanViewOwnSurveys
     /// 
-    /// **Important**: Person must belong to this household (HouseholdId must match)
-    /// 
-    /// **Required permissions**: CanEditOwnSurveys
-    /// 
-    /// **Example**:
-    /// ```json
-    /// {
-    ///   "personId": "person-guid-here"
-    /// }
-    /// ```
-    /// 
-    /// **Response**: Returns updated household with linked head
+    /// **Response**: Array of persons ordered by creation date
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="householdId">Household ID</param>
-    /// <param name="command">Command with person ID</param>
-    /// <returns>Updated household details</returns>
-    /// <response code="200">Household head set successfully.</response>
-    /// <response code="400">Person doesn't belong to this household.</response>
+    /// <param name="householdId">Household ID to get members for</param>
+    /// <returns>List of household members</returns>
+    /// <response code="200">Success. Returns array of persons (may be empty).</response>
     /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Can only modify your own surveys.</response>
-    /// <response code="404">Survey, household, or person not found.</response>
-    [HttpPost("{surveyId}/households/{householdId}/set-head")]
-    [Authorize(Policy = "CanEditOwnSurveys")]
-    [ProducesResponseType(typeof(HouseholdDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    /// <response code="403">Not authorized. Can only view members for your own surveys.</response>
+    /// <response code="404">Survey or household not found.</response>
+    [HttpGet("{surveyId}/households/{householdId}/persons")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<PersonDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HouseholdDto>> SetHouseholdHead(
+    public async Task<ActionResult<List<PersonDto>>> GetHouseholdPersons(
         Guid surveyId,
-        Guid householdId,
-        [FromBody] SetHouseholdHeadCommand command)
+        Guid householdId)
     {
-        command.SurveyId = surveyId;
-        command.HouseholdId = householdId;
-        var result = await _mediator.Send(command);
+        var query = new GetHouseholdPersonsQuery
+        {
+            SurveyId = surveyId,
+            HouseholdId = householdId
+        };
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
-
-    // ==================== PERSON MANAGEMENT (DAY 3) ====================
 
     /// <summary>
     /// Add person to household
@@ -598,8 +880,8 @@ public class SurveysController : ControllerBase
     /// 
     /// **Next steps**: 
     /// - Add more household members
-    /// - Set as household head: POST /set-head
-    /// - Link to property unit: POST /persons/{personId}/link-to-unit
+    /// - Set as household head: PUT /{surveyId}/households/{householdId}/head/{personId}
+    /// - Link to property unit: POST /{surveyId}/property-units/{unitId}/relations
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID to add person to</param>
@@ -625,61 +907,68 @@ public class SurveysController : ControllerBase
         command.SurveyId = surveyId;
         command.HouseholdId = householdId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(
-            nameof(GetHouseholdPersons),
-            new { surveyId, householdId },
-            result);
+        return CreatedAtAction(nameof(GetHouseholdPersons), new { surveyId, householdId }, result);
     }
 
     /// <summary>
-    /// Get all persons in household
+    /// Set household head
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - View household members
+    /// **Use Case**: UC-001 Stage 3 - Designate household head
     /// 
-    /// **Purpose**: Lists all registered persons/members in a household.
+    /// **Purpose**: Links a Person entity as the official head of household.
     /// 
-    /// **What you get**:
-    /// - List of all household members
-    /// - Full Arabic names (3-part + mother's name)
-    /// - Computed full names and ages
-    /// - Demographics (gender, nationality, birth year)
-    /// - Relationships to household head
-    /// - Contact information
-    /// - Identification details
+    /// **What it does**:
+    /// - Designates a person as head of household
+    /// - Updates household's HeadOfHouseholdPersonId
+    /// - Creates audit trail
     /// 
-    /// **Required permissions**: CanViewOwnSurveys
+    /// **When to use**:
+    /// - After adding persons to household
+    /// - To officially designate the household head
+    /// - Person must already be member of this household
     /// 
-    /// **Response**: Array of persons ordered by creation date
+    /// **Important**: Person must belong to this household (HouseholdId must match)
+    /// 
+    /// **Required permissions**: CanEditOwnSurveys
+    /// 
+    /// **Response**: Returns updated household with linked head
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="householdId">Household ID to get members for</param>
-    /// <returns>List of household members</returns>
-    /// <response code="200">Success. Returns array of persons (may be empty).</response>
+    /// <param name="householdId">Household ID</param>
+    /// <param name="personId">Person ID to set as head</param>
+    /// <returns>Updated household details</returns>
+    /// <response code="200">Household head set successfully.</response>
+    /// <response code="400">Person doesn't belong to this household.</response>
     /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Can only view members for your own surveys.</response>
-    /// <response code="404">Survey or household not found.</response>
-    [HttpGet("{surveyId}/households/{householdId}/persons")]
-    [Authorize(Policy = "CanViewOwnSurveys")]
-    [ProducesResponseType(typeof(List<PersonDto>), StatusCodes.Status200OK)]
+    /// <response code="403">Not authorized. Can only modify your own surveys.</response>
+    /// <response code="404">Survey, household, or person not found.</response>
+    [HttpPut("{surveyId}/households/{householdId}/head/{personId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(HouseholdDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<PersonDto>>> GetHouseholdPersons(
+    public async Task<ActionResult<HouseholdDto>> SetHouseholdHead(
         Guid surveyId,
-        Guid householdId)
+        Guid householdId,
+        Guid personId)
     {
-        var query = new GetHouseholdPersonsQuery
+        var command = new SetHouseholdHeadCommand
         {
             SurveyId = surveyId,
-            HouseholdId = householdId
+            HouseholdId = householdId,
+            PersonId = personId
         };
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(command);
         return Ok(result);
     }
 
+    // ==================== PERSON-PROPERTY RELATIONS ====================
+
     /// <summary>
-    /// Link person to property unit
+    /// Link person to property unit with relation type
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-001 Stage 3 - Establish person-property relationship
@@ -699,56 +988,60 @@ public class SurveysController : ControllerBase
     /// - For tenure rights documentation
     /// 
     /// **Relationship types**:
-    /// - Owner: Legal owner
-    /// - Tenant: Renter/tenant
-    /// - Occupant: Current occupant
+    /// - Owner: Legal owner of the property
+    /// - Heirs: Inherited ownership rights
+    /// - Tenant: Renter/tenant with lease
+    /// - Occupant: Current occupant without formal tenure
     /// - Claimant: Claiming ownership/rights
     /// - Co-owner: Shared ownership
     /// 
     /// **Important**: 
     /// - Person and property unit must be in same building
-    /// - Each person-unit pair can only have one relation
     /// - Used for later claims processing
+    /// - Ownership relations (Owner, Heirs) qualify for automatic claim creation
     /// 
     /// **Required permissions**: CanEditOwnSurveys
     /// 
     /// **Example**:
     /// ```json
     /// {
-    ///   "propertyUnitId": "unit-guid-here",
-    ///   "relationType": "Owner"
+    ///   "personId": "person-guid-here",
+    ///   "relationType": "Owner",
+    ///   "startDate": "2010-01-01",
+    ///   "notes": "Primary owner with deed documentation"
     /// }
     /// ```
     /// 
-    /// **Response**: 204 No Content (success)
+    /// **Response**: Created relation record with details
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="personId">Person ID to link</param>
-    /// <param name="command">Link command with property unit ID and relation type</param>
-    /// <returns>No content on success</returns>
-    /// <response code="204">Person linked to property unit successfully.</response>
+    /// <param name="unitId">Property unit ID</param>
+    /// <param name="command">Link command with personId and relationType</param>
+    /// <returns>Created relation details</returns>
+    /// <response code="201">Person linked to property unit successfully.</response>
     /// <response code="400">Person already linked to this unit or unit not in survey building.</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only link persons in your own surveys.</response>
     /// <response code="404">Survey, person, or property unit not found.</response>
-    [HttpPost("{surveyId}/persons/{personId}/link-to-unit")]
+    [HttpPost("{surveyId}/property-units/{unitId}/relations")]
     [Authorize(Policy = "CanEditOwnSurveys")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(Application.PersonPropertyRelations.Dtos.PersonPropertyRelationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> LinkPersonToPropertyUnit(
+    public async Task<ActionResult<Application.PersonPropertyRelations.Dtos.PersonPropertyRelationDto>> LinkPersonToPropertyUnit(
         Guid surveyId,
-        Guid personId,
+        Guid unitId,
         [FromBody] LinkPersonToPropertyUnitCommand command)
     {
         command.SurveyId = surveyId;
-        command.PersonId = personId;
-        await _mediator.Send(command);
-        return NoContent();
+        command.PropertyUnitId = unitId;
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetSurvey), new { id = surveyId }, result);
     }
-    // ==================== EVIDENCE MANAGEMENT ======================
+
+    // ==================== EVIDENCE MANAGEMENT ====================
 
     /// <summary>
     /// Upload property photo
@@ -772,7 +1065,7 @@ public class SurveysController : ControllerBase
     /// - Support tenure claims with visual evidence
     /// 
     /// **File Requirements**:
-    /// - Format: JPG, JPEG, PNG
+    /// - Format: JPG, JPEG, PNG, GIF
     /// - Max size: 10MB
     /// - Required: Photo file, description
     /// 
@@ -801,7 +1094,7 @@ public class SurveysController : ControllerBase
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only upload to your own surveys.</response>
     /// <response code="404">Survey or property unit not found.</response>
-    [HttpPost("{surveyId}/evidence/property-photo")]
+    [HttpPost("{surveyId}/evidence/photos")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status201Created)]
@@ -815,10 +1108,7 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(
-            nameof(GetEvidenceById),
-            new { evidenceId = result.Id },
-            result);
+        return CreatedAtAction(nameof(GetEvidenceById), new { evidenceId = result.Id }, result);
     }
 
     /// <summary>
@@ -876,7 +1166,7 @@ public class SurveysController : ControllerBase
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only upload to your own surveys.</response>
     /// <response code="404">Survey or person not found.</response>
-    [HttpPost("{surveyId}/evidence/identification/{personId}")]
+    [HttpPost("{surveyId}/evidence/identification")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status201Created)]
@@ -886,16 +1176,11 @@ public class SurveysController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EvidenceDto>> UploadIdentificationDocument(
         Guid surveyId,
-        Guid personId,
         [FromForm] UploadIdentificationDocumentCommand command)
     {
         command.SurveyId = surveyId;
-        command.PersonId = personId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(
-            nameof(GetEvidenceById),
-            new { evidenceId = result.Id },
-            result);
+        return CreatedAtAction(nameof(GetEvidenceById), new { evidenceId = result.Id }, result);
     }
 
     /// <summary>
@@ -925,6 +1210,7 @@ public class SurveysController : ControllerBase
     /// - Inheritance documents
     /// - Court orders
     /// - Municipal records
+    /// - Utility bills (as proof of residence)
     /// 
     /// **File Requirements**:
     /// - Format: PDF, JPG, JPEG, PNG
@@ -973,10 +1259,7 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(
-            nameof(GetEvidenceById),
-            new { evidenceId = result.Id },
-            result);
+        return CreatedAtAction(nameof(GetEvidenceById), new { evidenceId = result.Id }, result);
     }
 
     /// <summary>
@@ -1036,6 +1319,15 @@ public class SurveysController : ControllerBase
     /// 
     /// **Purpose**: Retrieves complete metadata for a specific evidence file.
     /// 
+    /// **What you get**:
+    /// - Evidence type and description
+    /// - File details (name, size, MIME type)
+    /// - File hash for integrity verification
+    /// - Upload timestamp
+    /// - Links to survey, person, property unit
+    /// - Document metadata (issue date, expiry, authority)
+    /// - Expiration status
+    /// 
     /// **Required permissions**: Authenticated users
     /// </remarks>
     /// <param name="evidenceId">Evidence ID to retrieve</param>
@@ -1086,7 +1378,6 @@ public class SurveysController : ControllerBase
     {
         var query = new DownloadEvidenceQuery { EvidenceId = evidenceId };
         var result = await _mediator.Send(query);
-
         return File(result.FileStream, result.MimeType, result.FileName);
     }
 

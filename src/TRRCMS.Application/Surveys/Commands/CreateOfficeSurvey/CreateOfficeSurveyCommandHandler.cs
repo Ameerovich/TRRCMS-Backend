@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -7,14 +7,14 @@ using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
-namespace TRRCMS.Application.Surveys.Commands.CreateFieldSurvey;
+namespace TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 
 /// <summary>
-/// Handler for CreateFieldSurveyCommand
-/// Creates new field survey with Draft status and generates reference code
-/// UC-001: Conduct Field Survey
+/// Handler for CreateOfficeSurveyCommand
+/// Creates new office survey with Draft status and generates reference code
+/// UC-004: Office Survey
 /// </summary>
-public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurveyCommand, SurveyDto>
+public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurveyCommand, SurveyDto>
 {
     private readonly ISurveyRepository _surveyRepository;
     private readonly IBuildingRepository _buildingRepository;
@@ -23,7 +23,7 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
-    public CreateFieldSurveyCommandHandler(
+    public CreateOfficeSurveyCommandHandler(
         ISurveyRepository surveyRepository,
         IBuildingRepository buildingRepository,
         IPropertyUnitRepository propertyUnitRepository,
@@ -39,9 +39,9 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    public async Task<SurveyDto> Handle(CreateFieldSurveyCommand request, CancellationToken cancellationToken)
+    public async Task<SurveyDto> Handle(CreateOfficeSurveyCommand request, CancellationToken cancellationToken)
     {
-        // Get current user (field collector)
+        // Get current user (office clerk)
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
@@ -53,9 +53,10 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         }
 
         // Validate property unit if provided
+        PropertyUnit? propertyUnit = null;
         if (request.PropertyUnitId.HasValue)
         {
-            var propertyUnit = await _propertyUnitRepository.GetByIdAsync(
+            propertyUnit = await _propertyUnitRepository.GetByIdAsync(
                 request.PropertyUnitId.Value,
                 cancellationToken);
 
@@ -72,28 +73,42 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
             }
         }
 
-        // Generate reference code
-        var referenceCode = await GenerateFieldReferenceCodeAsync(cancellationToken);
+        // Generate reference code for office survey (OFC-YYYY-NNNNN format)
+        var referenceCode = await GenerateOfficeReferenceCodeAsync(cancellationToken);
 
-        // Create survey entity using new factory method
-        var survey = Survey.CreateFieldSurvey(
+        // Create office survey entity using new factory method
+        var survey = Survey.CreateOfficeSurvey(
             buildingId: request.BuildingId,
-            fieldCollectorId: currentUserId,
+            officeClerkId: currentUserId,
             surveyDate: request.SurveyDate,
             propertyUnitId: request.PropertyUnitId,
+            officeLocation: request.OfficeLocation,
+            registrationNumber: request.RegistrationNumber,
+            inPersonVisit: request.InPersonVisit,
             createdByUserId: currentUserId
         );
 
-        // Set reference code using the proper domain method
+        // Set the generated reference code
         survey.SetReferenceCode(referenceCode);
 
         // Update survey details if provided
         survey.UpdateSurveyDetails(
-            gpsCoordinates: request.GpsCoordinates,
+            gpsCoordinates: null, // No GPS for office surveys
             intervieweeName: request.IntervieweeName,
             intervieweeRelationship: request.IntervieweeRelationship,
             notes: request.Notes,
             durationMinutes: null,
+            modifiedByUserId: currentUserId
+        );
+
+        // Update office-specific details
+        survey.UpdateOfficeDetails(
+            officeLocation: request.OfficeLocation,
+            registrationNumber: request.RegistrationNumber,
+            appointmentReference: request.AppointmentReference,
+            contactPhone: request.ContactPhone,
+            contactEmail: request.ContactEmail,
+            inPersonVisit: request.InPersonVisit,
             modifiedByUserId: currentUserId
         );
 
@@ -104,7 +119,7 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         // Audit logging
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,
-            actionDescription: $"Created field survey with reference code {referenceCode} for building {building.BuildingNumber}",
+            actionDescription: $"Created office survey with reference code {referenceCode} for building {building.BuildingId}",
             entityType: "Survey",
             entityId: survey.Id,
             entityIdentifier: referenceCode,
@@ -116,11 +131,12 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
                 BuildingNumber = building.BuildingNumber,
                 survey.SurveyDate,
                 survey.Status,
-                survey.SurveyType,
-                survey.Type,
-                survey.Source
+                SurveyType = "Office",
+                survey.OfficeLocation,
+                survey.RegistrationNumber,
+                survey.InPersonVisit
             }),
-            changedFields: "New Field Survey",
+            changedFields: "New Office Survey",
             cancellationToken: cancellationToken
         );
 
@@ -128,19 +144,23 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         var result = _mapper.Map<SurveyDto>(survey);
         result.BuildingNumber = building.BuildingNumber;
         result.BuildingAddress = building.Address;
-        result.FieldCollectorName = _currentUserService.Username;
+        result.FieldCollectorName = _currentUserService.Username; // "Clerk" for office surveys
+
+        if (propertyUnit != null)
+        {
+            result.UnitIdentifier = propertyUnit.UnitIdentifier;
+        }
 
         return result;
     }
 
     /// <summary>
-    /// Generate unique reference code for field survey
-    /// Format: ALG-YYYY-NNNNN
+    /// Generate unique reference code for office survey in format: OFC-YYYY-NNNNN
     /// </summary>
-    private async Task<string> GenerateFieldReferenceCodeAsync(CancellationToken cancellationToken)
+    private async Task<string> GenerateOfficeReferenceCodeAsync(CancellationToken cancellationToken)
     {
         var year = DateTime.UtcNow.Year;
         var sequence = await _surveyRepository.GetNextReferenceSequenceAsync(cancellationToken);
-        return $"ALG-{year}-{sequence:D5}";
+        return $"OFC-{year}-{sequence:D5}";
     }
 }

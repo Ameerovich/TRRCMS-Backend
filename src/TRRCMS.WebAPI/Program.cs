@@ -395,6 +395,7 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+
 // ============== DATABASE SEEDING & PERMISSION SYNC ==============
 // Automatically sync user permissions on startup
 using (var scope = app.Services.CreateScope())

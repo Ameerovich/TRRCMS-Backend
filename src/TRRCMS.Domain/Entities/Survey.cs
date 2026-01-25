@@ -4,7 +4,8 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
-/// Survey entity - tracks field survey visits and generates reference codes
+/// Survey entity - tracks field and office survey visits and generates reference codes
+/// Supports both UC-001 (Field Survey) and UC-004 (Office Survey) workflows
 /// </summary>
 public class Survey : BaseAuditableEntity
 {
@@ -12,6 +13,7 @@ public class Survey : BaseAuditableEntity
 
     /// <summary>
     /// Survey reference code - unique code given to interviewee (رمز المرجع)
+    /// Format: ALG-YYYY-NNNNN for Field, OFC-YYYY-NNNNN for Office
     /// </summary>
     public string ReferenceCode { get; private set; }
 
@@ -28,9 +30,27 @@ public class Survey : BaseAuditableEntity
     public Guid? PropertyUnitId { get; private set; }
 
     /// <summary>
-    /// Foreign key to field collector conducting the survey
+    /// Foreign key to user conducting the survey (field collector or office clerk)
+    /// Named FieldCollectorId for backward compatibility but applies to office clerks too
     /// </summary>
     public Guid FieldCollectorId { get; private set; }
+
+    // ==================== SURVEY CLASSIFICATION ====================
+
+    /// <summary>
+    /// Survey type enum (Field or Office)
+    /// </summary>
+    public SurveyType Type { get; private set; }
+
+    /// <summary>
+    /// Survey source - how the survey data entered the system
+    /// </summary>
+    public SurveySource Source { get; private set; }
+
+    /// <summary>
+    /// Survey type as string (kept for backward compatibility with existing queries)
+    /// </summary>
+    public string SurveyType { get; private set; }
 
     // ==================== SURVEY DETAILS ====================
 
@@ -45,13 +65,9 @@ public class Survey : BaseAuditableEntity
     public SurveyStatus Status { get; private set; }
 
     /// <summary>
-    /// Survey type (Field or Office)
-    /// </summary>
-    public string SurveyType { get; private set; }
-
-    /// <summary>
     /// GPS coordinates where survey was conducted (if available)
     /// Format: "latitude,longitude"
+    /// Primarily used for field surveys
     /// </summary>
     public string? GpsCoordinates { get; private set; }
 
@@ -75,6 +91,40 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public int? DurationMinutes { get; private set; }
 
+    // ==================== OFFICE SURVEY SPECIFIC ====================
+
+    /// <summary>
+    /// Office location where survey was conducted (for office surveys)
+    /// e.g., "UN-Habitat Aleppo Office", "Municipality Building"
+    /// </summary>
+    public string? OfficeLocation { get; private set; }
+
+    /// <summary>
+    /// Document registration number (for office surveys with walk-in claimants)
+    /// External reference from registration desk
+    /// </summary>
+    public string? RegistrationNumber { get; private set; }
+
+    /// <summary>
+    /// Appointment reference (if survey was scheduled)
+    /// </summary>
+    public string? AppointmentReference { get; private set; }
+
+    /// <summary>
+    /// Contact phone for follow-up (office surveys)
+    /// </summary>
+    public string? ContactPhone { get; private set; }
+
+    /// <summary>
+    /// Contact email for follow-up (office surveys)
+    /// </summary>
+    public string? ContactEmail { get; private set; }
+
+    /// <summary>
+    /// Indicates if claimant visited in person (true) or submitted remotely (false)
+    /// </summary>
+    public bool? InPersonVisit { get; private set; }
+
     // ==================== EXPORT TRACKING ====================
 
     /// <summary>
@@ -92,6 +142,19 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public DateTime? ImportedDate { get; private set; }
 
+    // ==================== CLAIM LINKING ====================
+
+    /// <summary>
+    /// Foreign key to Claim created from this survey (if any)
+    /// Set when survey is finalized and claim is auto-generated
+    /// </summary>
+    public Guid? ClaimId { get; private set; }
+
+    /// <summary>
+    /// Date when claim was created from this survey
+    /// </summary>
+    public DateTime? ClaimCreatedDate { get; private set; }
+
     // ==================== NAVIGATION PROPERTIES ====================
 
     /// <summary>
@@ -104,8 +167,15 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public virtual PropertyUnit? PropertyUnit { get; private set; }
 
-    // Note: FieldCollector would be a User entity (to be created)
-    // public virtual User FieldCollector { get; private set; } = null!;
+    /// <summary>
+    /// User conducting the survey (field collector or office clerk)
+    /// </summary>
+    public virtual User? Collector { get; private set; }
+
+    /// <summary>
+    /// Claim created from this survey
+    /// </summary>
+    public virtual Claim? Claim { get; private set; }
 
     // ==================== CONSTRUCTORS ====================
 
@@ -119,7 +189,67 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Create new survey
+    /// Create new field survey (UC-001)
+    /// </summary>
+    public static Survey CreateFieldSurvey(
+        Guid buildingId,
+        Guid fieldCollectorId,
+        DateTime surveyDate,
+        Guid? propertyUnitId,
+        Guid createdByUserId)
+    {
+        var survey = new Survey
+        {
+            BuildingId = buildingId,
+            FieldCollectorId = fieldCollectorId,
+            Type = Enums.SurveyType.Field,
+            Source = SurveySource.FieldCollection,
+            SurveyType = "Field", // Backward compatibility
+            SurveyDate = surveyDate,
+            PropertyUnitId = propertyUnitId,
+            Status = SurveyStatus.Draft
+        };
+
+        survey.MarkAsCreated(createdByUserId);
+
+        return survey;
+    }
+
+    /// <summary>
+    /// Create new office survey (UC-004)
+    /// </summary>
+    public static Survey CreateOfficeSurvey(
+        Guid buildingId,
+        Guid officeClerkId,
+        DateTime surveyDate,
+        Guid? propertyUnitId,
+        string? officeLocation,
+        string? registrationNumber,
+        bool? inPersonVisit,
+        Guid createdByUserId)
+    {
+        var survey = new Survey
+        {
+            BuildingId = buildingId,
+            FieldCollectorId = officeClerkId, // Using same field for compatibility
+            Type = Enums.SurveyType.Office,
+            Source = SurveySource.OfficeSubmission,
+            SurveyType = "Office", // Backward compatibility
+            SurveyDate = surveyDate,
+            PropertyUnitId = propertyUnitId,
+            OfficeLocation = officeLocation,
+            RegistrationNumber = registrationNumber,
+            InPersonVisit = inPersonVisit,
+            Status = SurveyStatus.Draft
+        };
+
+        survey.MarkAsCreated(createdByUserId);
+
+        return survey;
+    }
+
+    /// <summary>
+    /// Create new survey (backward compatible - kept for existing code)
     /// </summary>
     public static Survey Create(
         Guid buildingId,
@@ -129,10 +259,14 @@ public class Survey : BaseAuditableEntity
         Guid? propertyUnitId,
         Guid createdByUserId)
     {
+        var isOffice = surveyType.Equals("Office", StringComparison.OrdinalIgnoreCase);
+
         var survey = new Survey
         {
             BuildingId = buildingId,
             FieldCollectorId = fieldCollectorId,
+            Type = isOffice ? Enums.SurveyType.Office : Enums.SurveyType.Field,
+            Source = isOffice ? SurveySource.OfficeSubmission : SurveySource.FieldCollection,
             SurveyType = surveyType,
             SurveyDate = surveyDate,
             PropertyUnitId = propertyUnitId,
@@ -140,7 +274,7 @@ public class Survey : BaseAuditableEntity
         };
 
         // Generate reference code (will be enhanced with actual business logic)
-        survey.ReferenceCode = GenerateReferenceCode();
+        survey.ReferenceCode = GenerateReferenceCode(survey.Type);
 
         survey.MarkAsCreated(createdByUserId);
 
@@ -150,7 +284,18 @@ public class Survey : BaseAuditableEntity
     // ==================== DOMAIN METHODS ====================
 
     /// <summary>
-    /// Update survey details
+    /// Set the reference code (used by handlers after generating from repository)
+    /// </summary>
+    public void SetReferenceCode(string referenceCode)
+    {
+        if (string.IsNullOrWhiteSpace(referenceCode))
+            throw new ArgumentException("Reference code cannot be empty", nameof(referenceCode));
+
+        ReferenceCode = referenceCode;
+    }
+
+    /// <summary>
+    /// Update survey details (common fields for both field and office surveys)
     /// </summary>
     public void UpdateSurveyDetails(
         string? gpsCoordinates,
@@ -169,6 +314,30 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Update office survey specific details (UC-004)
+    /// </summary>
+    public void UpdateOfficeDetails(
+        string? officeLocation,
+        string? registrationNumber,
+        string? appointmentReference,
+        string? contactPhone,
+        string? contactEmail,
+        bool? inPersonVisit,
+        Guid modifiedByUserId)
+    {
+        if (Type != Enums.SurveyType.Office)
+            throw new InvalidOperationException("Office details can only be updated on Office surveys");
+
+        OfficeLocation = officeLocation;
+        RegistrationNumber = registrationNumber;
+        AppointmentReference = appointmentReference;
+        ContactPhone = contactPhone;
+        ContactEmail = contactEmail;
+        InPersonVisit = inPersonVisit;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Mark survey as completed
     /// </summary>
     public void MarkAsCompleted(Guid modifiedByUserId)
@@ -178,11 +347,21 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Mark survey as finalized (ready for export)
+    /// Mark survey as finalized (ready for export/claim creation)
     /// </summary>
     public void MarkAsFinalized(Guid modifiedByUserId)
     {
         Status = SurveyStatus.Finalized;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Link claim to survey (called when claim is auto-generated)
+    /// </summary>
+    public void LinkClaim(Guid claimId, Guid modifiedByUserId)
+    {
+        ClaimId = claimId;
+        ClaimCreatedDate = DateTime.UtcNow;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -250,7 +429,17 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Link to property unit (UC-001 Stage 2)
+    /// Check if this is a field survey
+    /// </summary>
+    public bool IsFieldSurvey => Type == Enums.SurveyType.Field;
+
+    /// <summary>
+    /// Check if this is an office survey
+    /// </summary>
+    public bool IsOfficeSurvey => Type == Enums.SurveyType.Office;
+
+    /// <summary>
+    /// Link to property unit (UC-001 Stage 2, UC-004)
     /// </summary>
     public void LinkToPropertyUnit(Guid propertyUnitId, Guid modifiedByUserId)
     {
@@ -263,14 +452,15 @@ public class Survey : BaseAuditableEntity
 
     /// <summary>
     /// Generate unique reference code for interviewee
-    /// Format: ALG-YYYY-NNNNN (Aleppo-Year-Sequential)
-    /// TODO: Implement proper sequential numbering logic
+    /// Format: ALG-YYYY-NNNNN for Field, OFC-YYYY-NNNNN for Office
+    /// Note: This is a placeholder. Actual implementation uses repository for sequential numbering.
     /// </summary>
-    private static string GenerateReferenceCode()
+    private static string GenerateReferenceCode(Enums.SurveyType surveyType)
     {
         var year = DateTime.UtcNow.Year;
         var random = new Random();
         var sequence = random.Next(10000, 99999); // Temporary - should be sequential from DB
-        return $"ALG-{year}-{sequence:D5}";
+        var prefix = surveyType == Enums.SurveyType.Office ? "OFC" : "ALG";
+        return $"{prefix}-{year}-{sequence:D5}";
     }
 }

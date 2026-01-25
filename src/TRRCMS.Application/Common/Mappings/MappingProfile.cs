@@ -126,6 +126,34 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.FieldCollectorName, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedByName, opt => opt.Ignore());
 
+        // Office Survey Detail mappings
+        CreateMap<Survey, OfficeSurveyDetailDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.BuildingNumber, opt => opt.MapFrom(src =>
+                src.Building != null ? src.Building.BuildingNumber : null))
+            .ForMember(dest => dest.BuildingAddress, opt => opt.MapFrom(src =>
+                src.Building != null ? src.Building.Address : null))
+            .ForMember(dest => dest.UnitIdentifier, opt => opt.MapFrom(src =>
+                src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
+            .ForMember(dest => dest.FieldCollectorName, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedByName, opt => opt.Ignore())
+            // Office-specific fields
+            .ForMember(dest => dest.OfficeLocation, opt => opt.MapFrom(src => src.OfficeLocation))
+            .ForMember(dest => dest.RegistrationNumber, opt => opt.MapFrom(src => src.RegistrationNumber))
+            .ForMember(dest => dest.AppointmentReference, opt => opt.MapFrom(src => src.AppointmentReference))
+            .ForMember(dest => dest.ContactPhone, opt => opt.MapFrom(src => src.ContactPhone))
+            .ForMember(dest => dest.ContactEmail, opt => opt.MapFrom(src => src.ContactEmail))
+            .ForMember(dest => dest.InPersonVisit, opt => opt.MapFrom(src => src.InPersonVisit))
+            // Claim linking
+            .ForMember(dest => dest.ClaimId, opt => opt.MapFrom(src => src.ClaimId))
+            .ForMember(dest => dest.ClaimCreatedDate, opt => opt.MapFrom(src => src.ClaimCreatedDate))
+            .ForMember(dest => dest.ClaimNumber, opt => opt.Ignore()) // Set manually in handler
+                                                                      // Related data - set manually in handler
+            .ForMember(dest => dest.Households, opt => opt.Ignore())
+            .ForMember(dest => dest.Relations, opt => opt.Ignore())
+            .ForMember(dest => dest.Evidence, opt => opt.Ignore())
+            .ForMember(dest => dest.DataSummary, opt => opt.Ignore());
+
     }
 
 }
