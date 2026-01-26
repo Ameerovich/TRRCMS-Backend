@@ -13,6 +13,7 @@ using TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.DeleteEvidence;
+using TRRCMS.Application.Surveys.Commands.FinalizeFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
@@ -27,6 +28,9 @@ using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Application.Surveys.Queries.DownloadEvidence;
 using TRRCMS.Application.Surveys.Queries.GetDraftSurvey;
 using TRRCMS.Application.Surveys.Queries.GetEvidenceById;
+using TRRCMS.Application.Surveys.Queries.GetFieldDraftSurveys;
+using TRRCMS.Application.Surveys.Queries.GetFieldSurveyById;
+using TRRCMS.Application.Surveys.Queries.GetFieldSurveys;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdPersons;
 using TRRCMS.Application.Surveys.Queries.GetOfficeDraftSurveys;
@@ -1431,5 +1435,175 @@ public class SurveysController : ControllerBase
         };
         await _mediator.Send(command);
         return NoContent();
+    }
+    // ==================== FIELD SURVEY LIST & QUERY ENDPOINTS ====================
+
+    /// <summary>
+    /// Get all field surveys with filtering and pagination
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 - Field Survey listing
+    /// 
+    /// Returns field surveys only (Type = Field) with optional filtering.
+    /// </remarks>
+    /// <param name="status">Filter by status (Draft, Completed, Finalized)</param>
+    /// <param name="buildingId">Filter by building ID</param>
+    /// <param name="fieldCollectorId">Filter by field collector ID</param>
+    /// <param name="propertyUnitId">Filter by property unit ID</param>
+    /// <param name="fromDate">Filter surveys from this date</param>
+    /// <param name="toDate">Filter surveys until this date</param>
+    /// <param name="referenceCode">Search by reference code (partial match)</param>
+    /// <param name="intervieweeName">Search by interviewee name (partial match)</param>
+    /// <param name="page">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 20, max: 100)</param>
+    /// <param name="sortBy">Sort field (default: SurveyDate)</param>
+    /// <param name="sortDirection">Sort direction (default: desc)</param>
+    /// <returns>Paginated list of field surveys</returns>
+    [HttpGet("field")]
+    [Authorize(Policy = "CanViewSurveys")]
+    [ProducesResponseType(typeof(GetFieldSurveysResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<GetFieldSurveysResponse>> GetFieldSurveys(
+        [FromQuery] string? status = null,
+        [FromQuery] Guid? buildingId = null,
+        [FromQuery] Guid? fieldCollectorId = null,
+        [FromQuery] Guid? propertyUnitId = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] string? referenceCode = null,
+        [FromQuery] string? intervieweeName = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string sortBy = "SurveyDate",
+        [FromQuery] string sortDirection = "desc")
+    {
+        var query = new GetFieldSurveysQuery
+        {
+            Status = status,
+            BuildingId = buildingId,
+            FieldCollectorId = fieldCollectorId,
+            PropertyUnitId = propertyUnitId,
+            FromDate = fromDate,
+            ToDate = toDate,
+            ReferenceCode = referenceCode,
+            IntervieweeName = intervieweeName,
+            Page = page,
+            PageSize = pageSize,
+            SortBy = sortBy,
+            SortDirection = sortDirection
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get current field collector's draft surveys
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-002 - Resume draft field survey
+    /// 
+    /// Returns only Draft status surveys belonging to the current user.
+    /// </remarks>
+    /// <param name="buildingId">Optional: Filter by building</param>
+    /// <param name="page">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 20, max: 50)</param>
+    /// <param name="sortBy">Sort field (default: LastModifiedAtUtc)</param>
+    /// <param name="sortDirection">Sort direction (default: desc)</param>
+    /// <returns>List of draft field surveys</returns>
+    [HttpGet("field/drafts")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(GetFieldDraftSurveysResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<GetFieldDraftSurveysResponse>> GetFieldDraftSurveys(
+        [FromQuery] Guid? buildingId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string sortBy = "LastModifiedAtUtc",
+        [FromQuery] string sortDirection = "desc")
+    {
+        var query = new GetFieldDraftSurveysQuery
+        {
+            BuildingId = buildingId,
+            Page = page,
+            PageSize = pageSize,
+            SortBy = sortBy,
+            SortDirection = sortDirection
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get field survey by ID with full details
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001/UC-002 - View or resume field survey
+    /// 
+    /// Returns complete survey with households, persons, relations, and evidence.
+    /// </remarks>
+    /// <param name="id">Field survey ID</param>
+    /// <param name="includeHouseholds">Include households (default: true)</param>
+    /// <param name="includePersons">Include persons (default: true)</param>
+    /// <param name="includeRelations">Include relations (default: true)</param>
+    /// <param name="includeEvidence">Include evidence (default: true)</param>
+    /// <returns>Complete field survey details</returns>
+    [HttpGet("field/{id}")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(FieldSurveyDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<FieldSurveyDetailDto>> GetFieldSurveyById(
+        Guid id,
+        [FromQuery] bool includeHouseholds = true,
+        [FromQuery] bool includePersons = true,
+        [FromQuery] bool includeRelations = true,
+        [FromQuery] bool includeEvidence = true)
+    {
+        var query = new GetFieldSurveyByIdQuery
+        {
+            SurveyId = id,
+            IncludeHouseholds = includeHouseholds,
+            IncludePersons = includePersons,
+            IncludeRelations = includeRelations,
+            IncludeEvidence = includeEvidence
+        };
+
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    // ==================== FIELD SURVEY FINALIZATION ====================
+
+    /// <summary>
+    /// Finalize a field survey
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Final Stage - Complete field survey for export
+    /// 
+    /// Marks survey as Finalized, making it ready for export to .uhc container.
+    /// Unlike office surveys, field surveys don't auto-create claims.
+    /// </remarks>
+    /// <param name="id">Survey ID to finalize</param>
+    /// <param name="command">Finalization options</param>
+    [HttpPost("field/{id}/finalize")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(FieldSurveyFinalizationResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<FieldSurveyFinalizationResultDto>> FinalizeFieldSurvey(
+        Guid id,
+        [FromBody] FinalizeFieldSurveyCommand command)
+    {
+        command.SurveyId = id;
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 }

@@ -1,4 +1,5 @@
-﻿using TRRCMS.Domain.Entities;
+﻿using TRRCMS.Application.Surveys.Queries.GetFieldSurveys;
+using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Common.Interfaces;
@@ -104,4 +105,50 @@ public interface ISurveyRepository
     /// Get finalized office surveys (for reporting)
     /// </summary>
     Task<List<Survey>> GetFinalizedOfficeSurveysAsync(DateTime? fromDate = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Get field surveys with filtering and pagination
+    /// Used by GetFieldSurveysQuery
+    /// </summary>
+    /// <param name="criteria">Filter criteria</param>
+    /// <param name="page">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of field surveys</returns>
+    Task<List<Survey>> GetFieldSurveysAsync(
+        FieldSurveyFilterCriteria criteria,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get total count of field surveys matching criteria
+    /// Used for pagination
+    /// </summary>
+    /// <param name="criteria">Filter criteria</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Total count</returns>
+    Task<int> GetFieldSurveysCountAsync(
+        FieldSurveyFilterCriteria criteria,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get draft field surveys for a specific collector with pagination
+    /// Used by GetFieldDraftSurveysQuery
+    /// </summary>
+    /// <param name="fieldCollectorId">Field collector user ID</param>
+    /// <param name="buildingId">Optional building filter</param>
+    /// <param name="page">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="sortBy">Sort field</param>
+    /// <param name="sortDirection">Sort direction (asc/desc)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Tuple of (surveys, totalCount)</returns>
+    Task<(List<Survey> Surveys, int TotalCount)> GetFieldDraftSurveysByCollectorAsync(
+        Guid fieldCollectorId,
+        Guid? buildingId,
+        int page,
+        int pageSize,
+        string sortBy,
+        string sortDirection,
+        CancellationToken cancellationToken = default);
 }

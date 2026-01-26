@@ -1,0 +1,1187 @@
+{
+	"info": {
+		"_postman_id": "trrcms-survey-api-collection",
+		"name": "TRRCMS Survey API",
+		"description": "Complete API collection for Field Survey (UC-001/UC-002) and Office Survey (UC-004/UC-005) workflows.\n\n## How to Use\n1. Import this collection into Postman\n2. Import the Environment file\n3. Select 'TRRCMS Development' environment\n4. Run 'Login' request first\n5. Follow the numbered folders in order\n\n## Workflows\n- **Field Survey**: 1.Auth → 2.Field Survey → 3.Survey Data → 4.Finalize Field\n- **Office Survey**: 1.Auth → 2.Office Survey → 3.Survey Data → 4.Finalize Office",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://localhost:7204/api",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Login (Field Collector)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.token) {",
+									"    pm.environment.set('authToken', jsonData.token);",
+									"    pm.environment.set('currentUserId', jsonData.user.id);",
+									"    pm.environment.set('currentUserName', jsonData.user.fullNameArabic || jsonData.user.username);",
+									"    console.log('✅ Token saved to environment');",
+									"}",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.token).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{fieldCollectorUsername}}\",\n  \"password\": \"{{password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["Auth", "login"]
+						},
+						"description": "Login as Field Collector. Token is automatically saved to environment."
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Office Clerk)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.token) {",
+									"    pm.environment.set('authToken', jsonData.token);",
+									"    pm.environment.set('currentUserId', jsonData.user.id);",
+									"    pm.environment.set('currentUserName', jsonData.user.fullNameArabic || jsonData.user.username);",
+									"    console.log('✅ Token saved to environment');",
+									"}",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.token).to.not.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{officeClerkUsername}}\",\n  \"password\": \"{{password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["Auth", "login"]
+						},
+						"description": "Login as Office Clerk. Token is automatically saved to environment."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints. Run login first to get token."
+		},
+		{
+			"name": "2. Field Survey",
+			"item": [
+				{
+					"name": "Create Field Survey",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.id) {",
+									"    pm.environment.set('surveyId', jsonData.id);",
+									"    pm.environment.set('referenceCode', jsonData.referenceCode);",
+									"    console.log('✅ Survey ID saved:', jsonData.id);",
+									"    console.log('✅ Reference Code:', jsonData.referenceCode);",
+									"}",
+									"",
+									"pm.test('Survey created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(jsonData.id).to.not.be.empty;",
+									"    pm.expect(jsonData.status).to.eql('Draft');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2025-01-25\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"Owner\",\n  \"notes\": \"Initial field survey - property inspection\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/field",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "field"]
+						},
+						"description": "Create a new field survey. Survey ID is automatically saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Field Surveys",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test('Response has surveys array', function () {",
+									"    pm.expect(jsonData.surveys).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/field?page=1&pageSize=20&sortBy=SurveyDate&sortDirection=desc",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "field"],
+							"query": [
+								{"key": "status", "value": "", "disabled": true},
+								{"key": "buildingId", "value": "", "disabled": true},
+								{"key": "fieldCollectorId", "value": "", "disabled": true},
+								{"key": "fromDate", "value": "", "disabled": true},
+								{"key": "toDate", "value": "", "disabled": true},
+								{"key": "referenceCode", "value": "", "disabled": true},
+								{"key": "intervieweeName", "value": "", "disabled": true},
+								{"key": "page", "value": "1"},
+								{"key": "pageSize", "value": "20"},
+								{"key": "sortBy", "value": "SurveyDate"},
+								{"key": "sortDirection", "value": "desc"}
+							]
+						},
+						"description": "Get all field surveys with filtering and pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Draft Surveys",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test('Response has surveys array', function () {",
+									"    pm.expect(jsonData.surveys).to.be.an('array');",
+									"});",
+									"",
+									"// Auto-save first survey ID if exists",
+									"if (jsonData.surveys && jsonData.surveys.length > 0) {",
+									"    console.log('📋 Found ' + jsonData.surveys.length + ' draft survey(s)');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/field/drafts?page=1&pageSize=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "field", "drafts"],
+							"query": [
+								{"key": "buildingId", "value": "", "disabled": true},
+								{"key": "page", "value": "1"},
+								{"key": "pageSize", "value": "20"},
+								{"key": "sortBy", "value": "LastModifiedAtUtc", "disabled": true},
+								{"key": "sortDirection", "value": "desc", "disabled": true}
+							]
+						},
+						"description": "Get current user's draft field surveys for resuming."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Field Survey by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test('Survey has correct ID', function () {",
+									"    pm.expect(jsonData.id).to.eql(pm.environment.get('surveyId'));",
+									"});",
+									"",
+									"console.log('📊 Data Summary:');",
+									"console.log('  Households:', jsonData.dataSummary?.householdsCount || 0);",
+									"console.log('  Persons:', jsonData.dataSummary?.personsCount || 0);",
+									"console.log('  Relations:', jsonData.dataSummary?.relationsCount || 0);",
+									"console.log('  Evidence:', jsonData.dataSummary?.evidenceCount || 0);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/field/{{surveyId}}?includeHouseholds=true&includePersons=true&includeRelations=true&includeEvidence=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "field", "{{surveyId}}"],
+							"query": [
+								{"key": "includeHouseholds", "value": "true"},
+								{"key": "includePersons", "value": "true"},
+								{"key": "includeRelations", "value": "true"},
+								{"key": "includeEvidence", "value": "true"}
+							]
+						},
+						"description": "Get full field survey details with all related data."
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Field Survey",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Finalization successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test('Survey is finalized', function () {",
+									"    pm.expect(jsonData.survey.status).to.eql('Finalized');",
+									"});",
+									"",
+									"pm.test('Ready for export', function () {",
+									"    pm.expect(jsonData.isReadyForExport).to.be.true;",
+									"});",
+									"",
+									"if (jsonData.warnings && jsonData.warnings.length > 0) {",
+									"    console.log('⚠️ Warnings:', jsonData.warnings);",
+									"}",
+									"",
+									"console.log('✅ Survey finalized successfully');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"finalNotes\": \"Survey completed. Property ownership verified with documentation.\",\n  \"durationMinutes\": 45,\n  \"finalGpsCoordinates\": \"36.2021,37.1343\",\n  \"validateCompleteness\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/field/{{surveyId}}/finalize",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "field", "{{surveyId}}", "finalize"]
+						},
+						"description": "Finalize field survey for export to .uhc container."
+					},
+					"response": []
+				}
+			],
+			"description": "Field Survey endpoints (UC-001/UC-002)"
+		},
+		{
+			"name": "3. Office Survey",
+			"item": [
+				{
+					"name": "Create Office Survey",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.id) {",
+									"    pm.environment.set('surveyId', jsonData.id);",
+									"    pm.environment.set('referenceCode', jsonData.referenceCode);",
+									"    console.log('✅ Survey ID saved:', jsonData.id);",
+									"    console.log('✅ Reference Code:', jsonData.referenceCode);",
+									"}",
+									"",
+									"pm.test('Survey created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(jsonData.id).to.not.be.empty;",
+									"    pm.expect(jsonData.status).to.eql('Draft');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2025-01-25\",\n  \"officeLocation\": \"مكتب التسجيل العقاري - حلب\",\n  \"registrationNumber\": \"REG-2025-00456\",\n  \"appointmentReference\": \"APT-2025-01234\",\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"ahmad@email.com\",\n  \"inPersonVisit\": true,\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"Owner\",\n  \"notes\": \"Walk-in registration - property ownership claim\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/office",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "office"]
+						},
+						"description": "Create a new office survey. Survey ID is automatically saved."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Office Surveys",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.test('Response has surveys array', function () {",
+									"    pm.expect(jsonData.surveys).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/office?page=1&pageSize=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "office"],
+							"query": [
+								{"key": "status", "value": "", "disabled": true},
+								{"key": "buildingId", "value": "", "disabled": true},
+								{"key": "registrationNumber", "value": "", "disabled": true},
+								{"key": "page", "value": "1"},
+								{"key": "pageSize", "value": "20"}
+							]
+						},
+						"description": "Get all office surveys with filtering and pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Office Draft Surveys",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/office/drafts?page=1&pageSize=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "office", "drafts"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "pageSize", "value": "20"}
+							]
+						},
+						"description": "Get current user's draft office surveys for resuming."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Office Survey by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('📋 Office Survey Details:');",
+									"console.log('  Office:', jsonData.officeLocation);",
+									"console.log('  Registration:', jsonData.registrationNumber);",
+									"console.log('  In Person:', jsonData.inPersonVisit);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "office", "{{surveyId}}"]
+						},
+						"description": "Get full office survey details."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Office Survey",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"officeLocation\": \"مكتب التسجيل العقاري - حلب\",\n  \"registrationNumber\": \"REG-2025-00456\",\n  \"appointmentReference\": \"APT-2025-01234\",\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"ahmad.updated@email.com\",\n  \"inPersonVisit\": true,\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"Owner\",\n  \"notes\": \"Updated notes - all documents verified\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "office", "{{surveyId}}"]
+						},
+						"description": "Update office survey details."
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Office Survey (With Claim)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Finalization successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.claimId) {",
+									"    pm.environment.set('claimId', jsonData.claimId);",
+									"    pm.environment.set('claimNumber', jsonData.claimNumber);",
+									"    console.log('✅ Claim created:', jsonData.claimNumber);",
+									"}",
+									"",
+									"pm.test('Survey is finalized', function () {",
+									"    pm.expect(jsonData.survey.status).to.eql('Finalized');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"createClaim\": true,\n  \"primaryClaimantPersonId\": \"{{person1Id}}\",\n  \"claimNotes\": \"Property ownership claim based on original deed.\",\n  \"finalNotes\": \"Office survey completed. All documents verified.\",\n  \"validateCompleteness\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}/finalize",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "office", "{{surveyId}}", "finalize"]
+						},
+						"description": "Finalize office survey and create claim automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Finalize Office Survey (No Claim)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"createClaim\": false,\n  \"finalNotes\": \"Survey completed. Claim to be created separately.\",\n  \"validateCompleteness\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}/finalize",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "office", "{{surveyId}}", "finalize"]
+						},
+						"description": "Finalize office survey without creating claim."
+					},
+					"response": []
+				}
+			],
+			"description": "Office Survey endpoints (UC-004/UC-005)"
+		},
+		{
+			"name": "4. Survey Data Collection",
+			"item": [
+				{
+					"name": "Property Units",
+					"item": [
+						{
+							"name": "Get Property Units for Building",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"if (Array.isArray(jsonData) && jsonData.length > 0) {",
+											"    pm.environment.set('propertyUnitId', jsonData[0].id);",
+											"    console.log('✅ First property unit ID saved:', jsonData[0].id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "property-units"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Property Unit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"if (jsonData.id) {",
+											"    pm.environment.set('propertyUnitId', jsonData.id);",
+											"    console.log('✅ Property Unit ID saved:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"unitIdentifier\": \"U-001-01\",\n  \"unitType\": \"Residential\",\n  \"floorNumber\": 1,\n  \"unitNumber\": \"1\",\n  \"estimatedArea\": 120.5,\n  \"numberOfRooms\": 4,\n  \"status\": \"Occupied\",\n  \"occupancyType\": \"OwnerOccupied\",\n  \"notes\": \"Ground floor apartment\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "property-units"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Link Property Unit to Survey",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/link",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "property-units", "{{propertyUnitId}}", "link"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Property Unit",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"unitIdentifier\": \"U-001-01\",\n  \"unitType\": \"Residential\",\n  \"floorNumber\": 1,\n  \"unitNumber\": \"1\",\n  \"estimatedArea\": 125.0,\n  \"numberOfRooms\": 4,\n  \"status\": \"Occupied\",\n  \"occupancyType\": \"OwnerOccupied\",\n  \"notes\": \"Updated measurements\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "property-units", "{{propertyUnitId}}"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Households",
+					"item": [
+						{
+							"name": "Create Household",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"if (jsonData.id) {",
+											"    pm.environment.set('householdId', jsonData.id);",
+											"    console.log('✅ Household ID saved:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"propertyUnitId\": \"{{propertyUnitId}}\",\n  \"headOfHouseholdName\": \"أحمد محمد علي الحسن\",\n  \"householdSize\": 5,\n  \"maleCount\": 2,\n  \"femaleCount\": 3,\n  \"infantCount\": 0,\n  \"childCount\": 2,\n  \"minorCount\": 0,\n  \"adultCount\": 2,\n  \"elderlyCount\": 1,\n  \"personsWithDisabilitiesCount\": 0,\n  \"isFemaleHeaded\": false,\n  \"isDisplaced\": true,\n  \"employedPersonsCount\": 1,\n  \"primaryIncomeSource\": \"Employment\",\n  \"monthlyIncomeEstimate\": 500000,\n  \"originLocation\": \"حلب - الأحياء الشرقية\",\n  \"displacementReason\": \"Conflict\",\n  \"notes\": \"Family displaced since 2016\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "households"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Household Details",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "households", "{{householdId}}"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Persons in Household",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "households", "{{householdId}}", "persons"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Persons",
+					"item": [
+						{
+							"name": "Add Person 1 (Head of Household)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person1Id', jsonData.id);",
+											"    console.log('✅ Person 1 ID saved:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstNameArabic\": \"أحمد\",\n  \"fatherNameArabic\": \"محمد\",\n  \"grandfatherNameArabic\": \"علي\",\n  \"familyNameArabic\": \"الحسن\",\n  \"nationalId\": \"01234567890123\",\n  \"gender\": \"Male\",\n  \"dateOfBirth\": \"1975-03-15\",\n  \"placeOfBirth\": \"حلب\",\n  \"maritalStatus\": \"Married\",\n  \"phoneNumber\": \"+963912345678\",\n  \"isHeadOfHousehold\": true,\n  \"notes\": \"Property owner\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "households", "{{householdId}}", "persons"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Person 2 (Spouse)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person2Id', jsonData.id);",
+											"    console.log('✅ Person 2 ID saved:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"firstNameArabic\": \"فاطمة\",\n  \"fatherNameArabic\": \"خالد\",\n  \"grandfatherNameArabic\": \"حسين\",\n  \"familyNameArabic\": \"العمر\",\n  \"nationalId\": \"01234567890124\",\n  \"gender\": \"Female\",\n  \"dateOfBirth\": \"1980-07-20\",\n  \"placeOfBirth\": \"حلب\",\n  \"maritalStatus\": \"Married\",\n  \"isHeadOfHousehold\": false,\n  \"notes\": \"Spouse\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "households", "{{householdId}}", "persons"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Set Head of Household",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/head/{{person1Id}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "households", "{{householdId}}", "head", "{{person1Id}}"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Relations",
+					"item": [
+						{
+							"name": "Add Relation (Owner)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": \"Owner\",\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"1995-01-01\",\n  \"notes\": \"Primary owner - inherited from father\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "property-units", "{{propertyUnitId}}", "relations"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Relation (Occupant)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person2Id}}\",\n  \"relationType\": \"Occupant\",\n  \"startDate\": \"2000-05-15\",\n  \"notes\": \"Spouse - living since marriage\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "property-units", "{{propertyUnitId}}", "relations"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Relation (Co-Owner 50%)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person2Id}}\",\n  \"relationType\": \"Owner\",\n  \"ownershipShare\": 0.5,\n  \"startDate\": \"2000-06-20\",\n  \"contractDetails\": \"Added to deed after marriage\",\n  \"notes\": \"Co-owner - 50% share\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "property-units", "{{propertyUnitId}}", "relations"]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Evidence",
+					"item": [
+						{
+							"name": "Upload Property Photo",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "description",
+											"value": "Front view of property",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/photos",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "evidence", "photos"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Upload ID Document",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personId",
+											"value": "{{person1Id}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "National ID card",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/identification",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "evidence", "identification"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Tenure Document",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "description",
+											"value": "Property deed",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/tenure",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "evidence", "tenure"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Evidence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "evidence"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get Evidence by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/evidence/{{evidenceId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "evidence", "{{evidenceId}}"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Download Evidence File",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/evidence/{{evidenceId}}/download",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "evidence", "{{evidenceId}}", "download"]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Evidence",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/{{evidenceId}}",
+									"host": ["{{baseUrl}}"],
+									"path": ["Surveys", "{{surveyId}}", "evidence", "{{evidenceId}}"]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			],
+			"description": "Endpoints for collecting survey data: property units, households, persons, relations, evidence."
+		},
+		{
+			"name": "5. Common Endpoints",
+			"item": [
+				{
+					"name": "Get Buildings",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.items && jsonData.items.length > 0) {",
+									"    pm.environment.set('buildingId', jsonData.items[0].id);",
+									"    console.log('✅ First building ID saved:', jsonData.items[0].id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Buildings?page=1&pageSize=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["Buildings"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "pageSize", "value": "10"}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Survey by ID (Generic)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/{{surveyId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "{{surveyId}}"]
+						},
+						"description": "Works for both field and office surveys"
+					},
+					"response": []
+				},
+				{
+					"name": "Save Survey Draft",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"أحمد محمد علي\",\n  \"notes\": \"Draft saved - work in progress\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Surveys/{{surveyId}}/draft",
+							"host": ["{{baseUrl}}"],
+							"path": ["Surveys", "{{surveyId}}", "draft"]
+						},
+						"description": "Save survey progress (works for both types)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claim by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Claims/{{claimId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["Claims", "{{claimId}}"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Common endpoints used by both survey types."
+		}
+	]
+}

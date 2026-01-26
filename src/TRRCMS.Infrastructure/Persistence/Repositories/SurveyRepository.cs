@@ -282,4 +282,165 @@ public class SurveyRepository : ISurveyRepository
             .OrderBy(s => s.SurveyDate)
             .ToListAsync(cancellationToken);
     }
+    /// <summary>
+    /// Get field surveys with filtering and pagination
+    /// </summary>
+    public async Task<List<Survey>> GetFieldSurveysAsync(
+        FieldSurveyFilterCriteria criteria,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildFieldSurveyQuery(criteria);
+
+        // Apply sorting
+        query = ApplyFieldSurveySorting(query, criteria.SortBy, criteria.SortDirection);
+
+        // Apply pagination
+        var skip = (page - 1) * pageSize;
+        query = query.Skip(skip).Take(pageSize);
+
+        return await query.ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Get total count of field surveys matching criteria
+    /// </summary>
+    public async Task<int> GetFieldSurveysCountAsync(
+        FieldSurveyFilterCriteria criteria,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildFieldSurveyQuery(criteria);
+        return await query.CountAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Get draft field surveys for a specific collector with pagination
+    /// </summary>
+    public async Task<(List<Survey> Surveys, int TotalCount)> GetFieldDraftSurveysByCollectorAsync(
+        Guid fieldCollectorId,
+        Guid? buildingId,
+        int page,
+        int pageSize,
+        string sortBy,
+        string sortDirection,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Surveys
+            .Include(s => s.Building)
+            .Include(s => s.PropertyUnit)
+            .Where(s => s.Type == SurveyType.Field
+                && s.FieldCollectorId == fieldCollectorId
+                && s.Status == SurveyStatus.Draft
+                && !s.IsDeleted);
+
+        // Apply building filter if provided
+        if (buildingId.HasValue)
+        {
+            query = query.Where(s => s.BuildingId == buildingId.Value);
+        }
+
+        // Get total count
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Apply sorting
+        query = ApplyFieldSurveySorting(query, sortBy, sortDirection);
+
+        // Apply pagination
+        var skip = (page - 1) * pageSize;
+        var surveys = await query.Skip(skip).Take(pageSize).ToListAsync(cancellationToken);
+
+        return (surveys, totalCount);
+    }
+
+    /// <summary>
+    /// Build query for field surveys with filters
+    /// </summary>
+    private IQueryable<Survey> BuildFieldSurveyQuery(FieldSurveyFilterCriteria criteria)
+    {
+        var query = _context.Surveys
+            .Include(s => s.Building)
+            .Include(s => s.PropertyUnit)
+            .Where(s => s.Type == SurveyType.Field && !s.IsDeleted);
+
+        // Apply filters
+        if (criteria.Status.HasValue)
+        {
+            query = query.Where(s => s.Status == criteria.Status.Value);
+        }
+
+        if (criteria.BuildingId.HasValue)
+        {
+            query = query.Where(s => s.BuildingId == criteria.BuildingId.Value);
+        }
+
+        if (criteria.FieldCollectorId.HasValue)
+        {
+            query = query.Where(s => s.FieldCollectorId == criteria.FieldCollectorId.Value);
+        }
+
+        if (criteria.PropertyUnitId.HasValue)
+        {
+            query = query.Where(s => s.PropertyUnitId == criteria.PropertyUnitId.Value);
+        }
+
+        if (criteria.FromDate.HasValue)
+        {
+            query = query.Where(s => s.SurveyDate >= criteria.FromDate.Value);
+        }
+
+        if (criteria.ToDate.HasValue)
+        {
+            query = query.Where(s => s.SurveyDate <= criteria.ToDate.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(criteria.ReferenceCode))
+        {
+            query = query.Where(s => s.ReferenceCode.Contains(criteria.ReferenceCode));
+        }
+
+        if (!string.IsNullOrWhiteSpace(criteria.IntervieweeName))
+        {
+            query = query.Where(s => s.IntervieweeName != null
+                && s.IntervieweeName.Contains(criteria.IntervieweeName));
+        }
+
+        return query;
+    }
+
+    /// <summary>
+    /// Apply sorting to field survey query
+    /// </summary>
+    private IQueryable<Survey> ApplyFieldSurveySorting(
+        IQueryable<Survey> query,
+        string sortBy,
+        string sortDirection)
+    {
+        var isDescending = sortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase);
+
+        return sortBy.ToLower() switch
+        {
+            "surveydate" => isDescending
+                ? query.OrderByDescending(s => s.SurveyDate)
+                : query.OrderBy(s => s.SurveyDate),
+            "referencecode" => isDescending
+                ? query.OrderByDescending(s => s.ReferenceCode)
+                : query.OrderBy(s => s.ReferenceCode),
+            "status" => isDescending
+                ? query.OrderByDescending(s => s.Status)
+                : query.OrderBy(s => s.Status),
+            "createdatutc" => isDescending
+                ? query.OrderByDescending(s => s.CreatedAtUtc)
+                : query.OrderBy(s => s.CreatedAtUtc),
+            "lastmodifiedatutc" => isDescending
+                ? query.OrderByDescending(s => s.LastModifiedAtUtc ?? s.CreatedAtUtc)
+                : query.OrderBy(s => s.LastModifiedAtUtc ?? s.CreatedAtUtc),
+            "buildingid" => isDescending
+                ? query.OrderByDescending(s => s.Building != null ? s.Building.BuildingNumber : "")
+                : query.OrderBy(s => s.Building != null ? s.Building.BuildingNumber : ""),
+            _ => isDescending
+                ? query.OrderByDescending(s => s.SurveyDate)
+                : query.OrderBy(s => s.SurveyDate)
+        };
+    }
 }
