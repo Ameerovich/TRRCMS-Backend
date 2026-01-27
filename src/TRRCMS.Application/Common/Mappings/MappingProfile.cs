@@ -18,9 +18,10 @@ public class MappingProfile : Profile
     {
         // Building mappings
         CreateMap<Building, BuildingDto>()
-            .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => src.BuildingType.ToString()))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-            .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null));
+           .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => src.BuildingType.ToString()))
+           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+           .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null))
+           .ForMember(dest => dest.LocationDescription, opt => opt.MapFrom(src => src.LocationDescription));
 
         // PropertyUnit mapping
         CreateMap<PropertyUnit, PropertyUnitDto>()

@@ -11,36 +11,37 @@ public class Building : BaseAuditableEntity
     // ==================== BUSINESS IDENTIFIER ====================
 
     /// <summary>
-    /// Unique 17-digit building identifier (رقم البناء)
-    /// Format: GG-DD-SS-CCC-NNN-BBBBB
-    /// This is the BUSINESS identifier visible to users
+    /// Unique building identifier (رمز البناء)
+    /// Stored format: GGDDSSCCNCNNBBBBB (17 digits, no dashes)
+    /// Display format: GG-DD-SS-CCC-NNN-BBBBB (with dashes, computed in DTO)
+    /// Auto-generated from administrative codes
     /// </summary>
     public string BuildingId { get; private set; }
 
     // ==================== ADMINISTRATIVE CODES ====================
 
     /// <summary>
-    /// Governorate code (رمز المحافظة) - 2 digits
+    /// Governorate code (محافظة) - 2 digits
     /// </summary>
     public string GovernorateCode { get; private set; }
 
     /// <summary>
-    /// District code (رمز المنطقة الإدارية) - 2 digits
+    /// District code (مدينة) - 2 digits
     /// </summary>
     public string DistrictCode { get; private set; }
 
     /// <summary>
-    /// Sub-district code (رمز الناحية الإدارية) - 2 digits
+    /// Sub-district code (بلدة) - 2 digits
     /// </summary>
     public string SubDistrictCode { get; private set; }
 
     /// <summary>
-    /// Community code (رمز التجمع العمراني) - 3 digits
+    /// Community code (قرية) - 3 digits
     /// </summary>
     public string CommunityCode { get; private set; }
 
     /// <summary>
-    /// Neighborhood code (رمز الحي) - 3 digits
+    /// Neighborhood code (حي) - 3 digits
     /// </summary>
     public string NeighborhoodCode { get; private set; }
 
@@ -80,6 +81,7 @@ public class Building : BaseAuditableEntity
 
     /// <summary>
     /// Building type classification (نوع البناء)
+    /// سكني، تجاري، مختلط، صناعي
     /// </summary>
     public BuildingType BuildingType { get; private set; }
 
@@ -94,7 +96,7 @@ public class Building : BaseAuditableEntity
     public DamageLevel? DamageLevel { get; private set; }
 
     /// <summary>
-    /// Total number of property units (عدد الوحدات العقارية)
+    /// Total number of property units (عدد الوحدات)
     /// </summary>
     public int NumberOfPropertyUnits { get; private set; }
 
@@ -149,7 +151,13 @@ public class Building : BaseAuditableEntity
     public string? Landmark { get; private set; }
 
     /// <summary>
-    /// Additional notes about the building
+    /// Location description (وصف الموقع)
+    /// Detailed description of the building location
+    /// </summary>
+    public string? LocationDescription { get; private set; }
+
+    /// <summary>
+    /// Additional notes / General description (الوصف العام)
     /// </summary>
     public string? Notes { get; private set; }
 
@@ -211,6 +219,7 @@ public class Building : BaseAuditableEntity
         string communityName,
         string neighborhoodName,
         BuildingType buildingType,
+        BuildingStatus status,
         Guid createdByUserId)
     {
         var building = new Building
@@ -227,10 +236,12 @@ public class Building : BaseAuditableEntity
             CommunityName = communityName,
             NeighborhoodName = neighborhoodName,
             BuildingType = buildingType,
-            Status = BuildingStatus.Unknown
+            Status = status
         };
 
-        // Generate 17-digit Building ID
+        // Generate Building ID (رمز البناء)
+        // Stored format: GGDDSSCCNCNNBBBBB (17 chars, no dashes)
+        // Display format: GG-DD-SS-CCC-NNN-BBBBB (with dashes, computed in DTO)
         building.BuildingId = $"{governorateCode}{districtCode}{subDistrictCode}" +
                              $"{communityCode}{neighborhoodCode}{buildingNumber}";
 
@@ -254,11 +265,11 @@ public class Building : BaseAuditableEntity
     /// <summary>
     /// Update building unit counts
     /// </summary>
-    public void UpdateUnitCounts(int apartments, int shops, Guid modifiedByUserId)
+    public void UpdateUnitCounts(int propertyUnits, int apartments, int shops, Guid modifiedByUserId)
     {
+        NumberOfPropertyUnits = propertyUnits;
         NumberOfApartments = apartments;
         NumberOfShops = shops;
-        NumberOfPropertyUnits = apartments + shops;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -291,6 +302,19 @@ public class Building : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Update location description and notes
+    /// </summary>
+    public void UpdateLocationInfo(
+        string? locationDescription,
+        string? notes,
+        Guid modifiedByUserId)
+    {
+        LocationDescription = locationDescription;
+        Notes = notes;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Update building details
     /// </summary>
     public void UpdateDetails(
@@ -298,6 +322,7 @@ public class Building : BaseAuditableEntity
         int? yearOfConstruction,
         string? address,
         string? landmark,
+        string? locationDescription,
         string? notes,
         Guid modifiedByUserId)
     {
@@ -305,6 +330,7 @@ public class Building : BaseAuditableEntity
         YearOfConstruction = yearOfConstruction;
         Address = address;
         Landmark = landmark;
+        LocationDescription = locationDescription;
         Notes = notes;
         MarkAsModified(modifiedByUserId);
     }

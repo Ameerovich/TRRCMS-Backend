@@ -13,9 +13,25 @@ public class BuildingMapDto
     public Guid Id { get; set; }
 
     /// <summary>
-    /// 17-digit Building ID (business identifier)
+    /// Building ID stored in database (رمز البناء)
+    /// Format: GGDDSSCCNCNNBBBBB (17 digits)
     /// </summary>
     public string BuildingId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Formatted Building ID for display
+    /// Format: GG-DD-SS-CCC-NNN-BBBBB
+    /// </summary>
+    public string BuildingIdFormatted => FormatBuildingId(BuildingId);
+
+    private static string FormatBuildingId(string buildingId)
+    {
+        if (string.IsNullOrEmpty(buildingId) || buildingId.Length != 17)
+            return buildingId;
+
+        return $"{buildingId[..2]}-{buildingId[2..4]}-{buildingId[4..6]}-" +
+               $"{buildingId[6..9]}-{buildingId[9..12]}-{buildingId[12..17]}";
+    }
 
     /// <summary>
     /// GPS Latitude
@@ -38,22 +54,18 @@ public class BuildingMapDto
     public string BuildingType { get; set; } = string.Empty;
 
     /// <summary>
-    /// Damage level for visual indicator
-    /// </summary>
-    public string? DamageLevel { get; set; }
-
-    /// <summary>
-    /// Building address for tooltip/popup
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// Number of property units (for badge display)
+    /// Number of property units (عدد الوحدات)
+    /// For badge display on map marker
     /// </summary>
     public int NumberOfPropertyUnits { get; set; }
 
     /// <summary>
-    /// Administrative location for grouping
+    /// Number of apartments (عدد المقاسم)
     /// </summary>
-    public string NeighborhoodName { get; set; } = string.Empty;
+    public int NumberOfApartments { get; set; }
+
+    /// <summary>
+    /// Number of shops (عدد المحلات)
+    /// </summary>
+    public int NumberOfShops { get; set; }
 }

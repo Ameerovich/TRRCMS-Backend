@@ -5,6 +5,9 @@ using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Buildings.Queries.SearchBuildings;
 
+/// <summary>
+/// Handler for SearchBuildingsQuery
+/// </summary>
 public class SearchBuildingsQueryHandler : IRequestHandler<SearchBuildingsQuery, SearchBuildingsResponse>
 {
     private readonly IBuildingRepository _buildingRepository;
@@ -22,6 +25,10 @@ public class SearchBuildingsQueryHandler : IRequestHandler<SearchBuildingsQuery,
         SearchBuildingsQuery request,
         CancellationToken cancellationToken)
     {
+        // Validate pagination
+        var page = request.Page < 1 ? 1 : request.Page;
+        var pageSize = request.PageSize < 1 ? 20 : (request.PageSize > 100 ? 100 : request.PageSize);
+
         // Get filtered and paginated buildings
         var (buildings, totalCount) = await _buildingRepository.SearchBuildingsAsync(
             governorateCode: request.GovernorateCode,
@@ -31,15 +38,15 @@ public class SearchBuildingsQueryHandler : IRequestHandler<SearchBuildingsQuery,
             neighborhoodCode: request.NeighborhoodCode,
             buildingId: request.BuildingId,
             buildingNumber: request.BuildingNumber,
-            address: request.Address,
-            latitude: request.Latitude,
-            longitude: request.Longitude,
-            radiusMeters: request.RadiusMeters,
+            address: null,          // Not used in current frontend
+            latitude: null,         // Not used for search
+            longitude: null,        // Not used for search
+            radiusMeters: null,     // Not used in current frontend
             status: request.Status,
             buildingType: request.BuildingType,
-            damageLevel: request.DamageLevel,
-            page: request.Page,
-            pageSize: request.PageSize,
+            damageLevel: null,      // Not used in current frontend
+            page: page,
+            pageSize: pageSize,
             sortBy: request.SortBy,
             sortDescending: request.SortDescending,
             cancellationToken: cancellationToken);
@@ -51,8 +58,8 @@ public class SearchBuildingsQueryHandler : IRequestHandler<SearchBuildingsQuery,
         {
             Buildings = buildingDtos,
             TotalCount = totalCount,
-            Page = request.Page,
-            PageSize = request.PageSize
+            Page = page,
+            PageSize = pageSize
         };
     }
 }

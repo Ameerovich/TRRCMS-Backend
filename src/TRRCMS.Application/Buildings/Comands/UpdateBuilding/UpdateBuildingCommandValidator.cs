@@ -2,6 +2,9 @@
 
 namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 
+/// <summary>
+/// Validator for UpdateBuildingCommand
+/// </summary>
 public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCommand>
 {
     public UpdateBuildingCommandValidator()
@@ -10,15 +13,24 @@ public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCo
             .NotEmpty()
             .WithMessage("Building ID is required");
 
-        RuleFor(x => x.ReasonForModification)
-            .NotEmpty()
-            .WithMessage("Reason for modification is required")
-            .MinimumLength(10)
-            .WithMessage("Reason must be at least 10 characters")
-            .MaximumLength(500)
-            .WithMessage("Reason must not exceed 500 characters");
+        // Building type validation
+        RuleFor(x => x.BuildingType)
+            .IsInEnum()
+            .When(x => x.BuildingType.HasValue)
+            .WithMessage("Invalid building type");
+
+        // Building status validation
+        RuleFor(x => x.BuildingStatus)
+            .IsInEnum()
+            .When(x => x.BuildingStatus.HasValue)
+            .WithMessage("Invalid building status");
 
         // Unit count validations
+        RuleFor(x => x.NumberOfPropertyUnits)
+            .GreaterThanOrEqualTo(0)
+            .When(x => x.NumberOfPropertyUnits.HasValue)
+            .WithMessage("Number of property units cannot be negative");
+
         RuleFor(x => x.NumberOfApartments)
             .GreaterThanOrEqualTo(0)
             .When(x => x.NumberOfApartments.HasValue)
@@ -28,33 +40,6 @@ public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCo
             .GreaterThanOrEqualTo(0)
             .When(x => x.NumberOfShops.HasValue)
             .WithMessage("Number of shops cannot be negative");
-
-        RuleFor(x => x.NumberOfFloors)
-            .GreaterThan(0)
-            .When(x => x.NumberOfFloors.HasValue)
-            .WithMessage("Number of floors must be positive");
-
-        RuleFor(x => x.YearOfConstruction)
-            .GreaterThan(1800)
-            .LessThanOrEqualTo(DateTime.UtcNow.Year + 10)
-            .When(x => x.YearOfConstruction.HasValue)
-            .WithMessage("Year of construction must be between 1800 and 10 years in the future");
-
-        // Text field length validations
-        RuleFor(x => x.Address)
-            .MaximumLength(500)
-            .When(x => !string.IsNullOrWhiteSpace(x.Address))
-            .WithMessage("Address must not exceed 500 characters");
-
-        RuleFor(x => x.Landmark)
-            .MaximumLength(200)
-            .When(x => !string.IsNullOrWhiteSpace(x.Landmark))
-            .WithMessage("Landmark must not exceed 200 characters");
-
-        RuleFor(x => x.Notes)
-            .MaximumLength(1000)
-            .When(x => !string.IsNullOrWhiteSpace(x.Notes))
-            .WithMessage("Notes must not exceed 1000 characters");
 
         // Coordinate validations
         RuleFor(x => x.Latitude)
@@ -72,5 +57,16 @@ public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCo
             .Must(x => (x.Latitude.HasValue && x.Longitude.HasValue) ||
                        (!x.Latitude.HasValue && !x.Longitude.HasValue))
             .WithMessage("Both latitude and longitude must be provided together");
+
+        // Description validations
+        RuleFor(x => x.LocationDescription)
+            .MaximumLength(1000)
+            .When(x => !string.IsNullOrWhiteSpace(x.LocationDescription))
+            .WithMessage("Location description cannot exceed 1000 characters");
+
+        RuleFor(x => x.Notes)
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrWhiteSpace(x.Notes))
+            .WithMessage("Notes cannot exceed 2000 characters");
     }
 }

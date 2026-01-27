@@ -1,29 +1,30 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using System.Text.Json;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 
+/// <summary>
+/// Handler for UpdateBuildingCommand
+/// Updates building attributes matching frontend form fields
+/// </summary>
 public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingCommand, BuildingDto>
 {
     private readonly IBuildingRepository _buildingRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
-    private readonly IMapper _mapper;
 
     public UpdateBuildingCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
-        IAuditService auditService,
-        IMapper mapper)
+        IAuditService auditService)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _auditService = auditService;
-        _mapper = mapper;
     }
 
     public async Task<BuildingDto> Handle(UpdateBuildingCommand request, CancellationToken cancellationToken)
@@ -34,32 +35,12 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
 
         // Get building
         var building = await _buildingRepository.GetByIdAsync(request.BuildingId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Building with ID {request.BuildingId} not found");
+            ?? throw new NotFoundException($"Building with ID {request.BuildingId} not found");
 
         // Track changes for audit
         var changedFields = new List<string>();
         var oldValues = new Dictionary<string, object?>();
         var newValues = new Dictionary<string, object?>();
-
-        // Update status and damage level
-        if (request.Status.HasValue || request.DamageLevel.HasValue)
-        {
-            var newStatus = request.Status ?? building.Status;
-            var newDamageLevel = request.DamageLevel ?? building.DamageLevel;
-
-            if (newStatus != building.Status || newDamageLevel != building.DamageLevel)
-            {
-                oldValues["Status"] = building.Status.ToString();
-                oldValues["DamageLevel"] = building.DamageLevel?.ToString();
-                newValues["Status"] = newStatus.ToString();
-                newValues["DamageLevel"] = newDamageLevel?.ToString();
-                changedFields.Add("Status");
-                if (request.DamageLevel.HasValue)
-                    changedFields.Add("DamageLevel");
-
-                building.UpdateStatus(newStatus, newDamageLevel, currentUserId);
-            }
-        }
 
         // Update building type
         if (request.BuildingType.HasValue && request.BuildingType.Value != building.BuildingType)
@@ -71,22 +52,38 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             building.UpdateBuildingType(request.BuildingType.Value, currentUserId);
         }
 
-        // Update unit counts
-        if (request.NumberOfApartments.HasValue || request.NumberOfShops.HasValue)
+        // Update building status
+        if (request.BuildingStatus.HasValue && request.BuildingStatus.Value != building.Status)
         {
+            oldValues["Status"] = building.Status.ToString();
+            newValues["Status"] = request.BuildingStatus.Value.ToString();
+            changedFields.Add("Status");
+
+            building.UpdateStatus(request.BuildingStatus.Value, building.DamageLevel, currentUserId);
+        }
+
+        // Update unit counts
+        if (request.NumberOfPropertyUnits.HasValue ||
+            request.NumberOfApartments.HasValue ||
+            request.NumberOfShops.HasValue)
+        {
+            var newPropertyUnits = request.NumberOfPropertyUnits ?? building.NumberOfPropertyUnits;
             var newApartments = request.NumberOfApartments ?? building.NumberOfApartments;
             var newShops = request.NumberOfShops ?? building.NumberOfShops;
 
-            if (newApartments != building.NumberOfApartments || newShops != building.NumberOfShops)
+            if (newPropertyUnits != building.NumberOfPropertyUnits ||
+                newApartments != building.NumberOfApartments ||
+                newShops != building.NumberOfShops)
             {
+                oldValues["NumberOfPropertyUnits"] = building.NumberOfPropertyUnits;
                 oldValues["NumberOfApartments"] = building.NumberOfApartments;
                 oldValues["NumberOfShops"] = building.NumberOfShops;
+                newValues["NumberOfPropertyUnits"] = newPropertyUnits;
                 newValues["NumberOfApartments"] = newApartments;
                 newValues["NumberOfShops"] = newShops;
-                changedFields.Add("NumberOfApartments");
-                changedFields.Add("NumberOfShops");
+                changedFields.Add("UnitCounts");
 
-                building.UpdateUnitCounts(newApartments, newShops, currentUserId);
+                building.UpdateUnitCounts(newPropertyUnits, newApartments, newShops, currentUserId);
             }
         }
 
@@ -105,44 +102,17 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             }
         }
 
-        // Update building details (address, landmark, notes, floors, year)
-        bool detailsChanged = false;
-        var newFloors = request.NumberOfFloors ?? building.NumberOfFloors;
-        var newYear = request.YearOfConstruction ?? building.YearOfConstruction;
-        var newAddress = request.Address ?? building.Address;
-        var newLandmark = request.Landmark ?? building.Landmark;
+        // Update location description and notes
+        bool descriptionChanged = false;
+        var newLocationDescription = request.LocationDescription ?? building.LocationDescription;
         var newNotes = request.Notes ?? building.Notes;
 
-        if (newFloors != building.NumberOfFloors)
+        if (newLocationDescription != building.LocationDescription)
         {
-            oldValues["NumberOfFloors"] = building.NumberOfFloors;
-            newValues["NumberOfFloors"] = newFloors;
-            changedFields.Add("NumberOfFloors");
-            detailsChanged = true;
-        }
-
-        if (newYear != building.YearOfConstruction)
-        {
-            oldValues["YearOfConstruction"] = building.YearOfConstruction;
-            newValues["YearOfConstruction"] = newYear;
-            changedFields.Add("YearOfConstruction");
-            detailsChanged = true;
-        }
-
-        if (newAddress != building.Address)
-        {
-            oldValues["Address"] = building.Address;
-            newValues["Address"] = newAddress;
-            changedFields.Add("Address");
-            detailsChanged = true;
-        }
-
-        if (newLandmark != building.Landmark)
-        {
-            oldValues["Landmark"] = building.Landmark;
-            newValues["Landmark"] = newLandmark;
-            changedFields.Add("Landmark");
-            detailsChanged = true;
+            oldValues["LocationDescription"] = building.LocationDescription;
+            newValues["LocationDescription"] = newLocationDescription;
+            changedFields.Add("LocationDescription");
+            descriptionChanged = true;
         }
 
         if (newNotes != building.Notes)
@@ -150,18 +120,12 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             oldValues["Notes"] = building.Notes;
             newValues["Notes"] = newNotes;
             changedFields.Add("Notes");
-            detailsChanged = true;
+            descriptionChanged = true;
         }
 
-        if (detailsChanged)
+        if (descriptionChanged)
         {
-            building.UpdateDetails(
-                newFloors,
-                newYear,
-                newAddress,
-                newLandmark,
-                newNotes,
-                currentUserId);
+            building.UpdateLocationInfo(newLocationDescription, newNotes, currentUserId);
         }
 
         // Save changes
@@ -173,7 +137,7 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
         {
             await _auditService.LogActionAsync(
                 actionType: AuditActionType.Update,
-                actionDescription: $"Updated building {building.BuildingId}. Reason: {request.ReasonForModification}",
+                actionDescription: $"Updated building {building.BuildingId}",
                 entityType: "Building",
                 entityId: building.Id,
                 entityIdentifier: building.BuildingId,
@@ -184,6 +148,55 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
         }
 
         // Return updated building DTO
-        return _mapper.Map<BuildingDto>(building);
+        return MapToDto(building);
+    }
+
+    private static BuildingDto MapToDto(Domain.Entities.Building building)
+    {
+        return new BuildingDto
+        {
+            Id = building.Id,
+            BuildingId = building.BuildingId,
+
+            // Administrative Codes
+            GovernorateCode = building.GovernorateCode,
+            DistrictCode = building.DistrictCode,
+            SubDistrictCode = building.SubDistrictCode,
+            CommunityCode = building.CommunityCode,
+            NeighborhoodCode = building.NeighborhoodCode,
+            BuildingNumber = building.BuildingNumber,
+
+            // Location Names
+            GovernorateName = building.GovernorateName,
+            DistrictName = building.DistrictName,
+            SubDistrictName = building.SubDistrictName,
+            CommunityName = building.CommunityName,
+            NeighborhoodName = building.NeighborhoodName,
+
+            // Attributes
+            BuildingType = building.BuildingType.ToString(),
+            Status = building.Status.ToString(),
+            DamageLevel = building.DamageLevel?.ToString(),
+            NumberOfPropertyUnits = building.NumberOfPropertyUnits,
+            NumberOfApartments = building.NumberOfApartments,
+            NumberOfShops = building.NumberOfShops,
+            NumberOfFloors = building.NumberOfFloors,
+            YearOfConstruction = building.YearOfConstruction,
+
+            // Location
+            Latitude = building.Latitude,
+            Longitude = building.Longitude,
+            BuildingGeometryWkt = building.BuildingGeometryWkt,
+
+            // Additional Information
+            Address = building.Address,
+            Landmark = building.Landmark,
+            LocationDescription = building.LocationDescription,
+            Notes = building.Notes,
+
+            // Audit
+            CreatedAtUtc = building.CreatedAtUtc,
+            LastModifiedAtUtc = building.LastModifiedAtUtc
+        };
     }
 }

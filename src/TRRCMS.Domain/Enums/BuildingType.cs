@@ -16,7 +16,12 @@ public enum BuildingType
     Commercial = 2,
 
     /// <summary>
-    /// Mixed-use building - houses and shops (مختلط - منازل ومحلات)
+    /// Mixed-use building - residential and commercial (مختلط)
     /// </summary>
-    MixedUse = 3
+    MixedUse = 3,
+
+    /// <summary>
+    /// Industrial building (صناعي)
+    /// </summary>
+    Industrial = 4
 }

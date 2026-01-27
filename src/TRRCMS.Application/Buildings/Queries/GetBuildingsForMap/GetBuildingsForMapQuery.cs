@@ -32,19 +32,14 @@ public class GetBuildingsForMapQuery : IRequest<List<BuildingMapDto>>
     public decimal SouthWestLng { get; set; }
 
     /// <summary>
-    /// Optional: Filter by building status
+    /// Optional: Filter by building status (حالة البناء)
     /// </summary>
     public BuildingStatus? Status { get; set; }
 
     /// <summary>
-    /// Optional: Filter by building type
+    /// Optional: Filter by building type (نوع البناء)
     /// </summary>
     public BuildingType? BuildingType { get; set; }
-
-    /// <summary>
-    /// Optional: Filter by damage level
-    /// </summary>
-    public DamageLevel? DamageLevel { get; set; }
 
     /// <summary>
     /// Maximum number of buildings to return (prevent overload)

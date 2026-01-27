@@ -1,21 +1,20 @@
-﻿using AutoMapper;
-using MediatR;
+﻿using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Buildings.Queries.GetBuildingsForMap;
 
+/// <summary>
+/// Handler for GetBuildingsForMapQuery
+/// Returns lightweight DTOs optimized for map rendering
+/// </summary>
 public class GetBuildingsForMapQueryHandler : IRequestHandler<GetBuildingsForMapQuery, List<BuildingMapDto>>
 {
     private readonly IBuildingRepository _buildingRepository;
-    private readonly IMapper _mapper;
 
-    public GetBuildingsForMapQueryHandler(
-        IBuildingRepository buildingRepository,
-        IMapper mapper)
+    public GetBuildingsForMapQueryHandler(IBuildingRepository buildingRepository)
     {
         _buildingRepository = buildingRepository;
-        _mapper = mapper;
     }
 
     public async Task<List<BuildingMapDto>> Handle(
@@ -23,7 +22,7 @@ public class GetBuildingsForMapQueryHandler : IRequestHandler<GetBuildingsForMap
         CancellationToken cancellationToken)
     {
         // Get all buildings (we'll filter in-memory for now)
-        // Alternative: Add GetBuildingsInBoundingBoxAsync to repository for better performance
+        // TODO: Add GetBuildingsInBoundingBoxAsync to repository for better performance
         var allBuildings = await _buildingRepository.GetAllAsync(cancellationToken);
 
         // Filter to buildings within bounding box
@@ -48,12 +47,6 @@ public class GetBuildingsForMapQueryHandler : IRequestHandler<GetBuildingsForMap
             buildingsInBox = buildingsInBox.Where(b => b.BuildingType == request.BuildingType.Value);
         }
 
-        // Apply optional damage level filter
-        if (request.DamageLevel.HasValue)
-        {
-            buildingsInBox = buildingsInBox.Where(b => b.DamageLevel == request.DamageLevel.Value);
-        }
-
         // Limit results to prevent overload
         var limitedBuildings = buildingsInBox.Take(request.MaxResults);
 
@@ -66,10 +59,9 @@ public class GetBuildingsForMapQueryHandler : IRequestHandler<GetBuildingsForMap
             Longitude = b.Longitude,
             Status = b.Status.ToString(),
             BuildingType = b.BuildingType.ToString(),
-            DamageLevel = b.DamageLevel?.ToString(),
-            Address = b.Address,
             NumberOfPropertyUnits = b.NumberOfPropertyUnits,
-            NeighborhoodName = b.NeighborhoodName
+            NumberOfApartments = b.NumberOfApartments,
+            NumberOfShops = b.NumberOfShops
         }).ToList();
 
         return buildingMapDtos;
