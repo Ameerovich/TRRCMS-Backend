@@ -1,18 +1,30 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Infrastructure.Persistence.Repositories;
 
+/// <summary>
+/// Building repository implementation with PostGIS spatial query support
+/// </summary>
 public class BuildingRepository : IBuildingRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly GeometryFactory _geometryFactory;
+    private readonly WKTReader _wktReader;
 
     public BuildingRepository(ApplicationDbContext context)
     {
         _context = context;
+        // SRID 4326 = WGS84 (GPS coordinate system)
+        _geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+        _wktReader = new WKTReader(_geometryFactory);
     }
+
+    // ==================== CRUD OPERATIONS ====================
 
     public async Task<Building?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -50,12 +62,15 @@ public class BuildingRepository : IBuildingRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
     public IQueryable<Building> GetQueryable()
     {
         return _context.Buildings
             .Where(b => !b.IsDeleted)
             .AsQueryable();
     }
+
+    // ==================== SEARCH WITH FILTERS ====================
 
     public async Task<(List<Building> Buildings, int TotalCount)> SearchBuildingsAsync(
         string? governorateCode = null,
@@ -78,7 +93,6 @@ public class BuildingRepository : IBuildingRepository
         bool sortDescending = false,
         CancellationToken cancellationToken = default)
     {
-        // Start with base query
         var query = _context.Buildings
             .Where(b => !b.IsDeleted)
             .AsQueryable();
@@ -106,31 +120,19 @@ public class BuildingRepository : IBuildingRepository
         if (!string.IsNullOrWhiteSpace(buildingNumber))
             query = query.Where(b => b.BuildingNumber == buildingNumber);
 
-        // Apply text search (partial match on address)
+        // Apply text search
         if (!string.IsNullOrWhiteSpace(address))
             query = query.Where(b => b.Address != null && b.Address.Contains(address));
 
-        // Apply spatial filter (bounding box approximation)
+        // Apply spatial filter using PostGIS
         if (latitude.HasValue && longitude.HasValue && radiusMeters.HasValue)
         {
-            // Calculate approximate bounding box
-            // 1 degree latitude ≈ 111 km
-            // 1 degree longitude ≈ 111 km * cos(latitude)
-            var latDelta = (decimal)(radiusMeters.Value / 111000.0);
-            var lngDelta = (decimal)(radiusMeters.Value / (111000.0 * Math.Cos((double)latitude.Value * Math.PI / 180)));
-
-            var minLat = latitude.Value - latDelta;
-            var maxLat = latitude.Value + latDelta;
-            var minLng = longitude.Value - lngDelta;
-            var maxLng = longitude.Value + lngDelta;
+            var point = _geometryFactory.CreatePoint(
+                new Coordinate((double)longitude.Value, (double)latitude.Value));
 
             query = query.Where(b =>
-                b.Latitude != null &&
-                b.Longitude != null &&
-                b.Latitude >= minLat &&
-                b.Latitude <= maxLat &&
-                b.Longitude >= minLng &&
-                b.Longitude <= maxLng);
+                b.BuildingGeometry != null &&
+                b.BuildingGeometry.IsWithinDistance(point, radiusMeters.Value));
         }
 
         // Apply attribute filters
@@ -143,7 +145,7 @@ public class BuildingRepository : IBuildingRepository
         if (damageLevel.HasValue)
             query = query.Where(b => b.DamageLevel == damageLevel.Value);
 
-        // Get total count before pagination
+        // Get total count
         var totalCount = await query.CountAsync(cancellationToken);
 
         // Apply sorting
@@ -155,7 +157,7 @@ public class BuildingRepository : IBuildingRepository
             "createddate" => sortDescending
                 ? query.OrderByDescending(b => b.CreatedAtUtc)
                 : query.OrderBy(b => b.CreatedAtUtc),
-            _ => query.OrderBy(b => b.BuildingId) // Default sort
+            _ => query.OrderBy(b => b.BuildingId)
         };
 
         // Apply pagination
@@ -167,4 +169,134 @@ public class BuildingRepository : IBuildingRepository
         return (buildings, totalCount);
     }
 
+    // ==================== SPATIAL QUERIES (PostGIS) ====================
+
+    public async Task<List<Building>> GetBuildingsWithinRadiusAsync(
+        decimal latitude,
+        decimal longitude,
+        int radiusMeters,
+        CancellationToken cancellationToken = default)
+    {
+        var point = _geometryFactory.CreatePoint(
+            new Coordinate((double)longitude, (double)latitude));
+
+        return await _context.Buildings
+            .Where(b => !b.IsDeleted &&
+                        b.BuildingGeometry != null &&
+                        b.BuildingGeometry.IsWithinDistance(point, radiusMeters))
+            .OrderBy(b => b.BuildingGeometry!.Distance(point))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Building>> GetBuildingsInPolygonAsync(
+        string polygonWkt,
+        CancellationToken cancellationToken = default)
+    {
+        var polygon = _wktReader.Read(polygonWkt);
+        polygon.SRID = 4326;
+
+        return await _context.Buildings
+            .Where(b => !b.IsDeleted &&
+                        b.BuildingGeometry != null &&
+                        b.BuildingGeometry.Within(polygon))
+            .OrderBy(b => b.BuildingId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Building>> GetBuildingsInBoundingBoxAsync(
+        decimal minLatitude,
+        decimal maxLatitude,
+        decimal minLongitude,
+        decimal maxLongitude,
+        BuildingType? buildingType = null,
+        BuildingStatus? status = null,
+        int maxResults = 10000,
+        CancellationToken cancellationToken = default)
+    {
+        // Create bounding box
+        var envelope = new Envelope(
+            (double)minLongitude, (double)maxLongitude,
+            (double)minLatitude, (double)maxLatitude);
+
+        var boundingBox = _geometryFactory.ToGeometry(envelope);
+        boundingBox.SRID = 4326;
+
+        var query = _context.Buildings
+            .Where(b => !b.IsDeleted &&
+                        b.BuildingGeometry != null &&
+                        b.BuildingGeometry.Intersects(boundingBox));
+
+        if (buildingType.HasValue)
+            query = query.Where(b => b.BuildingType == buildingType.Value);
+
+        if (status.HasValue)
+            query = query.Where(b => b.Status == status.Value);
+
+        return await query
+            .Take(maxResults)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<double?> GetDistanceBetweenBuildingsAsync(
+        Guid buildingId1,
+        Guid buildingId2,
+        CancellationToken cancellationToken = default)
+    {
+        var building1 = await _context.Buildings
+            .Where(b => b.Id == buildingId1 && !b.IsDeleted)
+            .Select(b => b.BuildingGeometry)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var building2 = await _context.Buildings
+            .Where(b => b.Id == buildingId2 && !b.IsDeleted)
+            .Select(b => b.BuildingGeometry)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (building1 == null || building2 == null)
+            return null;
+
+        // Distance in degrees, convert to meters
+        var distanceDegrees = building1.Distance(building2);
+        var avgLatitude = (building1.Centroid.Y + building2.Centroid.Y) / 2;
+        var metersPerDegree = 111139 * Math.Cos(avgLatitude * Math.PI / 180);
+
+        return distanceDegrees * metersPerDegree;
+    }
+
+    public async Task<List<Building>> GetBuildingsIntersectingAsync(
+        string geometryWkt,
+        Guid? excludeBuildingId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var geometry = _wktReader.Read(geometryWkt);
+        geometry.SRID = 4326;
+
+        var query = _context.Buildings
+            .Where(b => !b.IsDeleted &&
+                        b.BuildingGeometry != null &&
+                        b.BuildingGeometry.Intersects(geometry));
+
+        if (excludeBuildingId.HasValue)
+            query = query.Where(b => b.Id != excludeBuildingId.Value);
+
+        return await query
+            .OrderBy(b => b.BuildingId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Building>> GetNearestBuildingsAsync(
+        decimal latitude,
+        decimal longitude,
+        int count = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var point = _geometryFactory.CreatePoint(
+            new Coordinate((double)longitude, (double)latitude));
+
+        return await _context.Buildings
+            .Where(b => !b.IsDeleted && b.BuildingGeometry != null)
+            .OrderBy(b => b.BuildingGeometry!.Distance(point))
+            .Take(count)
+            .ToListAsync(cancellationToken);
+    }
 }

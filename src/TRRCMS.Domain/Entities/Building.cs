@@ -1,10 +1,14 @@
-﻿using TRRCMS.Domain.Common;
+﻿using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Building entity - represents physical buildings in the system.
+/// Uses PostGIS geometry for spatial operations.
+/// Follows DDD principles with encapsulated state and domain methods.
 /// </summary>
 public class Building : BaseAuditableEntity
 {
@@ -81,7 +85,6 @@ public class Building : BaseAuditableEntity
 
     /// <summary>
     /// Building type classification (نوع البناء)
-    /// سكني، تجاري، مختلط، صناعي
     /// </summary>
     public BuildingType BuildingType { get; private set; }
 
@@ -120,21 +123,27 @@ public class Building : BaseAuditableEntity
     /// </summary>
     public int? YearOfConstruction { get; private set; }
 
-    // ==================== SPATIAL DATA ====================
+    // ==================== SPATIAL DATA (PostGIS) ====================
 
     /// <summary>
-    /// Building geometry in WKT format (Well-Known Text)
-    /// Stored as PostGIS geometry in database
+    /// Building geometry stored as PostGIS native type
+    /// Uses SRID 4326 (WGS84 - GPS coordinate system)
     /// </summary>
-    public string? BuildingGeometryWkt { get; private set; }
+    public Geometry? BuildingGeometry { get; private set; }
 
     /// <summary>
-    /// GPS latitude coordinate
+    /// Building geometry as WKT string (computed property, not stored)
+    /// Used for API responses - maintains backwards compatibility
+    /// </summary>
+    public string? BuildingGeometryWkt => BuildingGeometry?.AsText();
+
+    /// <summary>
+    /// GPS latitude coordinate (center point)
     /// </summary>
     public decimal? Latitude { get; private set; }
 
     /// <summary>
-    /// GPS longitude coordinate
+    /// GPS longitude coordinate (center point)
     /// </summary>
     public decimal? Longitude { get; private set; }
 
@@ -152,7 +161,6 @@ public class Building : BaseAuditableEntity
 
     /// <summary>
     /// Location description (وصف الموقع)
-    /// Detailed description of the building location
     /// </summary>
     public string? LocationDescription { get; private set; }
 
@@ -163,25 +171,14 @@ public class Building : BaseAuditableEntity
 
     // ==================== NAVIGATION PROPERTIES ====================
 
-    /// <summary>
-    /// Property units within this building
-    /// </summary>
     public virtual ICollection<PropertyUnit> PropertyUnits { get; private set; }
-
-    /// <summary>
-    /// Building assignments to field collectors
-    /// </summary>
     public virtual ICollection<BuildingAssignment> BuildingAssignments { get; private set; }
-
-    /// <summary>
-    /// Surveys conducted for this building
-    /// </summary>
     public virtual ICollection<Survey> Surveys { get; private set; }
 
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>
-    /// EF Core constructor (required for materialization)
+    /// EF Core constructor
     /// </summary>
     private Building() : base()
     {
@@ -203,8 +200,10 @@ public class Building : BaseAuditableEntity
         Status = BuildingStatus.Unknown;
     }
 
+    // ==================== FACTORY METHOD ====================
+
     /// <summary>
-    /// Create new building with administrative codes
+    /// Create new building (Factory Method - DDD pattern)
     /// </summary>
     public static Building Create(
         string governorateCode,
@@ -239,9 +238,7 @@ public class Building : BaseAuditableEntity
             Status = status
         };
 
-        // Generate Building ID (رمز البناء)
-        // Stored format: GGDDSSCCNCNNBBBBB (17 chars, no dashes)
-        // Display format: GG-DD-SS-CCC-NNN-BBBBB (with dashes, computed in DTO)
+        // Generate Building ID (رمز البناء) - stored without dashes
         building.BuildingId = $"{governorateCode}{districtCode}{subDistrictCode}" +
                              $"{communityCode}{neighborhoodCode}{buildingNumber}";
 
@@ -274,21 +271,42 @@ public class Building : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Set building geometry
+    /// Set building geometry from WKT string
+    /// Converts WKT to PostGIS Geometry type
     /// </summary>
     public void SetGeometry(string geometryWkt, Guid modifiedByUserId)
     {
-        BuildingGeometryWkt = geometryWkt;
+        if (string.IsNullOrWhiteSpace(geometryWkt))
+        {
+            BuildingGeometry = null;
+        }
+        else
+        {
+            var reader = new WKTReader();
+            BuildingGeometry = reader.Read(geometryWkt);
+            BuildingGeometry.SRID = 4326; // WGS84
+        }
+
         MarkAsModified(modifiedByUserId);
     }
 
     /// <summary>
     /// Set GPS coordinates
+    /// Creates a Point geometry if no geometry exists
     /// </summary>
     public void SetCoordinates(decimal latitude, decimal longitude, Guid modifiedByUserId)
     {
         Latitude = latitude;
         Longitude = longitude;
+
+        // Create point geometry if no geometry exists
+        if (BuildingGeometry == null)
+        {
+            var geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+            BuildingGeometry = geometryFactory.CreatePoint(
+                new Coordinate((double)longitude, (double)latitude));
+        }
+
         MarkAsModified(modifiedByUserId);
     }
 
@@ -304,10 +322,7 @@ public class Building : BaseAuditableEntity
     /// <summary>
     /// Update location description and notes
     /// </summary>
-    public void UpdateLocationInfo(
-        string? locationDescription,
-        string? notes,
-        Guid modifiedByUserId)
+    public void UpdateLocationInfo(string? locationDescription, string? notes, Guid modifiedByUserId)
     {
         LocationDescription = locationDescription;
         Notes = notes;

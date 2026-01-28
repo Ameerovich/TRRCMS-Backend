@@ -1,4 +1,4 @@
-﻿# 🚀 TRRCMS - Team Setup Guide
+# 🚀 TRRCMS - Team Setup Guide
 
 ## Prerequisites
 
@@ -6,6 +6,7 @@ Before you start, make sure you have:
 - [ ] .NET 8 SDK installed - [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [ ] Visual Studio 2022 (or VS Code with C# extension)
 - [ ] PostgreSQL 16+ installed - [Download](https://www.postgresql.org/download/)
+- [ ] **PostGIS 3.x extension** for PostgreSQL - [Download](https://postgis.net/windows_downloads/)
 - [ ] Git installed - [Download](https://git-scm.com/)
 
 ---
@@ -16,7 +17,6 @@ git clone https://github.com/Ameerovich/TRRCMS.git
 cd TRRCMS
 ```
 
-
 ---
 
 ## 🗄️ Step 2: Setup PostgreSQL Database
@@ -26,7 +26,20 @@ cd TRRCMS
 - During installation, **remember your `postgres` user password**
 - Accept default port: **5432**
 
-### 2.2 Create Database
+### 2.2 Install PostGIS Extension (Required!)
+
+PostGIS adds spatial/geographic capabilities to PostgreSQL.
+
+1. Download **PostGIS 3.x Bundle for PostgreSQL 16** from: https://postgis.net/windows_downloads/
+2. Run the installer (`postgis-bundle-pg16-setup.exe`)
+3. Select your PostgreSQL 16 installation directory (usually `C:\Program Files\PostgreSQL\16`)
+4. Complete installation
+5. **Restart PostgreSQL service** (optional but recommended):
+   - Press `Win + R` → type `services.msc` → Enter
+   - Find **"postgresql-x64-16"**
+   - Right-click → **Restart**
+
+### 2.3 Create Database
 1. Open **pgAdmin 4** (installed with PostgreSQL)
 2. Connect to **PostgreSQL 16** server
 3. Right-click **Databases** → **Create** → **Database**
@@ -34,7 +47,19 @@ cd TRRCMS
 5. **Owner:** `postgres`
 6. Click **Save**
 
-✅ You should now see `TRRCMS_Dev` in the database list.
+### 2.4 Enable PostGIS Extension
+
+1. In pgAdmin, click on your **TRRCMS_Dev** database
+2. Click **Tools** → **Query Tool**
+3. Run this SQL command:
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+4. Verify installation:
+```sql
+SELECT PostGIS_Version();
+```
+5. ✅ **Expected output:** `3.6 USE_GEOS=1 USE_PROJ=1 USE_STATS=1` (or similar version)
 
 ---
 
@@ -89,6 +114,8 @@ dotnet build
 
 This creates the database tables from the code.
 
+⚠️ **IMPORTANT:** Only run `Update-Database` - do NOT run `Add-Migration`!
+
 ### Using Visual Studio:
 1. **Tools** → **NuGet Package Manager** → **Package Manager Console**
 2. In the dropdown, select **Default project: TRRCMS.Infrastructure**
@@ -99,13 +126,14 @@ Update-Database -StartupProject TRRCMS.WebAPI
 
 ### Using Command Line:
 ```bash
-cd src/TRRCMS.WebAPI
-dotnet ef database update --project ../TRRCMS.Infrastructure
+dotnet ef database update --project src/TRRCMS.Infrastructure --startup-project src/TRRCMS.WebAPI
 ```
 
 ✅ **Expected output:** 
 ```
 Applying migration '20260102233937_InitialCreate'.
+Applying migration '20260127151113_AddBuildingLocationDescription'.
+Applying migration '20260128084951_EnablePostGIS'.
 Done.
 ```
 
@@ -134,7 +162,7 @@ In the **Swagger UI** page:
 
 ### Test 1: Create a Building
 
-1. **Click** on **POST /api/v1/Buildings** (green bar)
+1. **Click** on **POST /api/Buildings** (green bar)
 2. **Click** "Try it out"
 3. **Paste** this test data:
 ```json
@@ -145,28 +173,102 @@ In the **Swagger UI** page:
   "communityCode": "001",
   "neighborhoodCode": "002",
   "buildingNumber": "00001",
-  "governorateName": "حلب",
-  "districtName": "منطقة الفرقان",
-  "subDistrictName": "ناحية السليمانية",
-  "communityName": "تجمع الشهباء",
-  "neighborhoodName": "حي الصاخور",
-  "buildingType": 0,
+  "buildingType": 1,
+  "buildingStatus": 1,
+  "numberOfPropertyUnits": 10,
+  "numberOfApartments": 8,
+  "numberOfShops": 2,
   "latitude": 36.2021,
-  "longitude": 37.1343
+  "longitude": 37.1343,
+  "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
+  "locationDescription": "بجانب المسجد الكبير",
+  "notes": "بناء سكني مؤلف من 5 طوابق"
 }
 ```
 
 4. **Click** "Execute"
-5. ✅ **Should see:** `201 Created` response with a GUID like `"7e439aab-5dd1-4a8a-b6c4-265008e53b86"`
+5. ✅ **Should see:** `201 Created` response with full building data including:
+   - `id` (GUID) - Use this for other API calls
+   - `buildingId` (17 digits) - Stored format
+   - `buildingIdFormatted` - Display format with dashes
 
-### Test 2: Get All Buildings
+### Test 2: Get Building by ID
 
-1. **Click** on **GET /api/v1/Buildings** (blue bar)
+1. **Click** on **GET /api/Buildings/{id}** (blue bar)
 2. **Click** "Try it out"
-3. **Click** "Execute"
-4. ✅ **Should see:** `200 OK` with an array containing the building you just created
+3. **Paste** the `id` (GUID) from Test 1
+4. **Click** "Execute"
+5. ✅ **Should see:** `200 OK` with full building details including `buildingGeometryWkt`
 
-**If both tests pass, your setup is complete!** 🎉
+### Test 3: Update Building Geometry
+
+1. **Click** on **PUT /api/Buildings/{id}/geometry** (orange bar)
+2. **Click** "Try it out"
+3. **Paste** the `id` (GUID) from Test 1
+4. **Paste** this request body:
+```json
+{
+  "latitude": 36.2025,
+  "longitude": 37.1350,
+  "geometryWkt": "POLYGON((37.1345 36.2020, 37.1355 36.2020, 37.1355 36.2030, 37.1345 36.2030, 37.1345 36.2020))"
+}
+```
+5. **Click** "Execute"
+6. ✅ **Should see:** `200 OK` with updated coordinates and geometry
+
+### Test 4: Verify PostGIS in Database (Optional)
+
+In pgAdmin, run this query:
+```sql
+SELECT 
+    "BuildingId",
+    ST_AsText("BuildingGeometry") as geometry_wkt,
+    "Latitude",
+    "Longitude"
+FROM "Buildings"
+WHERE "BuildingGeometry" IS NOT NULL;
+```
+✅ **Should see:** Your building with the polygon geometry
+
+**If all tests pass, your setup is complete!** 🎉
+
+---
+
+## 📋 Building API Field Reference
+
+### Building Types (نوع البناء)
+| Value | Enum | Arabic |
+|:-----:|------|--------|
+| 1 | Residential | سكني |
+| 2 | Commercial | تجاري |
+| 3 | MixedUse | مختلط |
+| 4 | Industrial | صناعي |
+
+### Building Status (حالة البناء)
+| Value | Enum | Arabic |
+|:-----:|------|--------|
+| 1 | Intact | سليم |
+| 2 | MinorDamage | أضرار طفيفة |
+| 3 | ModerateDamage | أضرار متوسطة |
+| 4 | MajorDamage | أضرار كبيرة |
+| 5 | SeverelyDamaged | أضرار شديدة |
+| 6 | Destroyed | مدمر |
+| 7 | UnderConstruction | قيد الإنشاء |
+| 8 | Abandoned | مهجور |
+| 99 | Unknown | غير معروف |
+
+### Building Code Format (رمز البناء)
+- **Stored:** `GGDDSSCCCCNNBBBBB` (17 digits, no dashes)
+- **Displayed:** `GG-DD-SS-CCC-NNN-BBBBB` (via `buildingIdFormatted`)
+
+| Segment | Digits | Arabic |
+|---------|:------:|--------|
+| GG | 2 | محافظة |
+| DD | 2 | مدينة |
+| SS | 2 | بلدة |
+| CCC | 3 | قرية |
+| NNN | 3 | حي |
+| BBBBB | 5 | رقم البناء |
 
 ---
 
@@ -179,10 +281,24 @@ In the **Swagger UI** page:
 - Ensure database `TRRCMS_Dev` exists in pgAdmin
 - Check connection string format is exactly: `Host=localhost;Database=TRRCMS_Dev;Username=postgres;Password=YourPassword`
 
+### Problem: "extension postgis is not available"
+**Solutions:**
+- PostGIS is not installed. Download and install from: https://postgis.net/windows_downloads/
+- Make sure you download the version matching your PostgreSQL (e.g., pg16 for PostgreSQL 16)
+- Restart PostgreSQL service after installing PostGIS
+
+### Problem: "type geometry does not exist"
+**Solutions:**
+- Enable PostGIS extension in your database:
+```sql
+CREATE EXTENSION IF NOT EXISTS postgis;
+```
+- Run this in pgAdmin on your `TRRCMS_Dev` database
+
 ### Problem: "No such table: Buildings"
 **Solution:**
 - Run migrations again: `Update-Database` in Package Manager Console
-- Or via CLI: `dotnet ef database update --project ../TRRCMS.Infrastructure`
+- Or via CLI: `dotnet ef database update --project src/TRRCMS.Infrastructure --startup-project src/TRRCMS.WebAPI`
 
 ### Problem: Build errors / missing packages
 **Solutions:**
@@ -200,6 +316,41 @@ In the **Swagger UI** page:
 - Manually open browser to: `https://localhost:7204/swagger`
 - Or check the console output for the actual URL
 
+### Problem: "NetTopologySuite" or "Geometry" errors
+**Solutions:**
+- Restore NuGet packages: `dotnet restore`
+- Check that `Npgsql.EntityFrameworkCore.PostgreSQL.NetTopologySuite` package is installed in Infrastructure project
 
+---
+
+## 📁 Project Structure
+
+```
+TRRCMS/
+├── src/
+│   ├── TRRCMS.Domain/           # Entities, Enums, Value Objects
+│   ├── TRRCMS.Application/      # Commands, Queries, DTOs, Interfaces
+│   ├── TRRCMS.Infrastructure/   # Database, Repositories, Services
+│   └── TRRCMS.WebAPI/           # Controllers, API Configuration
+├── tests/                       # Unit & Integration Tests
+└── TRRCMS.sln                   # Solution file
+```
+
+---
+
+## 🔑 Key Technologies
+
+| Technology | Purpose |
+|------------|---------|
+| .NET 8 | Backend framework |
+| PostgreSQL 16 | Database |
+| PostGIS 3.x | Spatial/Geographic queries |
+| Entity Framework Core 8 | ORM |
+| MediatR | CQRS pattern |
+| FluentValidation | Request validation |
+| AutoMapper | Object mapping |
+| JWT | Authentication |
+
+---
 
 **Happy Coding!** 🚀

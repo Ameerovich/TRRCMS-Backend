@@ -20,12 +20,17 @@ using TRRCMS.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ============== DATABASE ==============
+//============= DATABASE(with PostGIS support) ==============
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+        npgsqlOptions =>
+        {
+            npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+            npgsqlOptions.UseNetTopologySuite(); // Enable PostGIS/NetTopologySuite
+        }));
 
+//
 
 // ============== REPOSITORIES ==============
 builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();

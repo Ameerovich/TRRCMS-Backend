@@ -4,6 +4,10 @@ using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Infrastructure.Persistence.Configurations;
 
+/// <summary>
+/// EF Core configuration for Building entity
+/// Configures PostGIS geometry column with SRID 4326
+/// </summary>
 public class BuildingConfiguration : IEntityTypeConfiguration<Building>
 {
     public void Configure(EntityTypeBuilder<Building> builder)
@@ -13,7 +17,7 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         // Primary Key
         builder.HasKey(b => b.Id);
 
-        // Business Identifier - UNIQUE and INDEXED
+        // ==================== BUSINESS IDENTIFIER ====================
         builder.Property(b => b.BuildingId)
             .IsRequired()
             .HasMaxLength(17);
@@ -21,7 +25,7 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         builder.HasIndex(b => b.BuildingId)
             .IsUnique();
 
-        // Administrative Codes
+        // ==================== ADMINISTRATIVE CODES ====================
         builder.Property(b => b.GovernorateCode)
             .IsRequired()
             .HasMaxLength(2);
@@ -46,7 +50,7 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .IsRequired()
             .HasMaxLength(5);
 
-        // Location Names (Arabic)
+        // ==================== LOCATION NAMES (ARABIC) ====================
         builder.Property(b => b.GovernorateName)
             .IsRequired()
             .HasMaxLength(100);
@@ -67,7 +71,7 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .IsRequired()
             .HasMaxLength(100);
 
-        // Building Attributes - Store enums as strings
+        // ==================== BUILDING ATTRIBUTES ====================
         builder.Property(b => b.BuildingType)
             .IsRequired()
             .HasConversion<string>()
@@ -82,27 +86,36 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .HasConversion<string>()
             .HasMaxLength(50);
 
-        // Optional fields
+        // ==================== OPTIONAL FIELDS ====================
         builder.Property(b => b.Address)
             .HasMaxLength(500);
 
         builder.Property(b => b.Landmark)
             .HasMaxLength(500);
 
+        builder.Property(b => b.LocationDescription)
+            .HasMaxLength(1000);
+
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);
 
-        // Spatial data (simplified for now - we'll enhance with PostGIS later)
-        builder.Property(b => b.BuildingGeometryWkt)
-            .HasMaxLength(5000);
+        // ==================== SPATIAL DATA (PostGIS) ====================
+        // Geometry column using PostGIS native type
+        // SRID 4326 = WGS84 (GPS coordinate system)
+        builder.Property(b => b.BuildingGeometry)
+            .HasColumnType("geometry(Geometry, 4326)");
 
+        // Ignore the computed WKT property (not stored in database)
+        builder.Ignore(b => b.BuildingGeometryWkt);
+
+        // GPS Coordinates (kept for convenience)
         builder.Property(b => b.Latitude)
             .HasPrecision(10, 7);
 
         builder.Property(b => b.Longitude)
             .HasPrecision(10, 7);
 
-        // Audit fields
+        // ==================== AUDIT FIELDS ====================
         builder.Property(b => b.CreatedAtUtc)
             .IsRequired();
 
@@ -110,7 +123,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .IsRequired();
 
         builder.Property(b => b.LastModifiedAtUtc);
-
         builder.Property(b => b.LastModifiedBy);
 
         builder.Property(b => b.IsDeleted)
@@ -118,14 +130,13 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .HasDefaultValue(false);
 
         builder.Property(b => b.DeletedAtUtc);
-
         builder.Property(b => b.DeletedBy);
 
         // Row version for concurrency control
         builder.Property(b => b.RowVersion)
             .IsRowVersion();
 
-        // Relationships - ignore for now (we'll add these when we implement related entities)
+        // ==================== RELATIONSHIPS ====================
         builder.Ignore(b => b.BuildingAssignments);
         builder.Ignore(b => b.Surveys);
     }
