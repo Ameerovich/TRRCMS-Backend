@@ -35,6 +35,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 # Set working directory
 WORKDIR /app
 
+# Install curl for health checks and debugging
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
@@ -57,7 +61,7 @@ ENV ASPNETCORE_URLS=http://+:8080 \
     DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 # Health check endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
 # Entry point

@@ -53,10 +53,7 @@ _ReSharper*/
 **/.dockerignore
 
 # Documentation
-*.md
 docs/
-README.md
-SETUP_GUIDE.md
 
 # Database
 *.db
