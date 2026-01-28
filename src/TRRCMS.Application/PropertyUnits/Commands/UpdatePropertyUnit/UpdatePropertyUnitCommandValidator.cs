@@ -1,30 +1,25 @@
 using FluentValidation;
 
-namespace TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
+namespace TRRCMS.Application.PropertyUnits.Commands.UpdatePropertyUnit;
 
 /// <summary>
-/// Validator for CreatePropertyUnitInSurveyCommand
+/// Validator for UpdatePropertyUnitCommand
 /// </summary>
-public class CreatePropertyUnitInSurveyCommandValidator : AbstractValidator<CreatePropertyUnitInSurveyCommand>
+public class UpdatePropertyUnitCommandValidator : AbstractValidator<UpdatePropertyUnitCommand>
 {
-    public CreatePropertyUnitInSurveyCommandValidator()
+    public UpdatePropertyUnitCommandValidator()
     {
-        RuleFor(x => x.SurveyId)
+        RuleFor(x => x.Id)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
-
-        RuleFor(x => x.UnitIdentifier)
-            .NotEmpty()
-            .WithMessage("Unit identifier (رقم الوحدة) is required")
-            .MaximumLength(50)
-            .WithMessage("Unit identifier must not exceed 50 characters");
+            .WithMessage("Property unit ID is required");
 
         RuleFor(x => x.UnitType)
             .InclusiveBetween(1, 5)
+            .When(x => x.UnitType.HasValue)
             .WithMessage("Unit type (نوع الوحدة) must be between 1 and 5");
 
         RuleFor(x => x.Status)
-            .Must(s => s >= 1 && s <= 6 || s == 99)
+            .Must(s => !s.HasValue || (s.Value >= 1 && s.Value <= 6) || s.Value == 99)
             .WithMessage("Status (حالة الوحدة) must be a valid value (1-6 or 99)");
 
         RuleFor(x => x.FloorNumber)

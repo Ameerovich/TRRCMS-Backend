@@ -456,7 +456,9 @@ public class SurveysController : ControllerBase
         return Ok(result);
     }
 
-    //// ==================== PROPERTY UNIT MANAGEMENT ====================
+    // ==================== PROPERTY UNIT MANAGEMENT ====================
+    // Add these endpoints to your existing SurveysController.cs
+    // Replace the old property unit endpoints with these updated versions
 
     /// <summary>
     /// Get all property units for survey's building
@@ -465,17 +467,48 @@ public class SurveysController : ControllerBase
     /// **Use Case**: UC-001 Stage 2 - View available property units
     /// 
     /// **Purpose**: Lists all property units in the building being surveyed.
+    /// Field collectors can see existing units to select or create new ones.
     /// 
-    /// **What you get**:
-    /// - List of all property units in the survey's building
-    /// - Unit identifiers and types
-    /// - Current status of each unit
-    /// - Damage level assessments
-    /// - Occupancy information
+    /// **Required Permission**: CanViewOwnSurveys
     /// 
-    /// **Required permissions**: CanViewOwnSurveys
+    /// **Response includes**:
+    /// - Unit identifier (رقم الوحدة)
+    /// - Unit type (نوع الوحدة)
+    /// - Status (حالة الوحدة)
+    /// - Floor number (رقم الطابق)
+    /// - Area in m² (مساحة القسم)
+    /// - Number of rooms (عدد الغرف)
+    /// - Description (وصف مفصل)
     /// 
-    /// **Response**: Array of property units ordered by unit identifier
+    /// **Example Response**:
+    /// ```json
+    /// [
+    ///   {
+    ///     "id": "unit-guid-1",
+    ///     "buildingId": "building-guid",
+    ///     "buildingNumber": "00001",
+    ///     "unitIdentifier": "G-1",
+    ///     "floorNumber": 0,
+    ///     "unitType": "Shop",
+    ///     "status": "Occupied",
+    ///     "areaSquareMeters": 45.0,
+    ///     "numberOfRooms": null,
+    ///     "description": "محل تجاري"
+    ///   },
+    ///   {
+    ///     "id": "unit-guid-2",
+    ///     "buildingId": "building-guid",
+    ///     "buildingNumber": "00001",
+    ///     "unitIdentifier": "1A",
+    ///     "floorNumber": 1,
+    ///     "unitType": "Apartment",
+    ///     "status": "Occupied",
+    ///     "areaSquareMeters": 85.5,
+    ///     "numberOfRooms": 3,
+    ///     "description": "شقة سكنية"
+    ///   }
+    /// ]
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID to get property units for</param>
     /// <returns>List of property units in the building</returns>
@@ -500,28 +533,83 @@ public class SurveysController : ControllerBase
     /// Create new property unit in survey context
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 2 - Create new property unit during survey
+    /// **Use Case**: UC-001 Stage 2 - Create new property unit during field survey
     /// 
     /// **Purpose**: Creates a new property unit and automatically links it to the survey.
+    /// Use this when the unit doesn't exist in the system yet.
+    /// 
+    /// **Required Permission**: CanEditOwnSurveys
     /// 
     /// **What it does**:
-    /// - Creates property unit record in survey's building
-    /// - Generates unique unit identifier
-    /// - Links the unit to the survey
-    /// - Records unit type and characteristics
+    /// 1. Creates property unit record in survey's building
+    /// 2. Links the unit to the survey automatically
+    /// 3. Validates unit identifier is unique within building
     /// 
-    /// **Required permissions**: CanEditOwnSurveys
+    /// **Required Fields**:
+    /// - unitIdentifier: رقم الوحدة (e.g., "1A", "G-1", "الطابق الأول-يمين")
+    /// - unitType: نوع الوحدة (1=Apartment, 2=Shop, 3=Office, 4=Warehouse, 5=Other)
+    /// - status: حالة الوحدة (1=Occupied, 2=Vacant, 3=Damaged, 4=UnderRenovation, 5=Uninhabitable, 6=Locked, 99=Unknown)
     /// 
-    /// **Example**:
+    /// **Optional Fields**:
+    /// - floorNumber: رقم الطابق (0=Ground, 1=First, -1=Basement)
+    /// - areaSquareMeters: مساحة القسم
+    /// - numberOfRooms: عدد الغرف
+    /// - description: وصف مفصل
+    /// 
+    /// **Example Request - Apartment**:
     /// ```json
     /// {
-    ///   "unitIdentifier": "A-101",
+    ///   "unitIdentifier": "1A",
+    ///   "floorNumber": 1,
+    ///   "unitType": 1,
+    ///   "status": 1,
+    ///   "areaSquareMeters": 85.5,
+    ///   "numberOfRooms": 3,
+    ///   "description": "شقة سكنية مؤلفة من 3 غرف وصالة"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Shop**:
+    /// ```json
+    /// {
+    ///   "unitIdentifier": "G-1",
+    ///   "floorNumber": 0,
+    ///   "unitType": 2,
+    ///   "status": 1,
+    ///   "areaSquareMeters": 45.0,
+    ///   "numberOfRooms": null,
+    ///   "description": "محل تجاري في الطابق الأرضي"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Vacant Unit**:
+    /// ```json
+    /// {
+    ///   "unitIdentifier": "2B",
+    ///   "floorNumber": 2,
+    ///   "unitType": 1,
+    ///   "status": 2,
+    ///   "areaSquareMeters": 90.0,
+    ///   "numberOfRooms": 4,
+    ///   "description": "شقة شاغرة"
+    /// }
+    /// ```
+    /// 
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "buildingNumber": "00001",
+    ///   "unitIdentifier": "1A",
+    ///   "floorNumber": 1,
     ///   "unitType": "Apartment",
-    ///   "floor": 1,
-    ///   "area": 120.5,
-    ///   "roomCount": 3,
-    ///   "occupancyType": "Occupied",
-    ///   "damageLevel": "Minor"
+    ///   "status": "Occupied",
+    ///   "areaSquareMeters": 85.5,
+    ///   "numberOfRooms": 3,
+    ///   "description": "شقة سكنية مؤلفة من 3 غرف وصالة",
+    ///   "createdAtUtc": "2026-01-29T12:00:00Z",
+    ///   "lastModifiedAtUtc": null
     /// }
     /// ```
     /// </remarks>
@@ -533,6 +621,7 @@ public class SurveysController : ControllerBase
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only create units for your own surveys.</response>
     /// <response code="404">Survey or building not found.</response>
+    /// <response code="409">Property unit with same identifier already exists in building.</response>
     [HttpPost("{surveyId}/property-units")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [ProducesResponseType(typeof(PropertyUnitDto), StatusCodes.Status201Created)]
@@ -540,35 +629,96 @@ public class SurveysController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PropertyUnitDto>> CreatePropertyUnitInSurvey(
         Guid surveyId,
         [FromBody] CreatePropertyUnitInSurveyCommand command)
     {
         command.SurveyId = surveyId;
-        var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetSurvey), new { id = surveyId }, result);
+        try
+        {
+            var result = await _mediator.Send(command);
+            return CreatedAtAction(nameof(GetSurvey), new { id = surveyId }, result);
+        }
+        catch (Application.Common.Exceptions.ValidationException ex)
+        {
+            if (ex.Message.Contains("already exists"))
+            {
+                return Conflict(new { message = ex.Message });
+            }
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Application.Common.Exceptions.NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
     /// Update property unit in survey context
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 2 - Update property unit details during survey
+    /// **Use Case**: UC-001 Stage 2 - Update property unit details during field survey
     /// 
-    /// **Purpose**: Updates existing property unit details.
+    /// **Purpose**: Updates existing property unit details. Only provided fields will be updated.
+    /// 
+    /// **Required Permission**: CanEditOwnSurveys
     /// 
     /// **What it does**:
-    /// - Updates property unit fields
     /// - Validates unit belongs to survey's building
+    /// - Updates only the fields you provide
     /// - Records changes in audit trail
     /// 
-    /// **Updateable fields**:
-    /// - unitType, floor, area, roomCount
-    /// - occupancyType, occupancyNature
-    /// - damageLevel, status
-    /// - notes
+    /// **Updateable Fields** (all optional):
+    /// - floorNumber: رقم الطابق
+    /// - unitType: نوع الوحدة (1-5)
+    /// - status: حالة الوحدة (1-6 or 99)
+    /// - areaSquareMeters: مساحة القسم
+    /// - numberOfRooms: عدد الغرف
+    /// - description: وصف مفصل
     /// 
-    /// **Required permissions**: CanEditOwnSurveys
+    /// **Example Request - Update Status Only**:
+    /// ```json
+    /// {
+    ///   "status": 3
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Update Multiple Fields**:
+    /// ```json
+    /// {
+    ///   "status": 1,
+    ///   "numberOfRooms": 4,
+    ///   "areaSquareMeters": 95.0,
+    ///   "description": "تم تجديد الشقة وإضافة غرفة"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Mark as Damaged**:
+    /// ```json
+    /// {
+    ///   "status": 3,
+    ///   "description": "أضرار في السقف والجدران بسبب تسرب المياه"
+    /// }
+    /// ```
+    /// 
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "buildingNumber": "00001",
+    ///   "unitIdentifier": "1A",
+    ///   "floorNumber": 1,
+    ///   "unitType": "Apartment",
+    ///   "status": "Damaged",
+    ///   "areaSquareMeters": 85.5,
+    ///   "numberOfRooms": 3,
+    ///   "description": "أضرار في السقف والجدران بسبب تسرب المياه",
+    ///   "createdAtUtc": "2026-01-29T12:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-01-29T14:30:00Z"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="unitId">Property unit ID to update</param>
@@ -593,8 +743,19 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         command.PropertyUnitId = unitId;
-        var result = await _mediator.Send(command);
-        return Ok(result);
+        try
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+        catch (Application.Common.Exceptions.ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Application.Common.Exceptions.NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     /// <summary>
@@ -604,18 +765,36 @@ public class SurveysController : ControllerBase
     /// **Use Case**: UC-001 Stage 2 - Select existing property unit
     /// 
     /// **Purpose**: Links an existing property unit to the survey without creating a new one.
+    /// Use this when the unit already exists in the system.
+    /// 
+    /// **Required Permission**: CanEditOwnSurveys
     /// 
     /// **What it does**:
-    /// - Links property unit to survey
-    /// - Validates unit belongs to survey's building
-    /// - Updates survey's PropertyUnitId
+    /// 1. Validates unit belongs to survey's building
+    /// 2. Links property unit to survey
+    /// 3. Updates survey's PropertyUnitId
     /// 
     /// **When to use**:
-    /// - When the property unit already exists in the system
-    /// - To select from previously created units
-    /// - For office surveys selecting existing units
+    /// - When selecting from list of existing units
+    /// - For office surveys selecting previously created units
+    /// - When another field collector already created the unit
     /// 
-    /// **Required permissions**: CanEditOwnSurveys
+    /// **Example**: Link unit "1A" to a survey
+    /// ```
+    /// POST /api/Surveys/{surveyId}/property-units/{unitId}/link
+    /// ```
+    /// 
+    /// **Example Response** (returns updated survey):
+    /// ```json
+    /// {
+    ///   "id": "survey-guid",
+    ///   "referenceCode": "SRV-20260129-0001",
+    ///   "buildingId": "building-guid",
+    ///   "propertyUnitId": "unit-guid",
+    ///   "status": "Draft",
+    ///   ...
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID to link to</param>
     /// <param name="unitId">Property unit ID to link</param>
@@ -641,8 +820,19 @@ public class SurveysController : ControllerBase
             SurveyId = surveyId,
             PropertyUnitId = unitId
         };
-        var result = await _mediator.Send(command);
-        return Ok(result);
+        try
+        {
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+        catch (Application.Common.Exceptions.ValidationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Application.Common.Exceptions.NotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
     }
 
     // ==================== HOUSEHOLD MANAGEMENT ====================

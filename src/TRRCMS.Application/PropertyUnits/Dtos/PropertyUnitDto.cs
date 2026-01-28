@@ -1,54 +1,78 @@
 ﻿namespace TRRCMS.Application.PropertyUnits.Dtos;
 
 /// <summary>
-/// Data transfer object for Property Unit
+/// Simplified Property Unit DTO - matches frontend form fields
+/// Used for API requests and responses
 /// </summary>
 public class PropertyUnitDto
 {
     // ==================== IDENTIFIERS ====================
 
+    /// <summary>
+    /// Unique identifier (GUID)
+    /// </summary>
     public Guid Id { get; set; }
+
+    /// <summary>
+    /// Parent building ID
+    /// </summary>
     public Guid BuildingId { get; set; }
-    public string? BuildingNumber { get; set; } // Added for enrichment in handlers
+
+    /// <summary>
+    /// Building number (for display purposes)
+    /// </summary>
+    public string? BuildingNumber { get; set; }
+
+    /// <summary>
+    /// Unit identifier within building (رقم الوحدة)
+    /// Example: "1", "1A", "Ground-Left"
+    /// </summary>
     public string UnitIdentifier { get; set; } = string.Empty;
 
     // ==================== UNIT ATTRIBUTES ====================
 
+    /// <summary>
+    /// Floor number (رقم الطابق)
+    /// 0 = Ground, 1 = First, -1 = Basement
+    /// </summary>
     public int? FloorNumber { get; set; }
-    public string? PositionOnFloor { get; set; } // Added for Day 2
+
+    /// <summary>
+    /// Property unit type (نوع الوحدة)
+    /// Values: "Apartment", "Shop", "Office", "Warehouse", "Other"
+    /// </summary>
     public string UnitType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Property unit status (حالة الوحدة)
+    /// Values: "Occupied", "Vacant", "Damaged", "UnderRenovation", "Uninhabitable", "Locked", "Unknown"
+    /// </summary>
     public string Status { get; set; } = string.Empty;
-    public string? OccupancyStatus { get; set; } // Added for Day 2 (flexible field survey data)
-    public string? DamageLevel { get; set; }
+
+    /// <summary>
+    /// Area in square meters (مساحة القسم)
+    /// </summary>
     public decimal? AreaSquareMeters { get; set; }
-    public decimal? EstimatedAreaSqm { get; set; } // Added for Day 2 (field survey estimates)
+
+    /// <summary>
+    /// Number of rooms (عدد الغرف)
+    /// </summary>
     public int? NumberOfRooms { get; set; }
-    public int? NumberOfBathrooms { get; set; }
-    public bool? HasBalcony { get; set; }
 
-    // ==================== OCCUPANCY INFORMATION ====================
-
-    public string? OccupancyType { get; set; }
-    public string? OccupancyNature { get; set; }
-    public int? NumberOfHouseholds { get; set; }
-    public int? TotalOccupants { get; set; }
-
-    // ==================== UTILITIES (Added for Day 2) ====================
-
-    public bool HasElectricity { get; set; }
-    public bool HasWater { get; set; }
-    public bool HasSewage { get; set; }
-    public string? UtilitiesNotes { get; set; }
-
-    // ==================== ADDITIONAL INFORMATION ====================
-
+    /// <summary>
+    /// Unit description and notes (وصف مفصل)
+    /// </summary>
     public string? Description { get; set; }
-    public string? SpecialFeatures { get; set; }
 
     // ==================== AUDIT FIELDS ====================
 
+    /// <summary>
+    /// Creation timestamp
+    /// </summary>
     public DateTime CreatedAtUtc { get; set; }
-    public Guid CreatedBy { get; set; }
+
+    /// <summary>
+    /// Last modification timestamp
+    /// </summary>
     public DateTime? LastModifiedAtUtc { get; set; }
-    public Guid? LastModifiedBy { get; set; }
 }

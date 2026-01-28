@@ -24,15 +24,22 @@ public class MappingProfile : Profile
            .ForMember(dest => dest.LocationDescription, opt => opt.MapFrom(src => src.LocationDescription));
 
         // PropertyUnit mapping
+
         CreateMap<PropertyUnit, PropertyUnitDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.BuildingId, opt => opt.MapFrom(src => src.BuildingId))
+            .ForMember(dest => dest.BuildingNumber, opt => opt.Ignore()) // Set in handler
+            .ForMember(dest => dest.UnitIdentifier, opt => opt.MapFrom(src => src.UnitIdentifier))
+            .ForMember(dest => dest.FloorNumber, opt => opt.MapFrom(src => src.FloorNumber))
             .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.UnitType.ToString()))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-            .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null))
-            .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? src.OccupancyType.ToString() : null))
-            .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? src.OccupancyNature.ToString() : null))
-            .ForMember(dest => dest.BuildingNumber, opt => opt.Ignore()); // Set manually in handlers
-        // Person mappings
-        CreateMap<Person, PersonDto>();
+            .ForMember(dest => dest.AreaSquareMeters, opt => opt.MapFrom(src => src.AreaSquareMeters))
+            .ForMember(dest => dest.NumberOfRooms, opt => opt.MapFrom(src => src.NumberOfRooms))
+            .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
+            .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => src.LastModifiedAtUtc));
+   
+       CreateMap<Person, PersonDto>();
 
         // Household mappings
         CreateMap<Household, HouseholdDto>()

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -12,6 +12,7 @@ namespace TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 /// <summary>
 /// Handler for CreatePropertyUnitInSurveyCommand
 /// Creates property unit and automatically links it to the survey
+/// Simplified to match frontend form fields
 /// </summary>
 public class CreatePropertyUnitInSurveyCommandHandler : IRequestHandler<CreatePropertyUnitInSurveyCommand, PropertyUnitDto>
 {
@@ -86,29 +87,32 @@ public class CreatePropertyUnitInSurveyCommandHandler : IRequestHandler<CreatePr
         var propertyUnit = PropertyUnit.Create(
             buildingId: survey.BuildingId,
             unitIdentifier: request.UnitIdentifier,
-            unitType: request.UnitType,
+            unitType: (PropertyUnitType)request.UnitType,
             floorNumber: request.FloorNumber,
-            positionOnFloor: request.PositionOnFloor,
             createdByUserId: currentUserId
         );
 
-        // Update additional details
-        propertyUnit.UpdateDetails(
-            occupancyStatus: request.OccupancyStatus,
-            numberOfRooms: request.NumberOfRooms,
-            estimatedAreaSqm: request.EstimatedAreaSqm,
-            description: request.Description,
-            modifiedByUserId: currentUserId
-        );
+        // Update status
+        propertyUnit.UpdateStatus((PropertyUnitStatus)request.Status, null, currentUserId);
 
-        // Update utilities
-        propertyUnit.UpdateUtilities(
-            hasElectricity: request.HasElectricity ?? false,
-            hasWater: request.HasWater ?? false,
-            hasSewage: request.HasSewage ?? false,
-            utilitiesNotes: request.UtilitiesNotes,
-            modifiedByUserId: currentUserId
-        );
+        // Update physical details if provided
+        if (request.AreaSquareMeters.HasValue || request.NumberOfRooms.HasValue)
+        {
+            propertyUnit.UpdatePhysicalDetails(
+                numberOfRooms: request.NumberOfRooms,
+                numberOfBathrooms: null,
+                hasBalcony: null,
+                areaSquareMeters: request.AreaSquareMeters,
+                specialFeatures: null,
+                modifiedByUserId: currentUserId
+            );
+        }
+
+        // Update description if provided
+        if (!string.IsNullOrWhiteSpace(request.Description))
+        {
+            propertyUnit.UpdateDescription(request.Description, currentUserId);
+        }
 
         // Save property unit
         await _propertyUnitRepository.AddAsync(propertyUnit, cancellationToken);
@@ -130,8 +134,11 @@ public class CreatePropertyUnitInSurveyCommandHandler : IRequestHandler<CreatePr
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
                 propertyUnit.UnitIdentifier,
-                propertyUnit.UnitType,
+                UnitType = propertyUnit.UnitType.ToString(),
+                Status = propertyUnit.Status.ToString(),
                 propertyUnit.FloorNumber,
+                propertyUnit.AreaSquareMeters,
+                propertyUnit.NumberOfRooms,
                 request.SurveyId,
                 SurveyReferenceCode = survey.ReferenceCode
             }),

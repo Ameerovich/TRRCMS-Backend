@@ -1,17 +1,17 @@
 using FluentValidation;
 
-namespace TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
+namespace TRRCMS.Application.PropertyUnits.Commands.CreatePropertyUnit;
 
 /// <summary>
-/// Validator for CreatePropertyUnitInSurveyCommand
+/// Validator for CreatePropertyUnitCommand
 /// </summary>
-public class CreatePropertyUnitInSurveyCommandValidator : AbstractValidator<CreatePropertyUnitInSurveyCommand>
+public class CreatePropertyUnitCommandValidator : AbstractValidator<CreatePropertyUnitCommand>
 {
-    public CreatePropertyUnitInSurveyCommandValidator()
+    public CreatePropertyUnitCommandValidator()
     {
-        RuleFor(x => x.SurveyId)
+        RuleFor(x => x.BuildingId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage("Building ID (معرف البناء) is required");
 
         RuleFor(x => x.UnitIdentifier)
             .NotEmpty()

@@ -6,78 +6,46 @@ using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Domain.Enums;
 
-namespace TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
+namespace TRRCMS.Application.PropertyUnits.Commands.UpdatePropertyUnit;
 
 /// <summary>
-/// Handler for UpdatePropertyUnitInSurveyCommand
-/// Updates property unit details in the context of a survey
-/// Simplified to match frontend form fields
+/// Handler for updating a property unit
 /// </summary>
-public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePropertyUnitInSurveyCommand, PropertyUnitDto>
+public class UpdatePropertyUnitCommandHandler : IRequestHandler<UpdatePropertyUnitCommand, PropertyUnitDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly IBuildingRepository _buildingRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
-    public UpdatePropertyUnitInSurveyCommandHandler(
-        ISurveyRepository surveyRepository,
+    public UpdatePropertyUnitCommandHandler(
         IPropertyUnitRepository propertyUnitRepository,
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
-        _buildingRepository = buildingRepository ?? throw new ArgumentNullException(nameof(buildingRepository));
-        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
-        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _propertyUnitRepository = propertyUnitRepository;
+        _buildingRepository = buildingRepository;
+        _currentUserService = currentUserService;
+        _auditService = auditService;
+        _mapper = mapper;
     }
 
-    public async Task<PropertyUnitDto> Handle(UpdatePropertyUnitInSurveyCommand request, CancellationToken cancellationToken)
+    public async Task<PropertyUnitDto> Handle(UpdatePropertyUnitCommand request, CancellationToken cancellationToken)
     {
         // Get current user
-        var currentUserId = _currentUserService.UserId
-            ?? throw new UnauthorizedAccessException("User not authenticated");
-
-        // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
-        if (survey == null)
-        {
-            throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
-        }
-
-        // Verify ownership
-        if (survey.FieldCollectorId != currentUserId)
-        {
-            throw new UnauthorizedAccessException("You can only update property units for your own surveys");
-        }
-
-        // Verify survey is in Draft status
-        if (survey.Status != SurveyStatus.Draft)
-        {
-            throw new ValidationException($"Cannot update property units for survey in {survey.Status} status. Only Draft surveys can be modified.");
-        }
+        var userId = _currentUserService.UserId ?? Guid.NewGuid();
 
         // Get property unit
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId, cancellationToken);
+        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.Id, cancellationToken);
         if (propertyUnit == null)
         {
-            throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
+            throw new NotFoundException($"Property unit with ID {request.Id} not found");
         }
 
-        // Verify property unit belongs to survey's building
-        if (propertyUnit.BuildingId != survey.BuildingId)
-        {
-            throw new ValidationException(
-                $"Property unit {request.PropertyUnitId} does not belong to survey building {survey.BuildingId}");
-        }
-
-        // Track changes for audit
+        // Track old values for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             UnitType = propertyUnit.UnitType.ToString(),
@@ -91,13 +59,13 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
         // Update floor number if provided
         if (request.FloorNumber.HasValue)
         {
-            propertyUnit.UpdateLocation(request.FloorNumber, null, currentUserId);
+            propertyUnit.UpdateLocation(request.FloorNumber, null, userId);
         }
 
         // Update status if provided
         if (request.Status.HasValue)
         {
-            propertyUnit.UpdateStatus((PropertyUnitStatus)request.Status.Value, null, currentUserId);
+            propertyUnit.UpdateStatus((PropertyUnitStatus)request.Status.Value, null, userId);
         }
 
         // Update physical details if provided
@@ -109,21 +77,24 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
                 hasBalcony: null,
                 areaSquareMeters: request.AreaSquareMeters ?? propertyUnit.AreaSquareMeters,
                 specialFeatures: null,
-                modifiedByUserId: currentUserId
+                modifiedByUserId: userId
             );
         }
 
         // Update description if provided
         if (request.Description != null)
         {
-            propertyUnit.UpdateDescription(request.Description, currentUserId);
+            propertyUnit.UpdateDescription(request.Description, userId);
         }
+
+        // Note: UnitType is typically not updated after creation
+        // If needed, add a method to the entity for this
 
         // Save changes
         await _propertyUnitRepository.UpdateAsync(propertyUnit, cancellationToken);
         await _propertyUnitRepository.SaveChangesAsync(cancellationToken);
 
-        // Track changes
+        // Track new values for audit
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             UnitType = propertyUnit.UnitType.ToString(),
@@ -137,20 +108,20 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
         // Audit logging
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
-            actionDescription: $"Updated property unit {propertyUnit.UnitIdentifier} in survey {survey.ReferenceCode}",
+            actionDescription: $"Updated property unit {propertyUnit.UnitIdentifier}",
             entityType: "PropertyUnit",
             entityId: propertyUnit.Id,
             entityIdentifier: propertyUnit.UnitIdentifier,
             oldValues: oldValues,
             newValues: newValues,
-            changedFields: "Property unit updates",
+            changedFields: "Property unit update",
             cancellationToken: cancellationToken
         );
 
         // Get building for DTO
         var building = await _buildingRepository.GetByIdAsync(propertyUnit.BuildingId, cancellationToken);
 
-        // Map to DTO
+        // Map to DTO and return
         var result = _mapper.Map<PropertyUnitDto>(propertyUnit);
         result.BuildingNumber = building?.BuildingNumber;
 

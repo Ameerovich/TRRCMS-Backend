@@ -1,43 +1,36 @@
 using MediatR;
 using TRRCMS.Application.PropertyUnits.Dtos;
 
-namespace TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
+namespace TRRCMS.Application.PropertyUnits.Commands.UpdatePropertyUnit;
 
 /// <summary>
-/// Command to create a new property unit in the context of a field survey
+/// Command to update a property unit
 /// Simplified to match frontend form fields
-/// Corresponds to UC-001 Stage 2: Property Unit Selection - Create New Unit
+/// All fields optional - only provided fields will be updated
 /// </summary>
-public class CreatePropertyUnitInSurveyCommand : IRequest<PropertyUnitDto>
+public class UpdatePropertyUnitCommand : IRequest<PropertyUnitDto>
 {
     /// <summary>
-    /// Survey ID this property unit is being created for (required)
+    /// Property unit ID to update (required)
     /// </summary>
-    public Guid SurveyId { get; set; }
-
-    /// <summary>
-    /// Unit identifier within building (رقم الوحدة) - required
-    /// Example: "1", "1A", "Ground-Left"
-    /// </summary>
-    public string UnitIdentifier { get; set; } = string.Empty;
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Floor number (رقم الطابق)
-    /// 0 = Ground, 1 = First, -1 = Basement
     /// </summary>
     public int? FloorNumber { get; set; }
 
     /// <summary>
-    /// Property unit type (نوع الوحدة) - required
+    /// Property unit type (نوع الوحدة)
     /// Values: 1=Apartment, 2=Shop, 3=Office, 4=Warehouse, 5=Other
     /// </summary>
-    public int UnitType { get; set; }
+    public int? UnitType { get; set; }
 
     /// <summary>
-    /// Property unit status (حالة الوحدة) - required
+    /// Property unit status (حالة الوحدة)
     /// Values: 1=Occupied, 2=Vacant, 3=Damaged, 4=UnderRenovation, 5=Uninhabitable, 6=Locked, 99=Unknown
     /// </summary>
-    public int Status { get; set; }
+    public int? Status { get; set; }
 
     /// <summary>
     /// Area in square meters (مساحة القسم)
