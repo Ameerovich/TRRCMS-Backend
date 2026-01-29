@@ -1,17 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Households.Dtos;
 
 namespace TRRCMS.Application.Households.Queries.GetHousehold;
 
 /// <summary>
-/// Query to get a household by ID
+/// Query to get a single household by ID
 /// </summary>
-public class GetHouseholdQuery : IRequest<HouseholdDto?>
-{
-    public Guid Id { get; }
-
-    public GetHouseholdQuery(Guid id)
-    {
-        Id = id;
-    }
-}
+public record GetHouseholdQuery(Guid Id) : IRequest<HouseholdDto?>;

@@ -43,8 +43,42 @@ public class MappingProfile : Profile
 
         // Household mappings
         CreateMap<Household, HouseholdDto>()
-            .ForMember(dest => dest.DependencyRatio, opt => opt.MapFrom(src => src.CalculateDependencyRatio()))
-            .ForMember(dest => dest.IsVulnerable, opt => opt.MapFrom(src => src.IsVulnerable()));
+       // Identifiers
+       .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+       .ForMember(dest => dest.PropertyUnitId, opt => opt.MapFrom(src => src.PropertyUnitId))
+       .ForMember(dest => dest.PropertyUnitIdentifier, opt => opt.Ignore()) // Set in handler
+
+       // Basic info
+       .ForMember(dest => dest.HeadOfHouseholdName, opt => opt.MapFrom(src => src.HeadOfHouseholdName))
+       .ForMember(dest => dest.HeadOfHouseholdPersonId, opt => opt.MapFrom(src => src.HeadOfHouseholdPersonId))
+       .ForMember(dest => dest.HouseholdSize, opt => opt.MapFrom(src => src.HouseholdSize))
+       .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
+
+       // Adults composition
+       .ForMember(dest => dest.MaleCount, opt => opt.MapFrom(src => src.MaleCount))
+       .ForMember(dest => dest.FemaleCount, opt => opt.MapFrom(src => src.FemaleCount))
+
+       // Children composition
+       .ForMember(dest => dest.MaleChildCount, opt => opt.MapFrom(src => src.MaleChildCount))
+       .ForMember(dest => dest.FemaleChildCount, opt => opt.MapFrom(src => src.FemaleChildCount))
+
+       // Elderly composition
+       .ForMember(dest => dest.MaleElderlyCount, opt => opt.MapFrom(src => src.MaleElderlyCount))
+       .ForMember(dest => dest.FemaleElderlyCount, opt => opt.MapFrom(src => src.FemaleElderlyCount))
+
+       // Disabled composition
+       .ForMember(dest => dest.MaleDisabledCount, opt => opt.MapFrom(src => src.MaleDisabledCount))
+       .ForMember(dest => dest.FemaleDisabledCount, opt => opt.MapFrom(src => src.FemaleDisabledCount))
+
+       // Audit fields
+       .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
+       .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy))
+       .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => src.LastModifiedAtUtc))
+       .ForMember(dest => dest.LastModifiedBy, opt => opt.MapFrom(src => src.LastModifiedBy))
+       .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => src.IsDeleted))
+       .ForMember(dest => dest.DeletedAtUtc, opt => opt.MapFrom(src => src.DeletedAtUtc))
+       .ForMember(dest => dest.DeletedBy, opt => opt.MapFrom(src => src.DeletedBy));
+
 
         // PersonPropertyRelation mappings
         CreateMap<PersonPropertyRelation, PersonPropertyRelationDto>()

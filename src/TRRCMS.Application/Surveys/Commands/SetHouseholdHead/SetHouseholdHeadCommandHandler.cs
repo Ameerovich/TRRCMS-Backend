@@ -108,10 +108,6 @@ public class SetHouseholdHeadCommandHandler : IRequestHandler<SetHouseholdHeadCo
         // Map to DTO
         var result = _mapper.Map<HouseholdDto>(household);
 
-        // Calculate computed properties
-        result.DependencyRatio = household.CalculateDependencyRatio();
-        result.IsVulnerable = household.IsVulnerable();
-
         return result;
     }
 }

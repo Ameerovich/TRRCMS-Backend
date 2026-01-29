@@ -1,80 +1,132 @@
 ﻿namespace TRRCMS.Application.Households.Dtos;
 
 /// <summary>
-/// Data transfer object for Household entity
+/// Simplified Household DTO - matches frontend form fields
+/// تسجيل الأسرة - تسجيل تفاصيل الإشغال
 /// </summary>
 public class HouseholdDto
 {
     // ==================== IDENTIFIERS ====================
 
+    /// <summary>
+    /// Unique identifier (GUID)
+    /// </summary>
     public Guid Id { get; set; }
+
+    /// <summary>
+    /// Parent property unit ID
+    /// </summary>
     public Guid PropertyUnitId { get; set; }
+
+    /// <summary>
+    /// Property unit identifier (for display)
+    /// </summary>
+    public string? PropertyUnitIdentifier { get; set; }
 
     // ==================== BASIC INFORMATION ====================
 
+    /// <summary>
+    /// Head of household name (رب الأسرة/العميل - اسم الشخص)
+    /// </summary>
     public string HeadOfHouseholdName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Link to Person entity if head is registered
+    /// </summary>
     public Guid? HeadOfHouseholdPersonId { get; set; }
+
+    /// <summary>
+    /// Total household size (عدد الأفراد)
+    /// </summary>
     public int HouseholdSize { get; set; }
 
-    // ==================== GENDER COMPOSITION ====================
+    /// <summary>
+    /// Notes/observations (ادخل ملاحظاتك)
+    /// </summary>
+    public string? Notes { get; set; }
 
+    // ==================== ADULTS COMPOSITION (تكوين الأسرة - البالغين) ====================
+
+    /// <summary>
+    /// Number of adult males (عدد البالغين الذكور)
+    /// </summary>
     public int MaleCount { get; set; }
+
+    /// <summary>
+    /// Number of adult females (عدد البالغين الإناث)
+    /// </summary>
     public int FemaleCount { get; set; }
 
-    // ==================== AGE COMPOSITION ====================
+    // ==================== CHILDREN COMPOSITION (تكوين الأسرة - الأطفال) ====================
 
-    public int InfantCount { get; set; }
-    public int ChildCount { get; set; }
-    public int MinorCount { get; set; }
-    public int AdultCount { get; set; }
-    public int ElderlyCount { get; set; }
+    /// <summary>
+    /// Number of male children under 18 (عدد الأطفال الذكور - أقل من 18)
+    /// </summary>
+    public int MaleChildCount { get; set; }
 
-    // ==================== VULNERABILITY INDICATORS ====================
+    /// <summary>
+    /// Number of female children under 18 (عدد الأطفال الإناث - أقل من 18)
+    /// </summary>
+    public int FemaleChildCount { get; set; }
 
-    public int PersonsWithDisabilitiesCount { get; set; }
-    public bool IsFemaleHeaded { get; set; }
-    public int WidowCount { get; set; }
-    public int OrphanCount { get; set; }
-    public int SingleParentCount { get; set; }
+    // ==================== ELDERLY COMPOSITION (تكوين الأسرة - كبار السن) ====================
 
-    // ==================== ECONOMIC INDICATORS ====================
+    /// <summary>
+    /// Number of male elderly over 65 (عدد كبار السن الذكور - أكثر من 65)
+    /// </summary>
+    public int MaleElderlyCount { get; set; }
 
-    public int EmployedPersonsCount { get; set; }
-    public int UnemployedPersonsCount { get; set; }
-    public string? PrimaryIncomeSource { get; set; }
-    public decimal? MonthlyIncomeEstimate { get; set; }
+    /// <summary>
+    /// Number of female elderly over 65 (عدد كبار السن الإناث - أكثر من 65)
+    /// </summary>
+    public int FemaleElderlyCount { get; set; }
 
-    // ==================== DISPLACEMENT & ORIGIN ====================
+    // ==================== DISABLED COMPOSITION (تكوين الأسرة - المعاقين) ====================
 
-    public bool IsDisplaced { get; set; }
-    public string? OriginLocation { get; set; }
-    public DateTime? ArrivalDate { get; set; }
-    public string? DisplacementReason { get; set; }
+    /// <summary>
+    /// Number of male persons with disabilities (عدد المعاقين الذكور)
+    /// </summary>
+    public int MaleDisabledCount { get; set; }
 
-    // ==================== ADDITIONAL INFORMATION ====================
-
-    public string? Notes { get; set; }
-    public string? SpecialNeeds { get; set; }
+    /// <summary>
+    /// Number of female persons with disabilities (عدد المعاقين الإناث)
+    /// </summary>
+    public int FemaleDisabledCount { get; set; }
 
     // ==================== AUDIT FIELDS ====================
 
+    /// <summary>
+    /// Creation timestamp
+    /// </summary>
     public DateTime CreatedAtUtc { get; set; }
+
+    /// <summary>
+    /// Created by user ID
+    /// </summary>
     public Guid CreatedBy { get; set; }
+
+    /// <summary>
+    /// Last modification timestamp
+    /// </summary>
     public DateTime? LastModifiedAtUtc { get; set; }
+
+    /// <summary>
+    /// Last modified by user ID
+    /// </summary>
     public Guid? LastModifiedBy { get; set; }
+
+    /// <summary>
+    /// Soft delete flag
+    /// </summary>
     public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// Deletion timestamp
+    /// </summary>
     public DateTime? DeletedAtUtc { get; set; }
+
+    /// <summary>
+    /// Deleted by user ID
+    /// </summary>
     public Guid? DeletedBy { get; set; }
-
-    // ==================== COMPUTED PROPERTIES ====================
-
-    /// <summary>
-    /// Calculated dependency ratio (dependents / working age adults)
-    /// </summary>
-    public decimal DependencyRatio { get; set; }
-
-    /// <summary>
-    /// Indicates if household is vulnerable based on indicators
-    /// </summary>
-    public bool IsVulnerable { get; set; }
 }

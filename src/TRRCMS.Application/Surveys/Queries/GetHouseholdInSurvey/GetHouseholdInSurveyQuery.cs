@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Households.Dtos;
 
 namespace TRRCMS.Application.Surveys.Queries.GetHouseholdInSurvey;
@@ -6,7 +6,7 @@ namespace TRRCMS.Application.Surveys.Queries.GetHouseholdInSurvey;
 /// <summary>
 /// Query to get household details in survey context
 /// </summary>
-public class GetHouseholdInSurveyQuery : IRequest<HouseholdDto>
+public class GetHouseholdInSurveyQuery : IRequest<HouseholdDto?>
 {
     /// <summary>
     /// Survey ID for authorization

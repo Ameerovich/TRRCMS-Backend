@@ -1,8 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.Persons.Dtos;
@@ -19,6 +17,7 @@ using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 using TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 using TRRCMS.Application.Surveys.Commands.SetHouseholdHead;
+using TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
@@ -33,6 +32,7 @@ using TRRCMS.Application.Surveys.Queries.GetFieldSurveyById;
 using TRRCMS.Application.Surveys.Queries.GetFieldSurveys;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Queries.GetHouseholdPersons;
+using TRRCMS.Application.Surveys.Queries.GetHouseholdsForSurvey;
 using TRRCMS.Application.Surveys.Queries.GetOfficeDraftSurveys;
 using TRRCMS.Application.Surveys.Queries.GetOfficeSurveyById;
 using TRRCMS.Application.Surveys.Queries.GetOfficeSurveys;
@@ -834,71 +834,87 @@ public class SurveysController : ControllerBase
             return NotFound(new { message = ex.Message });
         }
     }
-
     // ==================== HOUSEHOLD MANAGEMENT ====================
+
+    /// <summary>
+    /// Get all households for survey
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 3 - View all households during survey
+    /// 
+    /// **Purpose**: Retrieves all households linked to the survey's property unit.
+    /// 
+    /// **Required Permission**: CanViewOwnSurveys
+    /// 
+    /// **Response**: List of households (may be empty if none created yet)
+    /// </remarks>
+    /// <param name="surveyId">Survey ID</param>
+    /// <returns>List of households for this survey</returns>
+    /// <response code="200">Success. Returns array of households.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only view households for your own surveys.</response>
+    /// <response code="404">Survey not found.</response>
+    [HttpGet("{surveyId}/households")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<HouseholdDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<HouseholdDto>>> GetHouseholdsForSurvey(Guid surveyId)
+    {
+        var query = new GetHouseholdsForSurveyQuery { SurveyId = surveyId };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
 
     /// <summary>
     /// Create household in survey context
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-001 Stage 3 - Household Registration
+    /// تسجيل الأسرة - تسجيل تفاصيل الإشغال
     /// 
-    /// **Purpose**: Creates a household for a property unit and collects demographic composition data.
+    /// **Purpose**: Creates a new household and links it to the survey's property unit.
     /// 
-    /// **What it does**:
-    /// - Creates household record linked to property unit
-    /// - Records head of household name
-    /// - Captures household size
-    /// - Records demographic composition (gender, age groups)
-    /// - Captures vulnerability indicators
-    /// - Records economic indicators
-    /// - Captures displacement information
+    /// **Required Permission**: CanEditOwnSurveys
     /// 
-    /// **When to use**:
-    /// - After selecting/creating a property unit
-    /// - When registering occupants of a unit
-    /// - As part of complete building survey
+    /// **Form Fields (Arabic)**:
+    /// - رب الأسرة/العميل: HeadOfHouseholdName (required)
+    /// - عدد الأفراد: HouseholdSize (required)
+    /// - ادخل ملاحظاتك: Notes (optional)
     /// 
-    /// **Required fields**:
-    /// - propertyUnitId: Unit this household occupies
-    /// - headOfHouseholdName: Name of household head
-    /// - householdSize: Total number of members
+    /// **تكوين الأسرة (Family Composition)**:
+    /// - عدد البالغين الذكور: MaleCount
+    /// - عدد البالغين الإناث: FemaleCount  
+    /// - عدد الأطفال الذكور (أقل من 18): MaleChildCount
+    /// - عدد الأطفال الإناث (أقل من 18): FemaleChildCount
+    /// - عدد كبار السن الذكور (أكثر من 65): MaleElderlyCount
+    /// - عدد كبار السن الإناث (أكثر من 65): FemaleElderlyCount
+    /// - عدد المعاقين الذكور: MaleDisabledCount
+    /// - عدد المعاقين الإناث: FemaleDisabledCount
     /// 
-    /// **Optional demographic data**:
-    /// - Gender composition (maleCount, femaleCount)
-    /// - Age breakdown (infantCount, childCount, minorCount, adultCount, elderlyCount)
-    /// - Vulnerability indicators (personsWithDisabilities, isFemaleHeaded, widows, orphans)
-    /// - Economic data (employed, unemployed, income source)
-    /// - Displacement info (isDisplaced, origin, arrival date)
-    /// 
-    /// **Required permissions**: CanEditOwnSurveys
-    /// 
-    /// **Example**:
+    /// **Example Request**:
     /// ```json
     /// {
-    ///   "propertyUnitId": "unit-guid-here",
-    ///   "headOfHouseholdName": "أحمد محمد حسن",
-    ///   "householdSize": 6,
-    ///   "maleCount": 3,
-    ///   "femaleCount": 3,
-    ///   "adultCount": 2,
-    ///   "childCount": 4,
-    ///   "isFemaleHeaded": false,
-    ///   "employedPersonsCount": 1
+    ///   "headOfHouseholdName": "أحمد محمد علي",
+    ///   "householdSize": 5,
+    ///   "maleCount": 1,
+    ///   "femaleCount": 1,
+    ///   "maleChildCount": 2,
+    ///   "femaleChildCount": 1,
+    ///   "maleElderlyCount": 0,
+    ///   "femaleElderlyCount": 0,
+    ///   "maleDisabledCount": 0,
+    ///   "femaleDisabledCount": 0,
+    ///   "notes": "أسرة من خمسة أفراد"
     /// }
     /// ```
-    /// 
-    /// **Response**: Returns created household with all demographic data
-    /// 
-    /// **Next steps**: 
-    /// - Add individual persons: POST /{surveyId}/households/{householdId}/persons
-    /// - Set household head: PUT /{surveyId}/households/{householdId}/head/{personId}
     /// </remarks>
-    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="surveyId">Survey ID to create household for</param>
     /// <param name="command">Household creation data</param>
     /// <returns>Created household details</returns>
     /// <response code="201">Household created successfully.</response>
-    /// <response code="400">Invalid input or property unit doesn't belong to survey's building.</response>
+    /// <response code="400">Validation error. Survey must have linked property unit.</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only create households for your own surveys.</response>
     /// <response code="404">Survey or property unit not found.</response>
@@ -915,7 +931,10 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetHouseholdInSurvey), new { surveyId, householdId = result.Id }, result);
+        return CreatedAtAction(
+            nameof(GetHouseholdInSurvey),
+            new { surveyId, householdId = result.Id },
+            result);
     }
 
     /// <summary>
@@ -924,20 +943,18 @@ public class SurveysController : ControllerBase
     /// <remarks>
     /// **Use Case**: UC-001 Stage 3 - View household information
     /// 
-    /// **Purpose**: Retrieves complete household details including all demographic composition.
+    /// **Purpose**: Retrieves complete household details.
     /// 
-    /// **What you get**:
-    /// - Household identification (ID, head name, size)
-    /// - Gender composition (male/female counts)
-    /// - Age breakdown (infants, children, minors, adults, elderly)
-    /// - Vulnerability indicators (disabilities, female-headed, widows, orphans)
-    /// - Economic indicators (employment, income)
-    /// - Displacement information
-    /// - Computed metrics (dependency ratio, vulnerability flag)
+    /// **Required Permission**: CanViewOwnSurveys
     /// 
-    /// **Required permissions**: CanViewOwnSurveys
-    /// 
-    /// **Response**: Complete household data with computed properties
+    /// **Response Fields**:
+    /// - Identifiers (id, propertyUnitId)
+    /// - Basic info (headOfHouseholdName, householdSize, notes)
+    /// - Adults composition (maleCount, femaleCount)
+    /// - Children composition (maleChildCount, femaleChildCount)
+    /// - Elderly composition (maleElderlyCount, femaleElderlyCount)
+    /// - Disabled composition (maleDisabledCount, femaleDisabledCount)
+    /// - Audit fields (createdAtUtc, lastModifiedAtUtc)
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID to retrieve</param>
@@ -962,8 +979,61 @@ public class SurveysController : ControllerBase
             HouseholdId = householdId
         };
         var result = await _mediator.Send(query);
+
+        if (result == null)
+        {
+            return NotFound(new { message = $"Household with ID {householdId} not found" });
+        }
+
         return Ok(result);
     }
+
+    /// <summary>
+    /// Update household in survey context
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 3 - Update household during survey
+    /// 
+    /// **Purpose**: Updates existing household details. Only provided fields will be updated.
+    /// 
+    /// **Required Permission**: CanEditOwnSurveys
+    /// 
+    /// **Example Request** (partial update - only updates provided fields):
+    /// ```json
+    /// {
+    ///   "householdSize": 6,
+    ///   "maleChildCount": 3,
+    ///   "notes": "ولد طفل ذكر جديد"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="householdId">Household ID to update</param>
+    /// <param name="command">Household update data (all fields optional)</param>
+    /// <returns>Updated household details</returns>
+    /// <response code="200">Household updated successfully.</response>
+    /// <response code="400">Validation error.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only update households for your own surveys.</response>
+    /// <response code="404">Survey or household not found.</response>
+    [HttpPut("{surveyId}/households/{householdId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(HouseholdDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<HouseholdDto>> UpdateHouseholdInSurvey(
+        Guid surveyId,
+        Guid householdId,
+        [FromBody] UpdateHouseholdInSurveyCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.HouseholdId = householdId;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
 
     /// <summary>
     /// Get all persons in household
@@ -982,7 +1052,7 @@ public class SurveysController : ControllerBase
     /// - Contact information
     /// - Identification details
     /// 
-    /// **Required permissions**: CanViewOwnSurveys
+    /// **Required permissions**: CanViewOwnSurveysB
     /// 
     /// **Response**: Array of persons ordered by creation date
     /// </remarks>

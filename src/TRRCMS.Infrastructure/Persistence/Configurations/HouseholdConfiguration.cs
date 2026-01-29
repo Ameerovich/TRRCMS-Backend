@@ -6,6 +6,7 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// EF Core configuration for Household entity
+/// Updated to include gender-specific composition fields for frontend form
 /// </summary>
 public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
 {
@@ -32,26 +33,69 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.Property(h => h.HeadOfHouseholdName)
             .IsRequired()
             .HasMaxLength(200)
-            .HasComment("Name of head of household");
+            .HasComment("رب الأسرة/العميل - Name of head of household");
 
         builder.Property(h => h.HouseholdSize)
             .IsRequired()
             .HasDefaultValue(0)
-            .HasComment("Total household size");
+            .HasComment("عدد الأفراد - Total household size");
 
-        // ==================== GENDER COMPOSITION ====================
+        // ==================== ADULTS BY GENDER ====================
 
         builder.Property(h => h.MaleCount)
             .IsRequired()
             .HasDefaultValue(0)
-            .HasComment("Number of male members");
+            .HasComment("عدد البالغين الذكور - Number of adult males");
 
         builder.Property(h => h.FemaleCount)
             .IsRequired()
             .HasDefaultValue(0)
-            .HasComment("Number of female members");
+            .HasComment("عدد البالغين الإناث - Number of adult females");
 
-        // ==================== AGE COMPOSITION ====================
+        // ==================== CHILDREN BY GENDER (NEW) ====================
+
+        builder.Property(h => h.MaleChildCount)
+            .IsRequired()
+            .HasDefaultValue(0)
+            .HasComment("عدد الأطفال الذكور (أقل من 18) - Number of male children under 18");
+
+        builder.Property(h => h.FemaleChildCount)
+            .IsRequired()
+            .HasDefaultValue(0)
+            .HasComment("عدد الأطفال الإناث (أقل من 18) - Number of female children under 18");
+
+        // ==================== ELDERLY BY GENDER (NEW) ====================
+
+        builder.Property(h => h.MaleElderlyCount)
+            .IsRequired()
+            .HasDefaultValue(0)
+            .HasComment("عدد كبار السن الذكور (أكثر من 65) - Number of male elderly over 65");
+
+        builder.Property(h => h.FemaleElderlyCount)
+            .IsRequired()
+            .HasDefaultValue(0)
+            .HasComment("عدد كبار السن الإناث (أكثر من 65) - Number of female elderly over 65");
+
+        // ==================== DISABLED BY GENDER (NEW) ====================
+
+        builder.Property(h => h.MaleDisabledCount)
+            .IsRequired()
+            .HasDefaultValue(0)
+            .HasComment("عدد المعاقين الذكور - Number of male persons with disabilities");
+
+        builder.Property(h => h.FemaleDisabledCount)
+            .IsRequired()
+            .HasDefaultValue(0)
+            .HasComment("عدد المعاقين الإناث - Number of female persons with disabilities");
+
+        // ==================== NOTES ====================
+
+        builder.Property(h => h.Notes)
+            .IsRequired(false)
+            .HasMaxLength(2000)
+            .HasComment("ملاحظات - Household notes");
+
+        // ==================== LEGACY FIELDS (kept for expansion) ====================
 
         builder.Property(h => h.InfantCount)
             .IsRequired()
@@ -61,7 +105,7 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.Property(h => h.ChildCount)
             .IsRequired()
             .HasDefaultValue(0)
-            .HasComment("Number of children (2-12 years)");
+            .HasComment("Number of children (2-12 years) - legacy total");
 
         builder.Property(h => h.MinorCount)
             .IsRequired()
@@ -76,14 +120,12 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.Property(h => h.ElderlyCount)
             .IsRequired()
             .HasDefaultValue(0)
-            .HasComment("Number of elderly (65+ years)");
-
-        // ==================== VULNERABILITY INDICATORS ====================
+            .HasComment("Number of elderly (65+ years) - legacy total");
 
         builder.Property(h => h.PersonsWithDisabilitiesCount)
             .IsRequired()
             .HasDefaultValue(0)
-            .HasComment("Number of persons with disabilities");
+            .HasComment("Total persons with disabilities - legacy total");
 
         builder.Property(h => h.IsFemaleHeaded)
             .IsRequired()
@@ -105,7 +147,7 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasDefaultValue(0)
             .HasComment("Number of single parents");
 
-        // ==================== ECONOMIC INDICATORS ====================
+        // ==================== ECONOMIC INDICATORS (LEGACY) ====================
 
         builder.Property(h => h.EmployedPersonsCount)
             .IsRequired()
@@ -127,7 +169,7 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasPrecision(18, 2)
             .HasComment("Estimated monthly income");
 
-        // ==================== DISPLACEMENT & ORIGIN ====================
+        // ==================== DISPLACEMENT & ORIGIN (LEGACY) ====================
 
         builder.Property(h => h.IsDisplaced)
             .IsRequired()
@@ -147,13 +189,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .IsRequired(false)
             .HasMaxLength(500)
             .HasComment("Reason for displacement");
-
-        // ==================== ADDITIONAL INFORMATION ====================
-
-        builder.Property(h => h.Notes)
-            .IsRequired(false)
-            .HasMaxLength(2000)
-            .HasComment("Household notes");
 
         builder.Property(h => h.SpecialNeeds)
             .IsRequired(false)
@@ -217,20 +252,18 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
 
         // Relationship to PropertyUnit (Many-to-One)
         builder.HasOne(h => h.PropertyUnit)
-            .WithMany()  // PropertyUnit.Households collection - configure from PropertyUnit side
+            .WithMany()
             .HasForeignKey(h => h.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Relationship to HeadOfHouseholdPerson (optional one-to-one)
         builder.HasOne(h => h.HeadOfHouseholdPerson)
-            .WithMany()  // Person doesn't have a back-navigation for this specific relationship
+            .WithMany()
             .HasForeignKey(h => h.HeadOfHouseholdPersonId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 
         // Relationship to Members (One-to-Many)
-        // Person.HouseholdId → Household.Members
-        // This is configured from the Person side via Person.HouseholdId FK
         builder.HasMany(h => h.Members)
             .WithOne(p => p.Household)
             .HasForeignKey(p => p.HouseholdId)

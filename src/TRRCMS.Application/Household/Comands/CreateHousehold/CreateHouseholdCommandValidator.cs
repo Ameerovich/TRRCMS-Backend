@@ -1,17 +1,17 @@
 using FluentValidation;
 
-namespace TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
+namespace TRRCMS.Application.Households.Commands.CreateHousehold;
 
 /// <summary>
-/// Validator for CreateHouseholdInSurveyCommand
+/// Validator for CreateHouseholdCommand
 /// </summary>
-public class CreateHouseholdInSurveyCommandValidator : AbstractValidator<CreateHouseholdInSurveyCommand>
+public class CreateHouseholdCommandValidator : AbstractValidator<CreateHouseholdCommand>
 {
-    public CreateHouseholdInSurveyCommandValidator()
+    public CreateHouseholdCommandValidator()
     {
-        RuleFor(x => x.SurveyId)
+        RuleFor(x => x.PropertyUnitId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage("Property unit ID is required");
 
         RuleFor(x => x.HeadOfHouseholdName)
             .NotEmpty()
@@ -28,52 +28,52 @@ public class CreateHouseholdInSurveyCommandValidator : AbstractValidator<CreateH
         // Adults
         RuleFor(x => x.MaleCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Adult male count cannot be negative")
+            .WithMessage("Adult male count (عدد البالغين الذكور) cannot be negative")
             .LessThanOrEqualTo(50)
             .WithMessage("Adult male count must not exceed 50");
 
         RuleFor(x => x.FemaleCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Adult female count cannot be negative")
+            .WithMessage("Adult female count (عدد البالغين الإناث) cannot be negative")
             .LessThanOrEqualTo(50)
             .WithMessage("Adult female count must not exceed 50");
 
         // Children
         RuleFor(x => x.MaleChildCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Male children count cannot be negative")
+            .WithMessage("Male children count (عدد الأطفال الذكور) cannot be negative")
             .LessThanOrEqualTo(30)
             .WithMessage("Male children count must not exceed 30");
 
         RuleFor(x => x.FemaleChildCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Female children count cannot be negative")
+            .WithMessage("Female children count (عدد الأطفال الإناث) cannot be negative")
             .LessThanOrEqualTo(30)
             .WithMessage("Female children count must not exceed 30");
 
         // Elderly
         RuleFor(x => x.MaleElderlyCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Male elderly count cannot be negative")
+            .WithMessage("Male elderly count (عدد كبار السن الذكور) cannot be negative")
             .LessThanOrEqualTo(20)
             .WithMessage("Male elderly count must not exceed 20");
 
         RuleFor(x => x.FemaleElderlyCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Female elderly count cannot be negative")
+            .WithMessage("Female elderly count (عدد كبار السن الإناث) cannot be negative")
             .LessThanOrEqualTo(20)
             .WithMessage("Female elderly count must not exceed 20");
 
         // Disabled
         RuleFor(x => x.MaleDisabledCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Male disabled count cannot be negative")
+            .WithMessage("Male disabled count (عدد المعاقين الذكور) cannot be negative")
             .LessThanOrEqualTo(20)
             .WithMessage("Male disabled count must not exceed 20");
 
         RuleFor(x => x.FemaleDisabledCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Female disabled count cannot be negative")
+            .WithMessage("Female disabled count (عدد المعاقين الإناث) cannot be negative")
             .LessThanOrEqualTo(20)
             .WithMessage("Female disabled count must not exceed 20");
 
@@ -81,6 +81,6 @@ public class CreateHouseholdInSurveyCommandValidator : AbstractValidator<CreateH
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrEmpty(x.Notes))
-            .WithMessage("Notes must not exceed 2000 characters");
+            .WithMessage("Notes (ملاحظات) must not exceed 2000 characters");
     }
 }

@@ -5,12 +5,12 @@ using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Households.Dtos;
 
-namespace TRRCMS.Application.Surveys.Queries.GetHouseholdInSurvey;
+namespace TRRCMS.Application.Surveys.Queries.GetHouseholdsForSurvey;
 
 /// <summary>
-/// Handler for GetHouseholdInSurveyQuery
+/// Handler for GetHouseholdsForSurveyQuery
 /// </summary>
-public class GetHouseholdInSurveyQueryHandler : IRequestHandler<GetHouseholdInSurveyQuery, HouseholdDto?>
+public class GetHouseholdsForSurveyQueryHandler : IRequestHandler<GetHouseholdsForSurveyQuery, List<HouseholdDto>>
 {
     private readonly ISurveyRepository _surveyRepository;
     private readonly IHouseholdRepository _householdRepository;
@@ -18,7 +18,7 @@ public class GetHouseholdInSurveyQueryHandler : IRequestHandler<GetHouseholdInSu
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
 
-    public GetHouseholdInSurveyQueryHandler(
+    public GetHouseholdsForSurveyQueryHandler(
         ISurveyRepository surveyRepository,
         IHouseholdRepository householdRepository,
         IPropertyUnitRepository propertyUnitRepository,
@@ -32,7 +32,7 @@ public class GetHouseholdInSurveyQueryHandler : IRequestHandler<GetHouseholdInSu
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    public async Task<HouseholdDto?> Handle(GetHouseholdInSurveyQuery request, CancellationToken cancellationToken)
+    public async Task<List<HouseholdDto>> Handle(GetHouseholdsForSurveyQuery request, CancellationToken cancellationToken)
     {
         // Get current user
         var currentUserId = _currentUserService.UserId
@@ -51,19 +51,25 @@ public class GetHouseholdInSurveyQueryHandler : IRequestHandler<GetHouseholdInSu
             throw new UnauthorizedAccessException("You can only view households for your own surveys");
         }
 
-        // Get household
-        var household = await _householdRepository.GetByIdAsync(request.HouseholdId, cancellationToken);
-        if (household == null)
+        // Check if survey has property unit
+        if (!survey.PropertyUnitId.HasValue)
         {
-            return null;
+            return new List<HouseholdDto>();
         }
 
-        // Get property unit for DTO enrichment
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(household.PropertyUnitId, cancellationToken);
+        // Get property unit
+        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(survey.PropertyUnitId.Value, cancellationToken);
 
-        // Map to DTO
-        var result = _mapper.Map<HouseholdDto>(household);
-        result.PropertyUnitIdentifier = propertyUnit?.UnitIdentifier;
+        // Get households for this property unit
+        var households = await _householdRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken);
+
+        // Map to DTOs
+        var result = households.Select(household =>
+        {
+            var dto = _mapper.Map<HouseholdDto>(household);
+            dto.PropertyUnitIdentifier = propertyUnit?.UnitIdentifier;
+            return dto;
+        }).ToList();
 
         return result;
     }
