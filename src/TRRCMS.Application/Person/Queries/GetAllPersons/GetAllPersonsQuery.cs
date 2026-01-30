@@ -1,9 +1,9 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Persons.Dtos;
 
-namespace TRRCMS.Application.Persons.Queries.GetAllPersons
-{
-    public class GetAllPersonsQuery : IRequest<IEnumerable<PersonDto>>
-    {
-    }
-}
+namespace TRRCMS.Application.Persons.Queries.GetAllPersons;
+
+/// <summary>
+/// Query to get all persons
+/// </summary>
+public record GetAllPersonsQuery : IRequest<List<PersonDto>>;

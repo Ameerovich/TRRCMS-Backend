@@ -1,40 +1,60 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Persons.Dtos;
 
-namespace TRRCMS.Application.Persons.Commands.CreatePerson
+namespace TRRCMS.Application.Persons.Commands.CreatePerson;
+
+/// <summary>
+/// Command to create a new person
+/// إضافة شخص جديد - matches mobile/desktop UI
+/// </summary>
+public class CreatePersonCommand : IRequest<PersonDto>
 {
-    public class CreatePersonCommand : IRequest<PersonDto>
-    {
-        // Required Arabic Names
-        public string FirstNameArabic { get; set; } = string.Empty;
-        public string FatherNameArabic { get; set; } = string.Empty;
-        public string LastNameArabic { get; set; } = string.Empty;  // ← Keep this to match Create method parameter
+    // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
 
-        // Optional Mother Name
-        public string? MotherNameArabic { get; set; }
+    /// <summary>
+    /// الكنية - Family/Last name in Arabic (required)
+    /// </summary>
+    public string FamilyNameArabic { get; set; } = string.Empty;
 
-        // Optional English Full Name
-        public string? FullNameEnglish { get; set; }
+    /// <summary>
+    /// الاسم الأول - First name in Arabic (required)
+    /// </summary>
+    public string FirstNameArabic { get; set; } = string.Empty;
 
-        // Optional Identification
-        public string? NationalId { get; set; }
-        public int? YearOfBirth { get; set; }
-        public string? Gender { get; set; }
-        public string? Nationality { get; set; }
+    /// <summary>
+    /// اسم الأب - Father's name in Arabic (required)
+    /// </summary>
+    public string FatherNameArabic { get; set; } = string.Empty;
 
-        // Optional Contact Info
-        public string? PrimaryPhoneNumber { get; set; }
-        public string? SecondaryPhoneNumber { get; set; }
-        public bool IsContactPerson { get; set; }
+    /// <summary>
+    /// الاسم الأم - Mother's name in Arabic (optional)
+    /// </summary>
+    public string? MotherNameArabic { get; set; }
 
-        // Household Relationship (Optional)
-        public Guid? HouseholdId { get; set; }
-        public string? RelationshipToHead { get; set; }
+    /// <summary>
+    /// الرقم الوطني - National ID number (optional)
+    /// </summary>
+    public string? NationalId { get; set; }
 
-        // Document Flag
-        public bool HasIdentificationDocument { get; set; }
+    /// <summary>
+    /// تاريخ الميلاد - Year of birth (optional)
+    /// </summary>
+    public int? YearOfBirth { get; set; }
 
-        // User who is creating this person
-        public Guid CreatedByUserId { get; set; }
-    }
+    // ==================== CONTACT INFORMATION (Step 2) ====================
+
+    /// <summary>
+    /// البريد الالكتروني - Email address (optional)
+    /// </summary>
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// رقم الموبايل - Mobile phone number (optional)
+    /// </summary>
+    public string? MobileNumber { get; set; }
+
+    /// <summary>
+    /// رقم الهاتف - Landline phone number (optional)
+    /// </summary>
+    public string? PhoneNumber { get; set; }
 }

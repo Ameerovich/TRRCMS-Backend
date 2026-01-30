@@ -1,45 +1,36 @@
 using FluentValidation;
 
-namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
+namespace TRRCMS.Application.Persons.Commands.UpdatePerson;
 
 /// <summary>
-/// Validator for AddPersonToHouseholdCommand
+/// Validator for UpdatePersonCommand
 /// </summary>
-public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonToHouseholdCommand>
+public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonCommand>
 {
-    public AddPersonToHouseholdCommandValidator()
+    public UpdatePersonCommandValidator()
     {
-        // ==================== IDs ====================
+        // ==================== ID ====================
 
-        RuleFor(x => x.SurveyId)
+        RuleFor(x => x.Id)
             .NotEmpty()
-            .WithMessage("معرف المسح مطلوب");
+            .WithMessage("معرف الشخص مطلوب");
 
-        RuleFor(x => x.HouseholdId)
-            .NotEmpty()
-            .WithMessage("معرف الأسرة مطلوب");
-
-        // ==================== REQUIRED NAMES ====================
+        // ==================== NAMES (if provided) ====================
 
         RuleFor(x => x.FamilyNameArabic)
-            .NotEmpty()
-            .WithMessage("الكنية مطلوبة")
             .MaximumLength(100)
-            .WithMessage("الكنية يجب ألا تتجاوز 100 حرف");
+            .WithMessage("الكنية يجب ألا تتجاوز 100 حرف")
+            .When(x => !string.IsNullOrEmpty(x.FamilyNameArabic));
 
         RuleFor(x => x.FirstNameArabic)
-            .NotEmpty()
-            .WithMessage("الاسم الأول مطلوب")
             .MaximumLength(100)
-            .WithMessage("الاسم الأول يجب ألا يتجاوز 100 حرف");
+            .WithMessage("الاسم الأول يجب ألا يتجاوز 100 حرف")
+            .When(x => !string.IsNullOrEmpty(x.FirstNameArabic));
 
         RuleFor(x => x.FatherNameArabic)
-            .NotEmpty()
-            .WithMessage("اسم الأب مطلوب")
             .MaximumLength(100)
-            .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف");
-
-        // ==================== OPTIONAL NAMES ====================
+            .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف")
+            .When(x => !string.IsNullOrEmpty(x.FatherNameArabic));
 
         RuleFor(x => x.MotherNameArabic)
             .MaximumLength(100)
@@ -82,12 +73,5 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
             .Matches(@"^[\+]?[0-9\s\-]*$")
             .WithMessage("رقم الهاتف غير صحيح")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
-
-        // ==================== HOUSEHOLD RELATIONSHIP ====================
-
-        RuleFor(x => x.RelationshipToHead)
-            .MaximumLength(50)
-            .WithMessage("علاقة الشخص برب الأسرة يجب ألا تتجاوز 50 حرف")
-            .When(x => !string.IsNullOrEmpty(x.RelationshipToHead));
     }
 }

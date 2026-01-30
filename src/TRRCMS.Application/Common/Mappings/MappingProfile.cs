@@ -38,10 +38,36 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
             .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => src.LastModifiedAtUtc));
-   
-       CreateMap<Person, PersonDto>();
 
-        // Household mappings
+        CreateMap<Person, PersonDto>()
+                    // Identifiers
+                    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+
+                    // Personal information
+                    .ForMember(dest => dest.FamilyNameArabic, opt => opt.MapFrom(src => src.FamilyNameArabic))
+                    .ForMember(dest => dest.FirstNameArabic, opt => opt.MapFrom(src => src.FirstNameArabic))
+                    .ForMember(dest => dest.FatherNameArabic, opt => opt.MapFrom(src => src.FatherNameArabic))
+                    .ForMember(dest => dest.MotherNameArabic, opt => opt.MapFrom(src => src.MotherNameArabic))
+                    .ForMember(dest => dest.NationalId, opt => opt.MapFrom(src => src.NationalId))
+                    .ForMember(dest => dest.YearOfBirth, opt => opt.MapFrom(src => src.YearOfBirth))
+
+                    // Contact information
+                    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                    .ForMember(dest => dest.MobileNumber, opt => opt.MapFrom(src => src.MobileNumber))
+                    .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
+
+                    // Household context
+                    .ForMember(dest => dest.HouseholdId, opt => opt.MapFrom(src => src.HouseholdId))
+                    .ForMember(dest => dest.RelationshipToHead, opt => opt.MapFrom(src => src.RelationshipToHead))
+
+                    // Audit fields
+                    .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
+                    .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy))
+                    .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => src.LastModifiedAtUtc))
+                    .ForMember(dest => dest.LastModifiedBy, opt => opt.MapFrom(src => src.LastModifiedBy))
+                    .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => src.IsDeleted))
+                    .ForMember(dest => dest.DeletedAtUtc, opt => opt.MapFrom(src => src.DeletedAtUtc))
+                    .ForMember(dest => dest.DeletedBy, opt => opt.MapFrom(src => src.DeletedBy));
         CreateMap<Household, HouseholdDto>()
        // Identifiers
        .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))

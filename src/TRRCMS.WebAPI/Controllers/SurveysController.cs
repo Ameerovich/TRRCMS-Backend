@@ -1035,124 +1035,57 @@ public class SurveysController : ControllerBase
     }
 
 
-    /// <summary>
-    /// Get all persons in household
-    /// </summary>
-    /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - View household members
-    /// 
-    /// **Purpose**: Lists all registered persons/members in a household.
-    /// 
-    /// **What you get**:
-    /// - List of all household members
-    /// - Full Arabic names (3-part + mother's name)
-    /// - Computed full names and ages
-    /// - Demographics (gender, nationality, birth year)
-    /// - Relationships to household head
-    /// - Contact information
-    /// - Identification details
-    /// 
-    /// **Required permissions**: CanViewOwnSurveysB
-    /// 
-    /// **Response**: Array of persons ordered by creation date
-    /// </remarks>
-    /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="householdId">Household ID to get members for</param>
-    /// <returns>List of household members</returns>
-    /// <response code="200">Success. Returns array of persons (may be empty).</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Can only view members for your own surveys.</response>
-    /// <response code="404">Survey or household not found.</response>
-    [HttpGet("{surveyId}/households/{householdId}/persons")]
-    [Authorize(Policy = "CanViewOwnSurveys")]
-    [ProducesResponseType(typeof(List<PersonDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<PersonDto>>> GetHouseholdPersons(
-        Guid surveyId,
-        Guid householdId)
-    {
-        var query = new GetHouseholdPersonsQuery
-        {
-            SurveyId = surveyId,
-            HouseholdId = householdId
-        };
-        var result = await _mediator.Send(query);
-        return Ok(result);
-    }
+    // ==================== PERSON MANAGEMENT ====================
 
     /// <summary>
-    /// Add person to household
+    /// Add person to household in survey context
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-001 Stage 3 - Person Registration
+    /// إضافة شخص جديد
     /// 
-    /// **Purpose**: Registers an individual person as member of a household.
+    /// **Purpose**: Creates a new person and assigns them to a household.
     /// 
-    /// **What it does**:
-    /// - Creates person record with Arabic 3-part name
-    /// - Links person to household
-    /// - Records relationship to household head
-    /// - Captures identification and demographics
-    /// - Records contact information
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
     /// 
-    /// **When to use**:
-    /// - After creating household
-    /// - For each household member
-    /// - To register household head and family members
+    /// **Step 1 - Personal Info (الخطوة الأولى)**:
+    /// - الكنية: FamilyNameArabic (required)
+    /// - الاسم الأول: FirstNameArabic (required)
+    /// - اسم الأب: FatherNameArabic (required)
+    /// - الاسم الأم: MotherNameArabic (optional)
+    /// - الرقم الوطني: NationalId (optional)
+    /// - تاريخ الميلاد: YearOfBirth (optional, year only)
     /// 
-    /// **Required fields (Arabic names)**:
-    /// - firstNameArabic: First name (الاسم الأول)
-    /// - fatherNameArabic: Father's name (اسم الأب)
-    /// - familyNameArabic: Family name (اسم العائلة)
+    /// **Step 2 - Contact Info (الخطوة الثانية)**:
+    /// - البريد الالكتروني: Email (optional)
+    /// - رقم الموبايل: MobileNumber (optional)
+    /// - رقم الهاتف: PhoneNumber (optional)
     /// 
-    /// **Optional fields**:
-    /// - motherNameArabic: Mother's name (اسم الأم)
-    /// - fullNameEnglish: English name
-    /// - nationalId: Identification number
-    /// - yearOfBirth: Birth year
-    /// - gender: M/F or ذكر/أنثى
-    /// - nationality: Nationality
-    /// - relationshipToHead: "Head", "Spouse", "Son", "Daughter", etc.
-    /// - primaryPhoneNumber: Contact number
-    /// - isContactPerson: Is main contact (true/false)
+    /// **Household Relationship**:
+    /// - RelationshipToHead: (optional, defaults to "Member")
     /// 
-    /// **Arabic naming system**:
-    /// - Format: [First] [Father] [Family] ([Mother])
-    /// - Example: أحمد محمد حسن (فاطمة)
-    /// 
-    /// **Required permissions**: CanEditOwnSurveys
-    /// 
-    /// **Example**:
+    /// **Example Request**:
     /// ```json
     /// {
-    ///   "firstNameArabic": "أحمد",
+    ///   "familyNameArabic": "الأحمد",
+    ///   "firstNameArabic": "محمد",
     ///   "fatherNameArabic": "محمد",
-    ///   "familyNameArabic": "حسن",
     ///   "motherNameArabic": "فاطمة",
+    ///   "nationalId": "00000000000",
     ///   "yearOfBirth": 1985,
-    ///   "gender": "M",
-    ///   "nationality": "Syrian",
-    ///   "relationshipToHead": "Head",
-    ///   "primaryPhoneNumber": "+963123456789",
-    ///   "isContactPerson": true
+    ///   "email": "*****@gmail.com",
+    ///   "mobileNumber": "+963 09",
+    ///   "phoneNumber": "0000000",
+    ///   "relationshipToHead": "Spouse"
     /// }
     /// ```
-    /// 
-    /// **Response**: Returns created person with computed full name and age
-    /// 
-    /// **Next steps**: 
-    /// - Add more household members
-    /// - Set as household head: PUT /{surveyId}/households/{householdId}/head/{personId}
-    /// - Link to property unit: POST /{surveyId}/property-units/{unitId}/relations
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID to add person to</param>
     /// <param name="command">Person creation data</param>
     /// <returns>Created person details</returns>
     /// <response code="201">Person added to household successfully.</response>
-    /// <response code="400">Invalid input. Check required Arabic names.</response>
+    /// <response code="400">Validation error.</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only add persons to your own surveys.</response>
     /// <response code="404">Survey or household not found.</response>
@@ -1171,7 +1104,49 @@ public class SurveysController : ControllerBase
         command.SurveyId = surveyId;
         command.HouseholdId = householdId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetHouseholdPersons), new { surveyId, householdId }, result);
+        return CreatedAtAction(
+            nameof(GetHouseholdPersons),
+            new { surveyId, householdId },
+            result);
+    }
+
+    /// <summary>
+    /// Get all persons in household
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 3 - View household members
+    /// عرض أفراد الأسرة
+    /// 
+    /// **Purpose**: Lists all registered persons/members in a household.
+    /// 
+    /// **Required Permission**: Surveys_ViewOwn (CanViewOwnSurveys)
+    /// 
+    /// **Response**: Array of persons ordered by creation date
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="householdId">Household ID to get persons for</param>
+    /// <returns>List of persons in the household</returns>
+    /// <response code="200">Success. Returns array of persons (may be empty).</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only view persons in your own surveys.</response>
+    /// <response code="404">Survey or household not found.</response>
+    [HttpGet("{surveyId}/households/{householdId}/persons")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<PersonDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<PersonDto>>> GetHouseholdPersons(
+        Guid surveyId,
+        Guid householdId)
+    {
+        var query = new GetHouseholdPersonsQuery
+        {
+            SurveyId = surveyId,
+            HouseholdId = householdId
+        };
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 
     /// <summary>

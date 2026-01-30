@@ -3,17 +3,17 @@ using MediatR;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Persons.Dtos;
 
-namespace TRRCMS.Application.Persons.Queries.GetAllPersons;
+namespace TRRCMS.Application.Persons.Queries.GetPersonsByHousehold;
 
 /// <summary>
-/// Handler for GetAllPersonsQuery
+/// Handler for GetPersonsByHouseholdQuery
 /// </summary>
-public class GetAllPersonsQueryHandler : IRequestHandler<GetAllPersonsQuery, List<PersonDto>>
+public class GetPersonsByHouseholdQueryHandler : IRequestHandler<GetPersonsByHouseholdQuery, List<PersonDto>>
 {
     private readonly IPersonRepository _personRepository;
     private readonly IMapper _mapper;
 
-    public GetAllPersonsQueryHandler(
+    public GetPersonsByHouseholdQueryHandler(
         IPersonRepository personRepository,
         IMapper mapper)
     {
@@ -21,9 +21,9 @@ public class GetAllPersonsQueryHandler : IRequestHandler<GetAllPersonsQuery, Lis
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    public async Task<List<PersonDto>> Handle(GetAllPersonsQuery request, CancellationToken cancellationToken)
+    public async Task<List<PersonDto>> Handle(GetPersonsByHouseholdQuery request, CancellationToken cancellationToken)
     {
-        var persons = await _personRepository.GetAllAsync(cancellationToken);
+        var persons = await _personRepository.GetByHouseholdIdAsync(request.HouseholdId, cancellationToken);
         return _mapper.Map<List<PersonDto>>(persons);
     }
 }

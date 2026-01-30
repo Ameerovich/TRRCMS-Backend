@@ -1,11 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Persons.Dtos;
 
 namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 
 /// <summary>
-/// Command to add a person/member to a household in survey context
-/// Corresponds to UC-001 Stage 3: Person Registration
+/// Command to add a person to a household in survey context
+/// إضافة شخص جديد - matches mobile/desktop UI
 /// </summary>
 public class AddPersonToHouseholdCommand : IRequest<PersonDto>
 {
@@ -19,80 +19,59 @@ public class AddPersonToHouseholdCommand : IRequest<PersonDto>
     /// </summary>
     public Guid HouseholdId { get; set; }
 
-    // ==================== PERSONAL IDENTIFICATION (ARABIC NAMES - REQUIRED) ====================
+    // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
 
     /// <summary>
-    /// First name in Arabic (الاسم الأول) - Required
-    /// </summary>
-    public string FirstNameArabic { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Father's name in Arabic (اسم الأب) - Required
-    /// </summary>
-    public string FatherNameArabic { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Family/Last name in Arabic (اسم العائلة) - Required
+    /// الكنية - Family/Last name in Arabic (required)
     /// </summary>
     public string FamilyNameArabic { get; set; } = string.Empty;
 
     /// <summary>
-    /// Mother's name in Arabic (اسم الأم) - Optional
+    /// الاسم الأول - First name in Arabic (required)
+    /// </summary>
+    public string FirstNameArabic { get; set; } = string.Empty;
+
+    /// <summary>
+    /// اسم الأب - Father's name in Arabic (required)
+    /// </summary>
+    public string FatherNameArabic { get; set; } = string.Empty;
+
+    /// <summary>
+    /// الاسم الأم - Mother's name in Arabic (optional)
     /// </summary>
     public string? MotherNameArabic { get; set; }
 
     /// <summary>
-    /// Full name in English (optional)
-    /// </summary>
-    public string? FullNameEnglish { get; set; }
-
-    // ==================== IDENTIFICATION DOCUMENTS ====================
-
-    /// <summary>
-    /// National ID or identification number
+    /// الرقم الوطني - National ID number (optional)
     /// </summary>
     public string? NationalId { get; set; }
 
-    // ==================== DEMOGRAPHICS ====================
-
     /// <summary>
-    /// Year of birth (integer, not full date)
+    /// تاريخ الميلاد - Year of birth (optional)
     /// </summary>
     public int? YearOfBirth { get; set; }
 
-    /// <summary>
-    /// Gender (M/F)
-    /// </summary>
-    public string? Gender { get; set; }
+    // ==================== CONTACT INFORMATION (Step 2) ====================
 
     /// <summary>
-    /// Nationality
+    /// البريد الالكتروني - Email address (optional)
     /// </summary>
-    public string? Nationality { get; set; }
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// رقم الموبايل - Mobile phone number (optional)
+    /// </summary>
+    public string? MobileNumber { get; set; }
+
+    /// <summary>
+    /// رقم الهاتف - Landline phone number (optional)
+    /// </summary>
+    public string? PhoneNumber { get; set; }
 
     // ==================== HOUSEHOLD RELATIONSHIP ====================
 
     /// <summary>
-    /// Relationship to head of household
-    /// Examples: "Head", "Spouse", "Son", "Daughter", "Parent", etc.
-    /// Arabic examples: "رب الأسرة", "الزوج/الزوجة", "الابن", "الابنة"
+    /// Relationship to head of household (optional)
     /// </summary>
     public string? RelationshipToHead { get; set; }
-
-    // ==================== CONTACT INFORMATION ====================
-
-    /// <summary>
-    /// Primary phone number
-    /// </summary>
-    public string? PrimaryPhoneNumber { get; set; }
-
-    /// <summary>
-    /// Secondary phone number
-    /// </summary>
-    public string? SecondaryPhoneNumber { get; set; }
-
-    /// <summary>
-    /// Is this person the main contact person?
-    /// </summary>
-    public bool? IsContactPerson { get; set; }
 }

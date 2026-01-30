@@ -1,49 +1,125 @@
-﻿namespace TRRCMS.Application.Persons.Dtos
+﻿namespace TRRCMS.Application.Persons.Dtos;
+
+/// <summary>
+/// Simplified Person DTO for frontend form
+/// إضافة شخص جديد - matches mobile/desktop UI
+/// </summary>
+public class PersonDto
 {
-    public class PersonDto
-    {
-        public Guid Id { get; set; }
+    // ==================== IDENTIFIER ====================
 
-        // Arabic Names (Primary)
-        public string FirstNameArabic { get; set; } = string.Empty;
-        public string FatherNameArabic { get; set; } = string.Empty;
-        public string FamilyNameArabic { get; set; } = string.Empty;
-        public string? MotherNameArabic { get; set; }
+    /// <summary>
+    /// Person ID
+    /// </summary>
+    public Guid Id { get; set; }
 
-        // English Name (Optional)
-        public string? FullNameEnglish { get; set; }
+    // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
 
-        // Identification
-        public string? NationalId { get; set; }
+    /// <summary>
+    /// الكنية - Family/Last name in Arabic
+    /// </summary>
+    public string FamilyNameArabic { get; set; } = string.Empty;
 
-        // Demographics
-        public int? YearOfBirth { get; set; }
-        public string? Gender { get; set; }
-        public string? Nationality { get; set; }
+    /// <summary>
+    /// الاسم الأول - First name in Arabic
+    /// </summary>
+    public string FirstNameArabic { get; set; } = string.Empty;
 
-        // Contact Information
-        public string? PrimaryPhoneNumber { get; set; }
-        public string? SecondaryPhoneNumber { get; set; }
-        public bool IsContactPerson { get; set; }
+    /// <summary>
+    /// اسم الأب - Father's name in Arabic
+    /// </summary>
+    public string FatherNameArabic { get; set; } = string.Empty;
 
-        // Household Relationship
-        public Guid? HouseholdId { get; set; }
-        public string? RelationshipToHead { get; set; }
+    /// <summary>
+    /// الاسم الأم - Mother's name in Arabic
+    /// </summary>
+    public string? MotherNameArabic { get; set; }
 
-        // Document Flag
-        public bool HasIdentificationDocument { get; set; }
+    /// <summary>
+    /// الرقم الوطني - National ID number
+    /// </summary>
+    public string? NationalId { get; set; }
 
-        // Audit fields 
-        public DateTime CreatedAtUtc { get; set; }
-        public Guid CreatedBy { get; set; }
-        public DateTime? LastModifiedAtUtc { get; set; }
-        public Guid? LastModifiedBy { get; set; }
-        public bool IsDeleted { get; set; }
-        public DateTime? DeletedAtUtc { get; set; }
-        public Guid? DeletedBy { get; set; }
+    /// <summary>
+    /// تاريخ الميلاد - Year of birth (stored as year only)
+    /// </summary>
+    public int? YearOfBirth { get; set; }
 
-        // Computed property for display
-        public string FullNameArabic => $"{FirstNameArabic} {FatherNameArabic} {FamilyNameArabic}";
-        public int? Age => YearOfBirth.HasValue ? DateTime.UtcNow.Year - YearOfBirth.Value : null;
-    }
+    // ==================== CONTACT INFORMATION (Step 2) ====================
+
+    /// <summary>
+    /// البريد الالكتروني - Email address
+    /// </summary>
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// رقم الموبايل - Mobile phone number
+    /// </summary>
+    public string? MobileNumber { get; set; }
+
+    /// <summary>
+    /// رقم الهاتف - Landline phone number
+    /// </summary>
+    public string? PhoneNumber { get; set; }
+
+    // ==================== HOUSEHOLD CONTEXT ====================
+
+    /// <summary>
+    /// Household ID (if person belongs to a household)
+    /// </summary>
+    public Guid? HouseholdId { get; set; }
+
+    /// <summary>
+    /// Relationship to head of household
+    /// </summary>
+    public string? RelationshipToHead { get; set; }
+
+    // ==================== AUDIT FIELDS ====================
+
+    /// <summary>
+    /// Creation timestamp (UTC)
+    /// </summary>
+    public DateTime CreatedAtUtc { get; set; }
+
+    /// <summary>
+    /// User who created this record
+    /// </summary>
+    public Guid CreatedBy { get; set; }
+
+    /// <summary>
+    /// Last modification timestamp (UTC)
+    /// </summary>
+    public DateTime? LastModifiedAtUtc { get; set; }
+
+    /// <summary>
+    /// User who last modified this record
+    /// </summary>
+    public Guid? LastModifiedBy { get; set; }
+
+    /// <summary>
+    /// Soft delete flag
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// Deletion timestamp (UTC)
+    /// </summary>
+    public DateTime? DeletedAtUtc { get; set; }
+
+    /// <summary>
+    /// User who deleted this record
+    /// </summary>
+    public Guid? DeletedBy { get; set; }
+
+    // ==================== COMPUTED PROPERTIES ====================
+
+    /// <summary>
+    /// Full name in Arabic (computed: الاسم الأول + اسم الأب + الكنية)
+    /// </summary>
+    public string FullNameArabic => $"{FirstNameArabic} {FatherNameArabic} {FamilyNameArabic}".Trim();
+
+    /// <summary>
+    /// Calculated age based on year of birth
+    /// </summary>
+    public int? Age => YearOfBirth.HasValue ? DateTime.UtcNow.Year - YearOfBirth.Value : null;
 }

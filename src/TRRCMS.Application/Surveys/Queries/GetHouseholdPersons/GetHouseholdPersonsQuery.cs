@@ -1,10 +1,10 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Persons.Dtos;
 
 namespace TRRCMS.Application.Surveys.Queries.GetHouseholdPersons;
 
 /// <summary>
-/// Query to get all persons/members in a household
+/// Query to get all persons in a household within survey context
 /// </summary>
 public class GetHouseholdPersonsQuery : IRequest<List<PersonDto>>
 {
@@ -14,7 +14,7 @@ public class GetHouseholdPersonsQuery : IRequest<List<PersonDto>>
     public Guid SurveyId { get; set; }
 
     /// <summary>
-    /// Household ID to get members for
+    /// Household ID to get persons for
     /// </summary>
     public Guid HouseholdId { get; set; }
 }

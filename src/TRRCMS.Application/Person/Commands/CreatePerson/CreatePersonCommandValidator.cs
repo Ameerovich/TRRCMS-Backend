@@ -1,24 +1,14 @@
 using FluentValidation;
 
-namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
+namespace TRRCMS.Application.Persons.Commands.CreatePerson;
 
 /// <summary>
-/// Validator for AddPersonToHouseholdCommand
+/// Validator for CreatePersonCommand
 /// </summary>
-public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonToHouseholdCommand>
+public class CreatePersonCommandValidator : AbstractValidator<CreatePersonCommand>
 {
-    public AddPersonToHouseholdCommandValidator()
+    public CreatePersonCommandValidator()
     {
-        // ==================== IDs ====================
-
-        RuleFor(x => x.SurveyId)
-            .NotEmpty()
-            .WithMessage("معرف المسح مطلوب");
-
-        RuleFor(x => x.HouseholdId)
-            .NotEmpty()
-            .WithMessage("معرف الأسرة مطلوب");
-
         // ==================== REQUIRED NAMES ====================
 
         RuleFor(x => x.FamilyNameArabic)
@@ -82,12 +72,5 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
             .Matches(@"^[\+]?[0-9\s\-]*$")
             .WithMessage("رقم الهاتف غير صحيح")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
-
-        // ==================== HOUSEHOLD RELATIONSHIP ====================
-
-        RuleFor(x => x.RelationshipToHead)
-            .MaximumLength(50)
-            .WithMessage("علاقة الشخص برب الأسرة يجب ألا تتجاوز 50 حرف")
-            .When(x => !string.IsNullOrEmpty(x.RelationshipToHead));
     }
 }

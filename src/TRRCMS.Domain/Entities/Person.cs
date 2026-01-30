@@ -1,14 +1,19 @@
-﻿using System.Security.Policy;
-using TRRCMS.Domain.Common;
+﻿using TRRCMS.Domain.Common;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Person entity - represents individuals (owners, claimants, household members, contact persons)
+/// إضافة شخص جديد
 /// </summary>
 public class Person : BaseAuditableEntity
 {
     // ==================== PERSONAL IDENTIFICATION ====================
+
+    /// <summary>
+    /// Family/Last name in Arabic (الكنية)
+    /// </summary>
+    public string FamilyNameArabic { get; private set; }
 
     /// <summary>
     /// First name in Arabic (الاسم الأول)
@@ -21,31 +26,43 @@ public class Person : BaseAuditableEntity
     public string FatherNameArabic { get; private set; }
 
     /// <summary>
-    /// Grandfather's name in Arabic (اسم الجد)
-    /// </summary>
-    public string FamilyNameArabic { get; private set; }
-
-    /// <summary>
-    /// Mother's name in Arabic (اسم الأم)
+    /// Mother's name in Arabic (الاسم الأم)
     /// </summary>
     public string? MotherNameArabic { get; private set; }
+
+    /// <summary>
+    /// National ID or identification number (الرقم الوطني)
+    /// </summary>
+    public string? NationalId { get; private set; }
+
+    /// <summary>
+    /// Year of birth (تاريخ الميلاد - stored as year only)
+    /// </summary>
+    public int? YearOfBirth { get; private set; }
+
+    // ==================== CONTACT INFORMATION ====================
+
+    /// <summary>
+    /// Email address (البريد الالكتروني)
+    /// </summary>
+    public string? Email { get; private set; }
+
+    /// <summary>
+    /// Mobile phone number (رقم الموبايل)
+    /// </summary>
+    public string? MobileNumber { get; private set; }
+
+    /// <summary>
+    /// Landline phone number (رقم الهاتف)
+    /// </summary>
+    public string? PhoneNumber { get; private set; }
+
+    // ==================== LEGACY FIELDS (for future expansion) ====================
 
     /// <summary>
     /// Full name in English (optional)
     /// </summary>
     public string? FullNameEnglish { get; private set; }
-
-    /// <summary>
-    /// National ID or identification number
-    /// </summary>
-    public string? NationalId { get; private set; }
-
-    // ==================== BIRTH & DEMOGRAPHICS ====================
-
-    /// <summary>
-    /// Year of birth (integer, not full date)
-    /// </summary>
-    public int? YearOfBirth { get; private set; }
 
     /// <summary>
     /// Gender (controlled vocabulary: M/F)
@@ -56,18 +73,6 @@ public class Person : BaseAuditableEntity
     /// Nationality (controlled vocabulary)
     /// </summary>
     public string? Nationality { get; private set; }
-
-    // ==================== CONTACT INFORMATION ====================
-
-    /// <summary>
-    /// Primary phone number
-    /// </summary>
-    public string? PrimaryPhoneNumber { get; private set; }
-
-    /// <summary>
-    /// Secondary phone number (optional)
-    /// </summary>
-    public string? SecondaryPhoneNumber { get; private set; }
 
     /// <summary>
     /// Indicates if this person is the main contact person
@@ -117,8 +122,8 @@ public class Person : BaseAuditableEntity
     /// </summary>
     private Person() : base()
     {
-        FirstNameArabic = string.Empty;
         FamilyNameArabic = string.Empty;
+        FirstNameArabic = string.Empty;
         FatherNameArabic = string.Empty;
         PropertyRelations = new List<PersonPropertyRelation>();
         Evidences = new List<Evidence>();
@@ -128,18 +133,53 @@ public class Person : BaseAuditableEntity
     /// Create new person with required Arabic names
     /// </summary>
     public static Person Create(
+        string familyNameArabic,
         string firstNameArabic,
         string fatherNameArabic,
-        string LastNameArabic,
         string? motherNameArabic,
         Guid createdByUserId)
     {
         var person = new Person
         {
+            FamilyNameArabic = familyNameArabic,
             FirstNameArabic = firstNameArabic,
             FatherNameArabic = fatherNameArabic,
-            FamilyNameArabic = LastNameArabic,
             MotherNameArabic = motherNameArabic,
+            IsContactPerson = false,
+            HasIdentificationDocument = false
+        };
+
+        person.MarkAsCreated(createdByUserId);
+
+        return person;
+    }
+
+    /// <summary>
+    /// Create person with full info (for simplified API)
+    /// </summary>
+    public static Person CreateWithFullInfo(
+        string familyNameArabic,
+        string firstNameArabic,
+        string fatherNameArabic,
+        string? motherNameArabic,
+        string? nationalId,
+        int? yearOfBirth,
+        string? email,
+        string? mobileNumber,
+        string? phoneNumber,
+        Guid createdByUserId)
+    {
+        var person = new Person
+        {
+            FamilyNameArabic = familyNameArabic,
+            FirstNameArabic = firstNameArabic,
+            FatherNameArabic = fatherNameArabic,
+            MotherNameArabic = motherNameArabic,
+            NationalId = nationalId,
+            YearOfBirth = yearOfBirth,
+            Email = email,
+            MobileNumber = mobileNumber,
+            PhoneNumber = phoneNumber,
             IsContactPerson = false,
             HasIdentificationDocument = false
         };
@@ -152,7 +192,43 @@ public class Person : BaseAuditableEntity
     // ==================== DOMAIN METHODS ====================
 
     /// <summary>
-    /// Update identification details
+    /// Update basic info (simplified API)
+    /// </summary>
+    public void UpdateBasicInfo(
+        string familyNameArabic,
+        string firstNameArabic,
+        string fatherNameArabic,
+        string? motherNameArabic,
+        string? nationalId,
+        int? yearOfBirth,
+        Guid modifiedByUserId)
+    {
+        FamilyNameArabic = familyNameArabic;
+        FirstNameArabic = firstNameArabic;
+        FatherNameArabic = fatherNameArabic;
+        MotherNameArabic = motherNameArabic;
+        NationalId = nationalId;
+        YearOfBirth = yearOfBirth;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update contact info (simplified API)
+    /// </summary>
+    public void UpdateContactInfo(
+        string? email,
+        string? mobileNumber,
+        string? phoneNumber,
+        Guid modifiedByUserId)
+    {
+        Email = email;
+        MobileNumber = mobileNumber;
+        PhoneNumber = phoneNumber;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update identification details (legacy method)
     /// </summary>
     public void UpdateIdentification(
         string? nationalId,
@@ -165,21 +241,6 @@ public class Person : BaseAuditableEntity
         YearOfBirth = yearOfBirth;
         Gender = gender;
         Nationality = nationality;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Update contact information
-    /// </summary>
-    public void UpdateContactInfo(
-        string? primaryPhone,
-        string? secondaryPhone,
-        bool isContactPerson,
-        Guid modifiedByUserId)
-    {
-        PrimaryPhoneNumber = primaryPhone;
-        SecondaryPhoneNumber = secondaryPhone;
-        IsContactPerson = isContactPerson;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -225,17 +286,21 @@ public class Person : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Set contact person flag
+    /// </summary>
+    public void SetAsContactPerson(bool isContact, Guid modifiedByUserId)
+    {
+        IsContactPerson = isContact;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Get full Arabic name (computed property for display)
     /// </summary>
     public string GetFullNameArabic()
     {
         var parts = new List<string> { FirstNameArabic, FatherNameArabic, FamilyNameArabic };
-
-        var fullName = string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
-        if (!string.IsNullOrWhiteSpace(MotherNameArabic))
-            fullName += $" ({MotherNameArabic})";
-
-        return fullName;
+        return string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
 
     /// <summary>
