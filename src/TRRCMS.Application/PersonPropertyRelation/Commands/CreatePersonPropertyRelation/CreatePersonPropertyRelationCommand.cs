@@ -1,64 +1,35 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.PersonPropertyRelations.Commands.CreatePersonPropertyRelation;
 
 /// <summary>
-/// Command to create a new person-property relation
+/// Command to create a person-property relation
 /// </summary>
 public class CreatePersonPropertyRelationCommand : IRequest<PersonPropertyRelationDto>
 {
-    // ==================== REQUIRED FIELDS ====================
-
-    /// <summary>
-    /// Person ID (required)
-    /// </summary>
     public Guid PersonId { get; set; }
-
-    /// <summary>
-    /// Property unit ID (required)
-    /// </summary>
     public Guid PropertyUnitId { get; set; }
 
     /// <summary>
-    /// Relation type (required) - e.g., owner, tenant, occupant, guest, heir, other
+    /// نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
-    public string RelationType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description in case the chosen type is "Other" (optional)
-    /// </summary>
+    public RelationType RelationType { get; set; }
     public string? RelationTypeOtherDesc { get; set; }
 
     /// <summary>
-    /// User creating this relation (required)
+    /// نوع العقد - FullOwnership=1, SharedOwnership=2, LongTermRental=3, etc.
     /// </summary>
-    public Guid CreatedByUserId { get; set; }
-
-    // ==================== OPTIONAL FIELDS ====================
+    public TenureContractType? ContractType { get; set; }
+    public string? ContractTypeOtherDesc { get; set; }
 
     /// <summary>
-    /// Ownership or occupancy share (optional) - percentage (e.g., 0.5 for 50%)
+    /// حصة الملكية - 0.0 to 1.0
     /// </summary>
     public decimal? OwnershipShare { get; set; }
-
-    /// <summary>
-    /// Contract or agreement details (optional)
-    /// </summary>
     public string? ContractDetails { get; set; }
-
-    /// <summary>
-    /// Start date of the relation (optional)
-    /// </summary>
     public DateTime? StartDate { get; set; }
-
-    /// <summary>
-    /// End date of the relation (optional)
-    /// </summary>
     public DateTime? EndDate { get; set; }
-
-    /// <summary>
-    /// Additional notes (optional)
-    /// </summary>
     public string? Notes { get; set; }
 }

@@ -1,107 +1,52 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Person-Property Relation entity
 /// Links a Person to a PropertyUnit with a specific relation type and evidence
-/// Relation types include owner, occupant, tenant, guest, heir
 /// </summary>
 public class PersonPropertyRelation : BaseAuditableEntity
 {
-    // ==================== RELATIONSHIP IDENTIFIERS ====================
-
-    /// <summary>
-    /// Foreign key to Person
-    /// </summary>
     public Guid PersonId { get; private set; }
-
-    /// <summary>
-    /// Foreign key to PropertyUnit
-    /// </summary>
     public Guid PropertyUnitId { get; private set; }
 
-    // ==================== RELATION ATTRIBUTES ====================
+    /// <summary>
+    /// Relation type (نوع العلاقة) - Owner, Occupant, Tenant, Guest, Heir, Other
+    /// </summary>
+    public RelationType RelationType { get; private set; }
+    public string? RelationTypeOtherDesc { get; private set; }
 
     /// <summary>
-    /// Relation type (controlled vocabulary)
+    /// Contract/Tenure type (نوع العقد)
     /// </summary>
-    public string RelationType { get; private set; }
-
-   
-    /// <summary>
-    /// Description in case the chosen type is "Other"
-    /// </summary>
-
-    public string? RelationTypeOtherDesc { get; set; }
-
-    /// <summary>
-    /// Ownership or occupancy share (if applicable)
-    /// </summary>
+    public TenureContractType? ContractType { get; private set; }
+    public string? ContractTypeOtherDesc { get; private set; }
 
     public decimal? OwnershipShare { get; private set; }
-
-    /// <summary>
-    /// Contract or agreement details (if applicable)
-    /// </summary>
     public string? ContractDetails { get; private set; }
-
-    /// <summary>
-    /// Start date of the relation (when did ownership/tenancy begin)
-    /// </summary>
     public DateTime? StartDate { get; private set; }
-
-    /// <summary>
-    /// End date of the relation (for terminated tenancies, etc.)
-    /// </summary>
     public DateTime? EndDate { get; private set; }
-
-    /// <summary>
-    /// Additional notes about this relation
-    /// </summary>
     public string? Notes { get; private set; }
-
-    /// <summary>
-    /// Indicates if this relation is currently active
-    /// </summary>
     public bool IsActive { get; private set; }
 
-    // ==================== NAVIGATION PROPERTIES ====================
-
-    /// <summary>
-    /// The person in this relation
-    /// </summary>
+    // Navigation properties
     public virtual Person Person { get; private set; } = null!;
-
-    /// <summary>
-    /// The property unit in this relation
-    /// </summary>
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
-
-    /// <summary>
-    /// Evidence supporting this relation
-    /// </summary>
     public virtual ICollection<Evidence> Evidences { get; private set; }
 
-    // ==================== CONSTRUCTORS ====================
-
-    /// <summary>
-    /// EF Core constructor
-    /// </summary>
     private PersonPropertyRelation() : base()
     {
-        RelationType = string.Empty;
+        RelationType = RelationType.Other;
         IsActive = true;
         Evidences = new List<Evidence>();
     }
 
-    /// <summary>
-    /// Create new person-property relation
-    /// </summary>
     public static PersonPropertyRelation Create(
         Guid personId,
         Guid propertyUnitId,
-        string relationType,
+        RelationType relationType,
         Guid createdByUserId)
     {
         var relation = new PersonPropertyRelation
@@ -111,20 +56,15 @@ public class PersonPropertyRelation : BaseAuditableEntity
             RelationType = relationType,
             IsActive = true
         };
-
         relation.MarkAsCreated(createdByUserId);
-
         return relation;
     }
 
-    // ==================== DOMAIN METHODS ====================
-
-    /// <summary>
-    /// Update relation details
-    /// </summary>
     public void UpdateRelationDetails(
-        string relationType,
-        string? relationTypeOtherDesc,  
+        RelationType relationType,
+        string? relationTypeOtherDesc,
+        TenureContractType? contractType,
+        string? contractTypeOtherDesc,
         decimal? ownershipShare,
         string? contractDetails,
         DateTime? startDate,
@@ -133,7 +73,9 @@ public class PersonPropertyRelation : BaseAuditableEntity
         Guid modifiedByUserId)
     {
         RelationType = relationType;
-        RelationTypeOtherDesc = relationTypeOtherDesc; 
+        RelationTypeOtherDesc = relationTypeOtherDesc;
+        ContractType = contractType;
+        ContractTypeOtherDesc = contractTypeOtherDesc;
         OwnershipShare = ownershipShare;
         ContractDetails = contractDetails;
         StartDate = startDate;
@@ -142,9 +84,46 @@ public class PersonPropertyRelation : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
-    /// <summary>
-    /// Terminate this relation (mark as inactive)
-    /// </summary>
+    public void PartialUpdate(
+        RelationType? relationType,
+        string? relationTypeOtherDesc,
+        TenureContractType? contractType,
+        string? contractTypeOtherDesc,
+        decimal? ownershipShare,
+        string? contractDetails,
+        DateTime? startDate,
+        DateTime? endDate,
+        string? notes,
+        bool clearRelationTypeOtherDesc,
+        bool clearContractType,
+        bool clearContractTypeOtherDesc,
+        bool clearOwnershipShare,
+        bool clearContractDetails,
+        bool clearStartDate,
+        bool clearEndDate,
+        bool clearNotes,
+        Guid modifiedByUserId)
+    {
+        if (relationType.HasValue) RelationType = relationType.Value;
+        if (clearRelationTypeOtherDesc) RelationTypeOtherDesc = null;
+        else if (relationTypeOtherDesc != null) RelationTypeOtherDesc = relationTypeOtherDesc;
+        if (clearContractType) ContractType = null;
+        else if (contractType.HasValue) ContractType = contractType.Value;
+        if (clearContractTypeOtherDesc) ContractTypeOtherDesc = null;
+        else if (contractTypeOtherDesc != null) ContractTypeOtherDesc = contractTypeOtherDesc;
+        if (clearOwnershipShare) OwnershipShare = null;
+        else if (ownershipShare.HasValue) OwnershipShare = ownershipShare;
+        if (clearContractDetails) ContractDetails = null;
+        else if (contractDetails != null) ContractDetails = contractDetails;
+        if (clearStartDate) StartDate = null;
+        else if (startDate.HasValue) StartDate = startDate;
+        if (clearEndDate) EndDate = null;
+        else if (endDate.HasValue) EndDate = endDate;
+        if (clearNotes) Notes = null;
+        else if (notes != null) Notes = notes;
+        MarkAsModified(modifiedByUserId);
+    }
+
     public void Terminate(DateTime endDate, Guid modifiedByUserId)
     {
         IsActive = false;
@@ -152,9 +131,6 @@ public class PersonPropertyRelation : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
-    /// <summary>
-    /// Reactivate this relation
-    /// </summary>
     public void Reactivate(Guid modifiedByUserId)
     {
         IsActive = true;

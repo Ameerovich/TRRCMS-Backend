@@ -11,8 +11,6 @@ namespace TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
 
 /// <summary>
 /// Handler for FinalizeOfficeSurveyCommand
-/// Finalizes office survey and optionally creates a claim
-/// UC-004 S21: Mark as finalized, UC-005: Complete draft office survey
 /// </summary>
 public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOfficeSurveyCommand, OfficeSurveyFinalizationResultDto>
 {
@@ -58,49 +56,30 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
         FinalizeOfficeSurveyCommand request,
         CancellationToken cancellationToken)
     {
-        // Get current user
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        // Get existing survey with building info
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
-        if (survey == null)
-        {
-            throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
-        }
+        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+            ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        // Verify this is an office survey
         if (survey.Type != SurveyType.Office)
-        {
             throw new ValidationException("This endpoint is only for office surveys.");
-        }
 
-        // Verify survey is in Draft status
         if (survey.Status != SurveyStatus.Draft)
-        {
             throw new ValidationException($"Survey is in {survey.Status} status. Only Draft surveys can be finalized.");
-        }
 
-        // Collect warnings
         var warnings = new List<string>();
 
-        // Validate survey has minimum required data
         if (!survey.PropertyUnitId.HasValue)
-        {
             throw new ValidationException("Survey must have a property unit linked before finalization.");
-        }
 
-        // Get related data for summary
         var propertyUnit = await _propertyUnitRepository.GetByIdAsync(survey.PropertyUnitId.Value, cancellationToken);
-
-        // Use correct method names from repositories
         var households = (await _householdRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
         var relations = (await _personPropertyRelationRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
-        // Get evidence by survey context (building-based)
+        // Get evidence using EvidenceType? enum (null = no filter)
         var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
 
-        // Count persons from households using correct method name
         var personCount = 0;
         foreach (var household in households)
         {
@@ -108,32 +87,16 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
             personCount += persons.Count;
         }
 
-        // Count ownership relations (basis for claim creation)
-        // RelationType in entity is string, so compare with string values
+        // Count ownership relations using enum comparison
         var ownershipRelations = relations.Where(r =>
-            r.RelationType.Equals("Owner", StringComparison.OrdinalIgnoreCase) ||
-            r.RelationType.Equals("Heir", StringComparison.OrdinalIgnoreCase) ||
-            r.RelationType.Equals("Heirs", StringComparison.OrdinalIgnoreCase)).ToList();
+            r.RelationType == RelationType.Owner ||
+            r.RelationType == RelationType.Heir).ToList();
 
-        // Add warnings for missing data
-        if (!households.Any())
-        {
-            warnings.Add("No households captured in this survey.");
-        }
-        if (personCount == 0)
-        {
-            warnings.Add("No persons captured in this survey.");
-        }
-        if (!relations.Any())
-        {
-            warnings.Add("No person-property relations captured.");
-        }
-        if (!evidence.Any())
-        {
-            warnings.Add("No evidence uploaded for this survey.");
-        }
+        if (!households.Any()) warnings.Add("No households captured in this survey.");
+        if (personCount == 0) warnings.Add("No persons captured in this survey.");
+        if (!relations.Any()) warnings.Add("No person-property relations captured.");
+        if (!evidence.Any()) warnings.Add("No evidence uploaded for this survey.");
 
-        // Update survey with final notes if provided
         if (!string.IsNullOrWhiteSpace(request.FinalNotes) || request.DurationMinutes.HasValue)
         {
             var finalNotes = survey.Notes;
@@ -150,14 +113,11 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
                 intervieweeRelationship: survey.IntervieweeRelationship,
                 notes: finalNotes,
                 durationMinutes: request.DurationMinutes ?? survey.DurationMinutes,
-                modifiedByUserId: currentUserId
-            );
+                modifiedByUserId: currentUserId);
         }
 
-        // Mark survey as finalized
         survey.MarkAsFinalized(currentUserId);
 
-        // Create claim if ownership relations exist and auto-create is enabled
         Claim? createdClaim = null;
         string? claimNotCreatedReason = null;
 
@@ -165,42 +125,27 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
         {
             if (ownershipRelations.Any())
             {
-                // Get primary owner (first ownership relation)
                 var primaryOwnerRelation = ownershipRelations.First();
                 var primaryOwner = await _personRepository.GetByIdAsync(primaryOwnerRelation.PersonId, cancellationToken);
 
                 if (primaryOwner != null)
                 {
-                    // Generate claim number using correct method name
                     var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(cancellationToken);
-
-                    // Determine initial lifecycle stage based on evidence
                     var hasEvidence = evidence.Any();
-                    var lifecycleStage = hasEvidence
-                        ? LifecycleStage.DraftPendingSubmission
-                        : LifecycleStage.AwaitingDocuments;
+                    var lifecycleStage = hasEvidence ? LifecycleStage.DraftPendingSubmission : LifecycleStage.AwaitingDocuments;
 
-                    // Create claim using correct ClaimSource enum value
-                    // Note: primaryClaimantId is Guid? in Create method signature
                     createdClaim = Claim.Create(
                         claimNumber: claimNumber,
                         propertyUnitId: survey.PropertyUnitId.Value,
-                        primaryClaimantId: primaryOwner.Id, // Guid is implicitly convertible to Guid?
-                        claimType: "Ownership Claim", // Default type
-                        claimSource: ClaimSource.OfficeSubmission, // Correct enum value
-                        createdByUserId: currentUserId
-                    );
+                        primaryClaimantId: primaryOwner.Id,
+                        claimType: "Ownership Claim",
+                        claimSource: ClaimSource.OfficeSubmission,
+                        createdByUserId: currentUserId);
 
-                    // Set initial lifecycle stage using correct method name
                     createdClaim.MoveToStage(lifecycleStage, currentUserId);
-
-                    // Save claim
                     await _claimRepository.AddAsync(createdClaim, cancellationToken);
-
-                    // Link claim to survey
                     survey.LinkClaim(createdClaim.Id, currentUserId);
 
-                    // Audit log for claim creation
                     await _auditService.LogActionAsync(
                         actionType: AuditActionType.Create,
                         actionDescription: $"Created claim {claimNumber} from office survey {survey.ReferenceCode}",
@@ -221,8 +166,7 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
                             SourceSurveyReference = survey.ReferenceCode
                         }),
                         changedFields: "New Claim from Office Survey",
-                        cancellationToken: cancellationToken
-                    );
+                        cancellationToken: cancellationToken);
                 }
                 else
                 {
@@ -240,11 +184,9 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
             claimNotCreatedReason = "Auto-create claim was disabled.";
         }
 
-        // Save all changes
         await _surveyRepository.UpdateAsync(survey, cancellationToken);
         await _surveyRepository.SaveChangesAsync(cancellationToken);
 
-        // Audit log for finalization
         await _auditService.LogActionAsync(
             actionType: AuditActionType.StatusChange,
             actionDescription: $"Finalized office survey {survey.ReferenceCode}",
@@ -270,13 +212,10 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
                 }
             }),
             changedFields: "Status, FinalizedAt, FinalizedBy",
-            cancellationToken: cancellationToken
-        );
+            cancellationToken: cancellationToken);
 
-        // Calculate total evidence size
         var totalEvidenceSize = evidence.Sum(e => e.FileSizeBytes);
 
-        // Build result
         var result = new OfficeSurveyFinalizationResultDto
         {
             Survey = _mapper.Map<SurveyDto>(survey),
@@ -287,7 +226,7 @@ public class FinalizeOfficeSurveyCommandHandler : IRequestHandler<FinalizeOffice
             Warnings = warnings,
             DataSummary = new SurveyDataSummaryDto
             {
-                PropertyUnitsCount = 1, // Survey is linked to one property unit
+                PropertyUnitsCount = 1,
                 HouseholdsCount = households.Count,
                 PersonsCount = personCount,
                 RelationsCount = relations.Count,

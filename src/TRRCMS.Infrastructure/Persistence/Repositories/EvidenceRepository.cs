@@ -1,19 +1,19 @@
 using Microsoft.EntityFrameworkCore;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Infrastructure.Persistence.Repositories;
 
-/// <summary>
-/// Repository implementation for Evidence entity
-/// </summary>
 public class EvidenceRepository : IEvidenceRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public EvidenceRepository(ApplicationDbContext context)
+    public EvidenceRepository(ApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Evidence?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -52,6 +52,26 @@ public class EvidenceRepository : IEvidenceRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<Evidence>> GetByRelationIdAsync(
+        Guid relationId,
+        EvidenceType? evidenceType,
+        bool onlyCurrentVersions,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Set<Evidence>()
+            .Include(e => e.Person)
+            .Include(e => e.PersonPropertyRelation)
+            .Where(e => e.PersonPropertyRelationId == relationId && !e.IsDeleted);
+
+        if (evidenceType.HasValue)
+            query = query.Where(e => e.EvidenceType == evidenceType.Value);
+
+        if (onlyCurrentVersions)
+            query = query.Where(e => e.IsCurrentVersion);
+
+        return await query.OrderByDescending(e => e.CreatedAtUtc).ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Evidence>> GetByClaimIdAsync(Guid claimId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
@@ -61,7 +81,6 @@ public class EvidenceRepository : IEvidenceRepository
             .ToListAsync(cancellationToken);
     }
 
-
     public async Task<IEnumerable<Evidence>> GetCurrentVersionsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
@@ -70,65 +89,50 @@ public class EvidenceRepository : IEvidenceRepository
             .Where(e => e.IsCurrentVersion && !e.IsDeleted)
             .ToListAsync(cancellationToken);
     }
-    /// <summary>
-    /// Get all evidence for a survey context (by persons and property relations in survey's building)
-    /// </summary>
+
     public async Task<List<Evidence>> GetBySurveyContextAsync(
         Guid buildingId,
-        string? evidenceType = null,
+        EvidenceType? evidenceType = null,
         CancellationToken cancellationToken = default)
     {
-        // Get all person IDs in the building
         var personIds = await _context.Persons
             .Where(p => p.HouseholdId.HasValue && !p.IsDeleted)
             .Where(p => _context.Households
                 .Where(h => h.Id == p.HouseholdId && !h.IsDeleted)
                 .Where(h => _context.PropertyUnits
-                    .Any(pu => pu.Id == h.PropertyUnitId
-                        && pu.BuildingId == buildingId
-                        && !pu.IsDeleted))
+                    .Any(pu => pu.Id == h.PropertyUnitId && pu.BuildingId == buildingId && !pu.IsDeleted))
                 .Any())
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
 
-        // Get all person-property relation IDs in the building
         var relationIds = await _context.PersonPropertyRelations
             .Where(ppr => !ppr.IsDeleted)
             .Where(ppr => _context.PropertyUnits
-                .Any(pu => pu.Id == ppr.PropertyUnitId
-                    && pu.BuildingId == buildingId
-                    && !pu.IsDeleted))
+                .Any(pu => pu.Id == ppr.PropertyUnitId && pu.BuildingId == buildingId && !pu.IsDeleted))
             .Select(ppr => ppr.Id)
             .ToListAsync(cancellationToken);
 
-        // Get all evidence linked to these persons or relations
         var query = _context.Evidences
             .Where(e => !e.IsDeleted)
             .Where(e => (e.PersonId.HasValue && personIds.Contains(e.PersonId.Value))
                      || (e.PersonPropertyRelationId.HasValue && relationIds.Contains(e.PersonPropertyRelationId.Value)))
-            .Where(e => e.IsCurrentVersion); // Only current versions
+            .Where(e => e.IsCurrentVersion);
 
-        // Apply evidence type filter if provided
-        if (!string.IsNullOrWhiteSpace(evidenceType))
-        {
-            query = query.Where(e => e.EvidenceType == evidenceType);
-        }
+        // Apply evidence type filter using enum
+        if (evidenceType.HasValue)
+            query = query.Where(e => e.EvidenceType == evidenceType.Value);
 
-        return await query
-            .OrderByDescending(e => e.CreatedAtUtc)
-            .ToListAsync(cancellationToken);
+        return await query.OrderByDescending(e => e.CreatedAtUtc).ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Evidence>> GetVersionHistoryAsync(Guid evidenceId, CancellationToken cancellationToken = default)
     {
-        // Find the current version first
         var currentVersion = await _context.Set<Evidence>()
             .FirstOrDefaultAsync(e => e.Id == evidenceId, cancellationToken);
 
         if (currentVersion == null)
             return Enumerable.Empty<Evidence>();
 
-        // Get all versions in the chain by following PreviousVersionId backward
         var versions = new List<Evidence> { currentVersion };
         var previousVersionId = currentVersion.PreviousVersionId;
 
@@ -144,14 +148,12 @@ public class EvidenceRepository : IEvidenceRepository
             previousVersionId = previousVersion.PreviousVersionId;
         }
 
-        // Order by version number descending (newest first)
         return versions.OrderByDescending(v => v.VersionNumber);
     }
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Set<Evidence>()
-            .AnyAsync(e => e.Id == id && !e.IsDeleted, cancellationToken);
+        return await _context.Set<Evidence>().AnyAsync(e => e.Id == id && !e.IsDeleted, cancellationToken);
     }
 
     public async Task<Evidence> AddAsync(Evidence evidence, CancellationToken cancellationToken = default)
@@ -162,6 +164,14 @@ public class EvidenceRepository : IEvidenceRepository
 
     public Task UpdateAsync(Evidence evidence, CancellationToken cancellationToken = default)
     {
+        _context.Set<Evidence>().Update(evidence);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(Evidence evidence, CancellationToken cancellationToken = default)
+    {
+        var currentUserId = _currentUserService.UserId ?? Guid.Empty;
+        evidence.MarkAsDeleted(currentUserId);
         _context.Set<Evidence>().Update(evidence);
         return Task.CompletedTask;
     }

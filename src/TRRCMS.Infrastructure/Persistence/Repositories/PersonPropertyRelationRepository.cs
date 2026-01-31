@@ -1,19 +1,18 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Infrastructure.Persistence.Repositories;
 
-/// <summary>
-/// Repository implementation for PersonPropertyRelation entity
-/// </summary>
 public class PersonPropertyRelationRepository : IPersonPropertyRelationRepository
 {
     private readonly ApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public PersonPropertyRelationRepository(ApplicationDbContext context)
+    public PersonPropertyRelationRepository(ApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<PersonPropertyRelation?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -21,6 +20,15 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
         return await _context.Set<PersonPropertyRelation>()
             .Include(r => r.Person)
             .Include(r => r.PropertyUnit)
+            .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
+    }
+
+    public async Task<PersonPropertyRelation?> GetByIdWithEvidencesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<PersonPropertyRelation>()
+            .Include(r => r.Person)
+            .Include(r => r.PropertyUnit)
+            .Include(r => r.Evidences.Where(e => !e.IsDeleted && e.IsCurrentVersion))
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
     }
 
@@ -51,6 +59,16 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<PersonPropertyRelation>> GetByPropertyUnitIdWithEvidencesAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<PersonPropertyRelation>()
+            .Include(r => r.Person)
+            .Include(r => r.PropertyUnit)
+            .Include(r => r.Evidences.Where(e => !e.IsDeleted && e.IsCurrentVersion))
+            .Where(r => r.PropertyUnitId == propertyUnitId && !r.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<PersonPropertyRelation>> GetActiveRelationsByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<PersonPropertyRelation>()
@@ -70,8 +88,7 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _context.Set<PersonPropertyRelation>()
-            .AnyAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
+        return await _context.Set<PersonPropertyRelation>().AnyAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
     }
 
     public async Task<PersonPropertyRelation> AddAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default)
@@ -82,6 +99,14 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
 
     public Task UpdateAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default)
     {
+        _context.Set<PersonPropertyRelation>().Update(relation);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default)
+    {
+        var currentUserId = _currentUserService.UserId ?? Guid.Empty;
+        relation.MarkAsDeleted(currentUserId);
         _context.Set<PersonPropertyRelation>().Update(relation);
         return Task.CompletedTask;
     }

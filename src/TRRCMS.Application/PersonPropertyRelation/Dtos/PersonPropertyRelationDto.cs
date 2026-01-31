@@ -1,60 +1,39 @@
-﻿namespace TRRCMS.Application.PersonPropertyRelations.Dtos;
+using TRRCMS.Domain.Enums;
+
+namespace TRRCMS.Application.PersonPropertyRelations.Dtos;
 
 /// <summary>
-/// Data transfer object for PersonPropertyRelation entity
+/// DTO for PersonPropertyRelation entity
 /// </summary>
 public class PersonPropertyRelationDto
 {
-    // ==================== IDENTIFIERS ====================
-
     public Guid Id { get; set; }
     public Guid PersonId { get; set; }
     public Guid PropertyUnitId { get; set; }
 
-    // ==================== RELATION ATTRIBUTES ====================
-
     /// <summary>
-    /// Relation type (owner, tenant, occupant, guest, heir, other, etc.)
+    /// نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
-    public string RelationType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description in case the chosen type is "Other"
-    /// </summary>
+    public RelationType RelationType { get; set; }
     public string? RelationTypeOtherDesc { get; set; }
 
     /// <summary>
-    /// Ownership or occupancy share (percentage, e.g., 0.5 for 50%)
+    /// نوع العقد - FullOwnership=1, SharedOwnership=2, LongTermRental=3, etc.
+    /// </summary>
+    public TenureContractType? ContractType { get; set; }
+    public string? ContractTypeOtherDesc { get; set; }
+
+    /// <summary>
+    /// حصة الملكية - 0.0 to 1.0
     /// </summary>
     public decimal? OwnershipShare { get; set; }
-
-    /// <summary>
-    /// Contract or agreement details
-    /// </summary>
     public string? ContractDetails { get; set; }
-
-    /// <summary>
-    /// Start date of the relation
-    /// </summary>
     public DateTime? StartDate { get; set; }
-
-    /// <summary>
-    /// End date of the relation (for terminated relations)
-    /// </summary>
     public DateTime? EndDate { get; set; }
-
-    /// <summary>
-    /// Additional notes
-    /// </summary>
     public string? Notes { get; set; }
-
-    /// <summary>
-    /// Indicates if this relation is currently active
-    /// </summary>
     public bool IsActive { get; set; }
 
-    // ==================== AUDIT FIELDS ====================
-
+    // Audit fields
     public DateTime CreatedAtUtc { get; set; }
     public Guid CreatedBy { get; set; }
     public DateTime? LastModifiedAtUtc { get; set; }
@@ -63,15 +42,8 @@ public class PersonPropertyRelationDto
     public DateTime? DeletedAtUtc { get; set; }
     public Guid? DeletedBy { get; set; }
 
-    // ==================== COMPUTED PROPERTIES ====================
-
-    /// <summary>
-    /// Duration of the relation in days (if both StartDate and EndDate exist)
-    /// </summary>
+    // Computed fields
     public int? DurationInDays { get; set; }
-
-    /// <summary>
-    /// Indicates if the relation is currently ongoing (StartDate exists but no EndDate)
-    /// </summary>
     public bool IsOngoing { get; set; }
+    public int EvidenceCount { get; set; }
 }

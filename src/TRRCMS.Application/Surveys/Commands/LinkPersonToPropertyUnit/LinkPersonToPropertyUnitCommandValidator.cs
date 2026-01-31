@@ -1,25 +1,10 @@
 using FluentValidation;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 
-/// <summary>
-/// Validator for LinkPersonToPropertyUnitCommand
-/// </summary>
 public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPersonToPropertyUnitCommand>
 {
-    /// <summary>
-    /// Valid relation types
-    /// </summary>
-    private static readonly string[] ValidRelationTypes = 
-    { 
-        "Owner", 
-        "Tenant", 
-        "Occupant", 
-        "Heir", 
-        "Guest", 
-        "Other" 
-    };
-
     public LinkPersonToPropertyUnitCommandValidator()
     {
         RuleFor(x => x.SurveyId)
@@ -34,65 +19,70 @@ public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPe
             .NotEmpty()
             .WithMessage("Property Unit ID is required");
 
+        // RelationType enum validation
         RuleFor(x => x.RelationType)
-            .NotEmpty()
-            .WithMessage("Relation type is required")
-            .Must(BeValidRelationType)
-            .WithMessage($"Relation type must be one of: {string.Join(", ", ValidRelationTypes)}");
+            .IsInEnum()
+            .WithMessage("Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other");
 
-        // Ownership share validation for Owner type
+        // ContractType enum validation (optional field)
+        RuleFor(x => x.ContractType)
+            .IsInEnum()
+            .When(x => x.ContractType.HasValue)
+            .WithMessage("Invalid contract type");
+
+        // Ownership share required for Owner
+        RuleFor(x => x.OwnershipShare)
+            .NotNull()
+            .When(x => x.RelationType == RelationType.Owner)
+            .WithMessage("Ownership share is required for Owner relation type");
+
         RuleFor(x => x.OwnershipShare)
             .GreaterThan(0)
-            .When(x => x.RelationType.Equals("Owner", StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Ownership share must be greater than 0 for Owner relation type")
+            .When(x => x.RelationType == RelationType.Owner && x.OwnershipShare.HasValue)
+            .WithMessage("Ownership share must be greater than 0 for Owner relation type");
+
+        RuleFor(x => x.OwnershipShare)
             .LessThanOrEqualTo(1)
             .When(x => x.OwnershipShare.HasValue)
             .WithMessage("Ownership share cannot exceed 1.0 (100%)");
 
-        // RelationTypeOtherDesc required when type is "Other"
+        // RelationTypeOtherDesc required when RelationType is Other
         RuleFor(x => x.RelationTypeOtherDesc)
             .NotEmpty()
-            .When(x => x.RelationType.Equals("Other", StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Description is required when relation type is 'Other'")
+            .When(x => x.RelationType == RelationType.Other)
+            .WithMessage("Description is required when relation type is 'Other'");
+
+        RuleFor(x => x.RelationTypeOtherDesc)
             .MaximumLength(500)
-            .When(x => !string.IsNullOrEmpty(x.RelationTypeOtherDesc))
-            .WithMessage("Description cannot exceed 500 characters");
+            .When(x => !string.IsNullOrEmpty(x.RelationTypeOtherDesc));
 
-        // Contract details max length
+        // ContractTypeOtherDesc required when ContractType is Other
+        RuleFor(x => x.ContractTypeOtherDesc)
+            .NotEmpty()
+            .When(x => x.ContractType == TenureContractType.Other)
+            .WithMessage("Description is required when contract type is 'Other'");
+
+        RuleFor(x => x.ContractTypeOtherDesc)
+            .MaximumLength(500)
+            .When(x => !string.IsNullOrEmpty(x.ContractTypeOtherDesc));
+
         RuleFor(x => x.ContractDetails)
-            .MaximumLength(2000)
-            .When(x => !string.IsNullOrEmpty(x.ContractDetails))
-            .WithMessage("Contract details cannot exceed 2000 characters");
+            .MaximumLength(2000);
 
-        // Notes max length
         RuleFor(x => x.Notes)
-            .MaximumLength(2000)
-            .When(x => !string.IsNullOrEmpty(x.Notes))
-            .WithMessage("Notes cannot exceed 2000 characters");
+            .MaximumLength(2000);
 
-        // Date range validation
+        // Date validation
         RuleFor(x => x.EndDate)
             .GreaterThanOrEqualTo(x => x.StartDate)
             .When(x => x.StartDate.HasValue && x.EndDate.HasValue)
             .WithMessage("End date cannot be before start date");
 
-        // Start date should not be in the future for Owner/Tenant
+        // Start date not in future for Owner/Tenant
         RuleFor(x => x.StartDate)
-            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1)) // Allow 1 day buffer for timezone issues
-            .When(x => x.StartDate.HasValue && 
-                  (x.RelationType.Equals("Owner", StringComparison.OrdinalIgnoreCase) || 
-                   x.RelationType.Equals("Tenant", StringComparison.OrdinalIgnoreCase)))
+            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
+            .When(x => x.StartDate.HasValue &&
+                       (x.RelationType == RelationType.Owner || x.RelationType == RelationType.Tenant))
             .WithMessage("Start date cannot be in the future for Owner or Tenant relations");
-    }
-
-    /// <summary>
-    /// Validates that the relation type is one of the allowed values
-    /// </summary>
-    private static bool BeValidRelationType(string relationType)
-    {
-        if (string.IsNullOrWhiteSpace(relationType))
-            return false;
-
-        return ValidRelationTypes.Any(t => t.Equals(relationType, StringComparison.OrdinalIgnoreCase));
     }
 }

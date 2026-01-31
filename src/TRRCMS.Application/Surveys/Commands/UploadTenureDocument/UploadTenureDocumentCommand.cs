@@ -1,6 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UploadTenureDocument;
 
@@ -24,6 +25,12 @@ public class UploadTenureDocumentCommand : IRequest<EvidenceDto>
     /// Document file to upload (deed, rental contract, etc.)
     /// </summary>
     public IFormFile File { get; set; } = null!;
+
+    /// <summary>
+    /// Evidence type - OwnershipDeed=2, RentalContract=3, InheritanceDocument=8, etc.
+    /// Defaults to OwnershipDeed if not specified
+    /// </summary>
+    public EvidenceType EvidenceType { get; set; } = EvidenceType.OwnershipDeed;
 
     /// <summary>
     /// Document description (e.g., "Property Deed", "Rental Contract", "Inheritance Document")

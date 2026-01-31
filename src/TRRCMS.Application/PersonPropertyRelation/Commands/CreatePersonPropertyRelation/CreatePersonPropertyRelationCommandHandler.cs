@@ -1,82 +1,85 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
-using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.PersonPropertyRelations.Commands.CreatePersonPropertyRelation;
 
-/// <summary>
-/// Handler for CreatePersonPropertyRelationCommand
-/// </summary>
 public class CreatePersonPropertyRelationCommandHandler : IRequestHandler<CreatePersonPropertyRelationCommand, PersonPropertyRelationDto>
 {
     private readonly IPersonPropertyRelationRepository _relationRepository;
+    private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
 
     public CreatePersonPropertyRelationCommandHandler(
         IPersonPropertyRelationRepository relationRepository,
+        ICurrentUserService currentUserService,
         IMapper mapper)
     {
         _relationRepository = relationRepository;
+        _currentUserService = currentUserService;
         _mapper = mapper;
     }
 
     public async Task<PersonPropertyRelationDto> Handle(CreatePersonPropertyRelationCommand request, CancellationToken cancellationToken)
     {
-        // Validate required fields
-        if (request.PersonId == Guid.Empty)
-            throw new ArgumentException("PersonId is required", nameof(request.PersonId));
+        var currentUserId = _currentUserService.UserId
+            ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        if (request.PropertyUnitId == Guid.Empty)
-            throw new ArgumentException("PropertyUnitId is required", nameof(request.PropertyUnitId));
+        if (request.RelationType == RelationType.Other && string.IsNullOrWhiteSpace(request.RelationTypeOtherDesc))
+            throw new ArgumentException("Description is required when relation type is 'Other'", nameof(request.RelationTypeOtherDesc));
 
-        if (string.IsNullOrWhiteSpace(request.RelationType))
-            throw new ArgumentException("RelationType is required", nameof(request.RelationType));
+        if (request.ContractType == TenureContractType.Other && string.IsNullOrWhiteSpace(request.ContractTypeOtherDesc))
+            throw new ArgumentException("Description is required when contract type is 'Other'", nameof(request.ContractTypeOtherDesc));
 
-        if (request.CreatedByUserId == Guid.Empty)
-            throw new ArgumentException("CreatedByUserId is required", nameof(request.CreatedByUserId));
-
-        // Create relation using factory method
-        var relation = PersonPropertyRelation.Create(
+        var relation = Domain.Entities.PersonPropertyRelation.Create(
             request.PersonId,
             request.PropertyUnitId,
             request.RelationType,
-            request.CreatedByUserId);
+            currentUserId);
 
-        // Convert DateTime values to UTC if they have a value
-        var startDateUtc = request.StartDate.HasValue
-            ? DateTime.SpecifyKind(request.StartDate.Value, DateTimeKind.Utc)
-            : (DateTime?)null;
-
-        var endDateUtc = request.EndDate.HasValue
-            ? DateTime.SpecifyKind(request.EndDate.Value, DateTimeKind.Utc)
-            : (DateTime?)null;
-
-        // Update optional details if provided
-        if (request.OwnershipShare.HasValue ||
-            !string.IsNullOrWhiteSpace(request.ContractDetails) ||
-            !string.IsNullOrWhiteSpace(request.RelationTypeOtherDesc) ||
-            startDateUtc.HasValue ||
-            endDateUtc.HasValue ||
-            !string.IsNullOrWhiteSpace(request.Notes))
+        if (request.RelationTypeOtherDesc != null ||
+            request.ContractType.HasValue ||
+            request.OwnershipShare.HasValue ||
+            request.ContractDetails != null ||
+            request.StartDate.HasValue ||
+            request.EndDate.HasValue ||
+            request.Notes != null)
         {
             relation.UpdateRelationDetails(
                 request.RelationType,
                 request.RelationTypeOtherDesc,
+                request.ContractType,
+                request.ContractTypeOtherDesc,
                 request.OwnershipShare,
                 request.ContractDetails,
-                startDateUtc,  // Use UTC version
-                endDateUtc,    // Use UTC version
+                request.StartDate,
+                request.EndDate,
                 request.Notes,
-                request.CreatedByUserId);
+                currentUserId);
         }
 
-        // Add to repository
         await _relationRepository.AddAsync(relation, cancellationToken);
         await _relationRepository.SaveChangesAsync(cancellationToken);
 
-        // Map to DTO
-        return _mapper.Map<PersonPropertyRelationDto>(relation);
+        var result = _mapper.Map<PersonPropertyRelationDto>(relation);
+
+        // Calculate computed properties
+        if (relation.StartDate.HasValue)
+        {
+            if (relation.EndDate.HasValue)
+            {
+                result.DurationInDays = (int)(relation.EndDate.Value - relation.StartDate.Value).TotalDays;
+                result.IsOngoing = false;
+            }
+            else
+            {
+                result.DurationInDays = (int)(DateTime.UtcNow - relation.StartDate.Value).TotalDays;
+                result.IsOngoing = true;
+            }
+        }
+
+        return result;
     }
 }

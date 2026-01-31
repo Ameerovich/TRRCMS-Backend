@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Households.Dtos;
+using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
@@ -11,6 +12,7 @@ using TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.DeleteEvidence;
+using TRRCMS.Application.Surveys.Commands.DeletePersonPropertyRelation;
 using TRRCMS.Application.Surveys.Commands.FinalizeFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
@@ -19,6 +21,7 @@ using TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 using TRRCMS.Application.Surveys.Commands.SetHouseholdHead;
 using TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
+using TRRCMS.Application.Surveys.Commands.UpdatePersonPropertyRelation;
 using TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 using TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
@@ -27,6 +30,7 @@ using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Application.Surveys.Queries.DownloadEvidence;
 using TRRCMS.Application.Surveys.Queries.GetDraftSurvey;
 using TRRCMS.Application.Surveys.Queries.GetEvidenceById;
+using TRRCMS.Application.Surveys.Queries.GetEvidencesByRelation;
 using TRRCMS.Application.Surveys.Queries.GetFieldDraftSurveys;
 using TRRCMS.Application.Surveys.Queries.GetFieldSurveyById;
 using TRRCMS.Application.Surveys.Queries.GetFieldSurveys;
@@ -38,6 +42,7 @@ using TRRCMS.Application.Surveys.Queries.GetOfficeSurveyById;
 using TRRCMS.Application.Surveys.Queries.GetOfficeSurveys;
 using TRRCMS.Application.Surveys.Queries.GetPropertyUnitsForSurvey;
 using TRRCMS.Application.Surveys.Queries.GetSurveyEvidence;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.WebAPI.Controllers;
 
@@ -1502,31 +1507,25 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Get all evidence for survey
+    /// Get all evidence for a survey
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - View collected evidence
+    /// **Use Case**: UC-001 Stage 4 - View survey evidence
     /// 
-    /// **Purpose**: Lists all photos and documents uploaded for the survey.
+    /// **Purpose**: Retrieves all evidence (documents, photos) uploaded during survey.
     /// 
     /// **What you get**:
-    /// - All property photos
-    /// - All identification documents
-    /// - All tenure documents
-    /// - File metadata (size, type, hash)
-    /// - Upload timestamps
-    /// - Links to persons/units
+    /// - List of evidence with type, description, file info
+    /// - Expiration status for documents
+    /// - Links to related persons and property units
     /// 
-    /// **Optional Filtering**:
-    /// - evidenceType: Filter by type (PropertyPhoto, IdentificationDocument, TenureDocument)
+    /// **Filter options**:
+    /// - evidenceType: Filter by type (1=IdentificationDocument, 2=OwnershipDeed, 3=RentalContract, 4=UtilityBill, 5=Photo, etc.)
     /// 
-    /// **Required permissions**: CanViewOwnSurveys
-    /// 
-    /// **Response**: Array of evidence records ordered by upload date
+    /// **Required permissions**: Field collector can only view their own surveys.
     /// </remarks>
-    /// <param name="surveyId">Survey ID to get evidence for</param>
-    /// <param name="evidenceType">Optional filter by evidence type</param>
-    /// <returns>List of evidence records</returns>
+    /// <param name="surveyId">Survey ID</param>
+    /// <param name="evidenceType">Optional filter by evidence type (int or name: 1, "Photo", "OwnershipDeed", etc.)</param>
     /// <response code="200">Success. Returns array of evidence (may be empty).</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only view evidence for your own surveys.</response>
@@ -1541,10 +1540,27 @@ public class SurveysController : ControllerBase
         Guid surveyId,
         [FromQuery] string? evidenceType = null)
     {
+        // Parse string to EvidenceType enum (supports both int and name)
+        EvidenceType? parsedType = null;
+        if (!string.IsNullOrEmpty(evidenceType))
+        {
+            // Try parse as int first (e.g., "1", "5")
+            if (int.TryParse(evidenceType, out var intValue) && Enum.IsDefined(typeof(EvidenceType), intValue))
+            {
+                parsedType = (EvidenceType)intValue;
+            }
+            // Try parse as name (e.g., "Photo", "OwnershipDeed")
+            else if (Enum.TryParse<EvidenceType>(evidenceType, ignoreCase: true, out var namedValue))
+            {
+                parsedType = namedValue;
+            }
+            // Invalid value - you could throw an error here, or just ignore it
+        }
+
         var query = new GetSurveyEvidenceQuery
         {
             SurveyId = surveyId,
-            EvidenceType = evidenceType
+            EvidenceType = parsedType
         };
         var result = await _mediator.Send(query);
         return Ok(result);
@@ -1841,4 +1857,105 @@ public class SurveysController : ControllerBase
         var result = await _mediator.Send(command);
         return Ok(result);
     }
+    /// <summary>
+    /// Update person-property relation (partial update - PATCH)
+    /// </summary>
+    /// <remarks>
+    /// Only provided fields are updated. Use Clear* flags to set fields to null.
+    /// 
+    /// **Enum Values**:
+    /// - RelationType: Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
+    /// - ContractType: FullOwnership=1, SharedOwnership=2, LongTermRental=3, ShortTermRental=4, 
+    ///                 InformalTenure=5, UnauthorizedOccupation=6, CustomaryRights=7, InheritanceBased=8,
+    ///                 HostedGuest=9, TemporaryShelter=10, GovernmentAllocation=11, Usufruct=12, Other=99
+    /// 
+    /// **Example Request**:
+    /// ```json
+    /// {
+    ///   "contractType": 2,
+    ///   "ownershipShare": 0.5,
+    ///   "clearNotes": true
+    /// }
+    /// ```
+    /// </remarks>
+    [HttpPatch("{surveyId}/relations/{relationId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(PersonPropertyRelationDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PersonPropertyRelationDto>> UpdatePersonPropertyRelation(
+        Guid surveyId,
+        Guid relationId,
+        [FromBody] UpdatePersonPropertyRelationCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.RelationId = relationId;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Delete person-property relation
+    /// </summary>
+    /// <param name="surveyId">Survey ID</param>
+    /// <param name="relationId">Relation ID to delete</param>
+    /// <param name="deleteEvidenceFiles">Also delete evidence files from storage (default: true)</param>
+    [HttpDelete("{surveyId}/relations/{relationId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeletePersonPropertyRelation(
+        Guid surveyId,
+        Guid relationId,
+        [FromQuery] bool deleteEvidenceFiles = true)
+    {
+        var command = new DeletePersonPropertyRelationCommand
+        {
+            SurveyId = surveyId,
+            RelationId = relationId,
+            DeleteEvidenceFiles = deleteEvidenceFiles
+        };
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Get evidences for a relation (صور المستندات)
+    /// </summary>
+    /// <remarks>
+    /// **EvidenceType Enum Values**:
+    /// - IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, UtilityBill=4,
+    ///   Photo=5, OfficialLetter=6, CourtOrder=7, InheritanceDocument=8, TaxReceipt=9, Other=99
+    /// </remarks>
+    /// <param name="surveyId">Survey ID</param>
+    /// <param name="relationId">Relation ID</param>
+    /// <param name="evidenceType">Optional: Filter by evidence type (integer enum value)</param>
+    /// <param name="onlyCurrentVersions">Only current versions (default: true)</param>
+    [HttpGet("{surveyId}/relations/{relationId}/evidences")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<EvidenceDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<EvidenceDto>>> GetEvidencesByRelation(
+        Guid surveyId,
+        Guid relationId,
+        [FromQuery] EvidenceType? evidenceType = null,
+        [FromQuery] bool onlyCurrentVersions = true)
+    {
+        var query = new GetEvidencesByRelationQuery
+        {
+            SurveyId = surveyId,
+            RelationId = relationId,
+            EvidenceType = evidenceType,
+            OnlyCurrentVersions = onlyCurrentVersions
+        };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
 }
+

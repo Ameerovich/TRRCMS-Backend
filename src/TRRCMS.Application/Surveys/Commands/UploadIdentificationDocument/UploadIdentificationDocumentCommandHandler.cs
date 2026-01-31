@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -48,37 +48,21 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
 
     public async Task<EvidenceDto> Handle(UploadIdentificationDocumentCommand request, CancellationToken cancellationToken)
     {
-        // Get current user
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
-        if (survey == null)
-        {
-            throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
-        }
+        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+            ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        // Verify ownership
         if (survey.FieldCollectorId != currentUserId)
-        {
             throw new UnauthorizedAccessException("You can only upload evidence for your own surveys");
-        }
 
-        // Verify survey is in Draft status
         if (survey.Status != SurveyStatus.Draft)
-        {
             throw new ValidationException($"Cannot upload evidence for survey in {survey.Status} status. Only Draft surveys can be modified.");
-        }
 
-        // Get and validate person
-        var person = await _personRepository.GetByIdAsync(request.PersonId, cancellationToken);
-        if (person == null)
-        {
-            throw new NotFoundException($"Person with ID {request.PersonId} not found");
-        }
+        var person = await _personRepository.GetByIdAsync(request.PersonId, cancellationToken)
+            ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
 
-        // Verify person belongs to survey's building (through household → property unit)
         if (person.HouseholdId.HasValue)
         {
             var household = await _householdRepository.GetByIdAsync(person.HouseholdId.Value, cancellationToken);
@@ -86,85 +70,58 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
             {
                 var propertyUnit = await _propertyUnitRepository.GetByIdAsync(household.PropertyUnitId, cancellationToken);
                 if (propertyUnit == null || propertyUnit.BuildingId != survey.BuildingId)
-                {
                     throw new ValidationException("Person does not belong to the survey's building");
-                }
             }
         }
 
-        // Validate file
         if (request.File == null || request.File.Length == 0)
-        {
             throw new ValidationException("File is required");
-        }
 
-        // Validate file size
         if (!_fileStorageService.ValidateFileSize(request.File.Length))
-        {
             throw new ValidationException("File size exceeds maximum allowed size");
-        }
 
-        // Validate file extension (documents and images)
         var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
         if (!_fileStorageService.ValidateFileExtension(request.File.FileName, allowedExtensions))
-        {
             throw new ValidationException($"Invalid file type. Allowed types: {string.Join(", ", allowedExtensions)}");
-        }
 
-        // Save file to storage
         string filePath;
         string fileHash;
         using (var stream = request.File.OpenReadStream())
         {
-            // Calculate hash first
             fileHash = await _fileStorageService.CalculateFileHashAsync(stream, cancellationToken);
-
-            // Save file
             filePath = await _fileStorageService.SaveFileAsync(
-                stream,
-                request.File.FileName,
-                "identification-documents",
-                request.SurveyId,
-                cancellationToken);
+                stream, request.File.FileName, "identification-documents", request.SurveyId, cancellationToken);
         }
 
-        // Get MIME type
         var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
 
-        // Create Evidence entity
+        // Create Evidence entity using EvidenceType.IdentificationDocument enum
         var evidence = Evidence.Create(
-            evidenceType: "IdentificationDocument",
+            evidenceType: EvidenceType.IdentificationDocument,
             description: request.Description,
             originalFileName: request.File.FileName,
             filePath: filePath,
             fileSizeBytes: request.File.Length,
             mimeType: mimeType,
             fileHash: fileHash,
-            createdByUserId: currentUserId
-        );
+            createdByUserId: currentUserId);
 
-        // Link to person
         evidence.LinkToPerson(request.PersonId, currentUserId);
 
-        // Update metadata
         evidence.UpdateMetadata(
             issuedDate: request.DocumentIssuedDate,
             expiryDate: request.DocumentExpiryDate,
             issuingAuthority: request.IssuingAuthority,
             referenceNumber: request.DocumentReferenceNumber,
             notes: request.Notes,
-            modifiedByUserId: currentUserId
-        );
+            modifiedByUserId: currentUserId);
 
-        // Mark person as having identification document
         person.MarkIdentificationDocumentUploaded(currentUserId);
 
-        // Save evidence
         await _evidenceRepository.AddAsync(evidence, cancellationToken);
         await _personRepository.UpdateAsync(person, cancellationToken);
         await _evidenceRepository.SaveChangesAsync(cancellationToken);
 
-        // Audit logging
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,
             actionDescription: $"Uploaded identification document '{request.File.FileName}' for person {person.GetFullNameArabic()} in survey {survey.ReferenceCode}",
@@ -174,7 +131,7 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
             oldValues: null,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
-                evidence.EvidenceType,
+                EvidenceType = evidence.EvidenceType.ToString(),
                 evidence.OriginalFileName,
                 evidence.FileSizeBytes,
                 request.PersonId,
@@ -183,10 +140,8 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
                 SurveyReferenceCode = survey.ReferenceCode
             }),
             changedFields: "New Identification Document",
-            cancellationToken: cancellationToken
-        );
+            cancellationToken: cancellationToken);
 
-        // Map to DTO
         var result = _mapper.Map<EvidenceDto>(evidence);
         result.IsExpired = evidence.IsExpired();
 

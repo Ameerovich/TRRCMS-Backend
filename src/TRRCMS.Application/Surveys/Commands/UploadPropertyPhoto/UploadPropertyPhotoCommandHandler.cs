@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -45,120 +45,72 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
 
     public async Task<EvidenceDto> Handle(UploadPropertyPhotoCommand request, CancellationToken cancellationToken)
     {
-        // Get current user
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
-        if (survey == null)
-        {
-            throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
-        }
+        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+            ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        // Verify ownership
         if (survey.FieldCollectorId != currentUserId)
-        {
             throw new UnauthorizedAccessException("You can only upload evidence for your own surveys");
-        }
 
-        // Verify survey is in Draft status
         if (survey.Status != SurveyStatus.Draft)
-        {
             throw new ValidationException($"Cannot upload evidence for survey in {survey.Status} status. Only Draft surveys can be modified.");
-        }
 
-        // Validate property unit if provided
         if (request.PropertyUnitId.HasValue)
         {
-            var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken);
-            if (propertyUnit == null)
-            {
-                throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
-            }
+            var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken)
+                ?? throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
 
-            // Verify property unit belongs to survey's building
             if (propertyUnit.BuildingId != survey.BuildingId)
-            {
                 throw new ValidationException("Property unit does not belong to the survey's building");
-            }
         }
 
-        // Validate person-property relation if provided
         if (request.PersonPropertyRelationId.HasValue)
         {
-            var relation = await _relationRepository.GetByIdAsync(request.PersonPropertyRelationId.Value, cancellationToken);
-            if (relation == null)
-            {
-                throw new NotFoundException($"Person-property relation with ID {request.PersonPropertyRelationId} not found");
-            }
+            var relation = await _relationRepository.GetByIdAsync(request.PersonPropertyRelationId.Value, cancellationToken)
+                ?? throw new NotFoundException($"Person-property relation with ID {request.PersonPropertyRelationId} not found");
 
-            // Verify relation's property unit belongs to survey's building
             var relationUnit = await _propertyUnitRepository.GetByIdAsync(relation.PropertyUnitId, cancellationToken);
             if (relationUnit == null || relationUnit.BuildingId != survey.BuildingId)
-            {
                 throw new ValidationException("Person-property relation does not belong to the survey's building");
-            }
         }
 
-        // Validate file
         if (request.File == null || request.File.Length == 0)
-        {
             throw new ValidationException("File is required");
-        }
 
-        // Validate file size
         if (!_fileStorageService.ValidateFileSize(request.File.Length))
-        {
             throw new ValidationException("File size exceeds maximum allowed size");
-        }
 
-        // Validate file extension (images only)
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
         if (!_fileStorageService.ValidateFileExtension(request.File.FileName, allowedExtensions))
-        {
             throw new ValidationException($"Invalid file type. Allowed types: {string.Join(", ", allowedExtensions)}");
-        }
 
-        // Save file to storage
         string filePath;
         string fileHash;
         using (var stream = request.File.OpenReadStream())
         {
-            // Calculate hash first
             fileHash = await _fileStorageService.CalculateFileHashAsync(stream, cancellationToken);
-
-            // Save file
             filePath = await _fileStorageService.SaveFileAsync(
-                stream,
-                request.File.FileName,
-                "property-photos",
-                request.SurveyId,
-                cancellationToken);
+                stream, request.File.FileName, "property-photos", request.SurveyId, cancellationToken);
         }
 
-        // Get MIME type
         var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
 
-        // Create Evidence entity
+        // Create Evidence entity using EvidenceType.Photo enum
         var evidence = Evidence.Create(
-            evidenceType: "PropertyPhoto",
+            evidenceType: EvidenceType.Photo,
             description: request.Description,
             originalFileName: request.File.FileName,
             filePath: filePath,
             fileSizeBytes: request.File.Length,
             mimeType: mimeType,
             fileHash: fileHash,
-            createdByUserId: currentUserId
-        );
+            createdByUserId: currentUserId);
 
-        // Link to person-property relation if provided
         if (request.PersonPropertyRelationId.HasValue)
-        {
             evidence.LinkToRelation(request.PersonPropertyRelationId.Value, currentUserId);
-        }
 
-        // Add notes if provided
         if (!string.IsNullOrWhiteSpace(request.Notes))
         {
             evidence.UpdateMetadata(
@@ -167,15 +119,12 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
                 issuingAuthority: null,
                 referenceNumber: null,
                 notes: request.Notes,
-                modifiedByUserId: currentUserId
-            );
+                modifiedByUserId: currentUserId);
         }
 
-        // Save evidence
         await _evidenceRepository.AddAsync(evidence, cancellationToken);
         await _evidenceRepository.SaveChangesAsync(cancellationToken);
 
-        // Audit logging
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,
             actionDescription: $"Uploaded property photo '{request.File.FileName}' for survey {survey.ReferenceCode}",
@@ -185,7 +134,7 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
             oldValues: null,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
-                evidence.EvidenceType,
+                EvidenceType = evidence.EvidenceType.ToString(),
                 evidence.OriginalFileName,
                 evidence.FileSizeBytes,
                 evidence.MimeType,
@@ -195,10 +144,8 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
                 request.PersonPropertyRelationId
             }),
             changedFields: "New Property Photo",
-            cancellationToken: cancellationToken
-        );
+            cancellationToken: cancellationToken);
 
-        // Map to DTO
         var result = _mapper.Map<EvidenceDto>(evidence);
         result.IsExpired = evidence.IsExpired();
 

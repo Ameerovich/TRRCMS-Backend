@@ -177,6 +177,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("CanDeleteEvidence", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Evidence_Delete)));
 
+
     // ==================== DOCUMENT POLICIES ======================
 
     options.AddPolicy("CanViewSensitiveDocuments", policy =>

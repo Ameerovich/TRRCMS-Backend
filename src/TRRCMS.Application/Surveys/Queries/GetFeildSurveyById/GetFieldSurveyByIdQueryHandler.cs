@@ -14,8 +14,6 @@ namespace TRRCMS.Application.Surveys.Queries.GetFieldSurveyById;
 
 /// <summary>
 /// Handler for GetFieldSurveyByIdQuery
-/// Returns field survey with all related data
-/// UC-001/UC-002: Field Survey view/resume
 /// </summary>
 public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyByIdQuery, FieldSurveyDetailDto>
 {
@@ -55,20 +53,12 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
         GetFieldSurveyByIdQuery request,
         CancellationToken cancellationToken)
     {
-        // Get survey with building and property unit
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
-        if (survey == null)
-        {
-            throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
-        }
+        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+            ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        // Verify this is a field survey
         if (survey.Type != SurveyType.Field)
-        {
             throw new ValidationException("This endpoint is only for field surveys. Use /api/surveys/office/{id} for office surveys.");
-        }
 
-        // Map base survey to DTO
         var result = new FieldSurveyDetailDto
         {
             Id = survey.Id,
@@ -93,31 +83,22 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
             LastModifiedBy = survey.LastModifiedBy
         };
 
-        // Add building info
         if (survey.Building != null)
         {
             result.BuildingNumber = survey.Building.BuildingNumber;
             result.BuildingAddress = survey.Building.Address;
         }
 
-        // Get field collector name
         var fieldCollector = await _userRepository.GetByIdAsync(survey.FieldCollectorId, cancellationToken);
         if (fieldCollector != null)
-        {
             result.FieldCollectorName = fieldCollector.FullNameArabic ?? fieldCollector.Username;
-        }
 
-        // Get creator name
         var creator = await _userRepository.GetByIdAsync(survey.CreatedBy, cancellationToken);
         if (creator != null)
-        {
             result.CreatedByName = creator.FullNameArabic ?? creator.Username;
-        }
 
-        // Initialize data summary
         result.DataSummary = new SurveyDataSummaryDto();
 
-        // Get property unit details if linked
         if (survey.PropertyUnitId.HasValue)
         {
             var propertyUnit = await _propertyUnitRepository.GetByIdAsync(survey.PropertyUnitId.Value, cancellationToken);
@@ -127,17 +108,13 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
                 result.PropertyUnit = _mapper.Map<PropertyUnitDto>(propertyUnit);
                 result.DataSummary.PropertyUnitsCount = 1;
 
-                // Get households for this property unit
                 if (request.IncludeHouseholds)
                 {
-                    var households = await _householdRepository.GetByPropertyUnitIdAsync(
-                        survey.PropertyUnitId.Value, cancellationToken);
-
+                    var households = await _householdRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken);
                     result.Households = new List<HouseholdWithPersonsDto>();
 
                     foreach (var household in households)
                     {
-                        // Map using CORRECT property names from Household entity
                         var householdDto = new HouseholdWithPersonsDto
                         {
                             Id = household.Id,
@@ -160,7 +137,6 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
                             Persons = new List<PersonDto>()
                         };
 
-                        // Get persons for this household
                         if (request.IncludePersons)
                         {
                             var persons = await _personRepository.GetByHouseholdIdAsync(household.Id, cancellationToken);
@@ -174,40 +150,30 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
                     result.DataSummary.HouseholdsCount = result.Households.Count;
                 }
 
-                // Get person-property relations for this property unit
                 if (request.IncludeRelations)
                 {
-                    var relations = await _personPropertyRelationRepository.GetByPropertyUnitIdAsync(
-                        survey.PropertyUnitId.Value, cancellationToken);
-
+                    var relations = await _personPropertyRelationRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken);
                     var relationsList = relations.ToList();
                     result.Relations = _mapper.Map<List<PersonPropertyRelationDto>>(relationsList);
                     result.DataSummary.RelationsCount = relationsList.Count;
 
-                    // Count ownership relations
+                    // Count ownership relations using enum comparison
                     result.DataSummary.OwnershipRelationsCount = relationsList.Count(r =>
-                        r.RelationType.Equals("Owner", StringComparison.OrdinalIgnoreCase) ||
-                        r.RelationType.Equals("Heir", StringComparison.OrdinalIgnoreCase) ||
-                        r.RelationType.Equals("Heirs", StringComparison.OrdinalIgnoreCase));
+                        r.RelationType == RelationType.Owner ||
+                        r.RelationType == RelationType.Heir);
                 }
             }
         }
 
-        // Get evidence for this survey (by building context)
-        // CORRECT signature: GetBySurveyContextAsync(buildingId, evidenceType?, cancellationToken)
         if (request.IncludeEvidence)
         {
-            var evidence = await _evidenceRepository.GetBySurveyContextAsync(
-                survey.BuildingId,
-                null, // No filter on evidence type - get all types
-                cancellationToken);
-
+            // Get evidence using EvidenceType? enum (null = no filter)
+            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
             result.Evidence = _mapper.Map<List<EvidenceDto>>(evidence);
             result.DataSummary.EvidenceCount = evidence.Count;
             result.DataSummary.TotalEvidenceSizeBytes = evidence.Sum(e => e.FileSizeBytes);
         }
 
-        // Get linked claim if any
         if (survey.ClaimId.HasValue)
         {
             var claim = await _claimRepository.GetByIdAsync(survey.ClaimId.Value, cancellationToken);

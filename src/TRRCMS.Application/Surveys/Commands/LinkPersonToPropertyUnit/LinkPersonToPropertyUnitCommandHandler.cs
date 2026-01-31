@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
@@ -8,11 +8,6 @@ using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 
-/// <summary>
-/// Handler for LinkPersonToPropertyUnitCommand
-/// Creates PersonPropertyRelation to track ownership/tenancy
-/// Returns the created relation as DTO
-/// </summary>
 public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPersonToPropertyUnitCommand, PersonPropertyRelationDto>
 {
     private readonly ISurveyRepository _surveyRepository;
@@ -30,205 +25,150 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
         ICurrentUserService currentUserService,
         IAuditService auditService)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
-        _relationRepository = relationRepository ?? throw new ArgumentNullException(nameof(relationRepository));
-        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
+        _surveyRepository = surveyRepository;
+        _personRepository = personRepository;
+        _propertyUnitRepository = propertyUnitRepository;
+        _relationRepository = relationRepository;
+        _currentUserService = currentUserService;
+        _auditService = auditService;
     }
 
     public async Task<PersonPropertyRelationDto> Handle(LinkPersonToPropertyUnitCommand request, CancellationToken cancellationToken)
     {
-        // Get current user
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
-        if (survey == null)
-        {
-            throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
-        }
+        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+            ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        // Verify ownership
         if (survey.FieldCollectorId != currentUserId)
-        {
-            throw new UnauthorizedAccessException("You can only link persons to property units in your own surveys");
-        }
+            throw new UnauthorizedAccessException("You can only link persons in your own surveys");
 
-        // Verify survey is in Draft status
         if (survey.Status != SurveyStatus.Draft)
-        {
-            throw new ValidationException($"Cannot link persons for survey in {survey.Status} status. Only Draft surveys can be modified.");
-        }
+            throw new ValidationException($"Cannot modify survey in {survey.Status} status");
 
         // Get and validate person
-        var person = await _personRepository.GetByIdAsync(request.PersonId, cancellationToken);
-        if (person == null)
-        {
-            throw new NotFoundException($"Person with ID {request.PersonId} not found");
-        }
+        var person = await _personRepository.GetByIdAsync(request.PersonId, cancellationToken)
+            ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
 
         // Get and validate property unit
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId, cancellationToken);
-        if (propertyUnit == null)
-        {
-            throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
-        }
+        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId, cancellationToken)
+            ?? throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
 
-        // Verify property unit belongs to survey's building
         if (propertyUnit.BuildingId != survey.BuildingId)
-        {
             throw new ValidationException("Property unit does not belong to the survey's building");
-        }
 
-        // Check if relation already exists
+        // Check for existing relation
         var existingRelation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
-            request.PersonId,
-            request.PropertyUnitId,
-            cancellationToken);
-
+            request.PersonId, request.PropertyUnitId, cancellationToken);
         if (existingRelation != null)
-        {
-            throw new ValidationException($"Person is already linked to this property unit with relation type: {existingRelation.RelationType}");
-        }
+            throw new ValidationException($"Person is already linked with relation type: {existingRelation.RelationType}");
 
-        // Validate ownership share for Owner relation type
-        if (request.RelationType.Equals("Owner", StringComparison.OrdinalIgnoreCase))
+        // Business validations
+        if (request.RelationType == RelationType.Owner)
         {
             if (!request.OwnershipShare.HasValue || request.OwnershipShare <= 0)
-            {
-                throw new ValidationException("Ownership share is required for Owner relation type and must be greater than 0");
-            }
+                throw new ValidationException("Ownership share is required for Owner type and must be > 0");
             if (request.OwnershipShare > 1)
-            {
                 throw new ValidationException("Ownership share cannot exceed 1.0 (100%)");
-            }
         }
 
-        // Validate RelationTypeOtherDesc when RelationType is "Other"
-        if (request.RelationType.Equals("Other", StringComparison.OrdinalIgnoreCase)
-            && string.IsNullOrWhiteSpace(request.RelationTypeOtherDesc))
-        {
-            throw new ValidationException("Description is required when relation type is 'Other'");
-        }
+        if (request.RelationType == RelationType.Other && string.IsNullOrWhiteSpace(request.RelationTypeOtherDesc))
+            throw new ValidationException("Description required when relation type is 'Other'");
 
-        // Validate date range
+        if (request.ContractType == TenureContractType.Other && string.IsNullOrWhiteSpace(request.ContractTypeOtherDesc))
+            throw new ValidationException("Description required when contract type is 'Other'");
+
         if (request.StartDate.HasValue && request.EndDate.HasValue && request.EndDate < request.StartDate)
-        {
             throw new ValidationException("End date cannot be before start date");
-        }
 
-        // Step 1: Create PersonPropertyRelation with required fields using factory method
+        // Create relation using factory method
         var relation = PersonPropertyRelation.Create(
-            personId: request.PersonId,
-            propertyUnitId: request.PropertyUnitId,
-            relationType: request.RelationType,
-            createdByUserId: currentUserId
-        );
+            request.PersonId,
+            request.PropertyUnitId,
+            request.RelationType,
+            currentUserId);
 
-        // Step 2: Update optional fields using the domain method (respects private setters)
-        // This is the correct way to set fields with private setters in DDD
+        // Update with all details
         relation.UpdateRelationDetails(
-            relationType: request.RelationType,
-            relationTypeOtherDesc: request.RelationTypeOtherDesc,
-            ownershipShare: request.OwnershipShare,
-            contractDetails: request.ContractDetails,
-            startDate: request.StartDate,
-            endDate: request.EndDate,
-            notes: request.Notes,
-            modifiedByUserId: currentUserId
-        );
+            request.RelationType,
+            request.RelationTypeOtherDesc,
+            request.ContractType,
+            request.ContractTypeOtherDesc,
+            request.OwnershipShare,
+            request.ContractDetails,
+            request.StartDate,
+            request.EndDate,
+            request.Notes,
+            currentUserId);
 
-        // Save relation
         await _relationRepository.AddAsync(relation, cancellationToken);
         await _relationRepository.SaveChangesAsync(cancellationToken);
 
-        // Audit logging
+        // Audit log
         await _auditService.LogActionAsync(
-            actionType: AuditActionType.Create,
-            actionDescription: $"Linked person {person.GetFullNameArabic()} to property unit {propertyUnit.UnitIdentifier} as {request.RelationType} in survey {survey.ReferenceCode}",
-            entityType: "PersonPropertyRelation",
-            entityId: relation.Id,
-            entityIdentifier: $"{person.GetFullNameArabic()} - {propertyUnit.UnitIdentifier}",
-            oldValues: null,
-            newValues: System.Text.Json.JsonSerializer.Serialize(new
+            AuditActionType.Create,
+            $"Linked person {person.GetFullNameArabic()} to property unit {propertyUnit.UnitIdentifier} as {request.RelationType}",
+            "PersonPropertyRelation",
+            relation.Id,
+            $"{person.GetFullNameArabic()} - {propertyUnit.UnitIdentifier}",
+            null,
+            System.Text.Json.JsonSerializer.Serialize(new
             {
                 relation.Id,
                 request.PersonId,
-                PersonName = person.GetFullNameArabic(),
                 request.PropertyUnitId,
-                PropertyUnitIdentifier = propertyUnit.UnitIdentifier,
-                request.RelationType,
-                request.RelationTypeOtherDesc,
-                request.OwnershipShare,
-                request.ContractDetails,
-                request.StartDate,
-                request.EndDate,
-                request.Notes
+                RelationType = request.RelationType.ToString(),
+                ContractType = request.ContractType?.ToString(),
+                request.OwnershipShare
             }),
-            changedFields: "New Person-Property Relation",
-            cancellationToken: cancellationToken
-        );
+            "New Person-Property Relation",
+            cancellationToken);
 
-        // Map to DTO and return
         return MapToDto(relation);
     }
 
-    /// <summary>
-    /// Maps PersonPropertyRelation entity to DTO
-    /// </summary>
-    private static PersonPropertyRelationDto MapToDto(PersonPropertyRelation relation)
+    private static PersonPropertyRelationDto MapToDto(PersonPropertyRelation r)
     {
-        // Calculate computed properties
-        int? durationInDays = null;
-        bool isOngoing = false;
-
-        if (relation.StartDate.HasValue)
+        int? duration = null;
+        bool ongoing = false;
+        if (r.StartDate.HasValue)
         {
-            if (relation.EndDate.HasValue)
-            {
-                durationInDays = (int)(relation.EndDate.Value - relation.StartDate.Value).TotalDays;
-                isOngoing = false;
-            }
+            if (r.EndDate.HasValue)
+                duration = (int)(r.EndDate.Value - r.StartDate.Value).TotalDays;
             else
             {
-                // Relation is ongoing (has start but no end)
-                isOngoing = true;
-                durationInDays = (int)(DateTime.UtcNow - relation.StartDate.Value).TotalDays;
+                ongoing = true;
+                duration = (int)(DateTime.UtcNow - r.StartDate.Value).TotalDays;
             }
         }
 
         return new PersonPropertyRelationDto
         {
-            // Identifiers
-            Id = relation.Id,
-            PersonId = relation.PersonId,
-            PropertyUnitId = relation.PropertyUnitId,
-
-            // Relation attributes
-            RelationType = relation.RelationType,
-            RelationTypeOtherDesc = relation.RelationTypeOtherDesc,
-            OwnershipShare = relation.OwnershipShare,
-            ContractDetails = relation.ContractDetails,
-            StartDate = relation.StartDate,
-            EndDate = relation.EndDate,
-            Notes = relation.Notes,
-            IsActive = relation.IsActive,
-
-            // Audit fields
-            CreatedAtUtc = relation.CreatedAtUtc,
-            CreatedBy = relation.CreatedBy,
-            LastModifiedAtUtc = relation.LastModifiedAtUtc,
-            LastModifiedBy = relation.LastModifiedBy,
-            IsDeleted = relation.IsDeleted,
-            DeletedAtUtc = relation.DeletedAtUtc,
-            DeletedBy = relation.DeletedBy,
-
-            // Computed properties
-            DurationInDays = durationInDays,
-            IsOngoing = isOngoing
+            Id = r.Id,
+            PersonId = r.PersonId,
+            PropertyUnitId = r.PropertyUnitId,
+            RelationType = r.RelationType,
+            RelationTypeOtherDesc = r.RelationTypeOtherDesc,
+            ContractType = r.ContractType,
+            ContractTypeOtherDesc = r.ContractTypeOtherDesc,
+            OwnershipShare = r.OwnershipShare,
+            ContractDetails = r.ContractDetails,
+            StartDate = r.StartDate,
+            EndDate = r.EndDate,
+            Notes = r.Notes,
+            IsActive = r.IsActive,
+            CreatedAtUtc = r.CreatedAtUtc,
+            CreatedBy = r.CreatedBy,
+            LastModifiedAtUtc = r.LastModifiedAtUtc,
+            LastModifiedBy = r.LastModifiedBy,
+            IsDeleted = r.IsDeleted,
+            DeletedAtUtc = r.DeletedAtUtc,
+            DeletedBy = r.DeletedBy,
+            DurationInDays = duration,
+            IsOngoing = ongoing,
+            EvidenceCount = r.Evidences?.Count ?? 0
         };
     }
 }

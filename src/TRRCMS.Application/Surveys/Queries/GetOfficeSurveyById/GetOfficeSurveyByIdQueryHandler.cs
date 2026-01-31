@@ -12,7 +12,6 @@ namespace TRRCMS.Application.Surveys.Queries.GetOfficeSurveyById;
 
 /// <summary>
 /// Handler for GetOfficeSurveyByIdQuery
-/// Returns detailed office survey with all related data
 /// </summary>
 public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyByIdQuery, OfficeSurveyDetailDto>
 {
@@ -49,20 +48,12 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
         GetOfficeSurveyByIdQuery request,
         CancellationToken cancellationToken)
     {
-        // Get survey with building info
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
-        if (survey == null)
-        {
-            throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
-        }
+        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+            ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        // Verify this is an office survey
         if (survey.Type != SurveyType.Office)
-        {
             throw new ValidationException("This endpoint is only for office surveys. Use field survey endpoints for field surveys.");
-        }
 
-        // Map base survey data
         var result = new OfficeSurveyDetailDto
         {
             Id = survey.Id,
@@ -89,44 +80,31 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
             CreatedBy = survey.CreatedBy,
             LastModifiedAtUtc = survey.LastModifiedAtUtc,
             LastModifiedBy = survey.LastModifiedBy,
-
-            // Office-specific fields
             OfficeLocation = survey.OfficeLocation,
             RegistrationNumber = survey.RegistrationNumber,
             AppointmentReference = survey.AppointmentReference,
             ContactPhone = survey.ContactPhone,
             ContactEmail = survey.ContactEmail,
             InPersonVisit = survey.InPersonVisit,
-
-            // Claim linking
             ClaimId = survey.ClaimId,
             ClaimCreatedDate = survey.ClaimCreatedDate
         };
 
-        // Get linked claim number if exists
         if (survey.ClaimId.HasValue)
         {
             var claim = await _claimRepository.GetByIdAsync(survey.ClaimId.Value, cancellationToken);
             if (claim != null)
-            {
                 result.ClaimNumber = claim.ClaimNumber;
-            }
         }
 
-        // Get related data if property unit is linked
         if (survey.PropertyUnitId.HasValue)
         {
-            // Get households
-            var households = (await _householdRepository.GetByPropertyUnitIdAsync(
-                survey.PropertyUnitId.Value, cancellationToken)).ToList();
+            var households = (await _householdRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
             result.Households = _mapper.Map<List<HouseholdDto>>(households);
 
-            // Get relations
-            var relations = (await _personPropertyRelationRepository.GetByPropertyUnitIdAsync(
-                survey.PropertyUnitId.Value, cancellationToken)).ToList();
+            var relations = (await _personPropertyRelationRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
             result.Relations = _mapper.Map<List<PersonPropertyRelationDto>>(relations);
 
-            // Count persons from households
             var personCount = 0;
             foreach (var household in households)
             {
@@ -134,18 +112,15 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
                 personCount += persons.Count;
             }
 
-            // Count ownership relations
+            // Count ownership relations using enum comparison
             var ownershipRelationsCount = relations.Count(r =>
-                r.RelationType.Equals("Owner", StringComparison.OrdinalIgnoreCase) ||
-                r.RelationType.Equals("Heir", StringComparison.OrdinalIgnoreCase) ||
-                r.RelationType.Equals("Heirs", StringComparison.OrdinalIgnoreCase));
+                r.RelationType == RelationType.Owner ||
+                r.RelationType == RelationType.Heir);
 
-            // Get evidence
-            var evidence = await _evidenceRepository.GetBySurveyContextAsync(
-                survey.BuildingId, null, cancellationToken);
+            // Get evidence using EvidenceType? enum (null = no filter)
+            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
             result.Evidence = _mapper.Map<List<EvidenceDto>>(evidence);
 
-            // Build summary
             result.DataSummary = new SurveyDataSummaryDto
             {
                 PropertyUnitsCount = 1,
@@ -159,7 +134,6 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
         }
         else
         {
-            // No property unit linked yet - empty summary
             result.DataSummary = new SurveyDataSummaryDto();
         }
 
