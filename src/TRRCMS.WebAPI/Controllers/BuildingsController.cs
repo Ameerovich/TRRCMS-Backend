@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Buildings.Commands.CreateBuilding;
+using TRRCMS.Application.Buildings.Commands.DeleteBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuildingGeometry;
 using TRRCMS.Application.Buildings.Dtos;
@@ -14,10 +15,53 @@ namespace TRRCMS.WebAPI.Controllers;
 
 /// <summary>
 /// Buildings management API controller
-/// Provides endpoints for building CRUD and search operations
 /// </summary>
+/// <remarks>
+/// Provides endpoints for building CRUD and search operations.
+/// إدارة المباني - UC-007 Building Management
+/// 
+/// **Building Code Format (رمز البناء):**
+/// - Stored: GGDDSSCCNCNNBBBBB (17 digits, no dashes)
+/// - Displayed: GG-DD-SS-CCC-NNN-BBBBB (with dashes via `buildingIdFormatted`)
+/// 
+/// **Code Segments:**
+/// | Segment | Digits | Arabic | Example |
+/// |---------|--------|--------|---------|
+/// | GG | 2 | محافظة (Governorate) | 01 |
+/// | DD | 2 | مدينة (District) | 01 |
+/// | SS | 2 | بلدة (SubDistrict) | 01 |
+/// | CCC | 3 | قرية (Community) | 001 |
+/// | NNN | 3 | حي (Neighborhood) | 001 |
+/// | BBBBB | 5 | رقم البناء (Building) | 00001 |
+/// 
+/// **BuildingType Values (نوع البناء):**
+/// | Value | Name | Arabic |
+/// |-------|------|--------|
+/// | 1 | Residential | سكني |
+/// | 2 | Commercial | تجاري |
+/// | 3 | MixedUse | مختلط |
+/// | 4 | Industrial | صناعي |
+/// 
+/// **BuildingStatus Values (حالة البناء):**
+/// | Value | Name | Arabic |
+/// |-------|------|--------|
+/// | 1 | Existing | قائم |
+/// | 2 | UnderConstruction | قيد الإنشاء |
+/// | 3 | Damaged | متضرر |
+/// | 4 | Destroyed | مدمر |
+/// | 5 | Demolished | مهدوم |
+/// | 99 | Unknown | غير معروف |
+/// 
+/// **Permissions:**
+/// - Buildings_View (4000) - CanViewAllBuildings
+/// - Buildings_Create (4001) - CanCreateBuildings
+/// - Buildings_Update (4002) - CanEditBuildings
+/// - Buildings_Delete (4003) - CanDeleteBuildings
+/// </remarks>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
+[Authorize]
+[Produces("application/json")]
 public class BuildingsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -27,31 +71,24 @@ public class BuildingsController : ControllerBase
         _mediator = mediator;
     }
 
+    // ==================== CREATE ====================
+
     /// <summary>
     /// Create a new building 
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Creates a new building record with administrative codes and details.
+    /// Creates a new building record with administrative codes and details.
+    /// إنشاء مبنى جديد
     /// 
-    /// **Building Code Format (رمز البناء)**:
-    /// - Stored: GGDDSSCCNCNNBBBBB (17 digits, no dashes)
-    /// - Displayed: GG-DD-SS-CCC-NNN-BBBBB (with dashes via `buildingIdFormatted`)
+    /// **Use Case**: UC-007 Building Management - Create Building
     /// 
-    /// **Code Segments**:
-    /// - GG: Governorate code (2 digits)
-    /// - DD: District code (2 digits)  
-    /// - SS: Sub-district code (2 digits)
-    /// - CCC: Community code (3 digits)
-    /// - NNN: Neighborhood code (3 digits)
-    /// - BBBBB: Building number (5 digits)
+    /// **Required Permission**: Buildings_Create (4001) - CanCreateBuildings policy
     /// 
-    /// **Building Types (نوع البناء)**:
-    /// - 1 = Residential (سكني)
-    /// - 2 = Commercial (تجاري)
-    /// - 3 = MixedUse (مختلط)
-    /// - 4 = Industrial (صناعي)
+    /// **Building Code Auto-Generation:**
+    /// The system automatically generates a 17-digit building code from the administrative codes:
+    /// `{governorateCode}{districtCode}{subDistrictCode}{communityCode}{neighborhoodCode}{buildingNumber}`
     /// 
-    /// **Example Request**:
+    /// **Example Request:**
     /// ```json
     /// {
     ///   "governorateCode": "01",
@@ -72,20 +109,32 @@ public class BuildingsController : ControllerBase
     /// }
     /// ```
     /// 
-    /// **Response**: Returns the created building with generated building code.
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "buildingId": "01010100300200001",
+    ///   "buildingIdFormatted": "01-01-01-003-002-00001",
+    ///   "buildingType": "Residential",
+    ///   "status": "Existing",
+    ///   "createdAtUtc": "2026-01-31T10:00:00Z"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="command">Building creation details</param>
     /// <returns>Created building details</returns>
     /// <response code="201">Building created successfully</response>
     /// <response code="400">Invalid request or building code already exists</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
+    /// <response code="403">Missing required permission - requires Buildings_Create (4001)</response>
+    /// <response code="409">Building with same code already exists</response>
     [HttpPost]
     [Authorize(Policy = "CanCreateBuildings")]
     [ProducesResponseType(typeof(BuildingDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<BuildingDto>> CreateBuilding([FromBody] CreateBuildingCommand command)
     {
         try
@@ -99,17 +148,53 @@ public class BuildingsController : ControllerBase
         }
     }
 
+    // ==================== GET BY ID ====================
+
     /// <summary>
     /// Get building by ID
     /// </summary>
     /// <remarks>
     /// Returns complete building details including all codes, attributes, and location data.
+    /// عرض تفاصيل المبنى
+    /// 
+    /// **Use Case**: UC-007 - View Building Details
+    /// 
+    /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "buildingId": "01010100300200001",
+    ///   "buildingIdFormatted": "01-01-01-003-002-00001",
+    ///   "governorateCode": "01",
+    ///   "governorateName": "حلب",
+    ///   "districtCode": "01",
+    ///   "districtName": "مدينة حلب",
+    ///   "subDistrictCode": "01",
+    ///   "subDistrictName": "حلب",
+    ///   "communityCode": "003",
+    ///   "communityName": "الجميلية",
+    ///   "neighborhoodCode": "002",
+    ///   "neighborhoodName": "العزيزية",
+    ///   "buildingNumber": "00001",
+    ///   "buildingType": "Residential",
+    ///   "status": "Existing",
+    ///   "numberOfPropertyUnits": 10,
+    ///   "numberOfApartments": 8,
+    ///   "numberOfShops": 2,
+    ///   "latitude": 36.2021,
+    ///   "longitude": 37.1343,
+    ///   "locationDescription": "بجانب المسجد الكبير",
+    ///   "createdAtUtc": "2026-01-31T10:00:00Z"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Building GUID</param>
     /// <returns>Building details</returns>
     /// <response code="200">Building found</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
+    /// <response code="403">Missing required permission - requires Buildings_View (4000)</response>
     /// <response code="404">Building not found</response>
     [HttpGet("{id}")]
     [Authorize(Policy = "CanViewAllBuildings")]
@@ -128,16 +213,25 @@ public class BuildingsController : ControllerBase
         return Ok(building);
     }
 
+    // ==================== GET ALL ====================
+
     /// <summary>
     /// Get all buildings
     /// </summary>
     /// <remarks>
     /// Returns list of all buildings. For large datasets, use search endpoint with pagination.
+    /// عرض جميع المباني
+    /// 
+    /// **Use Case**: UC-007 - List Buildings
+    /// 
+    /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
+    /// 
+    /// **Note**: For production use with large datasets, use `POST /search` with pagination.
     /// </remarks>
     /// <returns>List of all buildings</returns>
     /// <response code="200">Buildings retrieved successfully</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
+    /// <response code="403">Missing required permission - requires Buildings_View (4000)</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllBuildings")]
     [ProducesResponseType(typeof(List<BuildingDto>), StatusCodes.Status200OK)]
@@ -150,28 +244,94 @@ public class BuildingsController : ControllerBase
         return Ok(buildings);
     }
 
+    // ==================== SEARCH ====================
+
     /// <summary>
     /// Search buildings with filters and pagination
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Search buildings with advanced filters and pagination support.
+    /// Search buildings with advanced filters and pagination support.
+    /// البحث عن المباني
     /// 
-    /// **Filter Options**:
-    /// - governorateCode: Filter by governorate
-    /// - districtCode: Filter by district
-    /// - buildingType: Filter by type (1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial)
-    /// - status: Filter by status
-    /// - searchText: Search in building codes and addresses
+    /// **Use Case**: UC-007 - Search Buildings
     /// 
-    /// **Pagination**:
+    /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
+    /// 
+    /// **Filter Options:**
+    /// 
+    /// | Filter | Type | Description |
+    /// |--------|------|-------------|
+    /// | governorateCode | string | Filter by governorate (محافظة) |
+    /// | districtCode | string | Filter by district (مدينة) |
+    /// | subDistrictCode | string | Filter by sub-district (بلدة) |
+    /// | communityCode | string | Filter by community (قرية) |
+    /// | neighborhoodCode | string | Filter by neighborhood (حي) |
+    /// | buildingId | string | **Partial match** on building code (رمز البناء) - supports with/without dashes |
+    /// | buildingNumber | string | Exact match on building number |
+    /// | buildingType | int | 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial |
+    /// | status | int | Building status |
+    /// 
+    /// **BuildingId Partial Match Examples:**
+    /// - `"01-01"` → Finds all buildings starting with governorate 01, district 01
+    /// - `"01010101"` → Finds buildings in specific area (works without dashes)
+    /// - `"00001"` → Finds buildings with "00001" anywhere in the code
+    /// 
+    /// **Pagination:**
     /// - page: Page number (default: 1)
     /// - pageSize: Items per page (default: 20, max: 100)
+    /// 
+    /// **Sorting:**
+    /// - sortBy: "buildingId", "createdDate", "status", "buildingType"
+    /// - sortDescending: true/false (default: false)
+    /// 
+    /// **Example Request - Search by partial building code:**
+    /// ```json
+    /// {
+    ///   "buildingId": "01-01-01",
+    ///   "page": 1,
+    ///   "pageSize": 20
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Filter by area and type:**
+    /// ```json
+    /// {
+    ///   "governorateCode": "01",
+    ///   "districtCode": "01",
+    ///   "buildingType": 1,
+    ///   "page": 1,
+    ///   "pageSize": 20,
+    ///   "sortBy": "createdDate",
+    ///   "sortDescending": true
+    /// }
+    /// ```
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "buildings": [
+    ///     {
+    ///       "id": "guid-here",
+    ///       "buildingId": "01010100300200001",
+    ///       "buildingIdFormatted": "01-01-01-003-002-00001",
+    ///       "buildingType": "Residential",
+    ///       "status": "Existing"
+    ///     }
+    ///   ],
+    ///   "totalCount": 150,
+    ///   "page": 1,
+    ///   "pageSize": 20,
+    ///   "totalPages": 8,
+    ///   "hasPreviousPage": false,
+    ///   "hasNextPage": true
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="query">Search criteria with filters and pagination</param>
     /// <returns>Paginated list of buildings</returns>
     /// <response code="200">Buildings retrieved successfully</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
+    /// <response code="403">Missing required permission - requires Buildings_View (4000)</response>
     [HttpPost("search")]
     [Authorize(Policy = "CanViewAllBuildings")]
     [ProducesResponseType(typeof(SearchBuildingsResponse), StatusCodes.Status200OK)]
@@ -184,20 +344,44 @@ public class BuildingsController : ControllerBase
         return Ok(result);
     }
 
+    // ==================== UPDATE ====================
+
     /// <summary>
     /// Update building details
     /// </summary>
     /// <remarks>
-    /// **Note**: Administrative codes cannot be changed after creation.
+    /// Updates building attributes. Administrative codes cannot be changed after creation.
+    /// تحديث بيانات المبنى
     /// 
-    /// **Updatable Fields**:
+    /// **Use Case**: UC-007 - Update Building
+    /// 
+    /// **Required Permission**: Buildings_Update (4002) - CanEditBuildings policy
+    /// 
+    /// **Updatable Fields:**
     /// - buildingType
     /// - buildingStatus
+    /// - damageLevel
     /// - numberOfPropertyUnits
     /// - numberOfApartments
     /// - numberOfShops
+    /// - numberOfFloors
+    /// - yearOfConstruction
     /// - locationDescription
     /// - notes
+    /// 
+    /// **Cannot Change:**
+    /// - Administrative codes (governorate, district, etc.)
+    /// - buildingId (auto-generated from codes)
+    /// 
+    /// **Example Request:**
+    /// ```json
+    /// {
+    ///   "buildingType": 3,
+    ///   "buildingStatus": 1,
+    ///   "numberOfPropertyUnits": 12,
+    ///   "notes": "تم تحديث البيانات"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Building ID</param>
     /// <param name="command">Update details</param>
@@ -205,7 +389,7 @@ public class BuildingsController : ControllerBase
     /// <response code="200">Building updated successfully</response>
     /// <response code="400">Invalid request or validation failed</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
+    /// <response code="403">Missing required permission - requires Buildings_Update (4002)</response>
     /// <response code="404">Building not found</response>
     [HttpPut("{id}")]
     [Authorize(Policy = "CanEditBuildings")]
@@ -223,16 +407,36 @@ public class BuildingsController : ControllerBase
         return Ok(building);
     }
 
+    // ==================== UPDATE GEOMETRY ====================
+
     /// <summary>
     /// Update building geometry and coordinates
     /// </summary>
     /// <remarks>
     /// Updates GPS coordinates and/or polygon geometry for the building.
+    /// تحديث إحداثيات المبنى
     /// 
-    /// **Fields**:
-    /// - latitude: GPS latitude
-    /// - longitude: GPS longitude
+    /// **Use Case**: UC-007 - Update Building Location
+    /// 
+    /// **Required Permission**: Buildings_Update (4002) - CanEditBuildings policy
+    /// 
+    /// **Fields:**
+    /// - latitude: GPS latitude (-90 to 90)
+    /// - longitude: GPS longitude (-180 to 180)
     /// - buildingGeometryWkt: Polygon in WKT format (optional)
+    /// 
+    /// **WKT Format Example:**
+    /// ```
+    /// POLYGON((37.1340 36.2020, 37.1345 36.2020, 37.1345 36.2025, 37.1340 36.2025, 37.1340 36.2020))
+    /// ```
+    /// 
+    /// **Example Request:**
+    /// ```json
+    /// {
+    ///   "latitude": 36.2021,
+    ///   "longitude": 37.1343
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Building ID</param>
     /// <param name="command">Geometry update details</param>
@@ -240,7 +444,7 @@ public class BuildingsController : ControllerBase
     /// <response code="200">Geometry updated successfully</response>
     /// <response code="400">Invalid coordinates or geometry</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
+    /// <response code="403">Missing required permission - requires Buildings_Update (4002)</response>
     /// <response code="404">Building not found</response>
     [HttpPut("{id}/geometry")]
     [Authorize(Policy = "CanEditBuildings")]
@@ -258,19 +462,90 @@ public class BuildingsController : ControllerBase
         return Ok(building);
     }
 
+    // ==================== DELETE (SOFT DELETE) ====================
+
+    /// <summary>
+    /// Delete building (soft delete)
+    /// </summary>
+    /// <remarks>
+    /// Soft deletes a building - marks as deleted but retains data for audit.
+    /// حذف المبنى (حذف ناعم)
+    /// 
+    /// **Use Case**: UC-007 - Delete Building
+    /// 
+    /// **Required Permission**: Buildings_Delete (4003) - CanDeleteBuildings policy
+    /// 
+    /// **What happens:**
+    /// - Sets `IsDeleted = true`
+    /// - Records `DeletedAtUtc` timestamp
+    /// - Records `DeletedBy` user ID
+    /// - Building no longer appears in queries
+    /// - Data retained for audit and potential recovery
+    /// 
+    /// **Restrictions:**
+    /// - Cannot delete buildings with active surveys
+    /// - Cannot delete buildings with linked claims
+    /// 
+    /// **Note:** This is a soft delete. Data can be recovered if needed.
+    /// </remarks>
+    /// <param name="id">Building ID to delete</param>
+    /// <param name="command">Optional deletion reason</param>
+    /// <returns>No content on success</returns>
+    /// <response code="204">Building deleted successfully</response>
+    /// <response code="400">Building has active surveys or claims</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission - requires Buildings_Delete (4003)</response>
+    /// <response code="404">Building not found</response>
+    [HttpDelete("{id}")]
+    [Authorize(Policy = "CanDeleteBuildings")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteBuilding(
+        Guid id,
+        [FromBody] DeleteBuildingCommand? command = null)
+    {
+        var deleteCommand = command ?? new DeleteBuildingCommand();
+        deleteCommand.BuildingId = id;
+
+        await _mediator.Send(deleteCommand);
+        return NoContent();
+    }
+
+    // ==================== MAP ENDPOINTS ====================
+
     /// <summary>
     /// Get buildings for map display
     /// </summary>
     /// <remarks>
     /// Returns lightweight building data optimized for map rendering.
     /// Use bounding box coordinates to limit results to visible area.
+    /// عرض المباني على الخريطة
+    /// 
+    /// **Use Case**: UC-007 - Map View
+    /// 
+    /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
+    /// 
+    /// **Example Request:**
+    /// ```json
+    /// {
+    ///   "minLatitude": 36.1900,
+    ///   "maxLatitude": 36.2100,
+    ///   "minLongitude": 37.1200,
+    ///   "maxLongitude": 37.1500,
+    ///   "buildingType": 1,
+    ///   "maxResults": 500
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="query">Bounding box and filters</param>
     /// <returns>List of buildings with map data</returns>
     /// <response code="200">Buildings retrieved successfully</response>
     /// <response code="400">Invalid bounding box</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
+    /// <response code="403">Missing required permission - requires Buildings_View (4000)</response>
     [HttpPost("map")]
     [Authorize(Policy = "CanViewAllBuildings")]
     [ProducesResponseType(typeof(List<BuildingMapDto>), StatusCodes.Status200OK)]

@@ -48,11 +48,21 @@ namespace TRRCMS.WebAPI.Controllers;
 
 /// <summary>
 /// Surveys controller for field and office survey operations
-/// Supports UC-001 (Field Survey), UC-004 (Office Survey), and UC-005 (Draft Survey Management)
 /// </summary>
-[Route("api/[controller]")]
+/// <remarks>
+/// Supports UC-001 (Field Survey), UC-004 (Office Survey), and UC-005 (Draft Survey Management)
+/// 
+/// **Permissions:**
+/// - Surveys_Create (7000) - CanCreateSurveys
+/// - Surveys_ViewOwn (7001) - CanViewOwnSurveys
+/// - Surveys_EditOwn (7002) - CanEditOwnSurveys
+/// - Surveys_ViewAll (7004) - CanViewSurveys
+/// - Surveys_Finalize (7008) - CanFinalizeSurveys
+/// </remarks>
+[Route("api/v1/[controller]")]
 [ApiController]
 [Authorize]
+[Produces("application/json")]
 public class SurveysController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -142,10 +152,10 @@ public class SurveysController : ControllerBase
     /// **Response**: Returns the created survey with auto-generated reference code (OFC-YYYY-NNNNN)
     /// 
     /// **Next steps**: 
-    /// 1. Link or create property unit using POST /api/surveys/{surveyId}/property-units
+    /// 1. Link or create property unit using POST /api/v1/surveys/{surveyId}/property-units
     /// 2. Add household and person data
     /// 3. Upload evidence documents
-    /// 4. Finalize to create claim using POST /api/surveys/office/{id}/finalize
+    /// 4. Finalize to create claim using POST /api/v1/surveys/office/{id}/finalize
     /// </remarks>
     /// <param name="command">Office survey creation data</param>
     /// <returns>Created survey with reference code and status</returns>

@@ -113,14 +113,24 @@ public class BuildingRepository : IBuildingRepository
         if (!string.IsNullOrWhiteSpace(neighborhoodCode))
             query = query.Where(b => b.NeighborhoodCode == neighborhoodCode);
 
-        // Apply direct identifier filters
+        // ============================================================
+        // UPDATED: Apply buildingId filter with PARTIAL MATCH support
+        // Supports both formatted (01-01-01-001-001-00001) and 
+        // unformatted (01010100100100001) input
+        // ============================================================
         if (!string.IsNullOrWhiteSpace(buildingId))
-            query = query.Where(b => b.BuildingId == buildingId);
+        {
+            // Remove dashes if user entered formatted version
+            // Example: "01-01-01" becomes "010101"
+            var normalizedBuildingId = buildingId.Replace("-", "");
+            query = query.Where(b => b.BuildingId.Contains(normalizedBuildingId));
+        }
 
+        // Apply exact match on building number
         if (!string.IsNullOrWhiteSpace(buildingNumber))
             query = query.Where(b => b.BuildingNumber == buildingNumber);
 
-        // Apply text search
+        // Apply text search on address
         if (!string.IsNullOrWhiteSpace(address))
             query = query.Where(b => b.Address != null && b.Address.Contains(address));
 
@@ -157,6 +167,12 @@ public class BuildingRepository : IBuildingRepository
             "createddate" => sortDescending
                 ? query.OrderByDescending(b => b.CreatedAtUtc)
                 : query.OrderBy(b => b.CreatedAtUtc),
+            "status" => sortDescending
+                ? query.OrderByDescending(b => b.Status)
+                : query.OrderBy(b => b.Status),
+            "buildingtype" => sortDescending
+                ? query.OrderByDescending(b => b.BuildingType)
+                : query.OrderBy(b => b.BuildingType),
             _ => query.OrderBy(b => b.BuildingId)
         };
 

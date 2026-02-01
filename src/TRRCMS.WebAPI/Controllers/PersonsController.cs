@@ -10,11 +10,48 @@ using TRRCMS.Application.Persons.Queries.GetPerson;
 namespace TRRCMS.WebAPI.Controllers;
 
 /// <summary>
-/// Persons Management API (Admin/Data Manager access)
-/// إضافة شخص جديد - إدارة بيانات الأشخاص
+/// Person management API for individual identity records
 /// </summary>
+/// <remarks>
+/// Manages individual person records for tenure rights documentation.
+/// إضافة شخص جديد - إدارة بيانات الأشخاص
+/// 
+/// **What is a Person?**
+/// A Person represents an individual's identity and contact information.
+/// Persons can be linked to:
+/// - Households (as head or member)
+/// - Property units (via PersonPropertyRelation)
+/// - Evidence/Documents (for identity verification)
+/// 
+/// **Person vs Household:**
+/// - **Person**: Individual identity (name, national ID, contact)
+/// - **Household**: Group demographics (family composition counts)
+/// - A Person can be head of a Household
+/// - Multiple Persons can belong to one Household
+/// 
+/// **Syrian Name Structure:**
+/// Names follow the Arabic naming convention:
+/// - الاسم الأول (First name): Personal given name
+/// - اسم الأب (Father's name): Father's first name
+/// - الكنية (Family name): Family/tribal/surname
+/// - الاسم الأم (Mother's name): Optional, for disambiguation
+/// 
+/// **Full Name Format:**
+/// `{FirstNameArabic} {FatherNameArabic} {FamilyNameArabic}`
+/// Example: محمد أحمد الخالد (Mohammed Ahmed Al-Khaled)
+/// 
+/// **Permissions:**
+/// - This controller uses Survey permissions
+/// - View: Surveys_ViewAll (7004)
+/// - Edit: Surveys_EditAll (7006)
+/// 
+/// **Alternative Endpoints:**
+/// For field collectors working within a survey context:
+/// - `POST /api/v1/Surveys/{surveyId}/persons` - Create person in survey
+/// - `GET /api/v1/Households/{id}/persons` - Get persons by household
+/// </remarks>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 [Produces("application/json")]
 public class PersonsController : ControllerBase
@@ -29,48 +66,90 @@ public class PersonsController : ControllerBase
     // ==================== CREATE ====================
 
     /// <summary>
-    /// Create a new person (Admin/Data Manager)
+    /// Create a new person
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Creates a new person record.
+    /// Creates a new person record with identity and contact information.
     /// إضافة شخص جديد
     /// 
-    /// **Required Permission**: Surveys_EditAll (CanEditAllSurveys)
+    /// **Use Case**: UC-001 Field Survey - Register individuals for tenure documentation
     /// 
-    /// **Step 1 - Personal Info (الخطوة الأولى)**:
-    /// - الكنية: FamilyNameArabic (required)
-    /// - الاسم الأول: FirstNameArabic (required)
-    /// - اسم الأب: FatherNameArabic (required)
-    /// - الاسم الأم: MotherNameArabic (optional)
-    /// - الرقم الوطني: NationalId (optional)
-    /// - تاريخ الميلاد: YearOfBirth (optional, year only)
+    /// **Required Permission**: Surveys_EditAll (7006) - CanEditAllSurveys policy
     /// 
-    /// **Step 2 - Contact Info (الخطوة الثانية)**:
-    /// - البريد الالكتروني: Email (optional)
-    /// - رقم الموبايل: MobileNumber (optional)
-    /// - رقم الهاتف: PhoneNumber (optional)
+    /// **Form Steps (matching mobile/desktop UI):**
     /// 
-    /// **Example Request**:
+    /// **Step 1 - Personal Info (الخطوة الأولى - المعلومات الشخصية):**
+    /// | Field | Arabic | Required | Description |
+    /// |-------|--------|----------|-------------|
+    /// | familyNameArabic | الكنية | ✅ Yes | Family/surname |
+    /// | firstNameArabic | الاسم الأول | ✅ Yes | Given name |
+    /// | fatherNameArabic | اسم الأب | ✅ Yes | Father's name |
+    /// | motherNameArabic | الاسم الأم | ❌ No | Mother's name |
+    /// | nationalId | الرقم الوطني | ❌ No | 11-digit national ID |
+    /// | yearOfBirth | تاريخ الميلاد | ❌ No | Year only (e.g., 1985) |
+    /// 
+    /// **Step 2 - Contact Info (الخطوة الثانية - معلومات الاتصال):**
+    /// | Field | Arabic | Required | Description |
+    /// |-------|--------|----------|-------------|
+    /// | email | البريد الالكتروني | ❌ No | Email address |
+    /// | mobileNumber | رقم الموبايل | ❌ No | Mobile phone |
+    /// | phoneNumber | رقم الهاتف | ❌ No | Landline phone |
+    /// 
+    /// **Example Request - Full data:**
     /// ```json
     /// {
-    ///   "familyNameArabic": "الأحمد",
+    ///   "familyNameArabic": "الخالد",
     ///   "firstNameArabic": "محمد",
-    ///   "fatherNameArabic": "محمد",
+    ///   "fatherNameArabic": "أحمد",
     ///   "motherNameArabic": "فاطمة",
-    ///   "nationalId": "00000000000",
+    ///   "nationalId": "01234567890",
     ///   "yearOfBirth": 1985,
-    ///   "email": "*****@gmail.com",
-    ///   "mobileNumber": "+963 09",
-    ///   "phoneNumber": "0000000"
+    ///   "email": "mohammed.khaled@gmail.com",
+    ///   "mobileNumber": "+963 991 234 567",
+    ///   "phoneNumber": "021 234 5678"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Minimum required:**
+    /// ```json
+    /// {
+    ///   "familyNameArabic": "العلي",
+    ///   "firstNameArabic": "أحمد",
+    ///   "fatherNameArabic": "محمود"
+    /// }
+    /// ```
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "familyNameArabic": "الخالد",
+    ///   "firstNameArabic": "محمد",
+    ///   "fatherNameArabic": "أحمد",
+    ///   "motherNameArabic": "فاطمة",
+    ///   "nationalId": "01234567890",
+    ///   "yearOfBirth": 1985,
+    ///   "email": "mohammed.khaled@gmail.com",
+    ///   "mobileNumber": "+963 991 234 567",
+    ///   "phoneNumber": "021 234 5678",
+    ///   "householdId": null,
+    ///   "relationshipToHead": null,
+    ///   "fullNameArabic": "محمد أحمد الخالد",
+    ///   "age": 41,
+    ///   "createdAtUtc": "2026-01-31T10:00:00Z",
+    ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
+    ///   "lastModifiedAtUtc": null,
+    ///   "lastModifiedBy": null,
+    ///   "isDeleted": false
     /// }
     /// ```
     /// </remarks>
     /// <param name="command">Person creation data</param>
-    /// <returns>Created person with generated ID</returns>
-    /// <response code="201">Person created successfully.</response>
-    /// <response code="400">Validation error. Check required fields.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires Surveys_EditAll permission.</response>
+    /// <returns>Created person with generated ID and computed fields</returns>
+    /// <response code="201">Person created successfully</response>
+    /// <response code="400">Validation error - check required fields (familyNameArabic, firstNameArabic, fatherNameArabic)</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires Surveys_EditAll permission</response>
     [HttpPost]
     [Authorize(Policy = "CanEditAllSurveys")]
     [ProducesResponseType(typeof(PersonDto), StatusCodes.Status201Created)]
@@ -86,31 +165,83 @@ public class PersonsController : ControllerBase
     // ==================== UPDATE ====================
 
     /// <summary>
-    /// Update an existing person (Admin/Data Manager)
+    /// Update an existing person
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Updates person details. Only provided fields will be updated.
+    /// Updates person details. Only provided fields will be updated (partial update supported).
     /// تعديل بيانات شخص
     /// 
-    /// **Required Permission**: Surveys_EditAll (CanEditAllSurveys)
+    /// **Use Case**: Correct personal data, update contact information
     /// 
-    /// **Example Request** (partial update):
+    /// **Required Permission**: Surveys_EditAll (7006) - CanEditAllSurveys policy
+    /// 
+    /// **Updatable Fields (all optional):**
+    /// - Personal: familyNameArabic, firstNameArabic, fatherNameArabic, motherNameArabic
+    /// - Identity: nationalId, yearOfBirth
+    /// - Contact: email, mobileNumber, phoneNumber
+    /// 
+    /// **Note:** `householdId` and `relationshipToHead` are managed through
+    /// the Household endpoints, not directly on Person.
+    /// 
+    /// **Example Request - Update contact info only:**
     /// ```json
     /// {
-    ///   "id": "person-guid-here",
-    ///   "email": "newemail@gmail.com",
-    ///   "mobileNumber": "+963 099"
+    ///   "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "email": "new.email@gmail.com",
+    ///   "mobileNumber": "+963 992 345 678"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Correct name spelling:**
+    /// ```json
+    /// {
+    ///   "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "firstNameArabic": "محمّد",
+    ///   "fatherNameArabic": "أحمد"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Add national ID:**
+    /// ```json
+    /// {
+    ///   "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "nationalId": "01234567890"
+    /// }
+    /// ```
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "familyNameArabic": "الخالد",
+    ///   "firstNameArabic": "محمّد",
+    ///   "fatherNameArabic": "أحمد",
+    ///   "motherNameArabic": "فاطمة",
+    ///   "nationalId": "01234567890",
+    ///   "yearOfBirth": 1985,
+    ///   "email": "new.email@gmail.com",
+    ///   "mobileNumber": "+963 992 345 678",
+    ///   "phoneNumber": "021 234 5678",
+    ///   "householdId": null,
+    ///   "relationshipToHead": null,
+    ///   "fullNameArabic": "محمّد أحمد الخالد",
+    ///   "age": 41,
+    ///   "createdAtUtc": "2026-01-31T10:00:00Z",
+    ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
+    ///   "lastModifiedAtUtc": "2026-01-31T14:30:00Z",
+    ///   "lastModifiedBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
+    ///   "isDeleted": false
     /// }
     /// ```
     /// </remarks>
-    /// <param name="id">Person ID to update</param>
-    /// <param name="command">Person update data (all fields optional)</param>
-    /// <returns>Updated person details</returns>
-    /// <response code="200">Person updated successfully.</response>
-    /// <response code="400">Validation error or ID mismatch.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires Surveys_EditAll permission.</response>
-    /// <response code="404">Person not found.</response>
+    /// <param name="id">Person ID to update (must match ID in body)</param>
+    /// <param name="command">Person update data (only include fields to change)</param>
+    /// <returns>Updated person details with computed fields</returns>
+    /// <response code="200">Person updated successfully</response>
+    /// <response code="400">Validation error or ID mismatch between URL and body</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires Surveys_EditAll permission</response>
+    /// <response code="404">Person not found</response>
     [HttpPut("{id}")]
     [Authorize(Policy = "CanEditAllSurveys")]
     [ProducesResponseType(typeof(PersonDto), StatusCodes.Status200OK)]
@@ -132,27 +263,58 @@ public class PersonsController : ControllerBase
     // ==================== GET BY ID ====================
 
     /// <summary>
-    /// Get person by ID (Admin/Data Manager/Supervisor)
+    /// Get person by ID
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Retrieves detailed information about a specific person.
+    /// Retrieves detailed information about a specific person.
     /// عرض المعلومات الشخصية
     /// 
-    /// **Required Permission**: Surveys_ViewAll (CanViewAllSurveys)
+    /// **Use Case**: View person details, verify identity information
     /// 
-    /// **Response includes**:
-    /// - Personal info (names, national ID, year of birth)
-    /// - Contact info (email, mobile, phone)
-    /// - Household context (if assigned)
-    /// - Computed properties (full name, age)
-    /// - Audit timestamps
+    /// **Required Permission**: Surveys_ViewAll (7004) - CanViewAllSurveys policy
+    /// 
+    /// **Response includes:**
+    /// - Personal identification (names in Arabic, national ID)
+    /// - Contact information (email, phone numbers)
+    /// - Household context (if assigned to a household)
+    /// - Computed properties:
+    ///   - `fullNameArabic`: Concatenated full name
+    ///   - `age`: Calculated from yearOfBirth
+    /// - Complete audit trail
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "familyNameArabic": "الخالد",
+    ///   "firstNameArabic": "محمد",
+    ///   "fatherNameArabic": "أحمد",
+    ///   "motherNameArabic": "فاطمة",
+    ///   "nationalId": "01234567890",
+    ///   "yearOfBirth": 1985,
+    ///   "email": "mohammed.khaled@gmail.com",
+    ///   "mobileNumber": "+963 991 234 567",
+    ///   "phoneNumber": "021 234 5678",
+    ///   "householdId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "relationshipToHead": "Head",
+    ///   "fullNameArabic": "محمد أحمد الخالد",
+    ///   "age": 41,
+    ///   "createdAtUtc": "2026-01-31T10:00:00Z",
+    ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
+    ///   "lastModifiedAtUtc": "2026-01-31T14:30:00Z",
+    ///   "lastModifiedBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
+    ///   "isDeleted": false,
+    ///   "deletedAtUtc": null,
+    ///   "deletedBy": null
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Person ID (GUID)</param>
-    /// <returns>Person details</returns>
-    /// <response code="200">Person found and returned.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires Surveys_ViewAll permission.</response>
-    /// <response code="404">Person not found.</response>
+    /// <returns>Person details with computed properties</returns>
+    /// <response code="200">Person found and returned</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires Surveys_ViewAll permission</response>
+    /// <response code="404">Person not found</response>
     [HttpGet("{id}")]
     [Authorize(Policy = "CanViewAllSurveys")]
     [ProducesResponseType(typeof(PersonDto), StatusCodes.Status200OK)]
@@ -175,19 +337,54 @@ public class PersonsController : ControllerBase
     // ==================== GET ALL ====================
 
     /// <summary>
-    /// Get all persons (Admin/Data Manager/Supervisor)
+    /// Get all persons
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Retrieves all persons in the system.
+    /// Retrieves all persons in the system.
     /// 
-    /// **Required Permission**: Surveys_ViewAll (CanViewAllSurveys)
+    /// **Use Case**: Reporting, data export, administrative review
     /// 
-    /// **Note**: For large datasets, consider using filtered endpoints.
+    /// **Required Permission**: Surveys_ViewAll (7004) - CanViewAllSurveys policy
+    /// 
+    /// **Note**: For large datasets, consider using:
+    /// - `GET /api/v1/Households/{id}/persons` - Persons by household
+    /// - `GET /api/v1/Surveys/{surveyId}/persons` - Persons in a survey
+    /// - Search/filter endpoints (when available)
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// [
+    ///   {
+    ///     "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///     "familyNameArabic": "الخالد",
+    ///     "firstNameArabic": "محمد",
+    ///     "fatherNameArabic": "أحمد",
+    ///     "nationalId": "01234567890",
+    ///     "yearOfBirth": 1985,
+    ///     "fullNameArabic": "محمد أحمد الخالد",
+    ///     "age": 41,
+    ///     "householdId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///     "createdAtUtc": "2026-01-31T10:00:00Z"
+    ///   },
+    ///   {
+    ///     "id": "8cd03f62-9345-5234-b2cd-0e963g44bgc8",
+    ///     "familyNameArabic": "العلي",
+    ///     "firstNameArabic": "فاطمة",
+    ///     "fatherNameArabic": "خالد",
+    ///     "nationalId": null,
+    ///     "yearOfBirth": 1990,
+    ///     "fullNameArabic": "فاطمة خالد العلي",
+    ///     "age": 36,
+    ///     "householdId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///     "createdAtUtc": "2026-01-31T10:30:00Z"
+    ///   }
+    /// ]
+    /// ```
     /// </remarks>
     /// <returns>List of all persons</returns>
-    /// <response code="200">Success. Returns array of persons (may be empty).</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires Surveys_ViewAll permission.</response>
+    /// <response code="200">Success - returns array of persons (may be empty)</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires Surveys_ViewAll permission</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllSurveys")]
     [ProducesResponseType(typeof(List<PersonDto>), StatusCodes.Status200OK)]

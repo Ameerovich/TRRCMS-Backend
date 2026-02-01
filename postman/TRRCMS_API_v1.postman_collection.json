@@ -1,0 +1,2849 @@
+{
+	"info": {
+		"_postman_id": "trrcms-api-collection-v1",
+		"name": "TRRCMS API v1",
+		"description": "# TRRCMS API Collection\n\nComplete API collection for Tenure Rights Registration & Claims Management System.\n\n## Quick Start\n\n1. **Import** this collection and the environment file into Postman\n2. **Select** 'TRRCMS Development' environment\n3. **Run** appropriate login request (Admin, Field Collector, or Office Clerk)\n4. **Follow** the numbered folders for your workflow\n\n## Team Workflows\n\n### 📱 Mobile Team (Field Collectors)\n```\n0. Auth → Login (Field Collector)\n1. Buildings → Get Buildings (find building to survey)\n2. Mobile Team → Create Field Survey\n2. Mobile Team → Property Unit → Create/Link\n2. Mobile Team → Household → Create\n2. Mobile Team → Persons → Add persons\n2. Mobile Team → Relations → Link persons to property\n2. Mobile Team → Evidence → Upload photos/documents\n2. Mobile Team → Finalize Field Survey\n```\n\n### 🖥️ Desktop Team (Office Clerks)\n```\n0. Auth → Login (Office Clerk)\n1. Buildings → Get/Create Building\n3. Desktop Team → Create Office Survey\n3. Desktop Team → Property Unit → Create/Link\n3. Desktop Team → Household → Create\n3. Desktop Team → Persons → Add persons\n3. Desktop Team → Relations → Link persons to property\n3. Desktop Team → Evidence → Upload documents\n3. Desktop Team → Finalize Office Survey (creates Claim)\n4. Claims → View created claim\n```\n\n### 👨‍💼 Admin Team\n```\n0. Auth → Login (Admin)\n5. User Management → Full CRUD\n1. Buildings → Full management\n```\n\n## Enum Reference\n\n### UserRole\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FieldCollector | جامع بيانات |\n| 2 | FieldSupervisor | مشرف ميداني |\n| 3 | OfficeClerk | موظف مكتب |\n| 4 | DataManager | مدير بيانات |\n| 5 | Analyst | محلل |\n| 6 | Administrator | مدير النظام |\n\n### PropertyUnitType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Apartment | شقة سكنية |\n| 2 | Shop | محل تجاري |\n| 3 | Office | مكتب |\n| 4 | Warehouse | مستودع |\n| 5 | Other | أخرى |\n\n### PropertyUnitStatus\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Occupied | مشغول |\n| 2 | Vacant | شاغر |\n| 3 | Damaged | متضرر |\n| 4 | UnderRenovation | قيد الترميم |\n| 5 | Uninhabitable | غير صالح للسكن |\n| 6 | Locked | مغلق |\n| 99 | Unknown | غير معروف |\n\n### RelationType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Owner | مالك |\n| 2 | Occupant | ساكن |\n| 3 | Tenant | مستأجر |\n| 4 | Guest | ضيف |\n| 5 | Heir | وريث |\n| 99 | Other | أخرى |\n\n### TenureContractType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FullOwnership | ملكية تامة |\n| 2 | SharedOwnership | ملكية مشتركة |\n| 3 | LongTermRental | إيجار طويل الأمد |\n| 4 | ShortTermRental | إيجار قصير الأمد |\n| 5 | InformalTenure | حيازة غير رسمية |\n| 6 | UnauthorizedOccupation | إشغال غير مصرح |\n| 7 | CustomaryRights | حقوق عرفية |\n| 8 | InheritanceBased | ميراث |\n| 9 | HostedGuest | استضافة |\n| 10 | TemporaryShelter | مأوى مؤقت |\n| 11 | GovernmentAllocation | تخصيص حكومي |\n| 12 | Usufruct | حق الانتفاع |\n| 99 | Other | أخرى |\n\n### EvidenceType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | IdentificationDocument | بطاقة هوية |\n| 2 | OwnershipDeed | سند ملكية |\n| 3 | RentalContract | عقد إيجار |\n| 4 | UtilityBill | فاتورة مرافق |\n| 5 | Photo | صورة |\n| 6 | OfficialLetter | رسالة رسمية |\n| 7 | CourtOrder | أمر محكمة |\n| 8 | InheritanceDocument | وثيقة ميراث |\n| 9 | TaxReceipt | إيصال ضريبة |\n| 99 | Other | أخرى |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "0. Authentication",
+			"item": [
+				{
+					"name": "Login (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    pm.environment.set('currentUserId', jsonData.userId);",
+									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
+									"    pm.environment.set('currentUserRole', jsonData.role);",
+									"    console.log('✅ Admin logged in:', jsonData.fullNameArabic);",
+									"    console.log('✅ Token expires:', jsonData.accessTokenExpiresAt);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"deviceId\": \"postman-admin-device\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"login"
+							]
+						},
+						"description": "Login as Administrator. Full system access.\n\n**Response:**\n- accessToken (15 min expiry)\n- refreshToken (7 days expiry)\n- userId, fullNameArabic, role"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Field Collector)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    pm.environment.set('currentUserId', jsonData.userId);",
+									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
+									"    pm.environment.set('currentUserRole', jsonData.role);",
+									"    console.log('✅ Field Collector logged in:', jsonData.fullNameArabic);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{fieldCollectorUsername}}\",\n  \"password\": \"{{password}}\",\n  \"deviceId\": \"postman-mobile-device\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"login"
+							]
+						},
+						"description": "Login as Field Collector for mobile survey workflow.\n\n**Permissions:** Create/Edit own surveys, upload evidence"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Office Clerk)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    pm.environment.set('currentUserId', jsonData.userId);",
+									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
+									"    pm.environment.set('currentUserRole', jsonData.role);",
+									"    console.log('✅ Office Clerk logged in:', jsonData.fullNameArabic);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{officeClerkUsername}}\",\n  \"password\": \"{{password}}\",\n  \"deviceId\": \"postman-desktop-device\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"login"
+							]
+						},
+						"description": "Login as Office Clerk for desktop survey workflow.\n\n**Permissions:** Create/Edit surveys, finalize with claim creation"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Token refreshed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    console.log('✅ Token refreshed successfully');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"refresh"
+							]
+						},
+						"description": "Refresh access token using refresh token.\n\nCall when access token expires (15 min) or proactively."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('👤 Current user:', jsonData.fullNameArabic, '| Role:', jsonData.role);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user info from JWT claims."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"logout"
+							]
+						},
+						"description": "Logout current user. Client should discard tokens."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints. Run login first to get token.\n\n**Token Lifetimes:**\n- Access Token: 15 minutes\n- Refresh Token: 7 days"
+		},
+		{
+			"name": "1. Building Management",
+			"item": [
+				{
+					"name": "Get Buildings (Paginated)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.items && jsonData.items.length > 0) {",
+									"    var building = jsonData.items[0];",
+									"    pm.environment.set('buildingId', building.id);",
+									"    pm.environment.set('buildingCode', building.buildingCode);",
+									"    console.log('✅ First building saved:');",
+									"    console.log('   ID:', building.id);",
+									"    console.log('   Code:', building.buildingCode);",
+									"    console.log('   Total buildings:', jsonData.totalCount);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Buildings?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								},
+								{
+									"key": "governorateCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "districtCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "subDistrictCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "communityCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "neighborhoodCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "buildingType",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "searchTerm",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get paginated list of buildings with optional filters.\n\n**Filters:**\n- Administrative codes (governorate, district, etc.)\n- buildingType: 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n- searchTerm: Search in building code or address"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Building by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🏢 Building:', jsonData.buildingCode);",
+									"console.log('   Type:', jsonData.buildingType);",
+									"console.log('   Floors:', jsonData.numberOfFloors);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Get building details by GUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Building by Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('buildingId', jsonData.id);",
+									"    console.log('✅ Building found, ID saved:', jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/code/{{buildingCode}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"code",
+								"{{buildingCode}}"
+							]
+						},
+						"description": "Get building by 17-digit code.\n\n**Code Format:** GG-DD-SS-CCC-NNN-BBBBB\n- GG: Governorate (2 digits)\n- DD: District (2 digits)\n- SS: SubDistrict (2 digits)\n- CCC: Community (3 digits)\n- NNN: Neighborhood (3 digits)\n- BBBBB: Building (5 digits)"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Buildings (Partial Match)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🔍 Search Results:');",
+									"console.log('   Total:', jsonData.totalCount);",
+									"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
+									"",
+									"if (jsonData.buildings && jsonData.buildings.length > 0) {",
+									"    pm.environment.set('buildingId', jsonData.buildings[0].id);",
+									"    console.log('✅ First building ID saved:', jsonData.buildings[0].id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"buildingId\": \"01-01\",\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"sortBy\": \"buildingId\",\n  \"sortDescending\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"search"
+							]
+						},
+						"description": "Search buildings with partial match on building code.\n\n**BuildingId Partial Match:**\n- Supports both formatted (01-01-01) and unformatted (010101) input\n- Searches anywhere in the building code\n\n**Examples:**\n- `\"01-01\"` → Finds buildings starting with governorate 01, district 01\n- `\"01010101\"` → Finds buildings in specific sub-district\n- `\"00001\"` → Finds buildings with \"00001\" anywhere in code\n\n**Filters:**\n- governorateCode, districtCode, subDistrictCode, communityCode, neighborhoodCode\n- buildingType: 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n- status: Building status\n\n**Pagination:**\n- page: Page number (default: 1)\n- pageSize: Items per page (default: 20, max: 100)\n\n**Sorting:**\n- sortBy: \"buildingId\", \"createdDate\", \"status\", \"buildingType\"\n- sortDescending: true/false"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Building",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Building created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('buildingId', jsonData.id);",
+									"    pm.environment.set('buildingCode', jsonData.buildingCode);",
+									"    console.log('✅ Building created:');",
+									"    console.log('   ID:', jsonData.id);",
+									"    console.log('   Code:', jsonData.buildingCode);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"buildingCode\": \"11010101001001\",\n  \"buildingType\": 1,\n  \"numberOfFloors\": 4,\n  \"numberOfUnits\": 8,\n  \"buildingCondition\": 1,\n  \"constructionYear\": 1995,\n  \"addressArabic\": \"شارع النصر، حي الجميلية، حلب\",\n  \"gpsLatitude\": 36.2021,\n  \"gpsLongitude\": 37.1343,\n  \"notes\": \"مبنى سكني - 4 طوابق\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings"
+							]
+						},
+						"description": "Create a new building.\n\n**Required:** buildingCode, buildingType\n\n**BuildingType:**\n- 1 = Residential (سكني)\n- 2 = Commercial (تجاري)\n- 3 = MixedUse (مختلط)\n- 4 = Industrial (صناعي)\n\n**BuildingCondition:**\n- 1 = Good (جيد)\n- 2 = Fair (متوسط)\n- 3 = Poor (سيء)\n- 4 = Damaged (متضرر)\n- 5 = Destroyed (مدمر)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Building",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Building updated', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log('✅ Building updated successfully');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{buildingId}}\",\n  \"numberOfFloors\": 5,\n  \"numberOfUnits\": 10,\n  \"buildingCondition\": 2,\n  \"notes\": \"تم تحديث البيانات - إضافة طابق جديد\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Update building details. Only provided fields are updated."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Building (Soft Delete)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Building deleted', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"console.log('✅ Building soft deleted successfully');",
+									"console.log('ℹ️ Building is marked as deleted but data retained for audit');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Building demolished - no longer exists | تم هدم المبنى\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Soft delete a building (Admin only).\n\n**What happens:**\n- Sets `IsDeleted = true`\n- Records `DeletedAtUtc` timestamp\n- Records `DeletedBy` user ID\n- Building no longer appears in queries\n- Data retained for audit and potential recovery\n\n**Required Permission:** Buildings_Delete (4003) - CanDeleteBuildings policy\n\n**Request Body (optional):**\n```json\n{\n  \"reason\": \"Reason for deletion\"\n}\n```\n\n**Note:** This is a soft delete. Data can be recovered if needed."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Property Units by Building",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('📋 Found', jsonData.length, 'property unit(s)');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/PropertyUnits/building/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"PropertyUnits",
+								"building",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Get all property units in a building."
+					},
+					"response": []
+				}
+			],
+			"description": "Building management endpoints.\n\n**Used by:** Desktop Team, Admin\n\n**Endpoints:**\n- GET /Buildings - Get all buildings (paginated)\n- GET /Buildings/{id} - Get by GUID\n- GET /Buildings/code/{code} - Get by building code\n- POST /Buildings/search - Search with partial match\n- POST /Buildings - Create building\n- PUT /Buildings/{id} - Update building\n- DELETE /Buildings/{id} - Soft delete building\n- GET /PropertyUnits/building/{id} - Get units in building\n\n**Building Code Format:**\nGG-DD-SS-CCC-NNN-BBBBB (17 digits)\n\nExample: 11-01-01-001-001-00001\n- 11: Aleppo Governorate\n- 01: District\n- 01: SubDistrict\n- 001: Community\n- 001: Neighborhood\n- 00001: Building number\n\n**Permissions:**\n- Buildings_View (4000) - CanViewAllBuildings\n- Buildings_Create (4001) - CanCreateBuildings\n- Buildings_Update (4002) - CanEditBuildings\n- Buildings_Delete (4003) - CanDeleteBuildings"
+		},
+		{
+			"name": "2. Mobile Team - Field Survey",
+			"item": [
+				{
+					"name": "2.1 Create Survey",
+					"item": [
+						{
+							"name": "Create Field Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('surveyId', jsonData.id);",
+											"    pm.environment.set('referenceCode', jsonData.referenceCode);",
+											"    console.log('✅ Field Survey created:');",
+											"    console.log('   ID:', jsonData.id);",
+											"    console.log('   Reference:', jsonData.referenceCode);",
+											"    console.log('   Status:', jsonData.status);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"notes\": \"مسح ميداني أولي - معاينة العقار\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field"
+									]
+								},
+								"description": "**UC-001 Stage 1** - Create new field survey.\n\n**Reference Code Format:** FLD-YYYY-NNNNN\n\n**Required:** buildingId, surveyDate\n\n**Auto-set:** Status=Draft, assigned to current user"
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Draft Surveys",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('📋 Found', jsonData.surveys ? jsonData.surveys.length : 0, 'draft survey(s)');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field/drafts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field",
+										"drafts"
+									]
+								},
+								"description": "**UC-002** - Get current user's draft field surveys to resume."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Field Survey by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('📋 Survey:', jsonData.referenceCode, '| Status:', jsonData.status);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field/{{surveyId}}?includeHouseholds=true&includePersons=true&includeRelations=true&includeEvidence=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field",
+										"{{surveyId}}"
+									],
+									"query": [
+										{
+											"key": "includeHouseholds",
+											"value": "true"
+										},
+										{
+											"key": "includePersons",
+											"value": "true"
+										},
+										{
+											"key": "includeRelations",
+											"value": "true"
+										},
+										{
+											"key": "includeEvidence",
+											"value": "true"
+										}
+									]
+								},
+								"description": "Get full field survey details with all related data."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 1: Create and retrieve field surveys"
+				},
+				{
+					"name": "2.2 Property Unit",
+					"item": [
+						{
+							"name": "Get Property Units for Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.length > 0) {",
+											"    pm.environment.set('propertyUnitId', jsonData[0].id);",
+											"    console.log('✅ First unit saved:', jsonData[0].unitIdentifier);",
+											"}",
+											"console.log('📋 Found', jsonData.length, 'unit(s) in building');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								},
+								"description": "**UC-001 Stage 2** - Get existing property units in survey's building."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Property Unit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Property unit created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('propertyUnitId', jsonData.id);",
+											"    console.log('✅ Property unit created:', jsonData.unitIdentifier);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"unitIdentifier\": \"1A\",\n  \"floorNumber\": 1,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 85.5,\n  \"numberOfRooms\": 3,\n  \"description\": \"شقة سكنية - 3 غرف وصالة\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								},
+								"description": "**UC-001 Stage 2** - Create new property unit in survey.\n\n**UnitType:** 1=Apartment, 2=Shop, 3=Office, 4=Warehouse, 5=Other\n\n**Status:** 1=Occupied, 2=Vacant, 3=Damaged, 4=UnderRenovation, 5=Uninhabitable, 6=Locked, 99=Unknown"
+							},
+							"response": []
+						},
+						{
+							"name": "Link Existing Property Unit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Property unit linked', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"console.log('✅ Property unit linked to survey');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/link",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"link"
+									]
+								},
+								"description": "Link existing property unit to survey (instead of creating new)."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Property Unit",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": 3,\n  \"description\": \"تم اكتشاف أضرار في السقف\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}"
+									]
+								},
+								"description": "Update property unit details (partial update)."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 2: Property unit management"
+				},
+				{
+					"name": "2.3 Household & Persons",
+					"item": [
+						{
+							"name": "Create Household",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Household created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('householdId', jsonData.id);",
+											"    console.log('✅ Household created:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"headOfHouseholdName\": \"أحمد محمد علي\",\n  \"householdSize\": 5,\n  \"maleCount\": 2,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"maleElderlyCount\": 0,\n  \"femaleElderlyCount\": 0,\n  \"maleDisabledCount\": 0,\n  \"femaleDisabledCount\": 0,\n  \"notes\": \"أسرة مكونة من الوالدين و3 أطفال\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households"
+									]
+								},
+								"description": "**UC-001 Stage 3** - Create household in survey.\n\n**Demographic Breakdown:**\n- Adults (18-64): maleCount, femaleCount\n- Children (<18): maleChildCount, femaleChildCount\n- Elderly (65+): maleElderlyCount, femaleElderlyCount\n- Disabled (any age): maleDisabledCount, femaleDisabledCount"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Households",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households"
+									]
+								},
+								"description": "Get all households for survey."
+							},
+							"response": []
+						},
+						{
+							"name": "Add Person to Household (Head)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Person added', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person1Id', jsonData.id);",
+											"    console.log('✅ Person added (Head):', jsonData.fullNameArabic);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"familyNameArabic\": \"الحسن\",\n  \"firstNameArabic\": \"أحمد\",\n  \"fatherNameArabic\": \"محمد\",\n  \"motherNameArabic\": \"فاطمة\",\n  \"nationalId\": \"01234567890\",\n  \"yearOfBirth\": 1975,\n  \"relationshipToHead\": \"Head\",\n  \"mobileNumber\": \"+963 991 234 567\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								},
+								"description": "**UC-001 Stage 3** - Add person to household as head.\n\n**Required:** familyNameArabic, firstNameArabic, fatherNameArabic\n\n**RelationshipToHead:** Head, Spouse, Child, Parent, Sibling, Other"
+							},
+							"response": []
+						},
+						{
+							"name": "Add Person to Household (Spouse)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Person added', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person2Id', jsonData.id);",
+											"    console.log('✅ Person added (Spouse):', jsonData.fullNameArabic);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"familyNameArabic\": \"الحسن\",\n  \"firstNameArabic\": \"سارة\",\n  \"fatherNameArabic\": \"خالد\",\n  \"yearOfBirth\": 1980,\n  \"relationshipToHead\": \"Spouse\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								},
+								"description": "Add spouse to household."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Household Persons",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								},
+								"description": "Get all persons in household."
+							},
+							"response": []
+						},
+						{
+							"name": "Set Household Head",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/head/{{person1Id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"head",
+										"{{person1Id}}"
+									]
+								},
+								"description": "Set or change household head."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 3: Household registration and person management"
+				},
+				{
+					"name": "2.4 Relations",
+					"item": [
+						{
+							"name": "Create Relation (Owner 100%)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Relation created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('relationId', jsonData.id);",
+											"    console.log('✅ Relation created:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2010-06-15\",\n  \"notes\": \"مالك العقار الأصلي - طابو أخضر\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "**UC-001 Stage 3** - Link person to property as Owner (100%).\n\n**RelationType:** 1=Owner, 2=Occupant, 3=Tenant, 4=Guest, 5=Heir, 99=Other\n\n**ContractType:** 1=FullOwnership, 2=SharedOwnership, 3=LongTermRental, etc."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Relation (Co-Owner 50%)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person2Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 2,\n  \"ownershipShare\": 0.5,\n  \"startDate\": \"2015-03-20\",\n  \"notes\": \"ملكية مشتركة - 50% بعد الزواج\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "Link person as co-owner with 50% share."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Relation (Tenant)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 3,\n  \"contractType\": 3,\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2025-12-31\",\n  \"contractDetails\": \"عقد إيجار سنوي - رقم العقد: RC-2024-001\",\n  \"notes\": \"مستأجر بعقد رسمي\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "Link person as Tenant with rental contract."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Relation",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"ownershipShare\": 0.75,\n  \"notes\": \"تم تحديث نسبة الملكية\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/relations/{{relationId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"relations",
+										"{{relationId}}"
+									]
+								},
+								"description": "Update relation (partial update - PATCH)."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Relation",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/relations/{{relationId}}?deleteEvidenceFiles=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"relations",
+										"{{relationId}}"
+									],
+									"query": [
+										{
+											"key": "deleteEvidenceFiles",
+											"value": "true"
+										}
+									]
+								},
+								"description": "Delete person-property relation."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 3: Person-property relations (tenure rights)"
+				},
+				{
+					"name": "2.5 Evidence",
+					"item": [
+						{
+							"name": "Upload Property Photo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Photo uploaded', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ Photo uploaded:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "description",
+											"value": "صورة واجهة المبنى الأمامية",
+											"type": "text"
+										},
+										{
+											"key": "propertyUnitId",
+											"value": "{{propertyUnitId}}",
+											"type": "text"
+										},
+										{
+											"key": "notes",
+											"value": "صورة ملتقطة أثناء الزيارة الميدانية",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/photos",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"photos"
+									]
+								},
+								"description": "**UC-001 Stage 4** - Upload property photo.\n\n**Supported formats:** JPG, JPEG, PNG, GIF\n**Max size:** 10MB"
+							},
+							"response": []
+						},
+						{
+							"name": "Upload ID Document",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Document uploaded', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ ID document uploaded:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personId",
+											"value": "{{person1Id}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "بطاقة الهوية الوطنية",
+											"type": "text"
+										},
+										{
+											"key": "documentIssuedDate",
+											"value": "2020-01-15",
+											"type": "text"
+										},
+										{
+											"key": "documentExpiryDate",
+											"value": "2030-01-14",
+											"type": "text"
+										},
+										{
+											"key": "issuingAuthority",
+											"value": "السجل المدني",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/identification",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"identification"
+									]
+								},
+								"description": "Upload identification document (ID card, passport, etc.).\n\n**Supported formats:** PDF, JPG, JPEG, PNG\n**Max size:** 10MB"
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Tenure Document",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Document uploaded', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ Tenure document uploaded:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personPropertyRelationId",
+											"value": "{{relationId}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "سند ملكية - طابو أخضر",
+											"type": "text"
+										},
+										{
+											"key": "documentIssuedDate",
+											"value": "2010-06-15",
+											"type": "text"
+										},
+										{
+											"key": "issuingAuthority",
+											"value": "أمانة السجل العقاري",
+											"type": "text"
+										},
+										{
+											"key": "documentReferenceNumber",
+											"value": "DEED-2010-123456",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/tenure",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"tenure"
+									]
+								},
+								"description": "Upload tenure/ownership document (deed, contract, etc.)."
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Evidence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence"
+									],
+									"query": [
+										{
+											"key": "evidenceType",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Get all evidence for survey."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Evidence by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/evidence/{{evidenceId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"evidence",
+										"{{evidenceId}}"
+									]
+								},
+								"description": "Get evidence details."
+							},
+							"response": []
+						},
+						{
+							"name": "Download Evidence File",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/evidence/{{evidenceId}}/download",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"evidence",
+										"{{evidenceId}}",
+										"download"
+									]
+								},
+								"description": "Download evidence file."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Evidence",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/{{evidenceId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"{{evidenceId}}"
+									]
+								},
+								"description": "Delete evidence (only for Draft surveys)."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 4: Evidence collection (photos, documents)"
+				},
+				{
+					"name": "2.6 Finalize",
+					"item": [
+						{
+							"name": "Save Draft",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"notes\": \"تم حفظ المسودة - العمل قيد التقدم\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/draft",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"draft"
+									]
+								},
+								"description": "Save survey progress without finalizing."
+							},
+							"response": []
+						},
+						{
+							"name": "Finalize Field Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey finalized', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('✅ Field survey finalized');",
+											"console.log('   Status:', jsonData.status);",
+											"console.log('   Ready for export to .uhc container');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"finalNotes\": \"تم إنهاء المسح الميداني بنجاح\",\n  \"durationMinutes\": 45\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field/{{surveyId}}/finalize",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field",
+										"{{surveyId}}",
+										"finalize"
+									]
+								},
+								"description": "**UC-001 Final Stage** - Finalize field survey.\n\nMarks survey as Finalized, ready for export to .uhc container.\n\n**Note:** Field surveys do NOT auto-create claims (unlike office surveys)."
+							},
+							"response": []
+						}
+					],
+					"description": "Final stage: Save draft or finalize survey"
+				}
+			],
+			"description": "## 📱 Mobile Team - Field Survey Flow\n\n**Use Cases:** UC-001 (Field Survey), UC-002 (Resume Draft)\n\n**Workflow:**\n1. Login as Field Collector\n2. Get/Select Building\n3. Create Field Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Persons to Household\n7. Create Person-Property Relations\n8. Upload Evidence (photos, documents)\n9. Finalize Survey\n\n**Reference Code Format:** FLD-YYYY-NNNNN"
+		},
+		{
+			"name": "3. Desktop Team - Office Survey",
+			"item": [
+				{
+					"name": "3.1 Create Survey",
+					"item": [
+						{
+							"name": "Create Office Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('surveyId', jsonData.id);",
+											"    pm.environment.set('referenceCode', jsonData.referenceCode);",
+											"    console.log('✅ Office Survey created:');",
+											"    console.log('   ID:', jsonData.id);",
+											"    console.log('   Reference:', jsonData.referenceCode);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"officeLocation\": \"مكتب UN-Habitat حلب\",\n  \"registrationNumber\": \"REG-2026-001234\",\n  \"inPersonVisit\": true,\n  \"intervieweeName\": \"محمد أحمد السيد\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"owner@example.com\",\n  \"notes\": \"زيارة مكتبية - المراجع يحمل سند ملكية\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office"
+									]
+								},
+								"description": "**UC-004** - Create office survey for walk-in claimant.\n\n**Reference Code Format:** OFC-YYYY-NNNNN\n\n**Office-specific fields:**\n- officeLocation: Office where claim is registered\n- registrationNumber: Manual registration number\n- inPersonVisit: true if claimant visited in person\n- contactPhone/contactEmail: For follow-up"
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Draft Office Surveys",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/drafts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"drafts"
+									]
+								},
+								"description": "**UC-005** - Get current clerk's draft office surveys."
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Office Surveys",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office?page=1&pageSize=20&sortBy=SurveyDate&sortDirection=desc",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "buildingId",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "clerkId",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "fromDate",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "toDate",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "referenceCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "intervieweeName",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "pageSize",
+											"value": "20"
+										},
+										{
+											"key": "sortBy",
+											"value": "SurveyDate"
+										},
+										{
+											"key": "sortDirection",
+											"value": "desc"
+										}
+									]
+								},
+								"description": "Get all office surveys with filtering and pagination."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Office Survey by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"{{surveyId}}"
+									]
+								},
+								"description": "Get full office survey details."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Office Survey",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"intervieweeName\": \"محمد أحمد السيد الخالد\",\n  \"contactPhone\": \"+963992345678\",\n  \"notes\": \"تم تحديث معلومات الاتصال\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"{{surveyId}}"
+									]
+								},
+								"description": "Update office survey details (Draft only)."
+							},
+							"response": []
+						}
+					],
+					"description": "Create and manage office surveys"
+				},
+				{
+					"name": "3.2 Property Unit",
+					"item": [
+						{
+							"name": "Get Property Units",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.length > 0) {",
+											"    pm.environment.set('propertyUnitId', jsonData[0].id);",
+											"    console.log('✅ First unit saved:', jsonData[0].unitIdentifier);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Property Unit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('propertyUnitId', jsonData.id);",
+											"    console.log('✅ Property unit created:', jsonData.unitIdentifier);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"unitIdentifier\": \"2A\",\n  \"floorNumber\": 2,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 120.0,\n  \"numberOfRooms\": 4,\n  \"description\": \"شقة سكنية واسعة - 4 غرف\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Link Existing Property Unit",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/link",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"link"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Property unit management for office survey"
+				},
+				{
+					"name": "3.3 Household & Persons",
+					"item": [
+						{
+							"name": "Create Household",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('householdId', jsonData.id);",
+											"    console.log('✅ Household created');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"headOfHouseholdName\": \"محمد أحمد السيد\",\n  \"householdSize\": 4,\n  \"maleCount\": 1,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"notes\": \"أسرة من 4 أفراد - زيارة مكتبية\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Person (Claimant/Owner)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person1Id', jsonData.id);",
+											"    console.log('✅ Person added:', jsonData.fullNameArabic);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"familyNameArabic\": \"السيد\",\n  \"firstNameArabic\": \"محمد\",\n  \"fatherNameArabic\": \"أحمد\",\n  \"nationalId\": \"09876543210\",\n  \"yearOfBirth\": 1970,\n  \"relationshipToHead\": \"Head\",\n  \"email\": \"owner@example.com\",\n  \"mobileNumber\": \"+963912345678\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Household and person registration for office survey"
+				},
+				{
+					"name": "3.4 Relations",
+					"item": [
+						{
+							"name": "Create Owner Relation",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('relationId', jsonData.id);",
+											"    console.log('✅ Owner relation created');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2005-08-20\",\n  \"notes\": \"مالك العقار - يحمل سند ملكية أصلي\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "Create ownership relation for claim creation.\n\n**Important:** At least one Owner relation is required for automatic claim creation."
+							},
+							"response": []
+						}
+					],
+					"description": "Create ownership relations for claim creation"
+				},
+				{
+					"name": "3.5 Evidence",
+					"item": [
+						{
+							"name": "Upload Ownership Deed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ Deed uploaded');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personPropertyRelationId",
+											"value": "{{relationId}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "سند ملكية أصلي - طابو أخضر",
+											"type": "text"
+										},
+										{
+											"key": "documentIssuedDate",
+											"value": "2005-08-20",
+											"type": "text"
+										},
+										{
+											"key": "issuingAuthority",
+											"value": "أمانة السجل العقاري - حلب",
+											"type": "text"
+										},
+										{
+											"key": "documentReferenceNumber",
+											"value": "طابو-2005-789456",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/tenure",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"tenure"
+									]
+								},
+								"description": "Upload ownership deed document."
+							},
+							"response": []
+						},
+						{
+							"name": "Upload ID Document",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personId",
+											"value": "{{person1Id}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "بطاقة الهوية الوطنية",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/identification",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"identification"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Evidence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Document upload for office survey"
+				},
+				{
+					"name": "3.6 Finalize",
+					"item": [
+						{
+							"name": "Finalize Office Survey (Create Claim)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey finalized', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('✅ Office survey finalized');",
+											"console.log('   Status:', jsonData.status);",
+											"",
+											"if (jsonData.claimCreated && jsonData.claim) {",
+											"    pm.environment.set('claimId', jsonData.claim.id);",
+											"    pm.environment.set('claimNumber', jsonData.claim.claimNumber);",
+											"    console.log('✅ Claim auto-created:');",
+											"    console.log('   Claim ID:', jsonData.claim.id);",
+											"    console.log('   Claim Number:', jsonData.claim.claimNumber);",
+											"} else {",
+											"    console.log('ℹ️ No claim created (no ownership relations or autoCreateClaim=false)');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"finalNotes\": \"تم إنهاء المسح المكتبي بنجاح - جميع الوثائق مكتملة\",\n  \"durationMinutes\": 60,\n  \"autoCreateClaim\": true\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}/finalize",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"{{surveyId}}",
+										"finalize"
+									]
+								},
+								"description": "**UC-004 Final Stage** - Finalize office survey and create claim.\n\n**autoCreateClaim=true:**\n- Generates claim number (CLM-YYYY-NNNNNNNNN)\n- Creates claim with ClaimSource=OfficeSubmission\n- Links claim to survey\n\n**Requires:** At least one Owner/Heir relation"
+							},
+							"response": []
+						}
+					],
+					"description": "Finalize survey and auto-create claim"
+				}
+			],
+			"description": "## 🖥️ Desktop Team - Office Survey Flow\n\n**Use Cases:** UC-004 (Office Survey), UC-005 (Resume Draft)\n\n**Workflow:**\n1. Login as Office Clerk\n2. Get/Create Building\n3. Create Office Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Claimant Person\n7. Create Owner Relation\n8. Upload Documents (deed, ID)\n9. Finalize Survey → Creates Claim\n\n**Reference Code Format:** OFC-YYYY-NNNNN\n\n**Key Difference from Field Survey:**\n- Office surveys can auto-create claims on finalization\n- Field surveys are exported to .uhc containers"
+		},
+		{
+			"name": "4. Claims",
+			"item": [
+				{
+					"name": "Get Claim by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('📋 Claim:', jsonData.claimNumber);",
+									"console.log('   Status:', jsonData.status);",
+									"console.log('   Source:', jsonData.claimSource);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Claims/{{claimId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Claims",
+								"{{claimId}}"
+							]
+						},
+						"description": "Get claim details by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claim by Number",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Claims/number/{{claimNumber}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Claims",
+								"number",
+								"{{claimNumber}}"
+							]
+						},
+						"description": "Get claim by claim number (CLM-YYYY-NNNNNNNNN)."
+					},
+					"response": []
+				}
+			],
+			"description": "Claims viewing endpoints.\n\n**Claim Number Format:** CLM-YYYY-NNNNNNNNN\n\n**Note:** Claims are auto-created when office surveys with ownership relations are finalized."
+		},
+		{
+			"name": "5. User Management (Admin)",
+			"item": [
+				{
+					"name": "Get All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('👥 Total users:', jsonData.totalCount);",
+									"",
+									"if (jsonData.users && jsonData.users.length > 0) {",
+									"    pm.environment.set('targetUserId', jsonData.users[0].id);",
+									"    console.log('✅ First user ID saved');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users"
+							],
+							"query": [
+								{
+									"key": "role",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "isActive",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "searchTerm",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get all users with filtering and pagination.\n\n**Filters:**\n- role: 1-6 (see UserRole enum)\n- isActive: true/false\n- searchTerm: Search username, name, email"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}"
+							]
+						},
+						"description": "Get user details including permissions list."
+					},
+					"response": []
+				},
+				{
+					"name": "Create User (Field Collector)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('User created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('targetUserId', jsonData.id);",
+									"    console.log('✅ User created:', jsonData.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"fc002\",\n  \"email\": \"fc002@trrcms.org\",\n  \"fullNameArabic\": \"خالد محمود علي\",\n  \"fullNameEnglish\": \"Khaled Mahmoud Ali\",\n  \"phoneNumber\": \"+963 992 345 678\",\n  \"role\": 1,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": true,\n  \"hasDesktopAccess\": false,\n  \"organization\": \"فريق حلب الميداني\",\n  \"jobTitle\": \"جامع بيانات\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users"
+							]
+						},
+						"description": "Create new Field Collector user.\n\n**UserRole:** 1=FieldCollector, 2=FieldSupervisor, 3=OfficeClerk, 4=DataManager, 5=Analyst, 6=Administrator\n\n**Password Requirements:**\n- Min 8 characters\n- Uppercase, lowercase, digit, special char"
+					},
+					"response": []
+				},
+				{
+					"name": "Create User (Office Clerk)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"oc002\",\n  \"email\": \"oc002@trrcms.org\",\n  \"fullNameArabic\": \"سارة أحمد الخالد\",\n  \"role\": 3,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": false,\n  \"hasDesktopAccess\": true,\n  \"organization\": \"مكتب حلب\",\n  \"jobTitle\": \"موظف تسجيل\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users"
+							]
+						},
+						"description": "Create new Office Clerk user."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumber\": \"+963 993 456 789\",\n  \"organization\": \"فريق دمشق الميداني\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}"
+							]
+						},
+						"description": "Update user profile (partial update)."
+					},
+					"response": []
+				},
+				{
+					"name": "Activate User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/activate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"activate"
+							]
+						},
+						"description": "Reactivate a deactivated user."
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"انتهاء عقد العمل - End of employment\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/deactivate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"deactivate"
+							]
+						},
+						"description": "Deactivate user account."
+					},
+					"response": []
+				},
+				{
+					"name": "Unlock User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/unlock",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"unlock"
+							]
+						},
+						"description": "Unlock user locked due to failed login attempts."
+					},
+					"response": []
+				},
+				{
+					"name": "Grant Permissions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permissions\": [2000, 2001, 2002],\n  \"grantReason\": \"مطلوب للمشروع الجديد - Required for new project\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"permissions"
+							]
+						},
+						"description": "Grant additional permissions to user.\n\n**Common Permissions:**\n- Evidence: 2000 (View), 2001 (Upload), 2002 (Verify)\n- Surveys: 7000 (Create), 7004 (ViewAll)"
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke Permission",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"انتهاء المشروع - Project completed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/permissions/Evidence_Upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"permissions",
+								"Evidence_Upload"
+							]
+						},
+						"description": "Revoke a specific permission from user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Audit Log",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/audit-log",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"audit-log"
+							]
+						},
+						"description": "Get user's audit log (all account changes)."
+					},
+					"response": []
+				}
+			],
+			"description": "## 👨‍💼 User Management (Admin Only)\n\n**Requires:** Administrator role\n\n**Operations:**\n- CRUD users\n- Activate/Deactivate accounts\n- Unlock locked accounts\n- Grant/Revoke permissions\n- View audit logs"
+		}
+	]
+}

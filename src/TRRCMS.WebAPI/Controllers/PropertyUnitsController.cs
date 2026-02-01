@@ -11,24 +11,66 @@ using TRRCMS.Application.PropertyUnits.Queries.GetPropertyUnitsByBuilding;
 namespace TRRCMS.WebAPI.Controllers;
 
 /// <summary>
-/// Property Units Management API
-/// Provides CRUD operations for property units within buildings
+/// Property Units management API
 /// </summary>
 /// <remarks>
-/// Property units represent individual units within a building (apartments, shops, offices, etc.)
+/// Manages individual property units (apartments, shops, offices) within buildings.
+/// وحدات العقار - إدارة المقاسم
 /// 
-/// **Key Concepts**:
-/// - Each property unit belongs to exactly one building
-/// - Property units can be created directly or through surveys
-/// - Unit identifiers must be unique within a building
+/// **What is a Property Unit?**
+/// A Property Unit is an individual occupiable space within a building, such as:
+/// - Residential apartment (شقة سكنية)
+/// - Commercial shop (محل تجاري)
+/// - Office space (مكتب)
+/// - Warehouse (مستودع)
 /// 
-/// **Permissions Required**:
-/// - View: PropertyUnits_View
-/// - Create: PropertyUnits_Create
-/// - Update: PropertyUnits_Update
+/// **Hierarchy:**
+/// ```
+/// Building (بناء)
+///   └── Property Unit (وحدة/مقسم)
+///         ├── Household (أسرة)
+///         └── PersonPropertyRelation (علاقة الشخص بالعقار)
+/// ```
+/// 
+/// **Unit Identifier Format:**
+/// - Simple: "1", "2", "3" (apartment numbers)
+/// - Floor-based: "1A", "1B", "2A" (floor + unit letter)
+/// - Descriptive: "Ground-Left", "Basement-1" (position-based)
+/// 
+/// **PropertyUnitType Values (نوع الوحدة):**
+/// 
+/// | Value | Name | Arabic | Description |
+/// |-------|------|--------|-------------|
+/// | 1 | Apartment | شقة سكنية | Residential apartment |
+/// | 2 | Shop | محل تجاري | Commercial retail space |
+/// | 3 | Office | مكتب | Office space |
+/// | 4 | Warehouse | مستودع | Storage/warehouse |
+/// | 5 | Other | أخرى | Other unit type |
+/// 
+/// **PropertyUnitStatus Values (حالة الوحدة):**
+/// 
+/// | Value | Name | Arabic | Description |
+/// |-------|------|--------|-------------|
+/// | 1 | Occupied | مشغول | Currently occupied |
+/// | 2 | Vacant | شاغر | Empty/unoccupied |
+/// | 3 | Damaged | متضرر | Damaged but repairable |
+/// | 4 | UnderRenovation | قيد الترميم | Being renovated |
+/// | 5 | Uninhabitable | غير صالح للسكن | Cannot be occupied |
+/// | 6 | Locked | مغلق | Locked/sealed by authorities |
+/// | 99 | Unknown | غير معروف | Status unknown |
+/// 
+/// **Permissions:**
+/// - View: PropertyUnits_View (6000)
+/// - Create: PropertyUnits_Create (6001)
+/// - Update: PropertyUnits_Update (6002)
+/// 
+/// **Alternative Endpoints:**
+/// For survey context:
+/// - `POST /api/v1/Surveys/{surveyId}/property-units` - Create during survey
+/// - `GET /api/v1/Buildings/{id}/property-units` - Units by building
 /// </remarks>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 [Authorize]
 [Produces("application/json")]
 public class PropertyUnitsController : ControllerBase
@@ -46,41 +88,34 @@ public class PropertyUnitsController : ControllerBase
     /// Create a new property unit
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Creates a new property unit within a building.
+    /// Creates a new property unit within a building.
+    /// إضافة وحدة عقارية جديدة
     /// 
-    /// **Required Permission**: PropertyUnits_Create
+    /// **Use Case**: UC-001 Field Survey - Register property units in a building
     /// 
-    /// **Validation Rules**:
-    /// - BuildingId: Required, must exist
-    /// - UnitIdentifier: Required, max 50 chars, unique within building
-    /// - UnitType: Required, 1-5 (1=Apartment, 2=Shop, 3=Office, 4=Warehouse, 5=Other)
-    /// - Status: Required, 1-6 or 99 (1=Occupied, 2=Vacant, 3=Damaged, 4=UnderRenovation, 5=Uninhabitable, 6=Locked, 99=Unknown)
-    /// - FloorNumber: Optional, -5 to 200
-    /// - AreaSquareMeters: Optional, must be greater than 0
-    /// - NumberOfRooms: Optional, 0-100
-    /// - Description: Optional, max 2000 chars
+    /// **Required Permission**: PropertyUnits_Create (6001) - CanCreatePropertyUnits policy
     /// 
-    /// **Unit Types (نوع الوحدة)**:
-    /// | Value | Name | Arabic |
-    /// |-------|------|--------|
-    /// | 1 | Apartment | شقة سكنية |
-    /// | 2 | Shop | محل تجاري |
-    /// | 3 | Office | مكتب |
-    /// | 4 | Warehouse | مستودع |
-    /// | 5 | Other | أخرى |
+    /// **Required Fields:**
+    /// - `buildingId`: Parent building (must exist)
+    /// - `unitIdentifier`: Unique identifier within building (max 50 chars)
+    /// - `unitType`: Unit type (1-5)
+    /// - `status`: Current status (1-6 or 99)
     /// 
-    /// **Status Values (حالة الوحدة)**:
-    /// | Value | Name | Arabic |
-    /// |-------|------|--------|
-    /// | 1 | Occupied | مشغول |
-    /// | 2 | Vacant | شاغر |
-    /// | 3 | Damaged | متضرر |
-    /// | 4 | UnderRenovation | قيد الترميم |
-    /// | 5 | Uninhabitable | غير صالح للسكن |
-    /// | 6 | Locked | مغلق |
-    /// | 99 | Unknown | غير معروف |
+    /// **Optional Fields:**
+    /// - `floorNumber`: Floor number (-5 to 200, 0 = Ground, -1 = Basement)
+    /// - `areaSquareMeters`: Unit area (must be > 0)
+    /// - `numberOfRooms`: Room count (0-100)
+    /// - `description`: Additional notes (max 2000 chars)
     /// 
-    /// **Example Request**:
+    /// **Validation Rules:**
+    /// - `unitIdentifier` must be unique within the building
+    /// - `unitType` must be 1-5
+    /// - `status` must be 1-6 or 99
+    /// - `floorNumber` must be between -5 and 200
+    /// - `areaSquareMeters` must be greater than 0
+    /// - `numberOfRooms` must be between 0 and 100
+    /// 
+    /// **Example Request - Apartment:**
     /// ```json
     /// {
     ///   "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -94,7 +129,34 @@ public class PropertyUnitsController : ControllerBase
     /// }
     /// ```
     /// 
-    /// **Example Response**:
+    /// **Example Request - Shop:**
+    /// ```json
+    /// {
+    ///   "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "unitIdentifier": "G-1",
+    ///   "floorNumber": 0,
+    ///   "unitType": 2,
+    ///   "status": 1,
+    ///   "areaSquareMeters": 45.0,
+    ///   "description": "محل تجاري في الطابق الأرضي"
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Damaged Unit:**
+    /// ```json
+    /// {
+    ///   "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "unitIdentifier": "2B",
+    ///   "floorNumber": 2,
+    ///   "unitType": 1,
+    ///   "status": 3,
+    ///   "areaSquareMeters": 90.0,
+    ///   "numberOfRooms": 4,
+    ///   "description": "شقة متضررة بسبب القصف - تحتاج إلى ترميم"
+    /// }
+    /// ```
+    /// 
+    /// **Example Response:**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
@@ -107,19 +169,22 @@ public class PropertyUnitsController : ControllerBase
     ///   "areaSquareMeters": 85.5,
     ///   "numberOfRooms": 3,
     ///   "description": "شقة سكنية بإطلالة على الحديقة",
-    ///   "createdAtUtc": "2026-01-29T12:00:00Z",
+    ///   "createdAtUtc": "2026-01-31T12:00:00Z",
     ///   "lastModifiedAtUtc": null
     /// }
     /// ```
+    /// 
+    /// **Note:** Response returns `unitType` and `status` as strings for display,
+    /// but requests accept integer values.
     /// </remarks>
     /// <param name="command">Property unit creation data</param>
     /// <returns>Created property unit with generated ID</returns>
-    /// <response code="201">Property unit created successfully.</response>
-    /// <response code="400">Validation error. Check required fields and value ranges.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires PropertyUnits_Create permission.</response>
-    /// <response code="404">Building not found.</response>
-    /// <response code="409">Property unit with same identifier already exists in building.</response>
+    /// <response code="201">Property unit created successfully</response>
+    /// <response code="400">Validation error - check required fields and value ranges</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires PropertyUnits_Create (6001) permission</response>
+    /// <response code="404">Building not found</response>
+    /// <response code="409">Unit identifier already exists in this building</response>
     [HttpPost]
     [Authorize(Policy = "CanCreatePropertyUnits")]
     [ProducesResponseType(typeof(PropertyUnitDto), StatusCodes.Status201Created)]
@@ -151,51 +216,71 @@ public class PropertyUnitsController : ControllerBase
     /// Update an existing property unit
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Updates property unit details. Only provided fields will be updated.
+    /// Updates property unit details. Only provided fields will be updated (partial update).
+    /// تعديل بيانات الوحدة العقارية
     /// 
-    /// **Required Permission**: PropertyUnits_Update
+    /// **Use Case**: Update unit status, correct data, add details
     /// 
-    /// **Updateable Fields**:
-    /// - FloorNumber (رقم الطابق)
-    /// - UnitType (نوع الوحدة) - rarely changed after creation
-    /// - Status (حالة الوحدة)
-    /// - AreaSquareMeters (مساحة القسم)
-    /// - NumberOfRooms (عدد الغرف)
-    /// - Description (وصف مفصل)
+    /// **Required Permission**: PropertyUnits_Update (6002) - CanUpdatePropertyUnits policy
     /// 
-    /// **Note**: UnitIdentifier and BuildingId cannot be changed after creation.
+    /// **Updatable Fields:**
+    /// - `floorNumber` (رقم الطابق)
+    /// - `unitType` (نوع الوحدة) - rarely changed after creation
+    /// - `status` (حالة الوحدة) - most common update
+    /// - `areaSquareMeters` (مساحة القسم)
+    /// - `numberOfRooms` (عدد الغرف)
+    /// - `description` (وصف مفصل)
     /// 
-    /// **Example Request** (partial update):
+    /// **Cannot Change:**
+    /// - `buildingId` - Unit cannot be moved to another building
+    /// - `unitIdentifier` - Identifier is permanent
+    /// 
+    /// **Example Request - Update status:**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///   "status": 2,
-    ///   "numberOfRooms": 4,
-    ///   "description": "تم إضافة غرفة جديدة بعد التجديد"
+    ///   "description": "الساكن انتقل - الوحدة شاغرة الآن"
     /// }
     /// ```
     /// 
-    /// **Example Request** (full update):
+    /// **Example Request - After renovation:**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///   "floorNumber": 2,
-    ///   "unitType": 1,
     ///   "status": 1,
+    ///   "numberOfRooms": 4,
+    ///   "areaSquareMeters": 95.0,
+    ///   "description": "تم إضافة غرفة جديدة بعد الترميم"
+    /// }
+    /// ```
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "buildingNumber": "00001",
+    ///   "unitIdentifier": "1A",
+    ///   "floorNumber": 1,
+    ///   "unitType": "Apartment",
+    ///   "status": "Occupied",
     ///   "areaSquareMeters": 95.0,
     ///   "numberOfRooms": 4,
-    ///   "description": "شقة سكنية مجددة"
+    ///   "description": "تم إضافة غرفة جديدة بعد الترميم",
+    ///   "createdAtUtc": "2026-01-29T12:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-01-31T14:30:00Z"
     /// }
     /// ```
     /// </remarks>
-    /// <param name="id">Property unit ID to update</param>
-    /// <param name="command">Property unit update data (all fields optional)</param>
+    /// <param name="id">Property unit ID to update (must match ID in body)</param>
+    /// <param name="command">Property unit update data (only include fields to change)</param>
     /// <returns>Updated property unit details</returns>
-    /// <response code="200">Property unit updated successfully.</response>
-    /// <response code="400">Validation error or ID mismatch.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires PropertyUnits_Update permission.</response>
-    /// <response code="404">Property unit not found.</response>
+    /// <response code="200">Property unit updated successfully</response>
+    /// <response code="400">Validation error or ID mismatch between URL and body</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires PropertyUnits_Update (6002) permission</response>
+    /// <response code="404">Property unit not found</response>
     [HttpPut("{id}")]
     [Authorize(Policy = "CanUpdatePropertyUnits")]
     [ProducesResponseType(typeof(PropertyUnitDto), StatusCodes.Status200OK)]
@@ -210,15 +295,8 @@ public class PropertyUnitsController : ControllerBase
             return BadRequest(new { message = "ID in URL does not match ID in request body" });
         }
 
-        try
-        {
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Application.Common.Exceptions.NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     // ==================== GET BY ID ====================
@@ -227,18 +305,21 @@ public class PropertyUnitsController : ControllerBase
     /// Get property unit by ID
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Retrieves detailed information about a specific property unit.
+    /// Retrieves detailed information about a specific property unit.
+    /// عرض تفاصيل الوحدة العقارية
     /// 
-    /// **Required Permission**: PropertyUnits_View
+    /// **Use Case**: View unit details, verify data
     /// 
-    /// **Response includes**:
-    /// - Unit identifier and building info
+    /// **Required Permission**: PropertyUnits_View (6000) - CanViewPropertyUnits policy
+    /// 
+    /// **Response includes:**
+    /// - Unit identification (ID, building, identifier)
     /// - Physical characteristics (floor, area, rooms)
-    /// - Current status
+    /// - Current status and type
     /// - Description and notes
     /// - Audit timestamps
     /// 
-    /// **Example Response**:
+    /// **Example Response:**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
@@ -255,13 +336,17 @@ public class PropertyUnitsController : ControllerBase
     ///   "lastModifiedAtUtc": "2026-01-29T14:30:00Z"
     /// }
     /// ```
+    /// 
+    /// **UnitType Values:** 1=Apartment, 2=Shop, 3=Office, 4=Warehouse, 5=Other
+    /// 
+    /// **Status Values:** 1=Occupied, 2=Vacant, 3=Damaged, 4=UnderRenovation, 5=Uninhabitable, 6=Locked, 99=Unknown
     /// </remarks>
     /// <param name="id">Property unit ID (GUID)</param>
     /// <returns>Property unit details</returns>
-    /// <response code="200">Property unit found and returned.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires PropertyUnits_View permission.</response>
-    /// <response code="404">Property unit not found.</response>
+    /// <response code="200">Property unit found and returned</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires PropertyUnits_View (6000) permission</response>
+    /// <response code="404">Property unit not found</response>
     [HttpGet("{id}")]
     [Authorize(Policy = "CanViewPropertyUnits")]
     [ProducesResponseType(typeof(PropertyUnitDto), StatusCodes.Status200OK)]
@@ -287,15 +372,19 @@ public class PropertyUnitsController : ControllerBase
     /// Get all property units
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Retrieves all property units in the system.
+    /// Retrieves all property units in the system.
     /// 
-    /// **Required Permission**: PropertyUnits_View
+    /// **Use Case**: Reporting, data export, administrative review
     /// 
-    /// **Note**: For large datasets, consider using the building-specific endpoint instead.
+    /// **Required Permission**: PropertyUnits_View (6000) - CanViewPropertyUnits policy
+    /// 
+    /// **Note**: For large datasets, consider using:
+    /// - `GET /api/v1/PropertyUnits/building/{buildingId}` - Units by building
+    /// - `GET /api/v1/Surveys/{surveyId}/property-units` - Units in a survey
     /// 
     /// **Response**: Array of property units ordered by building and unit identifier.
     /// 
-    /// **Example Response**:
+    /// **Example Response:**
     /// ```json
     /// [
     ///   {
@@ -309,8 +398,7 @@ public class PropertyUnitsController : ControllerBase
     ///     "areaSquareMeters": 85.5,
     ///     "numberOfRooms": 3,
     ///     "description": "شقة سكنية",
-    ///     "createdAtUtc": "2026-01-29T12:00:00Z",
-    ///     "lastModifiedAtUtc": null
+    ///     "createdAtUtc": "2026-01-29T12:00:00Z"
     ///   },
     ///   {
     ///     "id": "8f550bbc-6ee2-5b9b-c7d5-376119f64c97",
@@ -323,16 +411,15 @@ public class PropertyUnitsController : ControllerBase
     ///     "areaSquareMeters": 45.0,
     ///     "numberOfRooms": null,
     ///     "description": "محل تجاري في الطابق الأرضي",
-    ///     "createdAtUtc": "2026-01-29T12:00:00Z",
-    ///     "lastModifiedAtUtc": null
+    ///     "createdAtUtc": "2026-01-29T12:00:00Z"
     ///   }
     /// ]
     /// ```
     /// </remarks>
     /// <returns>List of all property units</returns>
-    /// <response code="200">Success. Returns array of property units (may be empty).</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires PropertyUnits_View permission.</response>
+    /// <response code="200">Success - returns array of property units (may be empty)</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires PropertyUnits_View (6000) permission</response>
     [HttpGet]
     [Authorize(Policy = "CanViewPropertyUnits")]
     [ProducesResponseType(typeof(List<PropertyUnitDto>), StatusCodes.Status200OK)]
@@ -352,23 +439,27 @@ public class PropertyUnitsController : ControllerBase
     /// Get all property units for a specific building
     /// </summary>
     /// <remarks>
-    /// **Purpose**: Retrieves all property units within a specific building.
+    /// Retrieves all property units within a specific building.
+    /// عرض وحدات البناء
     /// 
-    /// **Required Permission**: PropertyUnits_View
+    /// **Use Case**: Building management, survey preparation, unit listing
     /// 
-    /// **Use Cases**:
-    /// - Display units when selecting a building
-    /// - Building management view
-    /// - Survey preparation - see existing units
+    /// **Required Permission**: PropertyUnits_View (6000) - CanViewPropertyUnits policy
     /// 
-    /// **Response**: Array of property units in the building, ordered by floor and identifier.
+    /// **Common Uses:**
+    /// - Display units when selecting a building in UI
+    /// - Building management dashboard
+    /// - Survey preparation - view existing units before survey
+    /// - Generate building occupancy report
     /// 
-    /// **Example Response**:
+    /// **Response**: Array of property units ordered by floor and identifier.
+    /// 
+    /// **Example Response:**
     /// ```json
     /// [
     ///   {
     ///     "id": "unit-guid-1",
-    ///     "buildingId": "building-guid",
+    ///     "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "G-1",
     ///     "floorNumber": 0,
@@ -380,7 +471,7 @@ public class PropertyUnitsController : ControllerBase
     ///   },
     ///   {
     ///     "id": "unit-guid-2",
-    ///     "buildingId": "building-guid",
+    ///     "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "1A",
     ///     "floorNumber": 1,
@@ -392,7 +483,7 @@ public class PropertyUnitsController : ControllerBase
     ///   },
     ///   {
     ///     "id": "unit-guid-3",
-    ///     "buildingId": "building-guid",
+    ///     "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "1B",
     ///     "floorNumber": 1,
@@ -407,10 +498,10 @@ public class PropertyUnitsController : ControllerBase
     /// </remarks>
     /// <param name="buildingId">Building ID to get units for</param>
     /// <returns>List of property units in the building</returns>
-    /// <response code="200">Success. Returns array of property units (may be empty).</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Requires PropertyUnits_View permission.</response>
-    /// <response code="404">Building not found.</response>
+    /// <response code="200">Success - returns array of property units (may be empty)</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires PropertyUnits_View (6000) permission</response>
+    /// <response code="404">Building not found</response>
     [HttpGet("building/{buildingId}")]
     [Authorize(Policy = "CanViewPropertyUnits")]
     [ProducesResponseType(typeof(List<PropertyUnitDto>), StatusCodes.Status200OK)]
