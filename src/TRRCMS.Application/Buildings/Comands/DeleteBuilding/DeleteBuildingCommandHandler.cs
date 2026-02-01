@@ -6,7 +6,8 @@ namespace TRRCMS.Application.Buildings.Commands.DeleteBuilding;
 
 /// <summary>
 /// Handler for DeleteBuildingCommand
-/// Performs soft delete - sets IsDeleted flag
+/// Performs soft delete with referential integrity checks
+/// Uses repository methods (Clean Architecture)
 /// </summary>
 public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingCommand, bool>
 {
@@ -31,14 +32,35 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
             throw new NotFoundException($"Building with ID {request.BuildingId} not found.");
         }
 
-        // Get current user ID
-        var userId = _currentUserService.UserId
+        // ============================================================
+        // REFERENTIAL INTEGRITY CHECKS
+        // ============================================================
+
+        // Check 1: Property Units linked to this building
+        var hasPropertyUnits = await _buildingRepository.HasPropertyUnitsAsync(request.BuildingId, cancellationToken);
+        if (hasPropertyUnits)
+        {
+            throw new ValidationException(
+                "Cannot delete building with existing property units. Delete or reassign property units first. | لا يمكن حذف المبنى لوجود وحدات عقارية مرتبطة به.");
+        }
+
+        // Check 2: Active Surveys (Draft or Completed)
+        var hasActiveSurveys = await _buildingRepository.HasActiveSurveysAsync(request.BuildingId, cancellationToken);
+        if (hasActiveSurveys)
+        {
+            throw new ValidationException(
+                "Cannot delete building with active surveys. Finalize or cancel surveys first. | لا يمكن حذف المبنى لوجود مسوحات نشطة.");
+        }
+
+        // ============================================================
+        // PERFORM SOFT DELETE
+        // ============================================================
+
+        var userId = _currentUserService.UserId 
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        // Soft delete the building
         building.MarkAsDeleted(userId);
 
-        // Save changes
         await _buildingRepository.UpdateAsync(building, cancellationToken);
         await _buildingRepository.SaveChangesAsync(cancellationToken);
 

@@ -70,6 +70,24 @@ public class BuildingRepository : IBuildingRepository
             .AsQueryable();
     }
 
+    // ==================== REFERENTIAL INTEGRITY CHECKS ====================
+
+    public async Task<bool> HasPropertyUnitsAsync(Guid buildingId, CancellationToken cancellationToken = default)
+    {
+        return await _context.PropertyUnits
+            .AnyAsync(pu => pu.BuildingId == buildingId && !pu.IsDeleted, cancellationToken);
+    }
+
+    public async Task<bool> HasActiveSurveysAsync(Guid buildingId, CancellationToken cancellationToken = default)
+    {
+        // Active surveys = Draft or Completed (not yet Finalized/Exported/etc.)
+        return await _context.Surveys
+            .AnyAsync(s => s.BuildingId == buildingId
+                       && !s.IsDeleted
+                       && (s.Status == SurveyStatus.Draft || s.Status == SurveyStatus.Completed),
+                       cancellationToken);
+    }
+
     // ==================== SEARCH WITH FILTERS ====================
 
     public async Task<(List<Building> Buildings, int TotalCount)> SearchBuildingsAsync(
@@ -114,23 +132,19 @@ public class BuildingRepository : IBuildingRepository
             query = query.Where(b => b.NeighborhoodCode == neighborhoodCode);
 
         // ============================================================
-        // UPDATED: Apply buildingId filter with PARTIAL MATCH support
+        // PARTIAL MATCH: Apply buildingId filter with dash normalization
         // Supports both formatted (01-01-01-001-001-00001) and 
         // unformatted (01010100100100001) input
         // ============================================================
         if (!string.IsNullOrWhiteSpace(buildingId))
         {
-            // Remove dashes if user entered formatted version
-            // Example: "01-01-01" becomes "010101"
             var normalizedBuildingId = buildingId.Replace("-", "");
             query = query.Where(b => b.BuildingId.Contains(normalizedBuildingId));
         }
 
-        // Apply exact match on building number
         if (!string.IsNullOrWhiteSpace(buildingNumber))
             query = query.Where(b => b.BuildingNumber == buildingNumber);
 
-        // Apply text search on address
         if (!string.IsNullOrWhiteSpace(address))
             query = query.Where(b => b.Address != null && b.Address.Contains(address));
 
@@ -219,6 +233,46 @@ public class BuildingRepository : IBuildingRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<(List<Building> Buildings, int TotalCount)> SearchBuildingsInPolygonAsync(
+        string polygonWkt,
+        BuildingType? buildingType = null,
+        BuildingStatus? status = null,
+        DamageLevel? damageLevel = null,
+        int page = 1,
+        int pageSize = 100,
+        CancellationToken cancellationToken = default)
+    {
+        var polygon = _wktReader.Read(polygonWkt);
+        polygon.SRID = 4326;
+
+        var query = _context.Buildings
+            .Where(b => !b.IsDeleted)
+            .Where(b => b.BuildingGeometry != null && b.BuildingGeometry.Within(polygon))
+            .AsQueryable();
+
+        if (buildingType.HasValue)
+            query = query.Where(b => b.BuildingType == buildingType.Value);
+
+        if (status.HasValue)
+            query = query.Where(b => b.Status == status.Value);
+
+        if (damageLevel.HasValue)
+            query = query.Where(b => b.DamageLevel == damageLevel.Value);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 100 : (pageSize > 1000 ? 1000 : pageSize);
+
+        var buildings = await query
+            .OrderBy(b => b.BuildingId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (buildings, totalCount);
+    }
+
     public async Task<List<Building>> GetBuildingsInBoundingBoxAsync(
         decimal minLatitude,
         decimal maxLatitude,
@@ -229,7 +283,6 @@ public class BuildingRepository : IBuildingRepository
         int maxResults = 10000,
         CancellationToken cancellationToken = default)
     {
-        // Create bounding box
         var envelope = new Envelope(
             (double)minLongitude, (double)maxLongitude,
             (double)minLatitude, (double)maxLatitude);
@@ -271,7 +324,6 @@ public class BuildingRepository : IBuildingRepository
         if (building1 == null || building2 == null)
             return null;
 
-        // Distance in degrees, convert to meters
         var distanceDegrees = building1.Distance(building2);
         var avgLatitude = (building1.Centroid.Y + building2.Centroid.Y) / 2;
         var metersPerDegree = 111139 * Math.Cos(avgLatitude * Math.PI / 180);

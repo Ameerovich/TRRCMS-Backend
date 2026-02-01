@@ -28,6 +28,18 @@ public interface IBuildingRepository
     /// </summary>
     IQueryable<Building> GetQueryable();
 
+    // ==================== REFERENTIAL INTEGRITY CHECKS (for Delete) ====================
+
+    /// <summary>
+    /// Check if building has any non-deleted property units
+    /// </summary>
+    Task<bool> HasPropertyUnitsAsync(Guid buildingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if building has any active surveys (Draft or Completed but not Finalized)
+    /// </summary>
+    Task<bool> HasActiveSurveysAsync(Guid buildingId, CancellationToken cancellationToken = default);
+
     // ==================== SEARCH WITH FILTERS ====================
 
     /// <summary>
@@ -61,9 +73,6 @@ public interface IBuildingRepository
     /// Find buildings within a specified radius from a point
     /// Uses PostGIS ST_DWithin for accurate distance calculation
     /// </summary>
-    /// <param name="latitude">Center point latitude</param>
-    /// <param name="longitude">Center point longitude</param>
-    /// <param name="radiusMeters">Search radius in meters</param>
     Task<List<Building>> GetBuildingsWithinRadiusAsync(
         decimal latitude,
         decimal longitude,
@@ -71,12 +80,24 @@ public interface IBuildingRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Find buildings within a polygon area
+    /// Find buildings within a polygon area (simple version)
     /// Uses PostGIS ST_Within
     /// </summary>
-    /// <param name="polygonWkt">Polygon in WKT format</param>
     Task<List<Building>> GetBuildingsInPolygonAsync(
         string polygonWkt,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Find buildings within a polygon area with filters and pagination
+    /// Uses PostGIS ST_Within
+    /// </summary>
+    Task<(List<Building> Buildings, int TotalCount)> SearchBuildingsInPolygonAsync(
+        string polygonWkt,
+        BuildingType? buildingType = null,
+        BuildingStatus? status = null,
+        DamageLevel? damageLevel = null,
+        int page = 1,
+        int pageSize = 100,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -104,7 +125,7 @@ public interface IBuildingRepository
 
     /// <summary>
     /// Find buildings that intersect with a given geometry
-    /// Uses PostGIS ST_Intersects - useful for finding overlapping properties
+    /// Uses PostGIS ST_Intersects
     /// </summary>
     Task<List<Building>> GetBuildingsIntersectingAsync(
         string geometryWkt,

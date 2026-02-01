@@ -58,6 +58,11 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             createdByUserId: userId
         );
 
+        if (request.Latitude.HasValue && request.Longitude.HasValue)
+        {
+            building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, userId);
+        }
+
         // Set unit counts
         building.UpdateUnitCounts(
             propertyUnits: request.NumberOfPropertyUnits,

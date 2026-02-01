@@ -9,6 +9,7 @@ using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Buildings.Queries.GetAllBuildings;
 using TRRCMS.Application.Buildings.Queries.GetBuilding;
 using TRRCMS.Application.Buildings.Queries.GetBuildingsForMap;
+using TRRCMS.Application.Buildings.Queries.GetBuildingsInPolygon;
 using TRRCMS.Application.Buildings.Queries.SearchBuildings;
 
 namespace TRRCMS.WebAPI.Controllers;
@@ -557,5 +558,119 @@ public class BuildingsController : ControllerBase
     {
         var buildings = await _mediator.Send(query);
         return Ok(buildings);
+    }
+
+    // ==================== POLYGON SEARCH (PostGIS) ====================
+
+    /// <summary>
+    /// Get buildings within a polygon area
+    /// </summary>
+    /// <remarks>
+    /// Search for buildings that fall within a specified polygon using PostGIS ST_Within.
+    /// البحث عن المباني داخل مضلع جغرافي
+    /// 
+    /// **Use Case**: UC-007 - Spatial Search / Map Selection
+    /// 
+    /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
+    /// 
+    /// **Polygon Input Options:**
+    /// 
+    /// **Option 1: WKT Format (recommended for complex polygons)**
+    /// ```json
+    /// {
+    ///   "polygonWkt": "POLYGON((37.13 36.20, 37.14 36.20, 37.14 36.21, 37.13 36.21, 37.13 36.20))"
+    /// }
+    /// ```
+    /// 
+    /// **Option 2: Coordinates Array (easier for frontend)**
+    /// ```json
+    /// {
+    ///   "coordinates": [
+    ///     [37.13, 36.20],
+    ///     [37.14, 36.20],
+    ///     [37.14, 36.21],
+    ///     [37.13, 36.21]
+    ///   ]
+    /// }
+    /// ```
+    /// Note: Polygon will be auto-closed if first != last coordinate
+    /// 
+    /// **WKT Format Rules:**
+    /// - Coordinates are in `longitude latitude` order (X Y)
+    /// - First and last coordinate must be identical to close the polygon
+    /// - Use SRID 4326 (WGS84 - GPS coordinates)
+    /// 
+    /// **Optional Filters:**
+    /// - buildingType: 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial
+    /// - status: Building status filter
+    /// - damageLevel: Damage assessment filter
+    /// 
+    /// **Pagination:**
+    /// - page: Page number (default: 1)
+    /// - pageSize: Items per page (default: 100, max: 1000)
+    /// 
+    /// **Performance Options:**
+    /// - includeFullDetails: false (default) = lightweight response for map markers
+    /// - includeFullDetails: true = full building details (slower)
+    /// 
+    /// **Example Request - Draw selection on map:**
+    /// ```json
+    /// {
+    ///   "coordinates": [
+    ///     [37.1340, 36.2020],
+    ///     [37.1380, 36.2020],
+    ///     [37.1380, 36.2060],
+    ///     [37.1340, 36.2060]
+    ///   ],
+    ///   "buildingType": 1,
+    ///   "page": 1,
+    ///   "pageSize": 100,
+    ///   "includeFullDetails": false
+    /// }
+    /// ```
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "buildings": [
+    ///     {
+    ///       "id": "guid-here",
+    ///       "buildingId": "01010100300200001",
+    ///       "buildingIdFormatted": "01-01-01-003-002-00001",
+    ///       "latitude": 36.2021,
+    ///       "longitude": 37.1343,
+    ///       "buildingType": "Residential",
+    ///       "status": "Existing",
+    ///       "numberOfPropertyUnits": 8,
+    ///       "neighborhoodName": "العزيزية",
+    ///       "communityName": "الجميلية"
+    ///     }
+    ///   ],
+    ///   "totalCount": 25,
+    ///   "page": 1,
+    ///   "pageSize": 100,
+    ///   "totalPages": 1,
+    ///   "polygonAreaSquareMeters": 156000.5,
+    ///   "polygonWkt": "POLYGON((37.134 36.202, ...))"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="query">Polygon definition and optional filters</param>
+    /// <returns>Buildings within the polygon with pagination</returns>
+    /// <response code="200">Buildings retrieved successfully</response>
+    /// <response code="400">Invalid polygon or coordinates</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission - requires Buildings_View (4000)</response>
+    [HttpPost("polygon")]
+    [Authorize(Policy = "CanViewAllBuildings")]
+    [ProducesResponseType(typeof(GetBuildingsInPolygonResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<GetBuildingsInPolygonResponse>> GetBuildingsInPolygon(
+        [FromBody] GetBuildingsInPolygonQuery query)
+    {
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 }

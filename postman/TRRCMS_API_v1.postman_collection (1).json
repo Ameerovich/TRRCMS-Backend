@@ -687,9 +687,259 @@
 						"description": "Get all property units in a building."
 					},
 					"response": []
+				},
+				{
+					"name": "Polygon Search - Coordinates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🗺️ Polygon Search Results:');",
+									"console.log('   Buildings found:', jsonData.totalCount);",
+									"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
+									"console.log('   Area:', Math.round(jsonData.polygonAreaSquareMeters || 0), 'm²');",
+									"",
+									"if (jsonData.buildings && jsonData.buildings.length > 0) {",
+									"    pm.environment.set('polygonBuildingId', jsonData.buildings[0].id);",
+									"    jsonData.buildings.forEach(function(b, i) {",
+									"        console.log('   ' + (i+1) + '. ' + b.buildingIdFormatted + ' - ' + b.buildingType);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1340, 36.2020],\n    [37.1400, 36.2020],\n    [37.1400, 36.2060],\n    [37.1340, 36.2060]\n  ],\n  \"page\": 1,\n  \"pageSize\": 100,\n  \"includeFullDetails\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Search buildings within a polygon using coordinates array.\nالبحث عن المباني داخل مضلع جغرافي\n\n**Format:** [[lng, lat], [lng, lat], ...]\n**Auto-closes:** Polygon closes automatically if first != last\n\n**Test Areas:**\n- الجميلية: Lat 36.2020-36.2060, Lng 37.1340-37.1400\n- العزيزية: Lat 36.1960-36.2010, Lng 37.1340-37.1400\n- الشهباء: Lat 36.2080-36.2140, Lng 37.1340-37.1400"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - WKT Format",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var jsonData = pm.response.json();",
+									"console.log('🗺️ WKT Search - Found:', jsonData.totalCount, 'buildings');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"polygonWkt\": \"POLYGON((37.1340 36.2020, 37.1400 36.2020, 37.1400 36.2060, 37.1340 36.2060, 37.1340 36.2020))\",\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Search using WKT format.\n\n**WKT Format:** POLYGON((lng lat, lng lat, ...))\n**SRID:** 4326 (WGS84)\n**Note:** First and last coordinate must be identical"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - Large Area",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🗺️ Large Area - Total:', jsonData.totalCount);",
+									"",
+									"var neighborhoods = {};",
+									"jsonData.buildings.forEach(function(b) {",
+									"    var name = b.neighborhoodName || 'Unknown';",
+									"    neighborhoods[name] = (neighborhoods[name] || 0) + 1;",
+									"});",
+									"console.log('   By Neighborhood:', JSON.stringify(neighborhoods));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1330, 36.1950],\n    [37.1410, 36.1950],\n    [37.1410, 36.2150],\n    [37.1330, 36.2150]\n  ],\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Search large area covering multiple neighborhoods.\n\n**Expected:** Buildings from:\n- الجميلية الشرقية\n- العزيزية\n- الشهباء"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - Filter by Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🏠 Filtered by Type - Found:', jsonData.totalCount);",
+									"",
+									"pm.test('All match filter type', function() {",
+									"    jsonData.buildings.forEach(function(b) {",
+									"        pm.expect(b.buildingType).to.equal('Residential');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1330, 36.1950],\n    [37.1410, 36.2150]\n  ],\n  \"buildingType\": 1,\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Filter by building type.\n\n**BuildingType:**\n- 1 = Residential (سكني)\n- 2 = Commercial (تجاري)\n- 3 = MixedUse (مختلط)\n- 4 = Industrial (صناعي)"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - With Full Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Full details included', function() {",
+									"    if (jsonData.buildings && jsonData.buildings.length > 0) {",
+									"        pm.expect(jsonData.buildings[0].fullDetails).to.not.be.null;",
+									"        pm.expect(jsonData.buildings[0].buildingGeometryWkt).to.not.be.null;",
+									"    }",
+									"});",
+									"",
+									"console.log('📋 Full details for', jsonData.totalCount, 'buildings');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1340, 36.2020],\n    [37.1400, 36.2060]\n  ],\n  \"page\": 1,\n  \"pageSize\": 10,\n  \"includeFullDetails\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Include full building details.\n\n**includeFullDetails: true**\n- Includes complete BuildingDto in `fullDetails`\n- Includes `buildingGeometryWkt` (PostGIS Point WKT)"
+					},
+					"response": []
 				}
 			],
-			"description": "Building management endpoints.\n\n**Used by:** Desktop Team, Admin\n\n**Endpoints:**\n- GET /Buildings - Get all buildings (paginated)\n- GET /Buildings/{id} - Get by GUID\n- GET /Buildings/code/{code} - Get by building code\n- POST /Buildings/search - Search with partial match\n- POST /Buildings - Create building\n- PUT /Buildings/{id} - Update building\n- DELETE /Buildings/{id} - Soft delete building\n- GET /PropertyUnits/building/{id} - Get units in building\n\n**Building Code Format:**\nGG-DD-SS-CCC-NNN-BBBBB (17 digits)\n\nExample: 11-01-01-001-001-00001\n- 11: Aleppo Governorate\n- 01: District\n- 01: SubDistrict\n- 001: Community\n- 001: Neighborhood\n- 00001: Building number\n\n**Permissions:**\n- Buildings_View (4000) - CanViewAllBuildings\n- Buildings_Create (4001) - CanCreateBuildings\n- Buildings_Update (4002) - CanEditBuildings\n- Buildings_Delete (4003) - CanDeleteBuildings"
+			"description": "Building management endpoints.\n\n**Used by:** Desktop Team, Admin, GIS Team\n\n**Endpoints:**\n- GET /Buildings - Get all buildings (paginated)\n- GET /Buildings/{id} - Get by GUID\n- GET /Buildings/code/{code} - Get by building code\n- POST /Buildings/search - Search with partial match\n- POST /Buildings - Create building\n- PUT /Buildings/{id} - Update building\n- DELETE /Buildings/{id} - Soft delete\n- POST /Buildings/polygon - **NEW** Search in polygon (PostGIS)\n\n**Polygon Search Input Options:**\n- Coordinates: [[lng, lat], [lng, lat], ...]\n- WKT: POLYGON((lng lat, lng lat, ...))\n\n**BuildingType:**\n1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n\n**BuildingStatus:**\n1=Existing/Intact, 2=UnderConstruction, 3=Damaged, 4=Destroyed\n\n**Permissions:**\n- Buildings_View (4000)\n- Buildings_Create (4001)\n- Buildings_Update (4002)\n- Buildings_Delete (4003)"
 		},
 		{
 			"name": "2. Mobile Team - Field Survey",
