@@ -33,6 +33,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //
 
 // ============== REPOSITORIES ==============
+// Unit of Work - manages transactions across repositories
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();
 builder.Services.AddScoped<IPropertyUnitRepository, PropertyUnitRepository>();
 builder.Services.AddScoped<IPersonRepository, PersonRepository>();

@@ -23,6 +23,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
     public DbSet<Survey> Surveys => Set<Survey>();
 
+    // ==================== BUILDING ASSIGNMENTS ====================
+    /// <summary>
+    /// Building assignments for field collectors
+    /// UC-012: Assign Buildings to Field Collectors
+    /// </summary>
+    public DbSet<BuildingAssignment> BuildingAssignments => Set<BuildingAssignment>();
+
     // ==================== NEW: AUDIT LOG ====================
     /// <summary>
     /// Audit logs for comprehensive system action tracking

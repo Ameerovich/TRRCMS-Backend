@@ -122,6 +122,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.TabletAssignedDate);
 
+        builder.Property(u => u.IsAvailable)
+            .IsRequired()
+            .HasDefaultValue(true)
+            .HasComment("Indicates if field collector is available for new assignments");
+
         // ==================== SUPERVISION ====================
 
         builder.Property(u => u.SupervisorUserId);

@@ -1,10 +1,11 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Building Assignment entity - tracks assignment of buildings to field collectors
+/// UC-012: Assign Buildings to Field Collectors
 /// </summary>
 public class BuildingAssignment : BaseAuditableEntity
 {
@@ -77,6 +78,7 @@ public class BuildingAssignment : BaseAuditableEntity
 
     /// <summary>
     /// Reference to original assignment (if this is a revisit)
+    /// NULLABLE: May be null if this is the first assignment or original was deleted
     /// </summary>
     public Guid? OriginalAssignmentId { get; private set; }
 
@@ -136,10 +138,6 @@ public class BuildingAssignment : BaseAuditableEntity
     /// </summary>
     public virtual BuildingAssignment? OriginalAssignment { get; private set; }
 
-    // Note: FieldCollector and AssignedByUser would be User entities (to be created)
-    // public virtual User FieldCollector { get; private set; } = null!;
-    // public virtual User? AssignedByUser { get; private set; }
-
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>
@@ -188,12 +186,20 @@ public class BuildingAssignment : BaseAuditableEntity
     /// <summary>
     /// Create revisit assignment for specific units
     /// </summary>
+    /// <param name="buildingId">Building to revisit</param>
+    /// <param name="fieldCollectorId">Field collector to assign</param>
+    /// <param name="originalAssignmentId">Original assignment ID (CAN BE NULL if no prior assignment exists)</param>
+    /// <param name="unitsForRevisit">JSON array of property unit IDs</param>
+    /// <param name="revisitReason">Reason for revisit</param>
+    /// <param name="totalPropertyUnits">Number of units to revisit</param>
+    /// <param name="createdByUserId">User creating the assignment</param>
     public static BuildingAssignment CreateRevisit(
         Guid buildingId,
         Guid fieldCollectorId,
-        Guid originalAssignmentId,
+        Guid? originalAssignmentId,  // FIX: Changed from Guid to Guid? - can be null!
         string unitsForRevisit,
         string revisitReason,
+        int totalPropertyUnits,
         Guid createdByUserId)
     {
         var assignment = new BuildingAssignment
@@ -204,11 +210,11 @@ public class BuildingAssignment : BaseAuditableEntity
             UnitsForRevisit = unitsForRevisit,
             RevisitReason = revisitReason,
             IsRevisit = true,
-            OriginalAssignmentId = originalAssignmentId,
+            OriginalAssignmentId = originalAssignmentId,  // Can be null - FK allows null
             TransferStatus = TransferStatus.Pending,
             Priority = "High", // Revisits typically have higher priority
             IsActive = true,
-            TotalPropertyUnits = 0, // Will be calculated based on units for revisit
+            TotalPropertyUnits = totalPropertyUnits,
             CompletedPropertyUnits = 0
         };
 

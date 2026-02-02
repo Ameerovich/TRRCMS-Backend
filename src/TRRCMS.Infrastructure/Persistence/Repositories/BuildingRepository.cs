@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using TRRCMS.Application.Common.Interfaces;
@@ -15,6 +15,14 @@ public class BuildingRepository : IBuildingRepository
     private readonly ApplicationDbContext _context;
     private readonly GeometryFactory _geometryFactory;
     private readonly WKTReader _wktReader;
+
+    // =====================================================
+    // SPATIAL CONVERSION CONSTANTS
+    // For SRID 4326 (WGS84), distances are in DEGREES, not meters!
+    // 1 degree latitude ≈ 111,320 meters (constant)
+    // 1 degree longitude ≈ 111,320 * cos(latitude) meters (varies)
+    // =====================================================
+    private const double MetersPerDegree = 111320.0;
 
     public BuildingRepository(ApplicationDbContext context)
     {
@@ -148,15 +156,40 @@ public class BuildingRepository : IBuildingRepository
         if (!string.IsNullOrWhiteSpace(address))
             query = query.Where(b => b.Address != null && b.Address.Contains(address));
 
-        // Apply spatial filter using PostGIS
+        // ============================================================
+        // FIX: Apply spatial filter with PROPER meter-to-degree conversion
+        // SRID 4326 uses DEGREES, not meters!
+        // Also handles buildings added BEFORE PostGIS was enabled
+        // (they have BuildingGeometry = null but may have Latitude/Longitude)
+        // ============================================================
         if (latitude.HasValue && longitude.HasValue && radiusMeters.HasValue)
         {
+            // Convert meters to approximate degrees
+            // 1 degree ≈ 111,320 meters at equator
+            // This is approximate but good enough for small radii
+            double radiusDegrees = radiusMeters.Value / MetersPerDegree;
+
+            // Calculate bounding box for fallback search
+            decimal minLat = latitude.Value - (decimal)radiusDegrees;
+            decimal maxLat = latitude.Value + (decimal)radiusDegrees;
+            decimal minLng = longitude.Value - (decimal)radiusDegrees;
+            decimal maxLng = longitude.Value + (decimal)radiusDegrees;
+
             var point = _geometryFactory.CreatePoint(
                 new Coordinate((double)longitude.Value, (double)latitude.Value));
 
+            // Search buildings that have geometry OR have lat/lng coordinates
             query = query.Where(b =>
-                b.BuildingGeometry != null &&
-                b.BuildingGeometry.IsWithinDistance(point, radiusMeters.Value));
+                // Option 1: Buildings with PostGIS geometry
+                (b.BuildingGeometry != null && 
+                 b.BuildingGeometry.IsWithinDistance(point, radiusDegrees))
+                ||
+                // Option 2: Buildings without geometry but with lat/lng (pre-PostGIS buildings)
+                (b.BuildingGeometry == null && 
+                 b.Latitude.HasValue && b.Longitude.HasValue &&
+                 b.Latitude >= minLat && b.Latitude <= maxLat &&
+                 b.Longitude >= minLng && b.Longitude <= maxLng)
+            );
         }
 
         // Apply attribute filters
@@ -201,20 +234,44 @@ public class BuildingRepository : IBuildingRepository
 
     // ==================== SPATIAL QUERIES (PostGIS) ====================
 
+    /// <summary>
+    /// Get buildings within radius of a point (in METERS)
+    /// Handles both PostGIS geometry and lat/lng fallback
+    /// </summary>
     public async Task<List<Building>> GetBuildingsWithinRadiusAsync(
         decimal latitude,
         decimal longitude,
         int radiusMeters,
         CancellationToken cancellationToken = default)
     {
+        // Convert meters to degrees
+        double radiusDegrees = radiusMeters / MetersPerDegree;
+
+        // Calculate bounding box for fallback
+        decimal minLat = latitude - (decimal)radiusDegrees;
+        decimal maxLat = latitude + (decimal)radiusDegrees;
+        decimal minLng = longitude - (decimal)radiusDegrees;
+        decimal maxLng = longitude + (decimal)radiusDegrees;
+
         var point = _geometryFactory.CreatePoint(
             new Coordinate((double)longitude, (double)latitude));
 
         return await _context.Buildings
             .Where(b => !b.IsDeleted &&
-                        b.BuildingGeometry != null &&
-                        b.BuildingGeometry.IsWithinDistance(point, radiusMeters))
-            .OrderBy(b => b.BuildingGeometry!.Distance(point))
+                (
+                    // Buildings with geometry
+                    (b.BuildingGeometry != null && 
+                     b.BuildingGeometry.IsWithinDistance(point, radiusDegrees))
+                    ||
+                    // Buildings without geometry (fallback)
+                    (b.BuildingGeometry == null && 
+                     b.Latitude.HasValue && b.Longitude.HasValue &&
+                     b.Latitude >= minLat && b.Latitude <= maxLat &&
+                     b.Longitude >= minLng && b.Longitude <= maxLng)
+                ))
+            .OrderBy(b => b.BuildingGeometry != null 
+                ? b.BuildingGeometry.Distance(point) 
+                : double.MaxValue)
             .ToListAsync(cancellationToken);
     }
 
@@ -290,10 +347,19 @@ public class BuildingRepository : IBuildingRepository
         var boundingBox = _geometryFactory.ToGeometry(envelope);
         boundingBox.SRID = 4326;
 
+        // Search both buildings with geometry AND without
         var query = _context.Buildings
             .Where(b => !b.IsDeleted &&
-                        b.BuildingGeometry != null &&
-                        b.BuildingGeometry.Intersects(boundingBox));
+                (
+                    // Buildings with geometry
+                    (b.BuildingGeometry != null && b.BuildingGeometry.Intersects(boundingBox))
+                    ||
+                    // Buildings without geometry (fallback to lat/lng)
+                    (b.BuildingGeometry == null && 
+                     b.Latitude.HasValue && b.Longitude.HasValue &&
+                     b.Latitude >= minLatitude && b.Latitude <= maxLatitude &&
+                     b.Longitude >= minLongitude && b.Longitude <= maxLongitude)
+                ));
 
         if (buildingType.HasValue)
             query = query.Where(b => b.BuildingType == buildingType.Value);
@@ -326,7 +392,7 @@ public class BuildingRepository : IBuildingRepository
 
         var distanceDegrees = building1.Distance(building2);
         var avgLatitude = (building1.Centroid.Y + building2.Centroid.Y) / 2;
-        var metersPerDegree = 111139 * Math.Cos(avgLatitude * Math.PI / 180);
+        var metersPerDegree = MetersPerDegree * Math.Cos(avgLatitude * Math.PI / 180);
 
         return distanceDegrees * metersPerDegree;
     }

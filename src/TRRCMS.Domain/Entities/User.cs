@@ -146,6 +146,12 @@ public class User : BaseAuditableEntity
     /// </summary>
     public DateTime? TabletAssignedDate { get; private set; }
 
+    /// <summary>
+    /// Indicates if user is available for new assignments (متاح للتعيين)
+    /// UC-012: Used to filter available field collectors
+    /// </summary>
+    public bool IsAvailable { get; private set; }
+
     // ==================== SUPERVISION (for Field Teams) ====================
 
     /// <summary>
@@ -238,6 +244,7 @@ public class User : BaseAuditableEntity
         HasDesktopAccess = false;
         Supervisees = new List<User>();
         Permissions = new List<UserPermission>();
+        IsAvailable = true; // Field collectors are available by default
     }
 
     /// <summary>
@@ -427,6 +434,15 @@ public class User : BaseAuditableEntity
     {
         AssignedTabletId = null;
         TabletAssignedDate = null;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Set field collector availability for new assignments
+    /// </summary>
+    public void SetAvailability(bool isAvailable, Guid modifiedByUserId)
+    {
+        IsAvailable = isAvailable;
         MarkAsModified(modifiedByUserId);
     }
 
