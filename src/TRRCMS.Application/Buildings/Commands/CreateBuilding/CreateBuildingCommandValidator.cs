@@ -4,6 +4,10 @@ namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
 
 /// <summary>
 /// Validator for CreateBuildingCommand
+/// Enhanced with FSD-compliant validations:
+/// - Composite BuildingId 17-digit pattern
+/// - Syria geographic bounds for coordinates
+/// - Upper limits for unit counts
 /// </summary>
 public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCommand>
 {
@@ -41,6 +45,24 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
             .Length(5).WithMessage("Building number must be 5 digits")
             .Matches(@"^\d{5}$").WithMessage("Building number must contain only digits");
 
+        // ==================== COMPOSITE BUILDING ID (17 digits) ====================
+        // BuildingId = GovernorateCode(2) + DistrictCode(2) + SubDistrictCode(2)
+        //            + CommunityCode(3) + NeighborhoodCode(3) + BuildingNumber(5) = 17 digits
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                var compositeId = $"{x.GovernorateCode}{x.DistrictCode}{x.SubDistrictCode}" +
+                                  $"{x.CommunityCode}{x.NeighborhoodCode}{x.BuildingNumber}";
+                return compositeId.Length == 17 && compositeId.All(char.IsDigit);
+            })
+            .When(x => !string.IsNullOrEmpty(x.GovernorateCode) &&
+                        !string.IsNullOrEmpty(x.DistrictCode) &&
+                        !string.IsNullOrEmpty(x.SubDistrictCode) &&
+                        !string.IsNullOrEmpty(x.CommunityCode) &&
+                        !string.IsNullOrEmpty(x.NeighborhoodCode) &&
+                        !string.IsNullOrEmpty(x.BuildingNumber))
+            .WithMessage("Composite Building ID must form exactly 17 digits (2+2+2+3+3+5)");
+
         // ==================== BUILDING ATTRIBUTES ====================
 
         RuleFor(x => x.BuildingType)
@@ -50,25 +72,42 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
             .IsInEnum().WithMessage("Invalid building status (حالة البناء)");
 
         RuleFor(x => x.NumberOfPropertyUnits)
-            .GreaterThanOrEqualTo(0).WithMessage("Number of property units cannot be negative");
+            .GreaterThanOrEqualTo(0).WithMessage("Number of property units cannot be negative")
+            .LessThanOrEqualTo(500).WithMessage("Number of property units cannot exceed 500");
 
         RuleFor(x => x.NumberOfApartments)
-            .GreaterThanOrEqualTo(0).WithMessage("Number of apartments cannot be negative");
+            .GreaterThanOrEqualTo(0).WithMessage("Number of apartments cannot be negative")
+            .LessThanOrEqualTo(500).WithMessage("Number of apartments cannot exceed 500");
 
         RuleFor(x => x.NumberOfShops)
-            .GreaterThanOrEqualTo(0).WithMessage("Number of shops cannot be negative");
+            .GreaterThanOrEqualTo(0).WithMessage("Number of shops cannot be negative")
+            .LessThanOrEqualTo(200).WithMessage("Number of shops cannot exceed 200");
 
-        // ==================== LOCATION ====================
+        // Apartments + Shops should not exceed total PropertyUnits
+        RuleFor(x => x)
+            .Must(x => (x.NumberOfApartments + x.NumberOfShops) <= x.NumberOfPropertyUnits)
+            .When(x => x.NumberOfPropertyUnits > 0)
+            .WithMessage("Sum of apartments and shops cannot exceed total number of property units");
+
+        // ==================== LOCATION (Syria bounds) ====================
+        // FIX: Use decimal suffix (m) to match decimal? property type
+        // Syria approximate bounds: Lat 32.0°N - 37.5°N, Lng 35.5°E - 42.5°E
 
         RuleFor(x => x.Latitude)
-            .InclusiveBetween(-90, 90)
+            .InclusiveBetween(32.0m, 37.5m)
             .When(x => x.Latitude.HasValue)
-            .WithMessage("Latitude must be between -90 and 90");
+            .WithMessage("Latitude must be between 32.0 and 37.5 (Syria bounds)");
 
         RuleFor(x => x.Longitude)
-            .InclusiveBetween(-180, 180)
+            .InclusiveBetween(35.5m, 42.5m)
             .When(x => x.Longitude.HasValue)
-            .WithMessage("Longitude must be between -180 and 180");
+            .WithMessage("Longitude must be between 35.5 and 42.5 (Syria bounds)");
+
+        // Both coordinates must be provided together
+        RuleFor(x => x)
+            .Must(x => (x.Latitude.HasValue && x.Longitude.HasValue) ||
+                       (!x.Latitude.HasValue && !x.Longitude.HasValue))
+            .WithMessage("Both latitude and longitude must be provided together");
 
         // ==================== DESCRIPTIONS ====================
 

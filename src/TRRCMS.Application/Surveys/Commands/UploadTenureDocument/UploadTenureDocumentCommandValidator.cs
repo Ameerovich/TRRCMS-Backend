@@ -1,12 +1,26 @@
-﻿using FluentValidation;
+using FluentValidation;
 
 namespace TRRCMS.Application.Surveys.Commands.UploadTenureDocument;
 
 /// <summary>
 /// Validator for UploadTenureDocumentCommand
+/// Enhanced with file size limits and allowed MIME types for tenure/deed documents
 /// </summary>
 public class UploadTenureDocumentCommandValidator : AbstractValidator<UploadTenureDocumentCommand>
 {
+    /// <summary>
+    /// Maximum document file size: 25 MB (deeds/contracts may be multi-page scans)
+    /// </summary>
+    private const long MaxFileSizeBytes = 25 * 1024 * 1024;
+
+    private static readonly string[] AllowedMimeTypes =
+    {
+        "image/jpeg", "image/png", "image/gif", "image/webp", "image/tiff",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    };
+
     public UploadTenureDocumentCommandValidator()
     {
         RuleFor(x => x.SurveyId)
@@ -21,6 +35,28 @@ public class UploadTenureDocumentCommandValidator : AbstractValidator<UploadTenu
             .NotNull()
             .WithMessage("File is required");
 
+        // File size validation
+        RuleFor(x => x.File)
+            .Must(file => file.Length <= MaxFileSizeBytes)
+            .When(x => x.File != null)
+            .WithMessage($"Document file size cannot exceed {MaxFileSizeBytes / (1024 * 1024)} MB");
+
+        RuleFor(x => x.File)
+            .Must(file => file.Length > 0)
+            .When(x => x.File != null)
+            .WithMessage("Document file cannot be empty");
+
+        // MIME type validation - images, PDFs, and Word docs for tenure documents
+        RuleFor(x => x.File)
+            .Must(file => AllowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
+            .When(x => x.File != null)
+            .WithMessage("Only image files, PDFs, and Word documents are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF, DOC, DOCX)");
+
+        // Evidence type validation
+        RuleFor(x => x.EvidenceType)
+            .IsInEnum()
+            .WithMessage("Invalid evidence type");
+
         RuleFor(x => x.Description)
             .NotEmpty()
             .WithMessage("Description is required")
@@ -31,6 +67,11 @@ public class UploadTenureDocumentCommandValidator : AbstractValidator<UploadTenu
             .GreaterThan(x => x.DocumentIssuedDate)
             .When(x => x.DocumentIssuedDate.HasValue && x.DocumentExpiryDate.HasValue)
             .WithMessage("Expiry date must be after issue date");
+
+        RuleFor(x => x.DocumentIssuedDate)
+            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
+            .When(x => x.DocumentIssuedDate.HasValue)
+            .WithMessage("Document issue date cannot be in the future");
 
         RuleFor(x => x.IssuingAuthority)
             .MaximumLength(200)

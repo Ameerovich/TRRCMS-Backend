@@ -4,6 +4,7 @@ namespace TRRCMS.Application.Households.Commands.CreateHousehold;
 
 /// <summary>
 /// Validator for CreateHouseholdCommand
+/// Enhanced with cross-field demographics consistency validation
 /// </summary>
 public class CreateHouseholdCommandValidator : AbstractValidator<CreateHouseholdCommand>
 {
@@ -76,6 +77,29 @@ public class CreateHouseholdCommandValidator : AbstractValidator<CreateHousehold
             .WithMessage("Female disabled count (عدد المعاقين الإناث) cannot be negative")
             .LessThanOrEqualTo(20)
             .WithMessage("Female disabled count must not exceed 20");
+
+        // ==================== CROSS-FIELD: Demographics sum consistency ====================
+        // Total demographic members (adults + children + elderly) should not exceed household size
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                var totalMembers = x.MaleCount + x.FemaleCount +
+                                   x.MaleChildCount + x.FemaleChildCount +
+                                   x.MaleElderlyCount + x.FemaleElderlyCount;
+                return totalMembers <= x.HouseholdSize;
+            })
+            .WithMessage("Sum of demographic members (adults + children + elderly) cannot exceed household size")
+            .When(x => x.HouseholdSize > 0);
+
+        // Disabled count should not exceed total household size
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                var totalDisabled = x.MaleDisabledCount + x.FemaleDisabledCount;
+                return totalDisabled <= x.HouseholdSize;
+            })
+            .WithMessage("Total disabled count cannot exceed household size")
+            .When(x => x.HouseholdSize > 0);
 
         // Notes
         RuleFor(x => x.Notes)

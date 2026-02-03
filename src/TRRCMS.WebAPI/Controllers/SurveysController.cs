@@ -41,6 +41,7 @@ using TRRCMS.Application.Surveys.Queries.GetOfficeDraftSurveys;
 using TRRCMS.Application.Surveys.Queries.GetOfficeSurveyById;
 using TRRCMS.Application.Surveys.Queries.GetOfficeSurveys;
 using TRRCMS.Application.Surveys.Queries.GetPropertyUnitsForSurvey;
+using TRRCMS.Application.Surveys.Queries.GetRelationsForPropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Queries.GetSurveyEvidence;
 using TRRCMS.Domain.Enums;
 
@@ -1293,6 +1294,134 @@ public class SurveysController : ControllerBase
         command.PropertyUnitId = unitId;
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetSurvey), new { id = surveyId }, result);
+    }
+    /// <summary>
+    /// Get all person-property relations for a property unit in survey context
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 3 - View all person-property relations
+    /// عرض جميع العلاقات بين الأشخاص والوحدة العقارية
+    /// 
+    /// **Purpose**: Returns all person-property relations linked to a specific property unit
+    /// within a survey context. The response matches the same DTO returned by the
+    /// **LinkPersonToPropertyUnit** (POST) endpoint, so the frontend can display/refresh
+    /// the full list after creating or updating a relation.
+    /// 
+    /// **Required Permission**: CanViewOwnSurveys
+    /// 
+    /// **What it does**:
+    /// - Validates the survey exists and belongs to the current user
+    /// - Validates the property unit belongs to the survey's building
+    /// - Returns all non-deleted relations for the property unit
+    /// - Each relation includes: type, contract details, ownership share, dates, notes
+    /// - Includes computed fields: DurationInDays, IsOngoing, EvidenceCount
+    /// 
+    /// **Route**: `GET /api/v1/surveys/{surveyId}/property-units/{unitId}/relations`
+    /// 
+    /// **Relation types** (نوع العلاقة):
+    /// - Owner = 1 (مالك)
+    /// - Occupant = 2 (شاغل)
+    /// - Tenant = 3 (مستأجر)
+    /// - Guest = 4 (ضيف)
+    /// - Heir = 5 (وريث)
+    /// - Other = 99 (أخرى)
+    /// 
+    /// **Contract types** (نوع العقد):
+    /// - FullOwnership = 1, SharedOwnership = 2, LongTermRental = 3,
+    ///   ShortTermRental = 4, InformalTenure = 5, UnauthorizedOccupation = 6,
+    ///   CustomaryRights = 7, InheritanceBased = 8, HostedGuest = 9,
+    ///   TemporaryShelter = 10, GovernmentAllocation = 11, Usufruct = 12, Other = 99
+    /// 
+    /// **Example Request**:
+    /// ```
+    /// GET /api/v1/surveys/3fa85f64-5717-4562-b3fc-2c963f66afa6/property-units/7e439aab-5dd1-4a8a-b6c4-265008e53b86/relations
+    /// ```
+    /// 
+    /// **Example Response**:
+    /// ```json
+    /// [
+    ///   {
+    ///     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    ///     "personId": "11111111-2222-3333-4444-555555555555",
+    ///     "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///     "relationType": 1,
+    ///     "relationTypeOtherDesc": null,
+    ///     "contractType": 1,
+    ///     "contractTypeOtherDesc": null,
+    ///     "ownershipShare": 0.5,
+    ///     "contractDetails": "عقد ملكية مسجل في السجل العقاري",
+    ///     "startDate": "2010-01-01T00:00:00",
+    ///     "endDate": null,
+    ///     "notes": "المالك الأصلي مع وثائق ملكية",
+    ///     "isActive": true,
+    ///     "durationInDays": 5878,
+    ///     "isOngoing": true,
+    ///     "evidenceCount": 2,
+    ///     "createdAtUtc": "2026-01-29T12:00:00Z",
+    ///     "createdBy": "user-guid",
+    ///     "lastModifiedAtUtc": null,
+    ///     "lastModifiedBy": null,
+    ///     "isDeleted": false,
+    ///     "deletedAtUtc": null,
+    ///     "deletedBy": null
+    ///   },
+    ///   {
+    ///     "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    ///     "personId": "22222222-3333-4444-5555-666666666666",
+    ///     "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///     "relationType": 3,
+    ///     "relationTypeOtherDesc": null,
+    ///     "contractType": 3,
+    ///     "contractTypeOtherDesc": null,
+    ///     "ownershipShare": null,
+    ///     "contractDetails": null,
+    ///     "startDate": "2023-06-01T00:00:00",
+    ///     "endDate": "2025-06-01T00:00:00",
+    ///     "notes": "عقد إيجار لمدة سنتين",
+    ///     "isActive": true,
+    ///     "durationInDays": 731,
+    ///     "isOngoing": false,
+    ///     "evidenceCount": 1,
+    ///     "createdAtUtc": "2026-01-29T14:30:00Z",
+    ///     "createdBy": "user-guid",
+    ///     "lastModifiedAtUtc": null,
+    ///     "lastModifiedBy": null,
+    ///     "isDeleted": false,
+    ///     "deletedAtUtc": null,
+    ///     "deletedBy": null
+    ///   }
+    /// ]
+    /// ```
+    /// 
+    /// **Tip**: Use the POST variant of this same route to create new relations:
+    /// `POST /api/v1/surveys/{surveyId}/property-units/{unitId}/relations`
+    /// </remarks>
+    /// <param name="surveyId">Survey ID (used for authorization — current user must own this survey)</param>
+    /// <param name="unitId">Property unit ID to get relations for (must belong to survey's building)</param>
+    /// <returns>List of person-property relations for the property unit</returns>
+    /// <response code="200">Success. Returns array of relations (may be empty if none created yet).</response>
+    /// <response code="400">Property unit does not belong to the survey's building.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only view relations for your own surveys.</response>
+    /// <response code="404">Survey or property unit not found.</response>
+    [HttpGet("{surveyId}/property-units/{unitId}/relations")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<PersonPropertyRelationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<PersonPropertyRelationDto>>> GetRelationsForPropertyUnit(
+        Guid surveyId,
+        Guid unitId)
+    {
+        var query = new GetRelationsForPropertyUnitInSurveyQuery
+        {
+            SurveyId = surveyId,
+            PropertyUnitId = unitId
+        };
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 
     // ==================== EVIDENCE MANAGEMENT ====================

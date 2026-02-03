@@ -1,9 +1,10 @@
-ï»¿using FluentValidation;
+using FluentValidation;
 
 namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 
 /// <summary>
 /// Validator for UpdateBuildingCommand
+/// Enhanced with Syria geographic bounds and upper unit limits
 /// </summary>
 public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCommand>
 {
@@ -25,32 +26,50 @@ public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCo
             .When(x => x.BuildingStatus.HasValue)
             .WithMessage("Invalid building status");
 
-        // Unit count validations
+        // Unit count validations (with upper limits)
         RuleFor(x => x.NumberOfPropertyUnits)
             .GreaterThanOrEqualTo(0)
             .When(x => x.NumberOfPropertyUnits.HasValue)
             .WithMessage("Number of property units cannot be negative");
+
+        RuleFor(x => x.NumberOfPropertyUnits)
+            .LessThanOrEqualTo(500)
+            .When(x => x.NumberOfPropertyUnits.HasValue)
+            .WithMessage("Number of property units cannot exceed 500");
 
         RuleFor(x => x.NumberOfApartments)
             .GreaterThanOrEqualTo(0)
             .When(x => x.NumberOfApartments.HasValue)
             .WithMessage("Number of apartments cannot be negative");
 
+        RuleFor(x => x.NumberOfApartments)
+            .LessThanOrEqualTo(500)
+            .When(x => x.NumberOfApartments.HasValue)
+            .WithMessage("Number of apartments cannot exceed 500");
+
         RuleFor(x => x.NumberOfShops)
             .GreaterThanOrEqualTo(0)
             .When(x => x.NumberOfShops.HasValue)
             .WithMessage("Number of shops cannot be negative");
 
-        // Coordinate validations
+        RuleFor(x => x.NumberOfShops)
+            .LessThanOrEqualTo(200)
+            .When(x => x.NumberOfShops.HasValue)
+            .WithMessage("Number of shops cannot exceed 200");
+
+        // Syria geographic bounds for coordinates
+        // FIX: Use decimal suffix (m) to match decimal? property type
+        // Syria approximate bounds: Lat 32.0°N - 37.5°N, Lng 35.5°E - 42.5°E
+
         RuleFor(x => x.Latitude)
-            .InclusiveBetween(-90, 90)
+            .InclusiveBetween(32.0m, 37.5m)
             .When(x => x.Latitude.HasValue)
-            .WithMessage("Latitude must be between -90 and 90");
+            .WithMessage("Latitude must be between 32.0 and 37.5 (Syria bounds)");
 
         RuleFor(x => x.Longitude)
-            .InclusiveBetween(-180, 180)
+            .InclusiveBetween(35.5m, 42.5m)
             .When(x => x.Longitude.HasValue)
-            .WithMessage("Longitude must be between -180 and 180");
+            .WithMessage("Longitude must be between 35.5 and 42.5 (Syria bounds)");
 
         // Both coordinates must be provided together
         RuleFor(x => x)

@@ -4,6 +4,7 @@ namespace TRRCMS.Application.Persons.Commands.CreatePerson;
 
 /// <summary>
 /// Validator for CreatePersonCommand
+/// Enhanced with Syria-specific National ID validation (11 digits per FSD)
 /// </summary>
 public class CreatePersonCommandValidator : AbstractValidator<CreatePersonCommand>
 {
@@ -38,17 +39,16 @@ public class CreatePersonCommandValidator : AbstractValidator<CreatePersonComman
 
         // ==================== IDENTIFICATION ====================
 
+        // Syria National ID: exactly 11 digits (per FSD)
         RuleFor(x => x.NationalId)
-            .MaximumLength(50)
-            .WithMessage("الرقم الوطني يجب ألا يتجاوز 50 حرف")
-            .Matches(@"^[0-9]*$")
-            .WithMessage("الرقم الوطني يجب أن يحتوي على أرقام فقط")
-            .When(x => !string.IsNullOrEmpty(x.NationalId));
+            .Matches(@"^\d{11}$")
+            .When(x => !string.IsNullOrEmpty(x.NationalId))
+            .WithMessage("الرقم الوطني يجب أن يكون 11 رقماً بالضبط");
 
         RuleFor(x => x.YearOfBirth)
-            .InclusiveBetween(1900, DateTime.UtcNow.Year)
-            .WithMessage($"سنة الميلاد يجب أن تكون بين 1900 و {DateTime.UtcNow.Year}")
-            .When(x => x.YearOfBirth.HasValue);
+            .Must(year => year >= 1900 && year <= DateTime.UtcNow.Year)
+            .When(x => x.YearOfBirth.HasValue)
+            .WithMessage($"سنة الميلاد يجب أن تكون بين 1900 و {DateTime.UtcNow.Year}");
 
         // ==================== CONTACT INFORMATION ====================
 
