@@ -282,6 +282,15 @@ public class Survey : BaseAuditableEntity
     }
 
     // ==================== DOMAIN METHODS ====================
+    /// <summary>
+    /// Re-point this survey to a different building (used during building merge).
+    /// Preserves all survey details; only changes the building FK.
+    /// </summary>
+    public void UpdateBuildingId(Guid newBuildingId, Guid modifiedByUserId)
+    {
+        BuildingId = newBuildingId;
+        MarkAsModified(modifiedByUserId);
+    }
 
     /// <summary>
     /// Set the reference code (used by handlers after generating from repository)

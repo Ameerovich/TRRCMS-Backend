@@ -17,6 +17,7 @@ using TRRCMS.Application.Surveys.Commands.FinalizeFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
+using TRRCMS.Application.Surveys.Commands.ProcessOfficeSurveyClaims;
 using TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 using TRRCMS.Application.Surveys.Commands.SetHouseholdHead;
 using TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
@@ -369,33 +370,27 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Finalize office survey and create claims from ownership/heir relations
+    /// Process office survey claims from ownership/heir relations
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 S21 / UC-005 - Finalize office survey
+    /// **Use Case**: UC-004 S21 / UC-005 - Process office survey data and create claims
     /// 
-    /// **Purpose**: Marks survey as finalized and creates one claim per ownership/heir relation.
+    /// **Purpose**: Validates survey data, collects summary, and creates one claim per
+    /// ownership/heir relation — WITHOUT changing the survey status.
+    /// The survey remains in Draft status. Call the finalize endpoint separately.
     /// 
     /// **What it does**:
     /// - Validates survey has required data (property unit linked)
     /// - Collects data summary (households, persons, relations, evidence)
-    /// - Marks survey as Finalized
-    /// - If AutoCreateClaim=true AND ownership/heir relations exist:
-    ///   - Iterates all Owner and Heir relations in the survey
-    ///   - Creates one claim per relation with:
-    ///     - ClaimSource = OfficeSubmission (2)
-    ///     - CasePriority = Normal (2)
-    ///     - ClaimStatus = Draft (1)
-    ///   - Each claim includes: PropertyUnitIdNumber, FullNameArabic, SurveyDate,
-    ///     TypeOfWorks (derived from unit type), and HasEvidence (per-relation)
-    ///   - Links the first created claim to the survey for backward compatibility
-    /// - Returns finalization result with full list of created claims
+    /// - If AutoCreateClaim=true AND ownership relations exist:
+    ///   - Creates one claim per Owner/Heir relation
+    ///   - Generates claim number (CLM-YYYY-NNNNNNNNN) per claim
+    ///   - Sets ClaimSource=OfficeSubmission
+    ///   - Checks per-relation evidence for HasEvidence flag
+    ///   - Links first claim to survey for backward compatibility
+    /// - Returns processing result with all created claims and data summary
     /// 
-    /// **TypeOfWorks mapping**:
-    /// - Apartment → Residential
-    /// - Shop / Office → Commercial
-    /// - Warehouse → Factorial
-    /// - Other → Other
+    /// **Survey status**: Remains unchanged (Draft)
     /// 
     /// **Required permissions**: CanFinalizeSurveys
     /// 
@@ -408,64 +403,74 @@ public class SurveysController : ControllerBase
     /// }
     /// ```
     /// 
-    /// **Example response** (abbreviated):
+    /// **Example response**:
     /// ```json
     /// {
-    ///   "survey": { "id": "...", "status": "Finalized" },
+    ///   "survey": { ... },
     ///   "claimCreated": true,
     ///   "claimId": "first-claim-guid",
     ///   "claimNumber": "CLM-2026-000000001",
     ///   "claimsCreatedCount": 2,
     ///   "createdClaims": [
-    ///     {
-    ///       "claimId": "first-claim-guid",
-    ///       "claimNumber": "CLM-2026-000000001",
-    ///       "propertyUnitIdNumber": "Apt 1",
-    ///       "fullNameArabic": "أحمد محمد العلي",
-    ///       "claimSource": 2,
-    ///       "casePriority": 2,
-    ///       "claimStatus": 1,
-    ///       "surveyDate": "2026-02-07T10:00:00Z",
-    ///       "typeOfWorks": "Residential",
-    ///       "hasEvidence": true,
-    ///       "relationType": "Owner"
-    ///     },
-    ///     {
-    ///       "claimId": "second-claim-guid",
-    ///       "claimNumber": "CLM-2026-000000002",
-    ///       "propertyUnitIdNumber": "Apt 1",
-    ///       "fullNameArabic": "سارة محمد العلي",
-    ///       "claimSource": 2,
-    ///       "casePriority": 2,
-    ///       "claimStatus": 1,
-    ///       "surveyDate": "2026-02-07T10:00:00Z",
-    ///       "typeOfWorks": "Residential",
-    ///       "hasEvidence": false,
-    ///       "relationType": "Heir"
-    ///     }
+    ///     { "claimNumber": "CLM-2026-000000001", "relationType": "Owner", ... },
+    ///     { "claimNumber": "CLM-2026-000000002", "relationType": "Heir", ... }
     ///   ],
-    ///   "dataSummary": { "relationsCount": 3, "ownershipRelationsCount": 2 }
+    ///   "dataSummary": { ... },
+    ///   "warnings": []
     /// }
     /// ```
     /// </remarks>
     /// <param name="id">Office survey ID</param>
-    /// <param name="command">Finalization options</param>
-    /// <returns>Finalization result with list of created claims and UI-supporting fields</returns>
-    [HttpPost("office/{id}/finalize")]
+    /// <param name="command">Processing options</param>
+    /// <returns>Processing result with created claims and data summary</returns>
+    [HttpPost("office/{id}/process-claims")]
     [Authorize(Policy = "CanFinalizeSurveys")]
     [ProducesResponseType(typeof(OfficeSurveyFinalizationResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OfficeSurveyFinalizationResultDto>> FinalizeOfficeSurvey(
+    public async Task<ActionResult<OfficeSurveyFinalizationResultDto>> ProcessOfficeSurveyClaims(
         Guid id,
-        [FromBody] FinalizeOfficeSurveyCommand command)
+        [FromBody] ProcessOfficeSurveyClaimsCommand command)
     {
         command.SurveyId = id;
         var result = await _mediator.Send(command);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Finalize office survey (change status to Finalized)
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004 S21 - Mark office survey as finalized
+    /// 
+    /// **Purpose**: Transitions the survey status from Draft to Finalized.
+    /// Does NOT create claims — use the process-claims endpoint for that.
+    /// 
+    /// **What it does**:
+    /// - Validates survey is an office survey in Draft status
+    /// - Marks the survey as Finalized via domain method
+    /// - Logs the status change in audit trail
+    /// 
+    /// **Required permissions**: CanFinalizeSurveys
+    /// </remarks>
+    /// <param name="id">Office survey ID</param>
+    /// <returns>200 OK on success</returns>
+    [HttpPost("office/{id}/finalize")]
+    [Authorize(Policy = "CanFinalizeSurveys")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> FinalizeOfficeSurvey(Guid id)
+    {
+        var command = new FinalizeOfficeSurveyCommand { SurveyId = id };
+        await _mediator.Send(command);
+        return Ok();
+    }
+
 
     // ==================== COMMON SURVEY OPERATIONS ====================
 

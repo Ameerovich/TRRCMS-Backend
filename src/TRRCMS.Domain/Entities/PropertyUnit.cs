@@ -262,7 +262,17 @@ public class PropertyUnit : BaseAuditableEntity
         return unit;
     }
 
-    // ==================== ORIGINAL DOMAIN METHODS (unchanged) ====================
+    // ==================== ORIGINAL DOMAIN METHODS ====================
+
+    /// <summary>
+    /// Re-parent this property unit to a different building (used during building merge).
+    /// Preserves all unit details; only changes the parent building FK.
+    /// </summary>
+    public void ReParentToBuilding(Guid newBuildingId, Guid modifiedByUserId)
+    {
+        BuildingId = newBuildingId;
+        MarkAsModified(modifiedByUserId);
+    }
 
     /// <summary>
     /// Update unit status and damage level

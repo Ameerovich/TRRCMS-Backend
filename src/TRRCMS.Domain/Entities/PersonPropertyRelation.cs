@@ -124,6 +124,12 @@ public class PersonPropertyRelation : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
+    public void UpdatePersonId(Guid newPersonId, Guid modifiedByUserId)
+    {
+        PersonId = newPersonId;
+        MarkAsModified(modifiedByUserId);
+    }
+
     public void Terminate(DateTime endDate, Guid modifiedByUserId)
     {
         IsActive = false;
