@@ -369,26 +369,37 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Finalize office survey and optionally create claim
+    /// Finalize office survey and create claims from ownership/heir relations
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-004 S21 / UC-005 - Finalize office survey
     /// 
-    /// **Purpose**: Marks survey as finalized and optionally creates a claim.
+    /// **Purpose**: Marks survey as finalized and creates one claim per ownership/heir relation.
     /// 
     /// **What it does**:
     /// - Validates survey has required data (property unit linked)
     /// - Collects data summary (households, persons, relations, evidence)
     /// - Marks survey as Finalized
-    /// - If AutoCreateClaim=true AND ownership relations exist:
-    ///   - Generates claim number (CLM-YYYY-NNNNNNNNN)
-    ///   - Creates claim with ClaimSource=OfficeSubmission
-    ///   - Links claim to survey
-    /// - Returns finalization result with summary
+    /// - If AutoCreateClaim=true AND ownership/heir relations exist:
+    ///   - Iterates all Owner and Heir relations in the survey
+    ///   - Creates one claim per relation with:
+    ///     - ClaimSource = OfficeSubmission (2)
+    ///     - CasePriority = Normal (2)
+    ///     - ClaimStatus = Draft (1)
+    ///   - Each claim includes: PropertyUnitIdNumber, FullNameArabic, SurveyDate,
+    ///     TypeOfWorks (derived from unit type), and HasEvidence (per-relation)
+    ///   - Links the first created claim to the survey for backward compatibility
+    /// - Returns finalization result with full list of created claims
+    /// 
+    /// **TypeOfWorks mapping**:
+    /// - Apartment → Residential
+    /// - Shop / Office → Commercial
+    /// - Warehouse → Factorial
+    /// - Other → Other
     /// 
     /// **Required permissions**: CanFinalizeSurveys
     /// 
-    /// **Example**:
+    /// **Example request**:
     /// ```json
     /// {
     ///   "finalNotes": "Survey completed successfully",
@@ -396,10 +407,50 @@ public class SurveysController : ControllerBase
     ///   "autoCreateClaim": true
     /// }
     /// ```
+    /// 
+    /// **Example response** (abbreviated):
+    /// ```json
+    /// {
+    ///   "survey": { "id": "...", "status": "Finalized" },
+    ///   "claimCreated": true,
+    ///   "claimId": "first-claim-guid",
+    ///   "claimNumber": "CLM-2026-000000001",
+    ///   "claimsCreatedCount": 2,
+    ///   "createdClaims": [
+    ///     {
+    ///       "claimId": "first-claim-guid",
+    ///       "claimNumber": "CLM-2026-000000001",
+    ///       "propertyUnitIdNumber": "Apt 1",
+    ///       "fullNameArabic": "أحمد محمد العلي",
+    ///       "claimSource": 2,
+    ///       "casePriority": 2,
+    ///       "claimStatus": 1,
+    ///       "surveyDate": "2026-02-07T10:00:00Z",
+    ///       "typeOfWorks": "Residential",
+    ///       "hasEvidence": true,
+    ///       "relationType": "Owner"
+    ///     },
+    ///     {
+    ///       "claimId": "second-claim-guid",
+    ///       "claimNumber": "CLM-2026-000000002",
+    ///       "propertyUnitIdNumber": "Apt 1",
+    ///       "fullNameArabic": "سارة محمد العلي",
+    ///       "claimSource": 2,
+    ///       "casePriority": 2,
+    ///       "claimStatus": 1,
+    ///       "surveyDate": "2026-02-07T10:00:00Z",
+    ///       "typeOfWorks": "Residential",
+    ///       "hasEvidence": false,
+    ///       "relationType": "Heir"
+    ///     }
+    ///   ],
+    ///   "dataSummary": { "relationsCount": 3, "ownershipRelationsCount": 2 }
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Office survey ID</param>
     /// <param name="command">Finalization options</param>
-    /// <returns>Finalization result with claim info</returns>
+    /// <returns>Finalization result with list of created claims and UI-supporting fields</returns>
     [HttpPost("office/{id}/finalize")]
     [Authorize(Policy = "CanFinalizeSurveys")]
     [ProducesResponseType(typeof(OfficeSurveyFinalizationResultDto), StatusCodes.Status200OK)]

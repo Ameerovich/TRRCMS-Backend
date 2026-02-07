@@ -1,22 +1,24 @@
 ﻿using FluentValidation;
-using TRRCMS.Application.Common.Behaviors;
-using System.Reflection;
-using Microsoft.OpenApi.Models;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
 using System.Text;
+using TRRCMS.Application.Common.Behaviors;
 using TRRCMS.Application.Common.Interfaces;
-using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Common.Mappings;
+using TRRCMS.Application.Common.Services;
+using TRRCMS.Application.Import.Models;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 using TRRCMS.Infrastructure.Authorization;
 using TRRCMS.Infrastructure.Persistence;
 using TRRCMS.Infrastructure.Persistence.Repositories;
 using TRRCMS.Infrastructure.Services;
+using TRRCMS.Infrastructure.Services.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +33,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         }));
 
 //
+
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 500L * 1024 * 1024; // 500 MB
+});
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 500L * 1024 * 1024; // 500 MB
+});
 
 // ============== REPOSITORIES ==============
 // Unit of Work - manages transactions across repositories
@@ -74,6 +86,43 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 // Format: CLM-YYYY-NNNNNNNNN (e.g. CLM-2026-000000001)
 // Thread-safe, no collisions, survives app restarts
 builder.Services.AddScoped<IClaimNumberGenerator, ClaimNumberGenerator>();
+// ============== IMPORT PIPELINE REPOSITORIES ==============
+
+// Generic staging repository — covers all 8 staging entity types via open generic registration
+builder.Services.AddScoped(typeof(IStagingRepository<>), typeof(StagingRepository<>));
+
+// Specific repositories for ImportPackage and ConflictResolution
+builder.Services.AddScoped<IImportPackageRepository, ImportPackageRepository>();
+builder.Services.AddScoped<IConflictResolutionRepository, ConflictResolutionRepository>();
+
+// ============== IMPORT PIPELINE SETTINGS ==============
+builder.Services.Configure<ImportPipelineSettings>(
+    builder.Configuration.GetSection(ImportPipelineSettings.SectionName));
+
+// ============== IMPORT PIPELINE SERVICES ==============
+builder.Services.AddScoped<IImportService, ImportService>();
+
+// ============== STAGING SERVICE ==============
+builder.Services.AddScoped<IStagingService, StagingService>();
+
+// ============== VALIDATION PIPELINE ==============
+builder.Services.AddScoped<IValidationPipeline, ValidationPipeline>();
+
+// ============== 8-LEVEL VALIDATORS (registered as IStagingValidator) ==============
+builder.Services.AddScoped<IStagingValidator, DataConsistencyValidator>();
+builder.Services.AddScoped<IStagingValidator, CrossEntityRelationValidator>();
+builder.Services.AddScoped<IStagingValidator, OwnershipEvidenceValidator>();
+builder.Services.AddScoped<IStagingValidator, HouseholdStructureValidator>();
+builder.Services.AddScoped<IStagingValidator, SpatialGeometryValidator>();
+builder.Services.AddScoped<IStagingValidator, ClaimLifecycleValidator>();
+builder.Services.AddScoped<IStagingValidator, VocabularyVersionValidator>();
+builder.Services.AddScoped<IStagingValidator, BuildingUnitCodeValidator>();
+
+// Matching services (concrete classes — injected into DuplicateDetectionService directly)
+builder.Services.AddScoped<TRRCMS.Infrastructure.Services.Matching.PersonMatchingService>();
+builder.Services.AddScoped<TRRCMS.Infrastructure.Services.Matching.PropertyMatchingService>();
+// Duplicate detection orchestrator
+builder.Services.AddScoped<IDuplicateDetectionService, DuplicateDetectionService>();
 
 // ============== MEDIATOR ==============
 builder.Services.AddMediatR(cfg =>

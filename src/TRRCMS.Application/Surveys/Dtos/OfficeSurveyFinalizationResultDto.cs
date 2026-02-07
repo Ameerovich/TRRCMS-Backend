@@ -2,7 +2,7 @@ namespace TRRCMS.Application.Surveys.Dtos;
 
 /// <summary>
 /// Result DTO for office survey finalization
-/// Contains survey details and optionally created claim information
+/// Contains survey details and all claims created from ownership/heir relations
 /// </summary>
 public class OfficeSurveyFinalizationResultDto
 {
@@ -12,23 +12,35 @@ public class OfficeSurveyFinalizationResultDto
     public SurveyDto Survey { get; set; } = null!;
 
     /// <summary>
-    /// Indicates if a claim was created from this survey
+    /// Indicates if any claims were created from this survey
     /// </summary>
     public bool ClaimCreated { get; set; }
 
     /// <summary>
-    /// Created claim ID (if any)
+    /// First created claim ID (backward compatibility - use CreatedClaims for full list)
     /// </summary>
     public Guid? ClaimId { get; set; }
 
     /// <summary>
-    /// Created claim number (if any)
+    /// First created claim number (backward compatibility - use CreatedClaims for full list)
     /// Format: CL-YYYY-NNNNNN
     /// </summary>
     public string? ClaimNumber { get; set; }
 
     /// <summary>
-    /// Reason why claim was not created (if applicable)
+    /// Total number of claims created from this survey
+    /// </summary>
+    public int ClaimsCreatedCount { get; set; }
+
+    /// <summary>
+    /// Detailed list of all claims created from ownership/heir relations in this survey.
+    /// Each relation that qualifies (Owner, Heir) generates one claim.
+    /// Contains all fields required by the "تسجيل الحالة" UI panel.
+    /// </summary>
+    public List<CreatedClaimSummaryDto> CreatedClaims { get; set; } = new();
+
+    /// <summary>
+    /// Reason why claims were not created (if applicable)
     /// e.g., "No ownership relations found", "AutoCreateClaim disabled"
     /// </summary>
     public string? ClaimNotCreatedReason { get; set; }

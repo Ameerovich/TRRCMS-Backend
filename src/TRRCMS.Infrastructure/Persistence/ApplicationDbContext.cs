@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Entities.Staging;
 
 namespace TRRCMS.Infrastructure.Persistence;
 
@@ -40,6 +41,73 @@ public class ApplicationDbContext : DbContext
     // TODO: Add other entities later as we implement them
     // public DbSet<Certificate> Certificates => Set<Certificate>();
     // etc.
+
+    // ==================== IMPORT PIPELINE ====================
+
+    /// <summary>
+    /// Import packages tracking the full .uhc import lifecycle.
+    /// Referenced in UC-003 and FSD FR-D-2 through FR-D-4.
+    /// </summary>
+    public DbSet<ImportPackage> ImportPackages => Set<ImportPackage>();
+
+    /// <summary>
+    /// Conflict resolution records for duplicate detection and merge decisions.
+    /// Referenced in UC-007, UC-008, and FSD FR-D-7.
+    /// </summary>
+    public DbSet<ConflictResolution> ConflictResolutions => Set<ConflictResolution>();
+
+    // ==================== STAGING ENTITIES (Import Pipeline) ====================
+
+    /// <summary>
+    /// Staging area for Building records from .uhc packages.
+    /// Isolated from production until validation and commit.
+    /// </summary>
+    public DbSet<StagingBuilding> StagingBuildings => Set<StagingBuilding>();
+
+    /// <summary>
+    /// Staging area for PropertyUnit records from .uhc packages.
+    /// </summary>
+    public DbSet<StagingPropertyUnit> StagingPropertyUnits => Set<StagingPropertyUnit>();
+
+    /// <summary>
+    /// Staging area for Person records from .uhc packages.
+    /// Central to duplicate detection per FSD FR-D-5.
+    /// </summary>
+    public DbSet<StagingPerson> StagingPersons => Set<StagingPerson>();
+
+    /// <summary>
+    /// Staging area for Household records from .uhc packages.
+    /// Subject to household structure validation (FR-D-4 Level 4).
+    /// </summary>
+    public DbSet<StagingHousehold> StagingHouseholds => Set<StagingHousehold>();
+
+    /// <summary>
+    /// Staging area for PersonPropertyRelation records from .uhc packages.
+    /// Subject to cross-entity relation and ownership evidence validation.
+    /// </summary>
+    public DbSet<StagingPersonPropertyRelation> StagingPersonPropertyRelations => Set<StagingPersonPropertyRelation>();
+
+    /// <summary>
+    /// Staging area for Evidence records from .uhc packages.
+    /// Subject to attachment deduplication by SHA-256 hash (FR-D-9).
+    /// </summary>
+    public DbSet<StagingEvidence> StagingEvidences => Set<StagingEvidence>();
+
+    /// <summary>
+    /// Staging area for Claim records from .uhc packages.
+    /// Subject to claim lifecycle validation (FR-D-4 Level 6).
+    /// </summary>
+    public DbSet<StagingClaim> StagingClaims => Set<StagingClaim>();
+
+    /// <summary>
+    /// Staging area for Survey records from .uhc packages.
+    /// </summary>
+    public DbSet<StagingSurvey> StagingSurveys => Set<StagingSurvey>();
+
+    // TODO: Add other entities later as we implement them
+    // public DbSet<Certificate> Certificates => Set<Certificate>();
+    // etc.
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
