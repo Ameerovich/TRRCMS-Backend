@@ -123,6 +123,8 @@ builder.Services.AddScoped<TRRCMS.Infrastructure.Services.Matching.PersonMatchin
 builder.Services.AddScoped<TRRCMS.Infrastructure.Services.Matching.PropertyMatchingService>();
 // Duplicate detection orchestrator
 builder.Services.AddScoped<IDuplicateDetectionService, DuplicateDetectionService>();
+// Commmit pipeline service
+builder.Services.AddScoped<ICommitService, CommitService>();
 
 // ============== MEDIATOR ==============
 builder.Services.AddMediatR(cfg =>

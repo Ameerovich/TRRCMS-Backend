@@ -30,4 +30,10 @@ public interface IEvidenceRepository
     Task UpdateAsync(Evidence evidence, CancellationToken cancellationToken = default);
     Task DeleteAsync(Evidence evidence, CancellationToken cancellationToken = default);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Find an existing current-version Evidence by its SHA-256 file hash.
+    /// Used during import commit for attachment deduplication (FR-D-9).
+    /// Returns null if no matching evidence exists.
+    /// </summary>
+    Task<Evidence?> GetByFileHashAsync(string fileHash, CancellationToken cancellationToken = default);
 }

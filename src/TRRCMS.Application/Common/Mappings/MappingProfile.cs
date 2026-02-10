@@ -1,14 +1,15 @@
 ﻿using AutoMapper;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Documents.Dtos;
+using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Households.Dtos;
+using TRRCMS.Application.Import.Dtos;
+using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
-using TRRCMS.Domain.Entities;
-using TRRCMS.Application.PersonPropertyRelations.Dtos;
-using TRRCMS.Application.Evidences.Dtos;
-using TRRCMS.Application.Documents.Dtos;
-using TRRCMS.Application.Users.Dtos;
 using TRRCMS.Application.Surveys.Dtos;
+using TRRCMS.Application.Users.Dtos;
+using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -221,6 +222,12 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Relations, opt => opt.Ignore())
             .ForMember(dest => dest.Evidence, opt => opt.Ignore())
             .ForMember(dest => dest.DataSummary, opt => opt.Ignore());
+
+            // ImportPackage
+        CreateMap<ImportPackage, ImportPackageDto>()
+           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+           .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()));
+
 
     }
 

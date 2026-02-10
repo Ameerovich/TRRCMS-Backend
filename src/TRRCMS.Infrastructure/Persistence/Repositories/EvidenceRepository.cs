@@ -180,4 +180,12 @@ public class EvidenceRepository : IEvidenceRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Evidence?> GetByFileHashAsync(
+    string fileHash, CancellationToken cancellationToken = default)
+    {
+        return await _context.Evidences
+            .Where(e => e.FileHash == fileHash && e.IsCurrentVersion)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }
