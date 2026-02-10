@@ -44,13 +44,37 @@ Wait 2-5 minutes for first build.
 | Port | `5432` |
 | Database | `TRRCMS_Dev` |
 | Username | `postgres` |
-| Password | `trrcms_dev_password_2024` |
+| Password | `3123124` |
 
 ### Connect with pgAdmin:
 - Host: `localhost`
 - Port: `5432`
 - Username: `postgres`
-- Password: `trrcms_dev_password_2024`
+- Password: `3123124`
+
+### 🔑 Changing the Database Password
+
+If you need a different password, update it in **two places** inside `docker-compose.yml`:
+
+1. The `db` service environment:
+   ```yaml
+   environment:
+     POSTGRES_PASSWORD: YOUR_NEW_PASSWORD
+   ```
+
+2. The `api` service connection string:
+   ```yaml
+   environment:
+     ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=TRRCMS_Dev;Username=postgres;Password=YOUR_NEW_PASSWORD"
+   ```
+
+Then rebuild:
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+> ⚠️ Both values **must match** or the API won't connect to the database.
 
 ---
 
