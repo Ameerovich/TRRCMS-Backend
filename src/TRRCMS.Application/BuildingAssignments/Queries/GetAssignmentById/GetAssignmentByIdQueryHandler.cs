@@ -44,6 +44,9 @@ public class GetAssignmentByIdQueryHandler : IRequestHandler<GetAssignmentByIdQu
             SubDistrictCode = building?.SubDistrictCode,
             CommunityCode = building?.CommunityCode,
             NeighborhoodCode = building?.NeighborhoodCode,
+            BuildingGeometryWkt = building?.BuildingGeometryWkt,
+            Latitude = building?.Latitude,
+            Longitude = building?.Longitude,
             
             // Field Collector Info
             FieldCollectorId = assignment.FieldCollectorId,

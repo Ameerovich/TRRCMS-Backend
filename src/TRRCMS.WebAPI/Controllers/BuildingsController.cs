@@ -58,6 +58,24 @@ namespace TRRCMS.WebAPI.Controllers;
 /// - Buildings_Create (4001) - CanCreateBuildings
 /// - Buildings_Update (4002) - CanEditBuildings
 /// - Buildings_Delete (4003) - CanDeleteBuildings
+/// 
+/// **Building Geometry (PostGIS):**
+/// 
+/// Buildings support polygon geometry stored via PostGIS (SRID 4326 / WGS84).
+/// All endpoints that return building data include `buildingGeometryWkt` in responses.
+/// 
+/// | Field | Type | Description |
+/// |-------|------|-------------|
+/// | `latitude` | decimal? | GPS latitude (center or polygon centroid) |
+/// | `longitude` | decimal? | GPS longitude (center or polygon centroid) |
+/// | `buildingGeometryWkt` | string? | WKT geometry (POLYGON or POINT) |
+/// 
+/// **WKT coordinate order:** longitude latitude (X Y) — e.g. `POLYGON((37.134 36.202, ...))` 
+/// 
+/// **Frontend rendering:**
+/// - Parse `buildingGeometryWkt` to detect type: starts with `POLYGON` → render footprint, starts with `POINT` → render marker
+/// - If `buildingGeometryWkt` is `null`, fall back to `latitude`/`longitude` as a marker
+/// - If all three are `null`, the building has no spatial data
 /// </remarks>
 [ApiController]
 [Route("api/v1/[controller]")]
@@ -105,10 +123,17 @@ public class BuildingsController : ControllerBase
     ///   "numberOfShops": 2,
     ///   "latitude": 36.2021,
     ///   "longitude": 37.1343,
+    ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
     ///   "locationDescription": "بجانب المسجد الكبير",
     ///   "notes": "بناء سكني مؤلف من 5 طوابق"
     /// }
     /// ```
+    /// 
+    /// **Geometry Input Options:**
+    /// - **Polygon only**: Provide `buildingGeometryWkt` — `latitude`/`longitude` will be computed from the centroid
+    /// - **Point only**: Provide `latitude`/`longitude` — a POINT geometry will be auto-created
+    /// - **Both**: Provide all three — polygon is stored as-is, lat/lng as provided
+    /// - **Neither**: Building is created without spatial data (can be added later via `PUT /{id}/geometry`)
     /// 
     /// **Example Response:**
     /// ```json
@@ -118,9 +143,17 @@ public class BuildingsController : ControllerBase
     ///   "buildingIdFormatted": "01-01-01-003-002-00001",
     ///   "buildingType": "Residential",
     ///   "status": "Existing",
+    ///   "latitude": 36.2021,
+    ///   "longitude": 37.1343,
+    ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
     ///   "createdAtUtc": "2026-01-31T10:00:00Z"
     /// }
     /// ```
+    /// 
+    /// **Geometry in Response:**
+    /// - If `buildingGeometryWkt` was provided as POLYGON, `latitude`/`longitude` are the centroid
+    /// - If only `latitude`/`longitude` were provided, `buildingGeometryWkt` returns a POINT geometry
+    /// - WKT coordinate order: **longitude latitude** (X Y), SRID 4326 (WGS84)
     /// </remarks>
     /// <param name="command">Building creation details</param>
     /// <returns>Created building details</returns>
@@ -186,6 +219,7 @@ public class BuildingsController : ControllerBase
     ///   "numberOfShops": 2,
     ///   "latitude": 36.2021,
     ///   "longitude": 37.1343,
+    ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
     ///   "locationDescription": "بجانب المسجد الكبير",
     ///   "createdAtUtc": "2026-01-31T10:00:00Z"
     /// }
@@ -316,7 +350,10 @@ public class BuildingsController : ControllerBase
     ///       "buildingId": "01010100300200001",
     ///       "buildingIdFormatted": "01-01-01-003-002-00001",
     ///       "buildingType": "Residential",
-    ///       "status": "Existing"
+    ///       "status": "Existing",
+    ///       "latitude": 36.2021,
+    ///       "longitude": 37.1343,
+    ///       "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))"
     ///     }
     ///   ],
     ///   "totalCount": 150,
@@ -431,11 +468,34 @@ public class BuildingsController : ControllerBase
     /// POLYGON((37.1340 36.2020, 37.1345 36.2020, 37.1345 36.2025, 37.1340 36.2025, 37.1340 36.2020))
     /// ```
     /// 
-    /// **Example Request:**
+    /// **Example Request - Point only:**
     /// ```json
     /// {
     ///   "latitude": 36.2021,
     ///   "longitude": 37.1343
+    /// }
+    /// ```
+    /// 
+    /// **Example Request - Polygon (building footprint):**
+    /// ```json
+    /// {
+    ///   "latitude": 36.2021,
+    ///   "longitude": 37.1343,
+    ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))"
+    /// }
+    /// ```
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "buildingId": "01010100300200001",
+    ///   "buildingIdFormatted": "01-01-01-003-002-00001",
+    ///   "latitude": 36.2021,
+    ///   "longitude": 37.1343,
+    ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
+    ///   "buildingType": "Residential",
+    ///   "status": "Existing"
     /// }
     /// ```
     /// </remarks>
@@ -540,6 +600,31 @@ public class BuildingsController : ControllerBase
     ///   "maxResults": 500
     /// }
     /// ```
+    /// 
+    /// **Example Response:**
+    /// ```json
+    /// [
+    ///   {
+    ///     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///     "buildingId": "01010100300200001",
+    ///     "buildingIdFormatted": "01-01-01-003-002-00001",
+    ///     "latitude": 36.2021,
+    ///     "longitude": 37.1343,
+    ///     "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
+    ///     "status": "Existing",
+    ///     "buildingType": "Residential",
+    ///     "numberOfPropertyUnits": 8,
+    ///     "numberOfApartments": 6,
+    ///     "numberOfShops": 2
+    ///   }
+    /// ]
+    /// ```
+    /// 
+    /// **Geometry Notes:**
+    /// - `buildingGeometryWkt` is `null` for buildings without spatial data
+    /// - POLYGON geometries can be rendered as building footprints on the map
+    /// - POINT geometries should be rendered as markers
+    /// - WKT coordinate order: **longitude latitude** (X Y)
     /// </remarks>
     /// <param name="query">Bounding box and filters</param>
     /// <returns>List of buildings with map data</returns>
@@ -639,6 +724,7 @@ public class BuildingsController : ControllerBase
     ///       "buildingIdFormatted": "01-01-01-003-002-00001",
     ///       "latitude": 36.2021,
     ///       "longitude": 37.1343,
+    ///       "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
     ///       "buildingType": "Residential",
     ///       "status": "Existing",
     ///       "numberOfPropertyUnits": 8,

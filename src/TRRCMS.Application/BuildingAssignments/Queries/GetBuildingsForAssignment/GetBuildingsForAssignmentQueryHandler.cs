@@ -182,6 +182,7 @@ public class GetBuildingsForAssignmentQueryHandler
                 BuildingStatus = b.Status.ToString(),
                 Latitude = b.Latitude,
                 Longitude = b.Longitude,
+                BuildingGeometryWkt = b.BuildingGeometryWkt,
                 HasActiveAssignment = hasAssignment,
                 CurrentAssignmentId = hasAssignment ? assignmentInfo.AssignmentId : null,
                 CurrentAssigneeId = hasAssignment ? assignmentInfo.CollectorId.ToString() : null,

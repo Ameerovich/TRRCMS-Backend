@@ -8,7 +8,7 @@ namespace TRRCMS.Application.BuildingAssignments.Dtos;
 public class BuildingAssignmentDto
 {
     public Guid Id { get; set; }
-    
+
     // Building Info
     public Guid BuildingId { get; set; }
     public string BuildingCode { get; set; } = string.Empty;
@@ -18,19 +18,36 @@ public class BuildingAssignmentDto
     public string? SubDistrictCode { get; set; }
     public string? CommunityCode { get; set; }
     public string? NeighborhoodCode { get; set; }
-    
+
+    // Building Spatial Data
+    /// <summary>
+    /// Building geometry in WKT format (POLYGON or POINT)
+    /// Used by frontend to render building footprint on the map
+    /// </summary>
+    public string? BuildingGeometryWkt { get; set; }
+
+    /// <summary>
+    /// GPS latitude coordinate (center point or polygon centroid)
+    /// </summary>
+    public decimal? Latitude { get; set; }
+
+    /// <summary>
+    /// GPS longitude coordinate (center point or polygon centroid)
+    /// </summary>
+    public decimal? Longitude { get; set; }
+
     // Field Collector Info
     public Guid FieldCollectorId { get; set; }
     public string FieldCollectorName { get; set; } = string.Empty;
     public string? FieldCollectorDeviceId { get; set; }
-    
+
     // Assignment Info
     public Guid? AssignedByUserId { get; set; }
     public string? AssignedByUserName { get; set; }
     public DateTime AssignedDate { get; set; }
     public DateTime? TargetCompletionDate { get; set; }
     public DateTime? ActualCompletionDate { get; set; }
-    
+
     // Transfer Status
     public TransferStatus TransferStatus { get; set; }
     public string TransferStatusName { get; set; } = string.Empty;
@@ -38,24 +55,24 @@ public class BuildingAssignmentDto
     public DateTime? SynchronizedFromTabletDate { get; set; }
     public string? TransferErrorMessage { get; set; }
     public int TransferRetryCount { get; set; }
-    
+
     // Progress
     public int TotalPropertyUnits { get; set; }
     public int CompletedPropertyUnits { get; set; }
     public decimal CompletionPercentage { get; set; }
-    
+
     // Revisit Info
     public bool IsRevisit { get; set; }
     public Guid? OriginalAssignmentId { get; set; }
     public string? UnitsForRevisit { get; set; }
     public string? RevisitReason { get; set; }
-    
+
     // Status
     public string Priority { get; set; } = "Normal";
     public string? AssignmentNotes { get; set; }
     public bool IsActive { get; set; }
     public bool IsOverdue { get; set; }
-    
+
     // Audit
     public DateTime CreatedAt { get; set; }
     public DateTime? ModifiedAt { get; set; }
@@ -70,6 +87,15 @@ public class BuildingAssignmentSummaryDto
     public Guid BuildingId { get; set; }
     public string BuildingCode { get; set; } = string.Empty;
     public string? BuildingAddress { get; set; }
+
+    // Building Spatial Data (for map rendering)
+    /// <summary>
+    /// Building geometry in WKT format (POLYGON or POINT)
+    /// </summary>
+    public string? BuildingGeometryWkt { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+
     public Guid FieldCollectorId { get; set; }
     public string FieldCollectorName { get; set; } = string.Empty;
     public DateTime AssignedDate { get; set; }
@@ -96,7 +122,7 @@ public class AvailableFieldCollectorDto
     public string? AssignedTabletId { get; set; }
     public string? TeamName { get; set; }
     public bool IsAvailable { get; set; }
-    
+
     // Current workload
     public int ActiveAssignments { get; set; }
     public int PendingTransferCount { get; set; }
@@ -111,7 +137,7 @@ public class BuildingForAssignmentDto
     public Guid Id { get; set; }
     public string BuildingCode { get; set; } = string.Empty;
     public string? Address { get; set; }
-    
+
     // Administrative hierarchy
     public string GovernorateCode { get; set; } = string.Empty;
     public string? GovernorateName { get; set; }
@@ -123,16 +149,22 @@ public class BuildingForAssignmentDto
     public string? CommunityName { get; set; }
     public string NeighborhoodCode { get; set; } = string.Empty;
     public string? NeighborhoodName { get; set; }
-    
+
     // Building details
     public int NumberOfPropertyUnits { get; set; }
     public string? BuildingType { get; set; }
     public string? BuildingStatus { get; set; }
-    
+
     // Location
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
-    
+
+    /// <summary>
+    /// Building geometry in WKT format (POLYGON or POINT)
+    /// Used by frontend to render building footprint on the map
+    /// </summary>
+    public string? BuildingGeometryWkt { get; set; }
+
     // Assignment status
     public bool HasActiveAssignment { get; set; }
     public Guid? CurrentAssignmentId { get; set; }
@@ -150,11 +182,11 @@ public class PropertyUnitForRevisitDto
     public string? UnitType { get; set; }
     public int? FloorNumber { get; set; }
     public string? Description { get; set; }
-    
+
     // Survey status
     public bool HasCompletedSurvey { get; set; }
     public DateTime? LastSurveyDate { get; set; }
-    
+
     // Associated data counts
     public int PersonCount { get; set; }
     public int HouseholdCount { get; set; }
@@ -168,14 +200,14 @@ public class FieldCollectorTasksDto
 {
     public Guid FieldCollectorId { get; set; }
     public string FieldCollectorName { get; set; } = string.Empty;
-    
+
     // Summary
     public int TotalAssignments { get; set; }
     public int PendingTransfer { get; set; }
     public int ReadyForSurvey { get; set; }
     public int InProgress { get; set; }
     public int Completed { get; set; }
-    
+
     // Assignments list
     public List<BuildingAssignmentSummaryDto> Assignments { get; set; } = new();
 }
@@ -204,45 +236,45 @@ public class BuildingsForAssignmentPagedResult
     /// List of buildings matching the search criteria
     /// </summary>
     public List<BuildingForAssignmentDto> Items { get; set; } = new();
-    
+
     /// <summary>
     /// Total count of matching buildings (before pagination)
     /// </summary>
     public int TotalCount { get; set; }
-    
+
     /// <summary>
     /// Current page number
     /// </summary>
     public int Page { get; set; }
-    
+
     /// <summary>
     /// Page size used for this request
     /// </summary>
     public int PageSize { get; set; }
-    
+
     /// <summary>
     /// Total number of pages
     /// </summary>
     public int TotalPages => PageSize > 0 ? (int)Math.Ceiling(TotalCount / (double)PageSize) : 0;
-    
+
     /// <summary>
     /// Indicates if there's a next page
     /// </summary>
     public bool HasNextPage => Page < TotalPages;
-    
+
     /// <summary>
     /// Indicates if there's a previous page
     /// </summary>
     public bool HasPreviousPage => Page > 1;
-    
+
     // ==================== POLYGON SEARCH RESPONSE FIELDS ====================
-    
+
     /// <summary>
     /// The polygon WKT used for search (only present if polygon search was used)
     /// Returns null if regular/radius search was used
     /// </summary>
     public string? PolygonWkt { get; set; }
-    
+
     /// <summary>
     /// Approximate polygon area in square meters (only present if polygon search was used)
     /// Returns null if regular/radius search was used or if area calculation failed
