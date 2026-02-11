@@ -31,6 +31,13 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<BuildingAssignment> BuildingAssignments => Set<BuildingAssignment>();
 
+    // ==================== NEIGHBORHOODS (Reference Data) ====================
+    /// <summary>
+    /// Neighborhood reference data with PostGIS boundary polygons.
+    /// Used for map navigation and building location validation.
+    /// </summary>
+    public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
+
     // ==================== NEW: AUDIT LOG ====================
     /// <summary>
     /// Audit logs for comprehensive system action tracking

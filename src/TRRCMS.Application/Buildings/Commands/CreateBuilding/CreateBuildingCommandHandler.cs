@@ -58,7 +58,6 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             createdByUserId: userId
         );
 
-
         // Set unit counts
         building.UpdateUnitCounts(
             propertyUnits: request.NumberOfPropertyUnits,

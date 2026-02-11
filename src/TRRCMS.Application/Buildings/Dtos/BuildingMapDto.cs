@@ -44,6 +44,14 @@ public class BuildingMapDto
     public decimal? Longitude { get; set; }
 
     /// <summary>
+    /// Building geometry in WKT format (POLYGON or POINT).
+    /// Use to render building footprints on map at high zoom levels.
+    /// Null for buildings without spatial data.
+    /// WKT coordinate order: longitude latitude (X Y).
+    /// </summary>
+    public string? BuildingGeometryWkt { get; set; }
+
+    /// <summary>
     /// Building status for color coding on map
     /// </summary>
     public string Status { get; set; } = string.Empty;

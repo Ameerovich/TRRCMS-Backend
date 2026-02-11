@@ -17,6 +17,7 @@ using TRRCMS.Domain.Enums;
 using TRRCMS.Infrastructure.Authorization;
 using TRRCMS.Infrastructure.Persistence;
 using TRRCMS.Infrastructure.Persistence.Repositories;
+using TRRCMS.Infrastructure.Persistence.SeedData;
 using TRRCMS.Infrastructure.Services;
 using TRRCMS.Infrastructure.Services.Validators;
 
@@ -58,6 +59,7 @@ builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ISurveyRepository, SurveyRepository>();
+builder.Services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
 
 // ============== AUTHENTICATION SERVICES ==============
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -457,7 +459,8 @@ var app = builder.Build();
 
 
 // ============== DATABASE SEEDING & PERMISSION SYNC ==============
-// Automatically sync user permissions on startup
+
+// SCOPE 1: Migrations + Users + Permissions
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -477,9 +480,6 @@ using (var scope = app.Services.CreateScope())
 
         logger.LogInformation("Starting user permission synchronization.");
 
-        // Ensure database is created
-        await context.Database.MigrateAsync();
-
         // Seed users if they don't exist
         await SeedUsersIfNeeded(context, userRepository, passwordHasher, logger);
 
@@ -491,6 +491,23 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         logger.LogError(ex, "An error occurred while seeding/syncing user permissions");
+    }
+}
+
+// SCOPE 2: Neighborhood seeding (separate scope = fresh DbContext, no tracking conflicts)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        await SeedNeighborhoodsIfNeeded(context, logger);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while seeding neighborhoods");
     }
 }
 
@@ -514,7 +531,7 @@ app.UseAuthorization();
 
 // ============== FILES STORAGE ==============
 // Enable serving files from wwwroot
-app.UseStaticFiles(); 
+app.UseStaticFiles();
 
 // ============== HEALTH CHECK ENDPOINT ==============
 app.MapHealthChecks("/health");
@@ -698,4 +715,31 @@ static async Task SyncUserPermissions(
     {
         logger.LogInformation("No permission changes needed for user {UserId}", userId);
     }
+}
+
+// Seeds Aleppo neighborhood reference data if the Neighborhoods table is empty.
+// Runs once on first startup — idempotent (safe to run repeatedly).
+static async Task SeedNeighborhoodsIfNeeded(ApplicationDbContext context, ILogger logger)
+{
+    // Only seed if table is empty
+    var hasNeighborhoods = await context.Neighborhoods.AnyAsync();
+    if (hasNeighborhoods)
+    {
+        logger.LogInformation("Neighborhoods already seeded — skipping.");
+        return;
+    }
+
+    logger.LogInformation("Seeding Aleppo neighborhood reference data (20 neighborhoods)...");
+
+    // Use system GUID for CreatedBy (same as user seeding)
+    var systemUserId = Guid.Empty;
+    var neighborhoods = NeighborhoodSeedData.GetAleppoNeighborhoods(systemUserId);
+
+    foreach (var neighborhood in neighborhoods)
+    {
+        context.Neighborhoods.Add(neighborhood);
+    }
+
+    await context.SaveChangesAsync();
+    logger.LogInformation("Successfully seeded {Count} neighborhoods.", neighborhoods.Count);
 }

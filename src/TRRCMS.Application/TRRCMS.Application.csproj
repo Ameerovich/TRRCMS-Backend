@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
+    <Folder Include="Neighborhoods\Commands\" />
   </ItemGroup>
 
 </Project>

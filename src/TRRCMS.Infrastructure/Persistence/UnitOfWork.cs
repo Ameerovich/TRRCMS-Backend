@@ -33,6 +33,7 @@ public class UnitOfWork : IUnitOfWork
     private ISurveyRepository? _surveys;
     private IUserRepository? _users;
     private IBuildingAssignmentRepository? _buildingAssignments;
+    private INeighborhoodRepository? _neighborhoods;
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService)
     {
@@ -76,6 +77,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IBuildingAssignmentRepository BuildingAssignments =>
         _buildingAssignments ??= new BuildingAssignmentRepository(_context);
+
+    public INeighborhoodRepository Neighborhoods =>
+        _neighborhoods ??= new NeighborhoodRepository(_context);
 
     // ==================== TRANSACTION OPERATIONS ====================
 

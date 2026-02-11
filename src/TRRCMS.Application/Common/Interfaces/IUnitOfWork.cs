@@ -19,65 +19,70 @@ namespace TRRCMS.Application.Common.Interfaces;
 public interface IUnitOfWork : IDisposable
 {
     // ==================== REPOSITORIES ====================
-    
+
     /// <summary>
     /// Building repository - spatial data and building management
     /// </summary>
     IBuildingRepository Buildings { get; }
-    
+
     /// <summary>
     /// Property unit repository - apartments, shops, offices within buildings
     /// </summary>
     IPropertyUnitRepository PropertyUnits { get; }
-    
+
     /// <summary>
     /// Person repository - individuals linked to properties
     /// </summary>
     IPersonRepository Persons { get; }
-    
+
     /// <summary>
     /// Household repository - household/occupancy profiles
     /// </summary>
     IHouseholdRepository Households { get; }
-    
+
     /// <summary>
     /// Person-property relation repository - ownership, tenancy, etc.
     /// </summary>
     IPersonPropertyRelationRepository PersonPropertyRelations { get; }
-    
+
     /// <summary>
     /// Evidence repository - documents supporting relations
     /// </summary>
     IEvidenceRepository Evidences { get; }
-    
+
     /// <summary>
     /// Document repository - uploaded files and metadata
     /// </summary>
     IDocumentRepository Documents { get; }
-    
+
     /// <summary>
     /// Claim repository - tenure rights claims
     /// </summary>
     IClaimRepository Claims { get; }
-    
+
     /// <summary>
     /// Survey repository - field and office surveys
     /// </summary>
     ISurveyRepository Surveys { get; }
-    
+
     /// <summary>
     /// User repository - system users and authentication
     /// </summary>
     IUserRepository Users { get; }
-    
+
     /// <summary>
     /// Building assignment repository - field collector assignments
     /// UC-012: Assign Buildings to Field Collectors
     /// </summary>
     IBuildingAssignmentRepository BuildingAssignments { get; }
 
+    /// <summary>
+    /// Neighborhood reference data repository - spatial lookups for map navigation
+    /// </summary>
+    INeighborhoodRepository Neighborhoods { get; }
+
     // ==================== TRANSACTION OPERATIONS ====================
-    
+
     /// <summary>
     /// Save all pending changes to the database in a single transaction.
     /// This is the only method that commits changes - repositories should NOT call SaveChanges.
@@ -85,7 +90,7 @@ public interface IUnitOfWork : IDisposable
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Number of entities written to the database</returns>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Begin an explicit database transaction for complex operations.
     /// Use when you need to coordinate with external systems or need rollback points.
@@ -93,7 +98,7 @@ public interface IUnitOfWork : IDisposable
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Transaction that must be committed or rolled back</returns>
     Task<IUnitOfWorkTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Execute a function within a transaction with automatic commit/rollback.
     /// Commits if the function succeeds, rolls back if an exception is thrown.
@@ -105,7 +110,7 @@ public interface IUnitOfWork : IDisposable
     Task<TResult> ExecuteInTransactionAsync<TResult>(
         Func<Task<TResult>> operation,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Execute an action within a transaction with automatic commit/rollback.
     /// </summary>
@@ -126,7 +131,7 @@ public interface IUnitOfWorkTransaction : IDisposable, IAsyncDisposable
     /// Commit all changes made within this transaction.
     /// </summary>
     Task CommitAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Rollback all changes made within this transaction.
     /// </summary>

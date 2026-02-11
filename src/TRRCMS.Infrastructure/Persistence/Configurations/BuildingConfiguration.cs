@@ -50,6 +50,11 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .IsRequired()
             .HasMaxLength(5);
 
+        // Composite index for admin hierarchy searches (filtered to non-deleted)
+        builder.HasIndex(b => new { b.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode, b.NeighborhoodCode })
+            .HasDatabaseName("IX_Buildings_AdminHierarchy")
+            .HasFilter("\"IsDeleted\" = false");
+
         // ==================== LOCATION NAMES (ARABIC) ====================
         builder.Property(b => b.GovernorateName)
             .IsRequired()
@@ -104,6 +109,12 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         // SRID 4326 = WGS84 (GPS coordinate system)
         builder.Property(b => b.BuildingGeometry)
             .HasColumnType("geometry(Geometry, 4326)");
+
+        // GiST spatial index on BuildingGeometry — critical for ST_Intersects, ST_DWithin, ST_Within
+        // Without this, every spatial query does a full table scan
+        builder.HasIndex(b => b.BuildingGeometry)
+            .HasMethod("gist")
+            .HasDatabaseName("IX_Buildings_BuildingGeometry");
 
         // Ignore the computed WKT property (not stored in database)
         builder.Ignore(b => b.BuildingGeometryWkt);

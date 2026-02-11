@@ -285,6 +285,15 @@ public class Building : BaseAuditableEntity
             var reader = new WKTReader();
             BuildingGeometry = reader.Read(geometryWkt);
             BuildingGeometry.SRID = 4326; // WGS84
+
+            // Auto-compute centroid from polygon so Latitude/Longitude are never null
+            // when a polygon geometry is provided
+            if (BuildingGeometry is Polygon or MultiPolygon)
+            {
+                var centroid = BuildingGeometry.Centroid;
+                Latitude = (decimal)centroid.Y;
+                Longitude = (decimal)centroid.X;
+            }
         }
 
         MarkAsModified(modifiedByUserId);
