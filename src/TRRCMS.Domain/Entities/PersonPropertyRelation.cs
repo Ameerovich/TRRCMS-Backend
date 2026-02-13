@@ -16,18 +16,32 @@ public class PersonPropertyRelation : BaseAuditableEntity
     /// Relation type (نوع العلاقة) - Owner, Occupant, Tenant, Guest, Heir, Other
     /// </summary>
     public RelationType RelationType { get; private set; }
-    public string? RelationTypeOtherDesc { get; private set; }
+    public string? RelationTypeOtherDesc { get; private set; }  // Deprecated for office survey, kept nullable for future
 
     /// <summary>
-    /// Contract/Tenure type (نوع العقد)
+    /// Contract/Tenure type (نوع العقد) - Deprecated for office survey
     /// </summary>
-    public TenureContractType? ContractType { get; private set; }
-    public string? ContractTypeOtherDesc { get; private set; }
+    public TenureContractType? ContractType { get; private set; }  // Deprecated for office survey, kept nullable for future
+    public string? ContractTypeOtherDesc { get; private set; }  // Deprecated for office survey, kept nullable for future
+
+    // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
+
+    /// <summary>
+    /// Occupancy type (نوع الإشغال) - OwnerOccupied, TenantOccupied, FamilyOccupied, etc.
+    /// </summary>
+    public OccupancyType? OccupancyType { get; private set; }
+
+    /// <summary>
+    /// Indicates if evidence documents are available/attached (هل يوجد دليل؟)
+    /// </summary>
+    public bool HasEvidence { get; private set; }
+
+    // ==================== OTHER FIELDS ====================
 
     public decimal? OwnershipShare { get; private set; }
     public string? ContractDetails { get; private set; }
-    public DateTime? StartDate { get; private set; }
-    public DateTime? EndDate { get; private set; }
+    public DateTime? StartDate { get; private set; }  // Deprecated for office survey, kept nullable for future
+    public DateTime? EndDate { get; private set; }  // Deprecated for office survey, kept nullable for future
     public string? Notes { get; private set; }
     public bool IsActive { get; private set; }
 
@@ -47,6 +61,8 @@ public class PersonPropertyRelation : BaseAuditableEntity
         Guid personId,
         Guid propertyUnitId,
         RelationType relationType,
+        OccupancyType? occupancyType,
+        bool hasEvidence,
         Guid createdByUserId)
     {
         var relation = new PersonPropertyRelation
@@ -54,6 +70,8 @@ public class PersonPropertyRelation : BaseAuditableEntity
             PersonId = personId,
             PropertyUnitId = propertyUnitId,
             RelationType = relationType,
+            OccupancyType = occupancyType,
+            HasEvidence = hasEvidence,
             IsActive = true
         };
         relation.MarkAsCreated(createdByUserId);
@@ -62,24 +80,18 @@ public class PersonPropertyRelation : BaseAuditableEntity
 
     public void UpdateRelationDetails(
         RelationType relationType,
-        string? relationTypeOtherDesc,
-        TenureContractType? contractType,
-        string? contractTypeOtherDesc,
+        OccupancyType? occupancyType,
+        bool hasEvidence,
         decimal? ownershipShare,
         string? contractDetails,
-        DateTime? startDate,
-        DateTime? endDate,
         string? notes,
         Guid modifiedByUserId)
     {
         RelationType = relationType;
-        RelationTypeOtherDesc = relationTypeOtherDesc;
-        ContractType = contractType;
-        ContractTypeOtherDesc = contractTypeOtherDesc;
+        OccupancyType = occupancyType;
+        HasEvidence = hasEvidence;
         OwnershipShare = ownershipShare;
         ContractDetails = contractDetails;
-        StartDate = startDate;
-        EndDate = endDate;
         Notes = notes;
         MarkAsModified(modifiedByUserId);
     }

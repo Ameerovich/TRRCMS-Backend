@@ -24,11 +24,11 @@ public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPe
             .IsInEnum()
             .WithMessage("Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other");
 
-        // ContractType enum validation (optional field)
-        RuleFor(x => x.ContractType)
+        // OccupancyType enum validation (optional field)
+        RuleFor(x => x.OccupancyType)
             .IsInEnum()
-            .When(x => x.ContractType.HasValue)
-            .WithMessage("Invalid contract type");
+            .When(x => x.OccupancyType.HasValue)
+            .WithMessage("Invalid occupancy type");
 
         // Ownership share required for Owner
         RuleFor(x => x.OwnershipShare)
@@ -46,43 +46,13 @@ public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPe
             .When(x => x.OwnershipShare.HasValue)
             .WithMessage("Ownership share cannot exceed 1.0 (100%)");
 
-        // RelationTypeOtherDesc required when RelationType is Other
-        RuleFor(x => x.RelationTypeOtherDesc)
-            .NotEmpty()
-            .When(x => x.RelationType == RelationType.Other)
-            .WithMessage("Description is required when relation type is 'Other'");
-
-        RuleFor(x => x.RelationTypeOtherDesc)
-            .MaximumLength(500)
-            .When(x => !string.IsNullOrEmpty(x.RelationTypeOtherDesc));
-
-        // ContractTypeOtherDesc required when ContractType is Other
-        RuleFor(x => x.ContractTypeOtherDesc)
-            .NotEmpty()
-            .When(x => x.ContractType == TenureContractType.Other)
-            .WithMessage("Description is required when contract type is 'Other'");
-
-        RuleFor(x => x.ContractTypeOtherDesc)
-            .MaximumLength(500)
-            .When(x => !string.IsNullOrEmpty(x.ContractTypeOtherDesc));
-
+        // Text field max lengths
         RuleFor(x => x.ContractDetails)
-            .MaximumLength(2000);
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrEmpty(x.ContractDetails));
 
         RuleFor(x => x.Notes)
-            .MaximumLength(2000);
-
-        // Date validation
-        RuleFor(x => x.EndDate)
-            .GreaterThanOrEqualTo(x => x.StartDate)
-            .When(x => x.StartDate.HasValue && x.EndDate.HasValue)
-            .WithMessage("End date cannot be before start date");
-
-        // Start date not in future for Owner/Tenant
-        RuleFor(x => x.StartDate)
-            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
-            .When(x => x.StartDate.HasValue &&
-                       (x.RelationType == RelationType.Owner || x.RelationType == RelationType.Tenant))
-            .WithMessage("Start date cannot be in the future for Owner or Tenant relations");
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrEmpty(x.Notes));
     }
 }

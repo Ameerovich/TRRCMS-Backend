@@ -11,11 +11,7 @@ public class DeleteBuildingCommandValidator : AbstractValidator<DeleteBuildingCo
     public DeleteBuildingCommandValidator()
     {
         RuleFor(x => x.BuildingId)
-            .NotEmpty().WithMessage("Building ID is required");
-
-        RuleFor(x => x.Reason)
-            .NotEmpty().WithMessage("Deletion reason is required for audit trail")
-            .MinimumLength(10).WithMessage("Deletion reason must be at least 10 characters")
-            .MaximumLength(500).WithMessage("Deletion reason cannot exceed 500 characters");
+            .NotEmpty()
+            .WithMessage("Building ID is required");
     }
 }

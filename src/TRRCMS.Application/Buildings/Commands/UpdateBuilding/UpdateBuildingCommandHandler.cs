@@ -42,6 +42,39 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
         var oldValues = new Dictionary<string, object?>();
         var newValues = new Dictionary<string, object?>();
 
+        // Update administrative codes (building code - 17 digits) if provided
+        if (!string.IsNullOrEmpty(request.GovernorateCode) &&
+            !string.IsNullOrEmpty(request.DistrictCode) &&
+            !string.IsNullOrEmpty(request.SubDistrictCode) &&
+            !string.IsNullOrEmpty(request.CommunityCode) &&
+            !string.IsNullOrEmpty(request.NeighborhoodCode) &&
+            !string.IsNullOrEmpty(request.BuildingNumber) &&
+            !string.IsNullOrEmpty(request.GovernorateName) &&
+            !string.IsNullOrEmpty(request.DistrictName) &&
+            !string.IsNullOrEmpty(request.SubDistrictName) &&
+            !string.IsNullOrEmpty(request.CommunityName) &&
+            !string.IsNullOrEmpty(request.NeighborhoodName))
+        {
+            oldValues["BuildingId"] = building.BuildingId;
+            newValues["BuildingId"] = $"{request.GovernorateCode}{request.DistrictCode}{request.SubDistrictCode}" +
+                                      $"{request.CommunityCode}{request.NeighborhoodCode}{request.BuildingNumber}";
+            changedFields.Add("BuildingCode");
+
+            building.UpdateAdministrativeCodes(
+                request.GovernorateCode,
+                request.DistrictCode,
+                request.SubDistrictCode,
+                request.CommunityCode,
+                request.NeighborhoodCode,
+                request.BuildingNumber,
+                request.GovernorateName,
+                request.DistrictName,
+                request.SubDistrictName,
+                request.CommunityName,
+                request.NeighborhoodName,
+                currentUserId);
+        }
+
         // Update building type
         if (request.BuildingType.HasValue && request.BuildingType.Value != building.BuildingType)
         {

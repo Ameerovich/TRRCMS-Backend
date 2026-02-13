@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Households.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 
@@ -22,9 +23,9 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     // ==================== BASIC INFORMATION ====================
 
     /// <summary>
-    /// Head of household name (رب الأسرة/العميل) - required
+    /// Head of household name (رب الأسرة/العميل) - optional for office survey
     /// </summary>
-    public string HeadOfHouseholdName { get; set; } = string.Empty;
+    public string? HeadOfHouseholdName { get; set; }
 
     /// <summary>
     /// Total household size (عدد الأفراد) - required
@@ -35,6 +36,18 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// Notes/observations (ملاحظات)
     /// </summary>
     public string? Notes { get; set; }
+
+    // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
+
+    /// <summary>
+    /// Occupancy type (نوع الإشغال) - Enum: 1=OwnerOccupied, 2=TenantOccupied, etc.
+    /// </summary>
+    public OccupancyType? OccupancyType { get; set; }
+
+    /// <summary>
+    /// Occupancy nature (طبيعة الإشغال) - Enum: 1=LegalFormal, 2=Informal, 3=Customary, etc.
+    /// </summary>
+    public OccupancyNature? OccupancyNature { get; set; }
 
     // ==================== ADULTS COMPOSITION ====================
 

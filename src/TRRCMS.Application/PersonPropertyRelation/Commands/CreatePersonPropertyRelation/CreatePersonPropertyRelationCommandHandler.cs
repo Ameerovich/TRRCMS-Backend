@@ -27,35 +27,24 @@ public class CreatePersonPropertyRelationCommandHandler : IRequestHandler<Create
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        if (request.RelationType == RelationType.Other && string.IsNullOrWhiteSpace(request.RelationTypeOtherDesc))
-            throw new ArgumentException("Description is required when relation type is 'Other'", nameof(request.RelationTypeOtherDesc));
-
-        if (request.ContractType == TenureContractType.Other && string.IsNullOrWhiteSpace(request.ContractTypeOtherDesc))
-            throw new ArgumentException("Description is required when contract type is 'Other'", nameof(request.ContractTypeOtherDesc));
-
         var relation = Domain.Entities.PersonPropertyRelation.Create(
             request.PersonId,
             request.PropertyUnitId,
             request.RelationType,
+            request.OccupancyType,
+            request.HasEvidence,
             currentUserId);
 
-        if (request.RelationTypeOtherDesc != null ||
-            request.ContractType.HasValue ||
-            request.OwnershipShare.HasValue ||
+        if (request.OwnershipShare.HasValue ||
             request.ContractDetails != null ||
-            request.StartDate.HasValue ||
-            request.EndDate.HasValue ||
             request.Notes != null)
         {
             relation.UpdateRelationDetails(
                 request.RelationType,
-                request.RelationTypeOtherDesc,
-                request.ContractType,
-                request.ContractTypeOtherDesc,
+                request.OccupancyType,
+                request.HasEvidence,
                 request.OwnershipShare,
                 request.ContractDetails,
-                request.StartDate,
-                request.EndDate,
                 request.Notes,
                 currentUserId);
         }
@@ -64,21 +53,7 @@ public class CreatePersonPropertyRelationCommandHandler : IRequestHandler<Create
         await _relationRepository.SaveChangesAsync(cancellationToken);
 
         var result = _mapper.Map<PersonPropertyRelationDto>(relation);
-
-        // Calculate computed properties
-        if (relation.StartDate.HasValue)
-        {
-            if (relation.EndDate.HasValue)
-            {
-                result.DurationInDays = (int)(relation.EndDate.Value - relation.StartDate.Value).TotalDays;
-                result.IsOngoing = false;
-            }
-            else
-            {
-                result.DurationInDays = (int)(DateTime.UtcNow - relation.StartDate.Value).TotalDays;
-                result.IsOngoing = true;
-            }
-        }
+        result.IsOngoing = relation.IsActive;
 
         return result;
     }

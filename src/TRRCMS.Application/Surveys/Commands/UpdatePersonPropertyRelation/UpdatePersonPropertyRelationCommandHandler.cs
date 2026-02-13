@@ -60,71 +60,38 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         var oldValues = new
         {
             RelationType = relation.RelationType.ToString(),
-            relation.RelationTypeOtherDesc,
-            ContractType = relation.ContractType?.ToString(),
-            relation.ContractTypeOtherDesc,
+            OccupancyType = relation.OccupancyType?.ToString(),
+            relation.HasEvidence,
             relation.OwnershipShare,
             relation.ContractDetails,
-            relation.StartDate,
-            relation.EndDate,
             relation.Notes
         };
 
         // Determine effective values for business validation
         var effectiveRelationType = request.RelationType ?? relation.RelationType;
+        var effectiveOccupancyType = request.ClearOccupancyType ? null : (request.OccupancyType ?? relation.OccupancyType);
+        var effectiveHasEvidence = request.HasEvidence ?? relation.HasEvidence;
+        var effectiveOwnershipShare = request.ClearOwnershipShare ? null : (request.OwnershipShare ?? relation.OwnershipShare);
+        var effectiveContractDetails = request.ClearContractDetails ? null : (request.ContractDetails ?? relation.ContractDetails);
+        var effectiveNotes = request.ClearNotes ? null : (request.Notes ?? relation.Notes);
 
         // Validate ownership share for Owner type
         if (effectiveRelationType == RelationType.Owner)
         {
-            var effectiveShare = request.ClearOwnershipShare ? null : (request.OwnershipShare ?? relation.OwnershipShare);
-            if (!effectiveShare.HasValue || effectiveShare <= 0)
+            if (!effectiveOwnershipShare.HasValue || effectiveOwnershipShare <= 0)
                 throw new ValidationException("Ownership share is required for Owner type and must be > 0");
-            if (effectiveShare > 1)
+            if (effectiveOwnershipShare > 1)
                 throw new ValidationException("Ownership share cannot exceed 1.0 (100%)");
         }
 
-        // Validate Other description for RelationType.Other
-        if (effectiveRelationType == RelationType.Other)
-        {
-            var effectiveDesc = request.ClearRelationTypeOtherDesc ? null : (request.RelationTypeOtherDesc ?? relation.RelationTypeOtherDesc);
-            if (string.IsNullOrWhiteSpace(effectiveDesc))
-                throw new ValidationException("Description required when relation type is 'Other'");
-        }
-
-        // Validate Other description for ContractType.Other
-        var effectiveContractType = request.ClearContractType ? null : (request.ContractType ?? relation.ContractType);
-        if (effectiveContractType == TenureContractType.Other)
-        {
-            var effectiveDesc = request.ClearContractTypeOtherDesc ? null : (request.ContractTypeOtherDesc ?? relation.ContractTypeOtherDesc);
-            if (string.IsNullOrWhiteSpace(effectiveDesc))
-                throw new ValidationException("Description required when contract type is 'Other'");
-        }
-
-        // Validate date range
-        var effectiveStartDate = request.ClearStartDate ? null : (request.StartDate ?? relation.StartDate);
-        var effectiveEndDate = request.ClearEndDate ? null : (request.EndDate ?? relation.EndDate);
-        if (effectiveStartDate.HasValue && effectiveEndDate.HasValue && effectiveEndDate < effectiveStartDate)
-            throw new ValidationException("End date cannot be before start date");
-
-        // Perform partial update using domain method
-        relation.PartialUpdate(
-            request.RelationType,
-            request.RelationTypeOtherDesc,
-            request.ContractType,
-            request.ContractTypeOtherDesc,
-            request.OwnershipShare,
-            request.ContractDetails,
-            request.StartDate,
-            request.EndDate,
-            request.Notes,
-            request.ClearRelationTypeOtherDesc,
-            request.ClearContractType,
-            request.ClearContractTypeOtherDesc,
-            request.ClearOwnershipShare,
-            request.ClearContractDetails,
-            request.ClearStartDate,
-            request.ClearEndDate,
-            request.ClearNotes,
+        // Update using simplified domain method
+        relation.UpdateRelationDetails(
+            effectiveRelationType,
+            effectiveOccupancyType,
+            effectiveHasEvidence,
+            effectiveOwnershipShare,
+            effectiveContractDetails,
+            effectiveNotes,
             currentUserId);
 
         await _relationRepository.UpdateAsync(relation, cancellationToken);
@@ -133,13 +100,10 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         // Build changed fields list for audit
         var changedFields = new List<string>();
         if (request.RelationType.HasValue) changedFields.Add("RelationType");
-        if (request.RelationTypeOtherDesc != null || request.ClearRelationTypeOtherDesc) changedFields.Add("RelationTypeOtherDesc");
-        if (request.ContractType.HasValue || request.ClearContractType) changedFields.Add("ContractType");
-        if (request.ContractTypeOtherDesc != null || request.ClearContractTypeOtherDesc) changedFields.Add("ContractTypeOtherDesc");
+        if (request.OccupancyType.HasValue || request.ClearOccupancyType) changedFields.Add("OccupancyType");
+        if (request.HasEvidence.HasValue) changedFields.Add("HasEvidence");
         if (request.OwnershipShare.HasValue || request.ClearOwnershipShare) changedFields.Add("OwnershipShare");
         if (request.ContractDetails != null || request.ClearContractDetails) changedFields.Add("ContractDetails");
-        if (request.StartDate.HasValue || request.ClearStartDate) changedFields.Add("StartDate");
-        if (request.EndDate.HasValue || request.ClearEndDate) changedFields.Add("EndDate");
         if (request.Notes != null || request.ClearNotes) changedFields.Add("Notes");
 
         // Audit log
@@ -164,32 +128,16 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
 
     private static PersonPropertyRelationDto MapToDto(PersonPropertyRelation r)
     {
-        int? duration = null;
-        bool ongoing = false;
-        if (r.StartDate.HasValue)
-        {
-            if (r.EndDate.HasValue)
-                duration = (int)(r.EndDate.Value - r.StartDate.Value).TotalDays;
-            else
-            {
-                ongoing = true;
-                duration = (int)(DateTime.UtcNow - r.StartDate.Value).TotalDays;
-            }
-        }
-
         return new PersonPropertyRelationDto
         {
             Id = r.Id,
             PersonId = r.PersonId,
             PropertyUnitId = r.PropertyUnitId,
             RelationType = r.RelationType,
-            RelationTypeOtherDesc = r.RelationTypeOtherDesc,
-            ContractType = r.ContractType,
-            ContractTypeOtherDesc = r.ContractTypeOtherDesc,
+            OccupancyType = r.OccupancyType,
+            HasEvidence = r.HasEvidence,
             OwnershipShare = r.OwnershipShare,
             ContractDetails = r.ContractDetails,
-            StartDate = r.StartDate,
-            EndDate = r.EndDate,
             Notes = r.Notes,
             IsActive = r.IsActive,
             CreatedAtUtc = r.CreatedAtUtc,
@@ -199,8 +147,7 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             IsDeleted = r.IsDeleted,
             DeletedAtUtc = r.DeletedAtUtc,
             DeletedBy = r.DeletedBy,
-            DurationInDays = duration,
-            IsOngoing = ongoing,
+            IsOngoing = r.IsActive,
             EvidenceCount = r.Evidences?.Count ?? 0
         };
     }

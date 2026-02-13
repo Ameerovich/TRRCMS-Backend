@@ -74,32 +74,22 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
                 throw new ValidationException("Ownership share cannot exceed 1.0 (100%)");
         }
 
-        if (request.RelationType == RelationType.Other && string.IsNullOrWhiteSpace(request.RelationTypeOtherDesc))
-            throw new ValidationException("Description required when relation type is 'Other'");
-
-        if (request.ContractType == TenureContractType.Other && string.IsNullOrWhiteSpace(request.ContractTypeOtherDesc))
-            throw new ValidationException("Description required when contract type is 'Other'");
-
-        if (request.StartDate.HasValue && request.EndDate.HasValue && request.EndDate < request.StartDate)
-            throw new ValidationException("End date cannot be before start date");
-
-        // Create relation using factory method
+        // Create relation using factory method with new signature
         var relation = PersonPropertyRelation.Create(
             request.PersonId,
             request.PropertyUnitId,
             request.RelationType,
+            request.OccupancyType,
+            request.HasEvidence,
             currentUserId);
 
-        // Update with all details
+        // Update with additional details using simplified signature
         relation.UpdateRelationDetails(
             request.RelationType,
-            request.RelationTypeOtherDesc,
-            request.ContractType,
-            request.ContractTypeOtherDesc,
+            request.OccupancyType,
+            request.HasEvidence,
             request.OwnershipShare,
             request.ContractDetails,
-            request.StartDate,
-            request.EndDate,
             request.Notes,
             currentUserId);
 
@@ -120,7 +110,8 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
                 request.PersonId,
                 request.PropertyUnitId,
                 RelationType = request.RelationType.ToString(),
-                ContractType = request.ContractType?.ToString(),
+                OccupancyType = request.OccupancyType?.ToString(),
+                request.HasEvidence,
                 request.OwnershipShare
             }),
             "New Person-Property Relation",
@@ -129,34 +120,22 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
         return MapToDto(relation);
     }
 
+    /// <summary>
+    /// Maps PersonPropertyRelation entity to PersonPropertyRelationDto.
+    /// Updated for office survey workflow - removed deprecated fields.
+    /// </summary>
     private static PersonPropertyRelationDto MapToDto(PersonPropertyRelation r)
     {
-        int? duration = null;
-        bool ongoing = false;
-        if (r.StartDate.HasValue)
-        {
-            if (r.EndDate.HasValue)
-                duration = (int)(r.EndDate.Value - r.StartDate.Value).TotalDays;
-            else
-            {
-                ongoing = true;
-                duration = (int)(DateTime.UtcNow - r.StartDate.Value).TotalDays;
-            }
-        }
-
         return new PersonPropertyRelationDto
         {
             Id = r.Id,
             PersonId = r.PersonId,
             PropertyUnitId = r.PropertyUnitId,
             RelationType = r.RelationType,
-            RelationTypeOtherDesc = r.RelationTypeOtherDesc,
-            ContractType = r.ContractType,
-            ContractTypeOtherDesc = r.ContractTypeOtherDesc,
+            OccupancyType = r.OccupancyType,
+            HasEvidence = r.HasEvidence,
             OwnershipShare = r.OwnershipShare,
             ContractDetails = r.ContractDetails,
-            StartDate = r.StartDate,
-            EndDate = r.EndDate,
             Notes = r.Notes,
             IsActive = r.IsActive,
             CreatedAtUtc = r.CreatedAtUtc,
@@ -166,8 +145,7 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
             IsDeleted = r.IsDeleted,
             DeletedAtUtc = r.DeletedAtUtc,
             DeletedBy = r.DeletedBy,
-            DurationInDays = duration,
-            IsOngoing = ongoing,
+            IsOngoing = r.IsActive,
             EvidenceCount = r.Evidences?.Count ?? 0
         };
     }

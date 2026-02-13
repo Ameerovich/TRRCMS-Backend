@@ -1,21 +1,14 @@
 using MediatR;
+using TRRCMS.Application.Common.Models;
 
 namespace TRRCMS.Application.Buildings.Commands.DeleteBuilding;
 
 /// <summary>
-/// Soft delete a building command
-/// UC-007: Building Management - Delete Building
+/// Command to soft delete a building
+/// Cascades to delete all PropertyUnits and their descendants
+/// Validates survey status is Draft before deletion
 /// </summary>
-public class DeleteBuildingCommand : IRequest<bool>
+public class DeleteBuildingCommand : IRequest<DeleteResultDto>
 {
-    /// <summary>
-    /// Building ID to delete (GUID)
-    /// </summary>
     public Guid BuildingId { get; set; }
-
-    /// <summary>
-    /// Reason for deletion (required for audit trail)
-    /// سبب الحذف
-    /// </summary>
-    public string? Reason { get; set; }
 }

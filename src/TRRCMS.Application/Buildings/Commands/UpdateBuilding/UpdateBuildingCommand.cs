@@ -16,6 +16,63 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     /// </summary>
     public Guid BuildingId { get; set; }
 
+    // ==================== BUILDING CODE (17 DIGITS) - NEW FOR OFFICE SURVEY ====================
+
+    /// <summary>
+    /// Governorate code (محافظة) - 2 digits
+    /// </summary>
+    public string? GovernorateCode { get; set; }
+
+    /// <summary>
+    /// District code (مدينة) - 2 digits
+    /// </summary>
+    public string? DistrictCode { get; set; }
+
+    /// <summary>
+    /// Sub-district code (بلدة) - 2 digits
+    /// </summary>
+    public string? SubDistrictCode { get; set; }
+
+    /// <summary>
+    /// Community code (قرية) - 3 digits
+    /// </summary>
+    public string? CommunityCode { get; set; }
+
+    /// <summary>
+    /// Neighborhood code (حي) - 3 digits
+    /// </summary>
+    public string? NeighborhoodCode { get; set; }
+
+    /// <summary>
+    /// Building number within neighborhood (رقم البناء) - 5 digits
+    /// </summary>
+    public string? BuildingNumber { get; set; }
+
+    /// <summary>
+    /// Governorate name in Arabic
+    /// </summary>
+    public string? GovernorateName { get; set; }
+
+    /// <summary>
+    /// District name in Arabic
+    /// </summary>
+    public string? DistrictName { get; set; }
+
+    /// <summary>
+    /// Sub-district name in Arabic
+    /// </summary>
+    public string? SubDistrictName { get; set; }
+
+    /// <summary>
+    /// Community name in Arabic
+    /// </summary>
+    public string? CommunityName { get; set; }
+
+    /// <summary>
+    /// Neighborhood name in Arabic
+    /// </summary>
+    public string? NeighborhoodName { get; set; }
+
     // ==================== BUILDING ATTRIBUTES ====================
 
     /// <summary>

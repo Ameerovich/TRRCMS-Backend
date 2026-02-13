@@ -358,4 +358,41 @@ public class Building : BaseAuditableEntity
         Notes = notes;
         MarkAsModified(modifiedByUserId);
     }
+
+    /// <summary>
+    /// Update building administrative codes and regenerate BuildingId
+    /// For office survey workflow to allow editing building code (17 digits)
+    /// </summary>
+    public void UpdateAdministrativeCodes(
+        string governorateCode,
+        string districtCode,
+        string subDistrictCode,
+        string communityCode,
+        string neighborhoodCode,
+        string buildingNumber,
+        string governorateName,
+        string districtName,
+        string subDistrictName,
+        string communityName,
+        string neighborhoodName,
+        Guid modifiedByUserId)
+    {
+        GovernorateCode = governorateCode;
+        DistrictCode = districtCode;
+        SubDistrictCode = subDistrictCode;
+        CommunityCode = communityCode;
+        NeighborhoodCode = neighborhoodCode;
+        BuildingNumber = buildingNumber;
+        GovernorateName = governorateName;
+        DistrictName = districtName;
+        SubDistrictName = subDistrictName;
+        CommunityName = communityName;
+        NeighborhoodName = neighborhoodName;
+
+        // Regenerate Building ID (رمز البناء) - stored without dashes
+        BuildingId = $"{governorateCode}{districtCode}{subDistrictCode}" +
+                     $"{communityCode}{neighborhoodCode}{buildingNumber}";
+
+        MarkAsModified(modifiedByUserId);
+    }
 }

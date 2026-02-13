@@ -72,36 +72,20 @@ public class GetRelationsForPropertyUnitInSurveyQueryHandler
 
     /// <summary>
     /// Maps PersonPropertyRelation entity to PersonPropertyRelationDto.
-    /// Same mapping logic used by LinkPersonToPropertyUnitCommandHandler.
+    /// Updated for office survey workflow - removed deprecated fields.
     /// </summary>
     private static PersonPropertyRelationDto MapToDto(PersonPropertyRelation r)
     {
-        int? duration = null;
-        bool ongoing = false;
-        if (r.StartDate.HasValue)
-        {
-            if (r.EndDate.HasValue)
-                duration = (int)(r.EndDate.Value - r.StartDate.Value).TotalDays;
-            else
-            {
-                ongoing = true;
-                duration = (int)(DateTime.UtcNow - r.StartDate.Value).TotalDays;
-            }
-        }
-
         return new PersonPropertyRelationDto
         {
             Id = r.Id,
             PersonId = r.PersonId,
             PropertyUnitId = r.PropertyUnitId,
             RelationType = r.RelationType,
-            RelationTypeOtherDesc = r.RelationTypeOtherDesc,
-            ContractType = r.ContractType,
-            ContractTypeOtherDesc = r.ContractTypeOtherDesc,
+            OccupancyType = r.OccupancyType,
+            HasEvidence = r.HasEvidence,
             OwnershipShare = r.OwnershipShare,
             ContractDetails = r.ContractDetails,
-            StartDate = r.StartDate,
-            EndDate = r.EndDate,
             Notes = r.Notes,
             IsActive = r.IsActive,
             CreatedAtUtc = r.CreatedAtUtc,
@@ -111,8 +95,7 @@ public class GetRelationsForPropertyUnitInSurveyQueryHandler
             IsDeleted = r.IsDeleted,
             DeletedAtUtc = r.DeletedAtUtc,
             DeletedBy = r.DeletedBy,
-            DurationInDays = duration,
-            IsOngoing = ongoing,
+            IsOngoing = r.IsActive,
             EvidenceCount = r.Evidences?.Count ?? 0
         };
     }

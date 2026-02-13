@@ -83,6 +83,10 @@ public class MappingProfile : Profile
        .ForMember(dest => dest.HouseholdSize, opt => opt.MapFrom(src => src.HouseholdSize))
        .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
 
+       // Occupancy information (NEW FOR OFFICE SURVEY)
+       .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType))
+       .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature))
+
        // Adults composition
        .ForMember(dest => dest.MaleCount, opt => opt.MapFrom(src => src.MaleCount))
        .ForMember(dest => dest.FemaleCount, opt => opt.MapFrom(src => src.FemaleCount))
@@ -111,12 +115,10 @@ public class MappingProfile : Profile
 
         // PersonPropertyRelation mappings
         CreateMap<PersonPropertyRelation, PersonPropertyRelationDto>()
-            .ForMember(dest => dest.DurationInDays, opt => opt.MapFrom(src =>
-                src.StartDate.HasValue && src.EndDate.HasValue
-                    ? (src.EndDate.Value - src.StartDate.Value).Days
-                    : (int?)null))
-            .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src =>
-                src.StartDate.HasValue && !src.EndDate.HasValue));
+            .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType))
+            .ForMember(dest => dest.HasEvidence, opt => opt.MapFrom(src => src.HasEvidence))
+            .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src => src.IsActive))
+            .ForMember(dest => dest.DurationInDays, opt => opt.Ignore()); // No longer calculated from dates
 
         // Evidence mappings
         CreateMap<Evidence, EvidenceDto>()

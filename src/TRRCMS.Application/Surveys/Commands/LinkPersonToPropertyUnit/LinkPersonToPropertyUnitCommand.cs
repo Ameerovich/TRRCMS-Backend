@@ -17,25 +17,26 @@ public class LinkPersonToPropertyUnitCommand : IRequest<PersonPropertyRelationDt
     /// نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
     public RelationType RelationType { get; set; }
-    public string? RelationTypeOtherDesc { get; set; }
+
+    // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
 
     /// <summary>
-    /// نوع العقد - FullOwnership=1, SharedOwnership=2, LongTermRental=3, etc.
+    /// نوع الإشغال - OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
     /// </summary>
-    public TenureContractType? ContractType { get; set; }
-    public string? ContractTypeOtherDesc { get; set; }
+    public OccupancyType? OccupancyType { get; set; }
+
+    /// <summary>
+    /// هل يوجد دليل؟ - Indicates if evidence documents are available
+    /// </summary>
+    public bool HasEvidence { get; set; }
+
+    // ==================== OTHER FIELDS ====================
 
     /// <summary>
     /// حصة الملكية - 0.0 to 1.0
     /// </summary>
     public decimal? OwnershipShare { get; set; }
     public string? ContractDetails { get; set; }
-
-    /// <summary>
-    /// تاريخ بدء العلاقة
-    /// </summary>
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
 
     /// <summary>
     /// ملاحظاتك

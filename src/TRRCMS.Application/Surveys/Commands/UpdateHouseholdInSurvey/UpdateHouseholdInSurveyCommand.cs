@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Households.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 
@@ -35,6 +36,18 @@ public class UpdateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// Notes/observations (ملاحظات)
     /// </summary>
     public string? Notes { get; set; }
+
+    // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
+
+    /// <summary>
+    /// Occupancy type (نوع الإشغال) - Enum: 1=OwnerOccupied, 2=TenantOccupied, etc.
+    /// </summary>
+    public OccupancyType? OccupancyType { get; set; }
+
+    /// <summary>
+    /// Occupancy nature (طبيعة الإشغال) - Enum: 1=LegalFormal, 2=Informal, 3=Customary, etc.
+    /// </summary>
+    public OccupancyNature? OccupancyNature { get; set; }
 
     // ==================== ADULTS COMPOSITION ====================
 

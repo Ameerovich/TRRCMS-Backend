@@ -59,6 +59,8 @@ public class CreateHouseholdCommandHandler : IRequestHandler<CreateHouseholdComm
             maleDisabledCount: request.MaleDisabledCount,
             femaleDisabledCount: request.FemaleDisabledCount,
             notes: request.Notes,
+            occupancyType: null, // Not supported in CreateHousehold command (use CreateHouseholdInSurvey instead)
+            occupancyNature: null, // Not supported in CreateHousehold command (use CreateHouseholdInSurvey instead)
             createdByUserId: userId
         );
 

@@ -31,14 +31,28 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         // ==================== BASIC INFORMATION ====================
 
         builder.Property(h => h.HeadOfHouseholdName)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(200)
-            .HasComment("رب الأسرة/العميل - Name of head of household");
+            .HasComment("رب الأسرة/العميل - Name of head of household (nullable for office survey)");
 
         builder.Property(h => h.HouseholdSize)
             .IsRequired()
             .HasDefaultValue(0)
             .HasComment("عدد الأفراد - Total household size");
+
+        // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
+
+        builder.Property(h => h.OccupancyType)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired(false)
+            .HasComment("نوع الإشغال - Occupancy type (enum converted to string): OwnerOccupied, TenantOccupied, etc.");
+
+        builder.Property(h => h.OccupancyNature)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired(false)
+            .HasComment("طبيعة الإشغال - Occupancy nature (enum converted to string): LegalFormal, Informal, Customary, etc.");
 
         // ==================== ADULTS BY GENDER ====================
 

@@ -26,30 +26,12 @@ public class CreatePersonPropertyRelationCommandValidator : AbstractValidator<Cr
             .IsInEnum()
             .WithMessage("Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other");
 
-        RuleFor(x => x.RelationTypeOtherDesc)
-            .NotEmpty()
-            .When(x => x.RelationType == RelationType.Other)
-            .WithMessage("Description is required when relation type is 'Other'");
+        // ==================== OCCUPANCY TYPE ====================
 
-        RuleFor(x => x.RelationTypeOtherDesc)
-            .MaximumLength(500)
-            .When(x => !string.IsNullOrEmpty(x.RelationTypeOtherDesc));
-
-        // ==================== CONTRACT TYPE ====================
-
-        RuleFor(x => x.ContractType)
+        RuleFor(x => x.OccupancyType)
             .IsInEnum()
-            .When(x => x.ContractType.HasValue)
-            .WithMessage("Invalid contract type");
-
-        RuleFor(x => x.ContractTypeOtherDesc)
-            .NotEmpty()
-            .When(x => x.ContractType == TenureContractType.Other)
-            .WithMessage("Description is required when contract type is 'Other'");
-
-        RuleFor(x => x.ContractTypeOtherDesc)
-            .MaximumLength(500)
-            .When(x => !string.IsNullOrEmpty(x.ContractTypeOtherDesc));
+            .When(x => x.OccupancyType.HasValue)
+            .WithMessage("Invalid occupancy type");
 
         // ==================== OWNERSHIP SHARE ====================
 
@@ -77,18 +59,5 @@ public class CreatePersonPropertyRelationCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrEmpty(x.Notes));
-
-        // ==================== DATE VALIDATIONS ====================
-
-        RuleFor(x => x.EndDate)
-            .GreaterThanOrEqualTo(x => x.StartDate)
-            .When(x => x.StartDate.HasValue && x.EndDate.HasValue)
-            .WithMessage("End date cannot be before start date");
-
-        RuleFor(x => x.StartDate)
-            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
-            .When(x => x.StartDate.HasValue &&
-                       (x.RelationType == RelationType.Owner || x.RelationType == RelationType.Tenant))
-            .WithMessage("Start date cannot be in the future for Owner or Tenant relations");
     }
 }

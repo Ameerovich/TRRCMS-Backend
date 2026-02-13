@@ -410,6 +410,8 @@ public class CommitService : ICommitService
                     maleDisabledCount: staging.MaleDisabledCount,
                     femaleDisabledCount: staging.FemaleDisabledCount,
                     notes: null,
+                    occupancyType: null, // Not captured during import
+                    occupancyNature: null, // Not captured during import
                     createdByUserId: userId);
 
                 await _unitOfWork.Households.AddAsync(household, ct);
@@ -462,17 +464,16 @@ public class CommitService : ICommitService
                     personId: productionPersonId,
                     propertyUnitId: productionUnitId,
                     relationType: staging.RelationType,
+                    occupancyType: null, // Not captured during import
+                    hasEvidence: false, // Not captured during import
                     createdByUserId: userId);
 
                 relation.UpdateRelationDetails(
                     relationType: staging.RelationType,
-                    relationTypeOtherDesc: staging.RelationTypeOtherDesc,
-                    contractType: staging.ContractType,
-                    contractTypeOtherDesc: staging.ContractTypeOtherDesc,
+                    occupancyType: null, // Not captured during import
+                    hasEvidence: false, // Not captured during import
                     ownershipShare: staging.OwnershipShare,
                     contractDetails: staging.ContractDetails,
-                    startDate: staging.StartDate,
-                    endDate: staging.EndDate,
                     notes: staging.Notes,
                     modifiedByUserId: userId);
 

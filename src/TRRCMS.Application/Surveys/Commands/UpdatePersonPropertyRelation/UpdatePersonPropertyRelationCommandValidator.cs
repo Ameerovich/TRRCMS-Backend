@@ -21,11 +21,11 @@ public class UpdatePersonPropertyRelationCommandValidator : AbstractValidator<Up
             .When(x => x.RelationType.HasValue)
             .WithMessage("Invalid relation type");
 
-        // ContractType enum validation (optional)
-        RuleFor(x => x.ContractType)
+        // OccupancyType enum validation (optional)
+        RuleFor(x => x.OccupancyType)
             .IsInEnum()
-            .When(x => x.ContractType.HasValue)
-            .WithMessage("Invalid contract type");
+            .When(x => x.OccupancyType.HasValue)
+            .WithMessage("Invalid occupancy type");
 
         // Ownership share validation
         RuleFor(x => x.OwnershipShare)
@@ -38,26 +38,13 @@ public class UpdatePersonPropertyRelationCommandValidator : AbstractValidator<Up
             .When(x => x.OwnershipShare.HasValue)
             .WithMessage("Ownership share cannot exceed 1.0 (100%)");
 
-        // RelationTypeOtherDesc max length
-        RuleFor(x => x.RelationTypeOtherDesc)
-            .MaximumLength(500)
-            .When(x => !string.IsNullOrEmpty(x.RelationTypeOtherDesc));
-
-        // ContractTypeOtherDesc max length
-        RuleFor(x => x.ContractTypeOtherDesc)
-            .MaximumLength(500)
-            .When(x => !string.IsNullOrEmpty(x.ContractTypeOtherDesc));
-
+        // Text field max lengths
         RuleFor(x => x.ContractDetails)
-            .MaximumLength(2000);
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrEmpty(x.ContractDetails));
 
         RuleFor(x => x.Notes)
-            .MaximumLength(2000);
-
-        // Date validation (when both provided in update)
-        RuleFor(x => x.EndDate)
-            .GreaterThanOrEqualTo(x => x.StartDate)
-            .When(x => x.StartDate.HasValue && x.EndDate.HasValue)
-            .WithMessage("End date cannot be before start date");
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrEmpty(x.Notes));
     }
 }

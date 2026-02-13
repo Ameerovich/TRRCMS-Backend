@@ -537,42 +537,62 @@ public class BuildingsController : ControllerBase
     /// **Required Permission**: Buildings_Delete (4003) - CanDeleteBuildings policy
     /// 
     /// **What happens:**
-    /// - Sets `IsDeleted = true`
-    /// - Records `DeletedAtUtc` timestamp
-    /// - Records `DeletedBy` user ID
-    /// - Building no longer appears in queries
+    /// - Sets `IsDeleted = true` on all affected entities
+    /// - Records `DeletedAtUtc` timestamp and `DeletedBy` user ID
+    /// - Entities no longer appear in queries (soft delete)
     /// - Data retained for audit and potential recovery
-    /// 
-    /// **Restrictions:**
-    /// - Cannot delete buildings with active surveys
-    /// - Cannot delete buildings with linked claims
-    /// 
-    /// **Note:** This is a soft delete. Data can be recovered if needed.
+    ///
+    /// **Cascade Delete Behavior**:
+    /// This operation will soft delete:
+    /// - The Building itself
+    /// - All PropertyUnits in the building
+    /// - All Households in those units
+    /// - All Persons in those households
+    /// - All PersonPropertyRelations for those persons
+    /// - All Evidences linked to relations and persons
+    ///
+    /// **Survey Status Validation**:
+    /// Delete operations are only allowed when the related survey is in **Draft** status.
+    /// If the survey is Completed, Finalized, or Exported, deletion will be rejected.
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "primaryEntityId": "guid",
+    ///   "primaryEntityType": "Building",
+    ///   "affectedEntities": [
+    ///     { "entityId": "guid", "entityType": "Building", "entityIdentifier": "01-01-01-003-002-00001" },
+    ///     { "entityId": "guid", "entityType": "PropertyUnit", "entityIdentifier": "Unit-A-101" },
+    ///     { "entityId": "guid", "entityType": "Household", "entityIdentifier": "Ahmed Family" },
+    ///     { "entityId": "guid", "entityType": "Person", "entityIdentifier": "أحمد محمد علي" },
+    ///     { "entityId": "guid", "entityType": "PersonPropertyRelation", "entityIdentifier": "Relation Owner" },
+    ///     { "entityId": "guid", "entityType": "Evidence", "entityIdentifier": "contract.pdf" }
+    ///   ],
+    ///   "totalAffected": 15,
+    ///   "deletedAtUtc": "2026-02-13T10:00:00Z",
+    ///   "message": "Building deleted successfully along with 3 property unit(s), 2 household(s), 5 person(s), 4 relation(s), and 3 evidence(s)"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Building ID to delete</param>
-    /// <param name="command">Optional deletion reason</param>
-    /// <returns>No content on success</returns>
-    /// <response code="204">Building deleted successfully</response>
-    /// <response code="400">Building has active surveys or claims</response>
+    /// <returns>Detailed information about all deleted entities</returns>
+    /// <response code="200">Building and related data deleted successfully with detailed cascade information</response>
+    /// <response code="400">Invalid request or survey status not Draft</response>
     /// <response code="401">Not authenticated</response>
     /// <response code="403">Missing required permission - requires Buildings_Delete (4003)</response>
     /// <response code="404">Building not found</response>
     [HttpDelete("{id}")]
     [Authorize(Policy = "CanDeleteBuildings")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(TRRCMS.Application.Common.Models.DeleteResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteBuilding(
-        Guid id,
-        [FromBody] DeleteBuildingCommand? command = null)
+    public async Task<ActionResult<TRRCMS.Application.Common.Models.DeleteResultDto>> DeleteBuilding(Guid id)
     {
-        var deleteCommand = command ?? new DeleteBuildingCommand();
-        deleteCommand.BuildingId = id;
-
-        await _mediator.Send(deleteCommand);
-        return NoContent();
+        var command = new DeleteBuildingCommand { BuildingId = id };
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     // ==================== MAP ENDPOINTS ====================

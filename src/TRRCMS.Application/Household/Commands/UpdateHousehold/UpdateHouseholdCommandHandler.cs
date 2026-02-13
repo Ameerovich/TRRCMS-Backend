@@ -61,14 +61,16 @@ public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdComm
         });
 
         // Update basic info if provided
-        if (!string.IsNullOrEmpty(request.HeadOfHouseholdName) || 
-            request.HouseholdSize.HasValue || 
+        if (!string.IsNullOrEmpty(request.HeadOfHouseholdName) ||
+            request.HouseholdSize.HasValue ||
             request.Notes != null)
         {
             household.UpdateBasicInfo(
                 headOfHouseholdName: request.HeadOfHouseholdName ?? household.HeadOfHouseholdName,
                 householdSize: request.HouseholdSize ?? household.HouseholdSize,
                 notes: request.Notes ?? household.Notes,
+                occupancyType: null, // Not supported in UpdateHousehold command
+                occupancyNature: null, // Not supported in UpdateHousehold command
                 modifiedByUserId: userId
             );
         }

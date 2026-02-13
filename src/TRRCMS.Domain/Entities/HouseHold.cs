@@ -1,4 +1,5 @@
 ﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
@@ -23,14 +24,26 @@ public class Household : BaseAuditableEntity
     public int HouseholdSize { get; private set; }
 
     /// <summary>
-    /// Head of household name - رب الأسرة/العميل
+    /// Head of household name - رب الأسرة/العميل (nullable for office survey)
     /// </summary>
-    public string HeadOfHouseholdName { get; private set; }
+    public string? HeadOfHouseholdName { get; private set; }
 
     /// <summary>
-    /// Foreign key to Person who is head of household (if registered)
+    /// Foreign key to Person who is head of household (if registered) - nullable for office survey
     /// </summary>
     public Guid? HeadOfHouseholdPersonId { get; private set; }
+
+    // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
+
+    /// <summary>
+    /// Occupancy type (نوع الإشغال) - OwnerOccupied, TenantOccupied, FamilyOccupied, etc.
+    /// </summary>
+    public OccupancyType? OccupancyType { get; private set; }
+
+    /// <summary>
+    /// Occupancy nature (طبيعة الإشغال) - LegalFormal, Informal, Customary, etc.
+    /// </summary>
+    public OccupancyNature? OccupancyNature { get; private set; }
 
     // ==================== ADULTS BY GENDER ====================
 
@@ -119,7 +132,6 @@ public class Household : BaseAuditableEntity
 
     private Household() : base()
     {
-        HeadOfHouseholdName = string.Empty;
         Members = new List<Person>();
     }
 
@@ -128,7 +140,7 @@ public class Household : BaseAuditableEntity
     /// </summary>
     public static Household Create(
         Guid propertyUnitId,
-        string headOfHouseholdName,
+        string? headOfHouseholdName,
         int householdSize,
         int maleCount,
         int femaleCount,
@@ -139,6 +151,8 @@ public class Household : BaseAuditableEntity
         int maleDisabledCount,
         int femaleDisabledCount,
         string? notes,
+        OccupancyType? occupancyType,
+        OccupancyNature? occupancyNature,
         Guid createdByUserId)
     {
         var household = new Household
@@ -155,6 +169,8 @@ public class Household : BaseAuditableEntity
             MaleDisabledCount = maleDisabledCount,
             FemaleDisabledCount = femaleDisabledCount,
             Notes = notes,
+            OccupancyType = occupancyType,
+            OccupancyNature = occupancyNature,
             // Auto-calculate legacy totals
             ChildCount = maleChildCount + femaleChildCount,
             ElderlyCount = maleElderlyCount + femaleElderlyCount,
@@ -170,7 +186,7 @@ public class Household : BaseAuditableEntity
     /// </summary>
     public static Household CreateSimple(
         Guid propertyUnitId,
-        string headOfHouseholdName,
+        string? headOfHouseholdName,
         int householdSize,
         Guid createdByUserId)
     {
@@ -191,14 +207,18 @@ public class Household : BaseAuditableEntity
     /// Update basic info
     /// </summary>
     public void UpdateBasicInfo(
-        string headOfHouseholdName,
+        string? headOfHouseholdName,
         int householdSize,
         string? notes,
+        OccupancyType? occupancyType,
+        OccupancyNature? occupancyNature,
         Guid modifiedByUserId)
     {
         HeadOfHouseholdName = headOfHouseholdName;
         HouseholdSize = householdSize;
         Notes = notes;
+        OccupancyType = occupancyType;
+        OccupancyNature = occupancyNature;
         MarkAsModified(modifiedByUserId);
     }
 

@@ -28,18 +28,34 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
         builder.Property(ppr => ppr.RelationTypeOtherDesc)
             .IsRequired(false)
             .HasMaxLength(500)
-            .HasComment("Description when relation type is 'Other'");
+            .HasComment("Description when relation type is 'Other' (deprecated for office survey)");
 
-        // ContractType stored as int (nullable enum conversion)
+        // ContractType stored as int (nullable enum conversion) - Deprecated for office survey
         builder.Property(ppr => ppr.ContractType)
             .IsRequired(false)
             .HasConversion<int?>()
-            .HasComment("نوع العقد - FullOwnership=1, SharedOwnership=2, LongTermRental=3, etc.");
+            .HasComment("نوع العقد - FullOwnership=1, SharedOwnership=2, etc. (deprecated for office survey)");
 
         builder.Property(ppr => ppr.ContractTypeOtherDesc)
             .IsRequired(false)
             .HasMaxLength(500)
-            .HasComment("Description when contract type is 'Other'");
+            .HasComment("Description when contract type is 'Other' (deprecated for office survey)");
+
+        // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
+
+        // OccupancyType stored as string (nullable enum conversion)
+        builder.Property(ppr => ppr.OccupancyType)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired(false)
+            .HasComment("نوع الإشغال - Occupancy type (enum): OwnerOccupied=1, TenantOccupied=2, etc.");
+
+        builder.Property(ppr => ppr.HasEvidence)
+            .IsRequired()
+            .HasDefaultValue(false)
+            .HasComment("هل يوجد دليل؟ - Indicates if evidence documents are available/attached");
+
+        // ==================== OTHER FIELDS ====================
 
         builder.Property(ppr => ppr.OwnershipShare)
             .HasPrecision(18, 4)
@@ -52,11 +68,11 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
 
         builder.Property(ppr => ppr.StartDate)
             .IsRequired(false)
-            .HasComment("تاريخ بدء العلاقة - Start date of the relation");
+            .HasComment("تاريخ بدء العلاقة - Start date of the relation (deprecated for office survey)");
 
         builder.Property(ppr => ppr.EndDate)
             .IsRequired(false)
-            .HasComment("End date of the relation");
+            .HasComment("End date of the relation (deprecated for office survey)");
 
         builder.Property(ppr => ppr.Notes)
             .IsRequired(false)
