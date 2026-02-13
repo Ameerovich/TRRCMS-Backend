@@ -10,25 +10,22 @@ public class CreatePersonCommandValidator : AbstractValidator<CreatePersonComman
 {
     public CreatePersonCommandValidator()
     {
-        // ==================== REQUIRED NAMES ====================
+        // ==================== NAMES (ALL OPTIONAL FOR OFFICE SURVEY) ====================
 
         RuleFor(x => x.FamilyNameArabic)
-            .NotEmpty()
-            .WithMessage("الكنية مطلوبة")
             .MaximumLength(100)
-            .WithMessage("الكنية يجب ألا تتجاوز 100 حرف");
+            .WithMessage("الكنية يجب ألا تتجاوز 100 حرف")
+            .When(x => !string.IsNullOrEmpty(x.FamilyNameArabic));
 
         RuleFor(x => x.FirstNameArabic)
-            .NotEmpty()
-            .WithMessage("الاسم الأول مطلوب")
             .MaximumLength(100)
-            .WithMessage("الاسم الأول يجب ألا يتجاوز 100 حرف");
+            .WithMessage("الاسم الأول يجب ألا يتجاوز 100 حرف")
+            .When(x => !string.IsNullOrEmpty(x.FirstNameArabic));
 
         RuleFor(x => x.FatherNameArabic)
-            .NotEmpty()
-            .WithMessage("اسم الأب مطلوب")
             .MaximumLength(100)
-            .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف");
+            .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف")
+            .When(x => !string.IsNullOrEmpty(x.FatherNameArabic));
 
         // ==================== OPTIONAL NAMES ====================
 
@@ -45,10 +42,10 @@ public class CreatePersonCommandValidator : AbstractValidator<CreatePersonComman
             .When(x => !string.IsNullOrEmpty(x.NationalId))
             .WithMessage("الرقم الوطني يجب أن يكون 11 رقماً بالضبط");
 
-        RuleFor(x => x.YearOfBirth)
-            .Must(year => year >= 1900 && year <= DateTime.UtcNow.Year)
-            .When(x => x.YearOfBirth.HasValue)
-            .WithMessage($"سنة الميلاد يجب أن تكون بين 1900 و {DateTime.UtcNow.Year}");
+        RuleFor(x => x.DateOfBirth)
+            .Must(date => date <= DateTime.UtcNow)
+            .When(x => x.DateOfBirth.HasValue)
+            .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
 
         // ==================== CONTACT INFORMATION ====================
 

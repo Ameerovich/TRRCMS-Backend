@@ -1,4 +1,5 @@
 ﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
@@ -13,17 +14,17 @@ public class Person : BaseAuditableEntity
     /// <summary>
     /// Family/Last name in Arabic (الكنية)
     /// </summary>
-    public string FamilyNameArabic { get; private set; }
+    public string? FamilyNameArabic { get; private set; }
 
     /// <summary>
     /// First name in Arabic (الاسم الأول)
     /// </summary>
-    public string FirstNameArabic { get; private set; }
+    public string? FirstNameArabic { get; private set; }
 
     /// <summary>
     /// Father's name in Arabic (اسم الأب)
     /// </summary>
-    public string FatherNameArabic { get; private set; }
+    public string? FatherNameArabic { get; private set; }
 
     /// <summary>
     /// Mother's name in Arabic (الاسم الأم)
@@ -36,9 +37,10 @@ public class Person : BaseAuditableEntity
     public string? NationalId { get; private set; }
 
     /// <summary>
-    /// Year of birth (تاريخ الميلاد - stored as year only)
+    /// Date of birth (تاريخ الميلاد)
+    /// Can store full date or year-only (stored as January 1st of that year)
     /// </summary>
-    public int? YearOfBirth { get; private set; }
+    public DateTime? DateOfBirth { get; private set; }
 
     // ==================== CONTACT INFORMATION ====================
 
@@ -65,14 +67,14 @@ public class Person : BaseAuditableEntity
     public string? FullNameEnglish { get; private set; }
 
     /// <summary>
-    /// Gender (controlled vocabulary: M/F)
+    /// Gender (الجنس)
     /// </summary>
-    public string? Gender { get; private set; }
+    public Gender? Gender { get; private set; }
 
     /// <summary>
-    /// Nationality (controlled vocabulary)
+    /// Nationality (الجنسية)
     /// </summary>
-    public string? Nationality { get; private set; }
+    public Nationality? Nationality { get; private set; }
 
     /// <summary>
     /// Indicates if this person is the main contact person
@@ -87,9 +89,9 @@ public class Person : BaseAuditableEntity
     public Guid? HouseholdId { get; private set; }
 
     /// <summary>
-    /// Relationship to head of household
+    /// Relationship to head of household (علاقة برب الأسرة)
     /// </summary>
-    public string? RelationshipToHead { get; private set; }
+    public RelationshipToHead? RelationshipToHead { get; private set; }
 
     // ==================== IDENTIFICATION DOCUMENTS ====================
 
@@ -122,9 +124,9 @@ public class Person : BaseAuditableEntity
     /// </summary>
     private Person() : base()
     {
-        FamilyNameArabic = string.Empty;
-        FirstNameArabic = string.Empty;
-        FatherNameArabic = string.Empty;
+        FamilyNameArabic = null;
+        FirstNameArabic = null;
+        FatherNameArabic = null;
         PropertyRelations = new List<PersonPropertyRelation>();
         Evidences = new List<Evidence>();
     }
@@ -158,12 +160,14 @@ public class Person : BaseAuditableEntity
     /// Create person with full info (for simplified API)
     /// </summary>
     public static Person CreateWithFullInfo(
-        string familyNameArabic,
-        string firstNameArabic,
-        string fatherNameArabic,
+        string? familyNameArabic,
+        string? firstNameArabic,
+        string? fatherNameArabic,
         string? motherNameArabic,
         string? nationalId,
-        int? yearOfBirth,
+        DateTime? dateOfBirth,
+        Gender? gender,
+        Nationality? nationality,
         string? email,
         string? mobileNumber,
         string? phoneNumber,
@@ -176,7 +180,9 @@ public class Person : BaseAuditableEntity
             FatherNameArabic = fatherNameArabic,
             MotherNameArabic = motherNameArabic,
             NationalId = nationalId,
-            YearOfBirth = yearOfBirth,
+            DateOfBirth = dateOfBirth,
+            Gender = gender,
+            Nationality = nationality,
             Email = email,
             MobileNumber = mobileNumber,
             PhoneNumber = phoneNumber,
@@ -195,12 +201,14 @@ public class Person : BaseAuditableEntity
     /// Update basic info (simplified API)
     /// </summary>
     public void UpdateBasicInfo(
-        string familyNameArabic,
-        string firstNameArabic,
-        string fatherNameArabic,
+        string? familyNameArabic,
+        string? firstNameArabic,
+        string? fatherNameArabic,
         string? motherNameArabic,
         string? nationalId,
-        int? yearOfBirth,
+        DateTime? dateOfBirth,
+        Gender? gender,
+        Nationality? nationality,
         Guid modifiedByUserId)
     {
         FamilyNameArabic = familyNameArabic;
@@ -208,7 +216,9 @@ public class Person : BaseAuditableEntity
         FatherNameArabic = fatherNameArabic;
         MotherNameArabic = motherNameArabic;
         NationalId = nationalId;
-        YearOfBirth = yearOfBirth;
+        DateOfBirth = dateOfBirth;
+        Gender = gender;
+        Nationality = nationality;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -228,17 +238,17 @@ public class Person : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Update identification details (legacy method)
+    /// Update identification details
     /// </summary>
     public void UpdateIdentification(
         string? nationalId,
-        int? yearOfBirth,
-        string? gender,
-        string? nationality,
+        DateTime? dateOfBirth,
+        Gender? gender,
+        Nationality? nationality,
         Guid modifiedByUserId)
     {
         NationalId = nationalId;
-        YearOfBirth = yearOfBirth;
+        DateOfBirth = dateOfBirth;
         Gender = gender;
         Nationality = nationality;
         MarkAsModified(modifiedByUserId);
@@ -258,7 +268,7 @@ public class Person : BaseAuditableEntity
     /// </summary>
     public void AssignToHousehold(
         Guid householdId,
-        string relationshipToHead,
+        RelationshipToHead relationshipToHead,
         Guid modifiedByUserId)
     {
         HouseholdId = householdId;
@@ -304,13 +314,20 @@ public class Person : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Calculate approximate age based on year of birth
+    /// Calculate age based on date of birth
     /// </summary>
     public int? CalculateAge()
     {
-        if (!YearOfBirth.HasValue)
+        if (!DateOfBirth.HasValue)
             return null;
 
-        return DateTime.UtcNow.Year - YearOfBirth.Value;
+        var today = DateTime.UtcNow;
+        var age = today.Year - DateOfBirth.Value.Year;
+
+        // Subtract 1 if birthday hasn't occurred this year yet
+        if (DateOfBirth.Value.Date > today.AddYears(-age))
+            age--;
+
+        return age;
     }
 }

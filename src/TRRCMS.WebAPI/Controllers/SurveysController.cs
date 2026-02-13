@@ -1110,33 +1110,36 @@ public class SurveysController : ControllerBase
     // ==================== PERSON MANAGEMENT ====================
 
     /// <summary>
-    /// Add person to household in survey context
+    /// Add person to household in survey context (Office Survey workflow)
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-001 Stage 3 - Person Registration
     /// إضافة شخص جديد
-    /// 
+    ///
     /// **Purpose**: Creates a new person and assigns them to a household.
-    /// 
+    /// This endpoint supports the Office Survey workflow where all fields are optional to accommodate incomplete data.
+    ///
     /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
-    /// 
-    /// **Step 1 - Personal Info (الخطوة الأولى)**:
-    /// - الكنية: FamilyNameArabic (required)
-    /// - الاسم الأول: FirstNameArabic (required)
-    /// - اسم الأب: FatherNameArabic (required)
-    /// - الاسم الأم: MotherNameArabic (optional)
-    /// - الرقم الوطني: NationalId (optional)
-    /// - تاريخ الميلاد: YearOfBirth (optional, year only)
-    /// 
+    ///
+    /// **Step 1 - Personal Info (الخطوة الأولى)** - All fields optional for Office Survey:
+    /// - الكنية: FamilyNameArabic (optional) - Family/surname
+    /// - الاسم الأول: FirstNameArabic (optional) - Given name
+    /// - اسم الأب: FatherNameArabic (optional) - Father's name
+    /// - الاسم الأم: MotherNameArabic (optional) - Mother's name
+    /// - الرقم الوطني: NationalId (optional) - 11-digit national ID
+    /// - الجنس: Gender (optional) - Enum: 1=Male, 2=Female
+    /// - الجنسية: Nationality (optional) - Enum: 1=Syrian, 2=Palestinian, 3=Iraqi, etc.
+    /// - تاريخ الميلاد: DateOfBirth (optional) - Full date or year-only (e.g., "1985-01-01T00:00:00Z" or "1985-06-15T00:00:00Z")
+    ///
     /// **Step 2 - Contact Info (الخطوة الثانية)**:
     /// - البريد الالكتروني: Email (optional)
     /// - رقم الموبايل: MobileNumber (optional)
     /// - رقم الهاتف: PhoneNumber (optional)
-    /// 
+    ///
     /// **Household Relationship**:
-    /// - RelationshipToHead: (optional, defaults to "Member")
-    /// 
-    /// **Example Request**:
+    /// - RelationshipToHead: (optional) - Enum values: Head=1, Spouse=2, Son=3, Daughter=4, Father=5, Mother=6, etc.
+    ///
+    /// **Example Request - Full data**:
     /// ```json
     /// {
     ///   "familyNameArabic": "الأحمد",
@@ -1144,11 +1147,21 @@ public class SurveysController : ControllerBase
     ///   "fatherNameArabic": "محمد",
     ///   "motherNameArabic": "فاطمة",
     ///   "nationalId": "00000000000",
-    ///   "yearOfBirth": 1985,
+    ///   "gender": 1,
+    ///   "nationality": 1,
+    ///   "dateOfBirth": "1985-06-15T00:00:00Z",
     ///   "email": "*****@gmail.com",
     ///   "mobileNumber": "+963 09",
     ///   "phoneNumber": "0000000",
-    ///   "relationshipToHead": "Spouse"
+    ///   "relationshipToHead": 2
+    /// }
+    /// ```
+    ///
+    /// **Example Request - Minimal data (all fields optional)**:
+    /// ```json
+    /// {
+    ///   "firstNameArabic": "أحمد",
+    ///   "gender": 1
     /// }
     /// ```
     /// </remarks>

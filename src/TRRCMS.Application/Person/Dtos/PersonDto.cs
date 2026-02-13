@@ -1,4 +1,6 @@
-﻿namespace TRRCMS.Application.Persons.Dtos;
+﻿using TRRCMS.Domain.Enums;
+
+namespace TRRCMS.Application.Persons.Dtos;
 
 /// <summary>
 /// Simplified Person DTO for frontend form
@@ -41,9 +43,19 @@ public class PersonDto
     public string? NationalId { get; set; }
 
     /// <summary>
-    /// تاريخ الميلاد - Year of birth (stored as year only)
+    /// الجنس - Gender
     /// </summary>
-    public int? YearOfBirth { get; set; }
+    public Gender? Gender { get; set; }
+
+    /// <summary>
+    /// الجنسية - Nationality
+    /// </summary>
+    public Nationality? Nationality { get; set; }
+
+    /// <summary>
+    /// تاريخ الميلاد - Date of birth (full date or year-only)
+    /// </summary>
+    public DateTime? DateOfBirth { get; set; }
 
     // ==================== CONTACT INFORMATION (Step 2) ====================
 
@@ -70,9 +82,9 @@ public class PersonDto
     public Guid? HouseholdId { get; set; }
 
     /// <summary>
-    /// Relationship to head of household
+    /// Relationship to head of household (علاقة برب الأسرة)
     /// </summary>
-    public string? RelationshipToHead { get; set; }
+    public RelationshipToHead? RelationshipToHead { get; set; }
 
     // ==================== AUDIT FIELDS ====================
 
@@ -119,7 +131,23 @@ public class PersonDto
     public string FullNameArabic => $"{FirstNameArabic} {FatherNameArabic} {FamilyNameArabic}".Trim();
 
     /// <summary>
-    /// Calculated age based on year of birth
+    /// Calculated age based on date of birth
     /// </summary>
-    public int? Age => YearOfBirth.HasValue ? DateTime.UtcNow.Year - YearOfBirth.Value : null;
+    public int? Age
+    {
+        get
+        {
+            if (!DateOfBirth.HasValue)
+                return null;
+
+            var today = DateTime.UtcNow;
+            var age = today.Year - DateOfBirth.Value.Year;
+
+            // Subtract 1 if birthday hasn't occurred this year yet
+            if (DateOfBirth.Value.Date > today.AddYears(-age))
+                age--;
+
+            return age;
+        }
+    }
 }

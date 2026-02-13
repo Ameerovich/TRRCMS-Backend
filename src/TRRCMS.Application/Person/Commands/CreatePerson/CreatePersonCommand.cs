@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Persons.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Persons.Commands.CreatePerson;
 
@@ -12,19 +13,19 @@ public class CreatePersonCommand : IRequest<PersonDto>
     // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
 
     /// <summary>
-    /// الكنية - Family/Last name in Arabic (required)
+    /// الكنية - Family/Last name in Arabic (optional)
     /// </summary>
-    public string FamilyNameArabic { get; set; } = string.Empty;
+    public string? FamilyNameArabic { get; set; }
 
     /// <summary>
-    /// الاسم الأول - First name in Arabic (required)
+    /// الاسم الأول - First name in Arabic (optional)
     /// </summary>
-    public string FirstNameArabic { get; set; } = string.Empty;
+    public string? FirstNameArabic { get; set; }
 
     /// <summary>
-    /// اسم الأب - Father's name in Arabic (required)
+    /// اسم الأب - Father's name in Arabic (optional)
     /// </summary>
-    public string FatherNameArabic { get; set; } = string.Empty;
+    public string? FatherNameArabic { get; set; }
 
     /// <summary>
     /// الاسم الأم - Mother's name in Arabic (optional)
@@ -37,9 +38,19 @@ public class CreatePersonCommand : IRequest<PersonDto>
     public string? NationalId { get; set; }
 
     /// <summary>
-    /// تاريخ الميلاد - Year of birth (optional)
+    /// الجنس - Gender (optional)
     /// </summary>
-    public int? YearOfBirth { get; set; }
+    public Gender? Gender { get; set; }
+
+    /// <summary>
+    /// الجنسية - Nationality (optional)
+    /// </summary>
+    public Nationality? Nationality { get; set; }
+
+    /// <summary>
+    /// تاريخ الميلاد - Date of birth (full date or year-only, optional)
+    /// </summary>
+    public DateTime? DateOfBirth { get; set; }
 
     // ==================== CONTACT INFORMATION (Step 2) ====================
 

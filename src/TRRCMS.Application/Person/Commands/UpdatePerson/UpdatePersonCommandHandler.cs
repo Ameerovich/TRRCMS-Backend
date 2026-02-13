@@ -46,7 +46,9 @@ public class UpdatePersonCommandHandler : IRequestHandler<UpdatePersonCommand, P
             fatherNameArabic: request.FatherNameArabic ?? person.FatherNameArabic,
             motherNameArabic: request.MotherNameArabic ?? person.MotherNameArabic,
             nationalId: request.NationalId ?? person.NationalId,
-            yearOfBirth: request.YearOfBirth ?? person.YearOfBirth,
+            dateOfBirth: request.DateOfBirth ?? person.DateOfBirth,
+            gender: request.Gender ?? person.Gender,
+            nationality: request.Nationality ?? person.Nationality,
             modifiedByUserId: currentUserId);
 
         // Update contact info (only if any contact field provided)

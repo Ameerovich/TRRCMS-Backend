@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Persons.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Persons.Commands.UpdatePerson;
 
@@ -42,9 +43,19 @@ public class UpdatePersonCommand : IRequest<PersonDto>
     public string? NationalId { get; set; }
 
     /// <summary>
-    /// تاريخ الميلاد - Year of birth
+    /// الجنس - Gender
     /// </summary>
-    public int? YearOfBirth { get; set; }
+    public Gender? Gender { get; set; }
+
+    /// <summary>
+    /// الجنسية - Nationality
+    /// </summary>
+    public Nationality? Nationality { get; set; }
+
+    /// <summary>
+    /// تاريخ الميلاد - Date of birth (full date or year-only)
+    /// </summary>
+    public DateTime? DateOfBirth { get; set; }
 
     // ==================== CONTACT INFORMATION (Step 2) ====================
 

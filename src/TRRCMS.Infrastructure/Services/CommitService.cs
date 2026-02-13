@@ -345,7 +345,9 @@ public class CommitService : ICommitService
                     fatherNameArabic: staging.FatherNameArabic,
                     motherNameArabic: staging.MotherNameArabic,
                     nationalId: staging.NationalId,
-                    yearOfBirth: staging.YearOfBirth,
+                    dateOfBirth: staging.YearOfBirth.HasValue ? new DateTime(staging.YearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc) : null,
+                    gender: null, // TODO: Add to staging entity
+                    nationality: null, // TODO: Add to staging entity
                     email: staging.Email,
                     mobileNumber: staging.MobileNumber,
                     phoneNumber: staging.PhoneNumber,

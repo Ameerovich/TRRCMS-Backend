@@ -79,22 +79,24 @@ public class PersonsController : ControllerBase
     /// **Form Steps (matching mobile/desktop UI):**
     /// 
     /// **Step 1 - Personal Info (الخطوة الأولى - المعلومات الشخصية):**
-    /// | Field | Arabic | Required | Description |
-    /// |-------|--------|----------|-------------|
-    /// | familyNameArabic | الكنية | ✅ Yes | Family/surname |
-    /// | firstNameArabic | الاسم الأول | ✅ Yes | Given name |
-    /// | fatherNameArabic | اسم الأب | ✅ Yes | Father's name |
-    /// | motherNameArabic | الاسم الأم | ❌ No | Mother's name |
-    /// | nationalId | الرقم الوطني | ❌ No | 11-digit national ID |
-    /// | yearOfBirth | تاريخ الميلاد | ❌ No | Year only (e.g., 1985) |
-    /// 
+    /// | Field | Arabic | Required | Type | Description |
+    /// |-------|--------|----------|------|-------------|
+    /// | familyNameArabic | الكنية | ❌ No | string | Family/surname |
+    /// | firstNameArabic | الاسم الأول | ❌ No | string | Given name |
+    /// | fatherNameArabic | اسم الأب | ❌ No | string | Father's name |
+    /// | motherNameArabic | الاسم الأم | ❌ No | string | Mother's name |
+    /// | nationalId | الرقم الوطني | ❌ No | string | 11-digit national ID |
+    /// | gender | الجنس | ❌ No | enum | 1=Male (ذكر), 2=Female (أنثى) |
+    /// | nationality | الجنسية | ❌ No | enum | 1=Syrian (سوري), 2=Palestinian (فلسطيني), 3=Iraqi (عراقي), etc. |
+    /// | dateOfBirth | تاريخ الميلاد | ❌ No | DateTime | Full date or year-only (e.g., "1985-01-01T00:00:00Z") |
+    ///
     /// **Step 2 - Contact Info (الخطوة الثانية - معلومات الاتصال):**
-    /// | Field | Arabic | Required | Description |
-    /// |-------|--------|----------|-------------|
-    /// | email | البريد الالكتروني | ❌ No | Email address |
-    /// | mobileNumber | رقم الموبايل | ❌ No | Mobile phone |
-    /// | phoneNumber | رقم الهاتف | ❌ No | Landline phone |
-    /// 
+    /// | Field | Arabic | Required | Type | Description |
+    /// |-------|--------|----------|------|-------------|
+    /// | email | البريد الالكتروني | ❌ No | string | Email address |
+    /// | mobileNumber | رقم الموبايل | ❌ No | string | Mobile phone |
+    /// | phoneNumber | رقم الهاتف | ❌ No | string | Landline phone |
+    ///
     /// **Example Request - Full data:**
     /// ```json
     /// {
@@ -103,22 +105,23 @@ public class PersonsController : ControllerBase
     ///   "fatherNameArabic": "أحمد",
     ///   "motherNameArabic": "فاطمة",
     ///   "nationalId": "01234567890",
-    ///   "yearOfBirth": 1985,
+    ///   "gender": 1,
+    ///   "nationality": 1,
+    ///   "dateOfBirth": "1985-06-15T00:00:00Z",
     ///   "email": "mohammed.khaled@gmail.com",
     ///   "mobileNumber": "+963 991 234 567",
     ///   "phoneNumber": "021 234 5678"
     /// }
     /// ```
-    /// 
-    /// **Example Request - Minimum required:**
+    ///
+    /// **Example Request - Minimal data (all fields optional):**
     /// ```json
     /// {
-    ///   "familyNameArabic": "العلي",
     ///   "firstNameArabic": "أحمد",
-    ///   "fatherNameArabic": "محمود"
+    ///   "gender": 1
     /// }
     /// ```
-    /// 
+    ///
     /// **Example Response:**
     /// ```json
     /// {
@@ -128,14 +131,16 @@ public class PersonsController : ControllerBase
     ///   "fatherNameArabic": "أحمد",
     ///   "motherNameArabic": "فاطمة",
     ///   "nationalId": "01234567890",
-    ///   "yearOfBirth": 1985,
+    ///   "gender": "Male",
+    ///   "nationality": "Syrian",
+    ///   "dateOfBirth": "1985-06-15T00:00:00Z",
     ///   "email": "mohammed.khaled@gmail.com",
     ///   "mobileNumber": "+963 991 234 567",
     ///   "phoneNumber": "021 234 5678",
     ///   "householdId": null,
     ///   "relationshipToHead": null,
     ///   "fullNameArabic": "محمد أحمد الخالد",
-    ///   "age": 41,
+    ///   "age": 40,
     ///   "createdAtUtc": "2026-01-31T10:00:00Z",
     ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
     ///   "lastModifiedAtUtc": null,
@@ -147,7 +152,7 @@ public class PersonsController : ControllerBase
     /// <param name="command">Person creation data</param>
     /// <returns>Created person with generated ID and computed fields</returns>
     /// <response code="201">Person created successfully</response>
-    /// <response code="400">Validation error - check required fields (familyNameArabic, firstNameArabic, fatherNameArabic)</response>
+    /// <response code="400">Validation error - check field formats (e.g., nationalId must be 11 digits, dateOfBirth cannot be in future)</response>
     /// <response code="401">Not authenticated - valid JWT token required</response>
     /// <response code="403">Not authorized - requires Surveys_EditAll permission</response>
     [HttpPost]
@@ -177,12 +182,12 @@ public class PersonsController : ControllerBase
     /// 
     /// **Updatable Fields (all optional):**
     /// - Personal: familyNameArabic, firstNameArabic, fatherNameArabic, motherNameArabic
-    /// - Identity: nationalId, yearOfBirth
+    /// - Identity: nationalId, gender (enum: 1=Male, 2=Female), nationality (enum: 1=Syrian, etc.), dateOfBirth (DateTime)
     /// - Contact: email, mobileNumber, phoneNumber
-    /// 
+    ///
     /// **Note:** `householdId` and `relationshipToHead` are managed through
     /// the Household endpoints, not directly on Person.
-    /// 
+    ///
     /// **Example Request - Update contact info only:**
     /// ```json
     /// {
@@ -191,7 +196,7 @@ public class PersonsController : ControllerBase
     ///   "mobileNumber": "+963 992 345 678"
     /// }
     /// ```
-    /// 
+    ///
     /// **Example Request - Correct name spelling:**
     /// ```json
     /// {
@@ -200,15 +205,18 @@ public class PersonsController : ControllerBase
     ///   "fatherNameArabic": "أحمد"
     /// }
     /// ```
-    /// 
-    /// **Example Request - Add national ID:**
+    ///
+    /// **Example Request - Update identity information:**
     /// ```json
     /// {
     ///   "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
-    ///   "nationalId": "01234567890"
+    ///   "nationalId": "01234567890",
+    ///   "gender": 1,
+    ///   "nationality": 1,
+    ///   "dateOfBirth": "1985-06-15T00:00:00Z"
     /// }
     /// ```
-    /// 
+    ///
     /// **Example Response:**
     /// ```json
     /// {
@@ -218,14 +226,16 @@ public class PersonsController : ControllerBase
     ///   "fatherNameArabic": "أحمد",
     ///   "motherNameArabic": "فاطمة",
     ///   "nationalId": "01234567890",
-    ///   "yearOfBirth": 1985,
+    ///   "gender": "Male",
+    ///   "nationality": "Syrian",
+    ///   "dateOfBirth": "1985-06-15T00:00:00Z",
     ///   "email": "new.email@gmail.com",
     ///   "mobileNumber": "+963 992 345 678",
     ///   "phoneNumber": "021 234 5678",
     ///   "householdId": null,
     ///   "relationshipToHead": null,
     ///   "fullNameArabic": "محمّد أحمد الخالد",
-    ///   "age": 41,
+    ///   "age": 40,
     ///   "createdAtUtc": "2026-01-31T10:00:00Z",
     ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
     ///   "lastModifiedAtUtc": "2026-01-31T14:30:00Z",
@@ -274,14 +284,15 @@ public class PersonsController : ControllerBase
     /// **Required Permission**: Surveys_ViewAll (7004) - CanViewAllSurveys policy
     /// 
     /// **Response includes:**
-    /// - Personal identification (names in Arabic, national ID)
+    /// - Personal identification (names in Arabic, national ID, gender, nationality)
     /// - Contact information (email, phone numbers)
-    /// - Household context (if assigned to a household)
+    /// - Date of birth (full date, not just year)
+    /// - Household context (if assigned to a household, includes relationshipToHead enum)
     /// - Computed properties:
     ///   - `fullNameArabic`: Concatenated full name
-    ///   - `age`: Calculated from yearOfBirth
+    ///   - `age`: Calculated from dateOfBirth
     /// - Complete audit trail
-    /// 
+    ///
     /// **Example Response:**
     /// ```json
     /// {
@@ -291,14 +302,16 @@ public class PersonsController : ControllerBase
     ///   "fatherNameArabic": "أحمد",
     ///   "motherNameArabic": "فاطمة",
     ///   "nationalId": "01234567890",
-    ///   "yearOfBirth": 1985,
+    ///   "gender": "Male",
+    ///   "nationality": "Syrian",
+    ///   "dateOfBirth": "1985-06-15T00:00:00Z",
     ///   "email": "mohammed.khaled@gmail.com",
     ///   "mobileNumber": "+963 991 234 567",
     ///   "phoneNumber": "021 234 5678",
     ///   "householdId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "relationshipToHead": "Head",
     ///   "fullNameArabic": "محمد أحمد الخالد",
-    ///   "age": 41,
+    ///   "age": 40,
     ///   "createdAtUtc": "2026-01-31T10:00:00Z",
     ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
     ///   "lastModifiedAtUtc": "2026-01-31T14:30:00Z",
@@ -360,10 +373,13 @@ public class PersonsController : ControllerBase
     ///     "firstNameArabic": "محمد",
     ///     "fatherNameArabic": "أحمد",
     ///     "nationalId": "01234567890",
-    ///     "yearOfBirth": 1985,
+    ///     "gender": "Male",
+    ///     "nationality": "Syrian",
+    ///     "dateOfBirth": "1985-06-15T00:00:00Z",
     ///     "fullNameArabic": "محمد أحمد الخالد",
-    ///     "age": 41,
+    ///     "age": 40,
     ///     "householdId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///     "relationshipToHead": "Head",
     ///     "createdAtUtc": "2026-01-31T10:00:00Z"
     ///   },
     ///   {
@@ -372,10 +388,13 @@ public class PersonsController : ControllerBase
     ///     "firstNameArabic": "فاطمة",
     ///     "fatherNameArabic": "خالد",
     ///     "nationalId": null,
-    ///     "yearOfBirth": 1990,
+    ///     "gender": "Female",
+    ///     "nationality": "Syrian",
+    ///     "dateOfBirth": "1990-03-22T00:00:00Z",
     ///     "fullNameArabic": "فاطمة خالد العلي",
-    ///     "age": 36,
+    ///     "age": 35,
     ///     "householdId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///     "relationshipToHead": "Spouse",
     ///     "createdAtUtc": "2026-01-31T10:30:00Z"
     ///   }
     /// ]

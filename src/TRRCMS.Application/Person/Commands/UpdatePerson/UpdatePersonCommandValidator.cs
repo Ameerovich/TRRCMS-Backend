@@ -46,10 +46,10 @@ public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonComman
             .When(x => !string.IsNullOrEmpty(x.NationalId))
             .WithMessage("الرقم الوطني يجب أن يكون 11 رقماً بالضبط");
 
-        RuleFor(x => x.YearOfBirth)
-            .InclusiveBetween(1900, DateTime.UtcNow.Year)
-            .WithMessage($"سنة الميلاد يجب أن تكون بين 1900 و {DateTime.UtcNow.Year}")
-            .When(x => x.YearOfBirth.HasValue);
+        RuleFor(x => x.DateOfBirth)
+            .Must(date => date <= DateTime.UtcNow)
+            .When(x => x.DateOfBirth.HasValue)
+            .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
 
         // ==================== CONTACT INFORMATION ====================
 

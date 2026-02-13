@@ -50,7 +50,9 @@ public class MappingProfile : Profile
                     .ForMember(dest => dest.FatherNameArabic, opt => opt.MapFrom(src => src.FatherNameArabic))
                     .ForMember(dest => dest.MotherNameArabic, opt => opt.MapFrom(src => src.MotherNameArabic))
                     .ForMember(dest => dest.NationalId, opt => opt.MapFrom(src => src.NationalId))
-                    .ForMember(dest => dest.YearOfBirth, opt => opt.MapFrom(src => src.YearOfBirth))
+                    .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
+                    .ForMember(dest => dest.Nationality, opt => opt.MapFrom(src => src.Nationality))
+                    .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
 
                     // Contact information
                     .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))

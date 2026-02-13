@@ -151,7 +151,7 @@ public class PersonMergeService : IMergeService
         {
             master.UpdateIdentification(
                 discarded.NationalId,
-                master.YearOfBirth,
+                master.DateOfBirth,
                 master.Gender,
                 master.Nationality,
                 master.Id);
@@ -210,20 +210,20 @@ public class PersonMergeService : IMergeService
             mergeMapping["Email"] = "master";
         }
 
-        // YearOfBirth — prefer non-null
-        if (!master.YearOfBirth.HasValue && discarded.YearOfBirth.HasValue)
+        // DateOfBirth — prefer non-null
+        if (!master.DateOfBirth.HasValue && discarded.DateOfBirth.HasValue)
         {
             master.UpdateIdentification(
                 master.NationalId,
-                discarded.YearOfBirth,
+                discarded.DateOfBirth,
                 master.Gender,
                 master.Nationality,
                 master.Id);
-            mergeMapping["YearOfBirth"] = "discarded";
+            mergeMapping["DateOfBirth"] = "discarded";
         }
         else
         {
-            mergeMapping["YearOfBirth"] = "master";
+            mergeMapping["DateOfBirth"] = "master";
         }
 
         // Names always kept from master (primary identity)

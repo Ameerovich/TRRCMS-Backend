@@ -66,20 +66,18 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
             fatherNameArabic: request.FatherNameArabic,
             motherNameArabic: request.MotherNameArabic,
             nationalId: request.NationalId,
-            yearOfBirth: request.YearOfBirth,
+            dateOfBirth: request.DateOfBirth,
+            gender: request.Gender,
+            nationality: request.Nationality,
             email: request.Email,
             mobileNumber: request.MobileNumber,
             phoneNumber: request.PhoneNumber,
             createdByUserId: currentUserId);
 
         // Assign to household
-        if (!string.IsNullOrEmpty(request.RelationshipToHead))
+        if (request.RelationshipToHead.HasValue)
         {
-            person.AssignToHousehold(request.HouseholdId, request.RelationshipToHead, currentUserId);
-        }
-        else
-        {
-            person.AssignToHousehold(request.HouseholdId, "Member", currentUserId);
+            person.AssignToHousehold(request.HouseholdId, request.RelationshipToHead.Value, currentUserId);
         }
 
         // Save to repository

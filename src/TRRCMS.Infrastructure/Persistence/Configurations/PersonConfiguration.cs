@@ -18,20 +18,20 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         // Primary Key
         builder.HasKey(p => p.Id);
 
-        // ==================== REQUIRED ARABIC NAMES ====================
+        // ==================== ARABIC NAMES (NULLABLE FOR OFFICE SURVEY) ====================
 
         builder.Property(p => p.FamilyNameArabic)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(100)
             .HasComment("الكنية - Family/Last name in Arabic");
 
         builder.Property(p => p.FirstNameArabic)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(100)
             .HasComment("الاسم الأول - First name in Arabic");
 
         builder.Property(p => p.FatherNameArabic)
-            .IsRequired()
+            .IsRequired(false)
             .HasMaxLength(100)
             .HasComment("اسم الأب - Father's name in Arabic");
 
@@ -45,8 +45,10 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasMaxLength(50)
             .HasComment("الرقم الوطني - National ID or identification number");
 
-        builder.Property(p => p.YearOfBirth)
-            .HasComment("تاريخ الميلاد - Year of birth (integer)");
+        builder.Property(p => p.DateOfBirth)
+            .HasColumnType("timestamp with time zone")
+            .IsRequired(false)
+            .HasComment("تاريخ الميلاد - Date of birth (full date or year-only)");
 
         // ==================== CONTACT INFORMATION ====================
 
@@ -69,12 +71,16 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasComment("Full name in English (optional)");
 
         builder.Property(p => p.Gender)
+            .HasConversion<string>()
             .HasMaxLength(20)
-            .HasComment("Gender (controlled vocabulary: M/F)");
+            .IsRequired(false)
+            .HasComment("Gender (enum converted to string)");
 
         builder.Property(p => p.Nationality)
+            .HasConversion<string>()
             .HasMaxLength(100)
-            .HasComment("Nationality (controlled vocabulary)");
+            .IsRequired(false)
+            .HasComment("Nationality (enum converted to string)");
 
         builder.Property(p => p.IsContactPerson)
             .IsRequired()
@@ -87,8 +93,10 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasComment("Foreign key to household (nullable)");
 
         builder.Property(p => p.RelationshipToHead)
+            .HasConversion<string>()
             .HasMaxLength(50)
-            .HasComment("Relationship to head of household");
+            .IsRequired(false)
+            .HasComment("Relationship to head of household (enum converted to string)");
 
         // ==================== IDENTIFICATION DOCUMENT ====================
 

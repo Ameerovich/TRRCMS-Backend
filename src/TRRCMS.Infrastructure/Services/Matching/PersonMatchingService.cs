@@ -210,14 +210,15 @@ public class PersonMatchingService
             production.FirstNameArabic, production.FatherNameArabic, production.FamilyNameArabic);
         score += nameSimilarity / 100m * MaxNameScore;
 
-        // Year of birth
+        // Year of birth (staging has int YearOfBirth, production has DateTime DateOfBirth)
         bool yearMatched = staging.YearOfBirth.HasValue &&
-                           production.YearOfBirth.HasValue &&
-                           staging.YearOfBirth.Value == production.YearOfBirth.Value;
+                           production.DateOfBirth.HasValue &&
+                           staging.YearOfBirth.Value == production.DateOfBirth.Value.Year;
         if (yearMatched) score += YearOfBirthScore;
 
-        // Gender
-        bool genderMatched = GendersMatch(staging.Gender, production.Gender);
+        // Gender (staging has string, production has enum)
+        bool genderMatched = GendersMatch(staging.Gender,
+            production.Gender.HasValue ? production.Gender.Value.ToString() : null);
         if (genderMatched) score += GenderScore;
 
         score = Math.Min(score, MaxCompositeScore);
@@ -257,6 +258,7 @@ public class PersonMatchingService
             b.FirstNameArabic, b.FatherNameArabic, b.FamilyNameArabic);
         score += nameSimilarity / 100m * MaxNameScore;
 
+        // Both are StagingPerson entities, so they both have YearOfBirth (int?) and Gender (string?)
         if (a.YearOfBirth.HasValue && b.YearOfBirth.HasValue &&
             a.YearOfBirth.Value == b.YearOfBirth.Value)
             score += YearOfBirthScore;
@@ -290,9 +292,10 @@ public class PersonMatchingService
             NameSimilarityScore = ArabicNameSimilarityHelper.ComputeFullNameSimilarity(
                 staging.FirstNameArabic, staging.FatherNameArabic, staging.FamilyNameArabic,
                 production.FirstNameArabic, production.FatherNameArabic, production.FamilyNameArabic),
-            YearOfBirthMatched = staging.YearOfBirth.HasValue && production.YearOfBirth.HasValue &&
-                                 staging.YearOfBirth.Value == production.YearOfBirth.Value,
-            GenderMatched = GendersMatch(staging.Gender, production.Gender)
+            YearOfBirthMatched = staging.YearOfBirth.HasValue && production.DateOfBirth.HasValue &&
+                                 staging.YearOfBirth.Value == production.DateOfBirth.Value.Year,
+            GenderMatched = GendersMatch(staging.Gender,
+                production.Gender.HasValue ? production.Gender.Value.ToString() : null)
         };
     }
 
@@ -375,7 +378,7 @@ public class PersonMatchingService
     }
 
     private static string BuildPersonIdentifier(
-        string firstName, string fatherName, string familyName, string? nationalId)
+        string? firstName, string? fatherName, string? familyName, string? nationalId)
     {
         var name = string.Join(" ",
             new[] { firstName, fatherName, familyName }
