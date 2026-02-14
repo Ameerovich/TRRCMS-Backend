@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Evidences.Dtos;
@@ -10,8 +11,9 @@ public class EvidenceDto
     public Guid Id { get; set; }
 
     /// <summary>
-    /// نوع الدليل - IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, etc.
+    /// نوع الدليل - Returned as string: "IdentificationDocument", "OwnershipDeed", "RentalContract", etc.
     /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public EvidenceType EvidenceType { get; set; }
     public string Description { get; set; } = string.Empty;
 

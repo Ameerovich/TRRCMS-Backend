@@ -58,9 +58,8 @@ public class UploadTenureDocumentCommandValidator : AbstractValidator<UploadTenu
             .WithMessage("Invalid evidence type");
 
         RuleFor(x => x.Description)
-            .NotEmpty()
-            .WithMessage("Description is required")
             .MaximumLength(500)
+            .When(x => !string.IsNullOrEmpty(x.Description))
             .WithMessage("Description cannot exceed 500 characters");
 
         RuleFor(x => x.DocumentExpiryDate)

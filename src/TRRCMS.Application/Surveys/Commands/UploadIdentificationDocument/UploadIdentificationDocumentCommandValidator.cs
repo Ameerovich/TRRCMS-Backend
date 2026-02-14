@@ -51,9 +51,8 @@ public class UploadIdentificationDocumentCommandValidator : AbstractValidator<Up
             .WithMessage("Only image files and PDFs are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF)");
 
         RuleFor(x => x.Description)
-            .NotEmpty()
-            .WithMessage("Description is required")
             .MaximumLength(500)
+            .When(x => !string.IsNullOrEmpty(x.Description))
             .WithMessage("Description cannot exceed 500 characters");
 
         RuleFor(x => x.DocumentExpiryDate)

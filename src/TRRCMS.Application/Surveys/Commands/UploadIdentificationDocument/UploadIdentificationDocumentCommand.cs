@@ -26,9 +26,9 @@ public class UploadIdentificationDocumentCommand : IRequest<EvidenceDto>
     public IFormFile File { get; set; } = null!;
 
     /// <summary>
-    /// Document description (e.g., "National ID Card", "Passport", "Birth Certificate")
+    /// Document description (optional - e.g., "National ID Card", "Passport", "Birth Certificate")
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
     /// Document issue date (optional)

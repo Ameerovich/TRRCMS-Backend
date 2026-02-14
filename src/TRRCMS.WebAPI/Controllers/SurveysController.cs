@@ -1771,51 +1771,37 @@ public class SurveysController : ControllerBase
     ///     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     ///     "personId": "11111111-2222-3333-4444-555555555555",
     ///     "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///     "relationType": 1,
-    ///     "relationTypeOtherDesc": null,
-    ///     "contractType": 1,
-    ///     "contractTypeOtherDesc": null,
+    ///     "relationType": "Owner",
+    ///     "occupancyType": "OwnerOccupied",
+    ///     "hasEvidence": true,
     ///     "ownershipShare": 0.5,
     ///     "contractDetails": "عقد ملكية مسجل في السجل العقاري",
-    ///     "startDate": "2010-01-01T00:00:00",
-    ///     "endDate": null,
     ///     "notes": "المالك الأصلي مع وثائق ملكية",
     ///     "isActive": true,
-    ///     "durationInDays": 5878,
+    ///     "durationInDays": null,
     ///     "isOngoing": true,
     ///     "evidenceCount": 2,
     ///     "createdAtUtc": "2026-01-29T12:00:00Z",
     ///     "createdBy": "user-guid",
-    ///     "lastModifiedAtUtc": null,
-    ///     "lastModifiedBy": null,
-    ///     "isDeleted": false,
-    ///     "deletedAtUtc": null,
-    ///     "deletedBy": null
+    ///     "isDeleted": false
     ///   },
     ///   {
     ///     "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
     ///     "personId": "22222222-3333-4444-5555-666666666666",
     ///     "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///     "relationType": 3,
-    ///     "relationTypeOtherDesc": null,
-    ///     "contractType": 3,
-    ///     "contractTypeOtherDesc": null,
+    ///     "relationType": "Tenant",
+    ///     "occupancyType": "TenantOccupied",
+    ///     "hasEvidence": false,
     ///     "ownershipShare": null,
     ///     "contractDetails": null,
-    ///     "startDate": "2023-06-01T00:00:00",
-    ///     "endDate": "2025-06-01T00:00:00",
     ///     "notes": "عقد إيجار لمدة سنتين",
     ///     "isActive": true,
-    ///     "durationInDays": 731,
-    ///     "isOngoing": false,
-    ///     "evidenceCount": 1,
+    ///     "durationInDays": null,
+    ///     "isOngoing": true,
+    ///     "evidenceCount": 0,
     ///     "createdAtUtc": "2026-01-29T14:30:00Z",
     ///     "createdBy": "user-guid",
-    ///     "lastModifiedAtUtc": null,
-    ///     "lastModifiedBy": null,
-    ///     "isDeleted": false,
-    ///     "deletedAtUtc": null,
-    ///     "deletedBy": null
+    ///     "isDeleted": false
     ///   }
     /// ]
     /// ```
@@ -1944,29 +1930,32 @@ public class SurveysController : ControllerBase
     /// 
     /// **File Requirements**:
     /// - Format: PDF, JPG, JPEG, PNG
-    /// - Max size: 10MB
-    /// - Required: File, description, person ID
-    /// 
-    /// **Document Metadata** (optional):
+    /// - Max size: 15MB
+    /// - Required: File, person ID
+    /// - Optional: Description (defaults to filename if not provided)
+    ///
+    /// **Document Metadata** (all optional):
+    /// - description: Document description (defaults to original filename)
     /// - documentIssuedDate: When document was issued
     /// - documentExpiryDate: When document expires
     /// - issuingAuthority: Who issued (e.g., "Ministry of Interior")
     /// - documentReferenceNumber: Official document number
-    /// 
+    ///
     /// **Required permissions**: CanEditOwnSurveys
-    /// 
+    ///
     /// **Example** (multipart/form-data):
     /// ```
     /// File: national-id.pdf (binary)
     /// PersonId: person-guid-here
-    /// Description: National ID Card
+    /// Description: National ID Card              ← optional
     /// DocumentIssuedDate: 2020-01-15
     /// DocumentExpiryDate: 2030-01-15
     /// IssuingAuthority: Ministry of Interior
     /// DocumentReferenceNumber: 123456789
     /// ```
-    /// 
-    /// **Response**: Evidence record with file details
+    ///
+    /// **Response**: Evidence record with file details.
+    /// Note: evidenceType is returned as string (e.g., "IdentificationDocument")
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="command">Upload command with file and metadata (from form)</param>
@@ -2023,29 +2012,38 @@ public class SurveysController : ControllerBase
     /// - Utility bills (as proof of residence)
     /// 
     /// **File Requirements**:
-    /// - Format: PDF, JPG, JPEG, PNG
-    /// - Max size: 10MB
-    /// - Required: File, description, person-property relation ID
-    /// 
-    /// **Document Metadata** (optional):
+    /// - Format: PDF, JPG, JPEG, PNG, DOC, DOCX
+    /// - Max size: 25MB
+    /// - Required: File, person-property relation ID
+    /// - Optional: Description (defaults to filename if not provided)
+    ///
+    /// **Evidence Types** (send as integer, returned as string):
+    /// - 2 = OwnershipDeed (default), 3 = RentalContract, 4 = UtilityBill,
+    ///   8 = InheritanceDocument, 9 = CourtOrder, 10 = MunicipalRecord, etc.
+    ///
+    /// **Document Metadata** (all optional):
+    /// - description: Document description (defaults to original filename)
+    /// - evidenceType: Type of evidence (int, defaults to 2=OwnershipDeed)
     /// - documentIssuedDate: When document was issued
     /// - documentExpiryDate: When document expires (for temporary rights)
     /// - issuingAuthority: Who issued (e.g., "Real Estate Registry", "Court")
     /// - documentReferenceNumber: Official registration/deed number
-    /// 
+    ///
     /// **Required permissions**: CanEditOwnSurveys
-    /// 
+    ///
     /// **Example** (multipart/form-data):
     /// ```
     /// File: property-deed.pdf (binary)
     /// PersonPropertyRelationId: relation-guid-here
-    /// Description: Property Ownership Deed
+    /// EvidenceType: 2                            ← int in request
+    /// Description: Property Ownership Deed       ← optional
     /// DocumentIssuedDate: 2015-06-20
     /// IssuingAuthority: Real Estate Registry Office
     /// DocumentReferenceNumber: DEED-2015-123456
     /// ```
-    /// 
-    /// **Response**: Evidence record with file details
+    ///
+    /// **Response**: Evidence record with file details.
+    /// Note: evidenceType is returned as string (e.g., "OwnershipDeed", "RentalContract")
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="command">Upload command with file and metadata (from form)</param>

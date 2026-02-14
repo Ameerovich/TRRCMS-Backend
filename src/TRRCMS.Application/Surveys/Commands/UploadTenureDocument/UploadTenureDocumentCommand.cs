@@ -33,9 +33,9 @@ public class UploadTenureDocumentCommand : IRequest<EvidenceDto>
     public EvidenceType EvidenceType { get; set; } = EvidenceType.OwnershipDeed;
 
     /// <summary>
-    /// Document description (e.g., "Property Deed", "Rental Contract", "Inheritance Document")
+    /// Document description (optional - e.g., "Property Deed", "Rental Contract", "Inheritance Document")
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
     /// Document issue date (optional)

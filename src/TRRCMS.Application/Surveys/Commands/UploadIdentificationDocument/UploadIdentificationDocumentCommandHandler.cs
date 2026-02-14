@@ -98,7 +98,7 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
         // Create Evidence entity using EvidenceType.IdentificationDocument enum
         var evidence = Evidence.Create(
             evidenceType: EvidenceType.IdentificationDocument,
-            description: request.Description,
+            description: request.Description ?? request.File.FileName,
             originalFileName: request.File.FileName,
             filePath: filePath,
             fileSizeBytes: request.File.Length,
