@@ -80,6 +80,7 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
         // Track changes for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
+            propertyUnit.UnitIdentifier,
             UnitType = propertyUnit.UnitType.ToString(),
             Status = propertyUnit.Status.ToString(),
             propertyUnit.FloorNumber,
@@ -87,6 +88,20 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
             propertyUnit.NumberOfRooms,
             propertyUnit.Description
         });
+
+        // Update unit identifier if provided
+        if (!string.IsNullOrWhiteSpace(request.UnitIdentifier) && request.UnitIdentifier != propertyUnit.UnitIdentifier)
+        {
+            // Check for duplicate unit identifier within the same building
+            var existingUnit = await _propertyUnitRepository.GetByBuildingAndIdentifierAsync(
+                propertyUnit.BuildingId, request.UnitIdentifier, cancellationToken);
+            if (existingUnit != null && existingUnit.Id != propertyUnit.Id)
+            {
+                throw new ValidationException(
+                    $"A property unit with identifier '{request.UnitIdentifier}' already exists in this building");
+            }
+            propertyUnit.UpdateUnitIdentifier(request.UnitIdentifier, currentUserId);
+        }
 
         // Update floor number if provided
         if (request.FloorNumber.HasValue)
@@ -126,6 +141,7 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
         // Track changes
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
         {
+            propertyUnit.UnitIdentifier,
             UnitType = propertyUnit.UnitType.ToString(),
             Status = propertyUnit.Status.ToString(),
             propertyUnit.FloorNumber,

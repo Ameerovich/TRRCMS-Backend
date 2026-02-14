@@ -60,6 +60,7 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
         // Capture old values for audit
         var oldValues = new
         {
+            survey.SurveyDate,
             survey.PropertyUnitId,
             survey.IntervieweeName,
             survey.IntervieweeRelationship,
@@ -95,6 +96,12 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
             survey.LinkToPropertyUnit(request.PropertyUnitId.Value, currentUserId);
         }
 
+        // Update survey date if provided
+        if (request.SurveyDate.HasValue)
+        {
+            survey.UpdateSurveyDate(request.SurveyDate.Value, currentUserId);
+        }
+
         // Update common survey details
         survey.UpdateSurveyDetails(
             gpsCoordinates: null, // No GPS for office surveys
@@ -122,6 +129,7 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
 
         // Build changed fields list
         var changedFields = new List<string>();
+        if (request.SurveyDate.HasValue) changedFields.Add("SurveyDate");
         if (request.PropertyUnitId != oldValues.PropertyUnitId) changedFields.Add("PropertyUnitId");
         if (request.IntervieweeName != oldValues.IntervieweeName) changedFields.Add("IntervieweeName");
         if (request.IntervieweeRelationship != oldValues.IntervieweeRelationship) changedFields.Add("IntervieweeRelationship");
@@ -144,6 +152,7 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
             oldValues: System.Text.Json.JsonSerializer.Serialize(oldValues),
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
+                survey.SurveyDate,
                 survey.PropertyUnitId,
                 survey.IntervieweeName,
                 survey.IntervieweeRelationship,

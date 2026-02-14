@@ -26,6 +26,9 @@ using TRRCMS.Application.Surveys.Commands.UpdatePersonPropertyRelation;
 using TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 using TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
+using TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
+using TRRCMS.Application.Surveys.Commands.UpdatePersonInSurvey;
+using TRRCMS.Application.Surveys.Commands.UpdateTenureDocument;
 using TRRCMS.Application.Surveys.Commands.UploadTenureDocument;
 using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Application.Surveys.Queries.DownloadEvidence;
@@ -1449,6 +1452,91 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
+    /// Update person in household
+    /// تحديث بيانات شخص في الأسرة
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004 - Office Survey - Update Person Details
+    /// تحديث بيانات شخص مسجل
+    ///
+    /// **Purpose**: Updates an existing person's details within a household while the survey is in Draft status.
+    /// Only provided fields will be updated; omitted fields retain their current values.
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
+    ///
+    /// **Prerequisites**:
+    /// - Survey must be in Draft status
+    /// - Person must belong to the specified household
+    /// - Household must belong to the survey's building
+    ///
+    /// **Step 1 - Personal Info (الخطوة الأولى)** - All fields optional:
+    /// - الكنية: FamilyNameArabic - Family/surname (max 100 chars)
+    /// - الاسم الأول: FirstNameArabic - Given name (max 100 chars)
+    /// - اسم الأب: FatherNameArabic - Father's name (max 100 chars)
+    /// - الاسم الأم: MotherNameArabic - Mother's name (max 100 chars)
+    /// - الرقم الوطني: NationalId - 11-digit national ID
+    /// - الجنس: Gender - Enum: 1=Male, 2=Female
+    /// - الجنسية: Nationality - Enum: 1=Syrian, 2=Palestinian, 3=Iraqi, etc.
+    /// - تاريخ الميلاد: DateOfBirth - Full date or year-only (e.g., "1985-06-15T00:00:00Z")
+    ///
+    /// **Step 2 - Contact Info (الخطوة الثانية)** - All fields optional:
+    /// - البريد الالكتروني: Email (max 255 chars)
+    /// - رقم الموبايل: MobileNumber (max 20 chars)
+    /// - رقم الهاتف: PhoneNumber (max 20 chars)
+    ///
+    /// **Household Relationship**:
+    /// - RelationshipToHead: Enum values: Head=1, Spouse=2, Son=3, Daughter=4, Father=5, Mother=6, etc.
+    ///
+    /// **Example Request - Update name and contact**:
+    /// ```json
+    /// {
+    ///   "familyNameArabic": "الأحمد",
+    ///   "firstNameArabic": "محمد",
+    ///   "mobileNumber": "+963912345678"
+    /// }
+    /// ```
+    ///
+    /// **Example Request - Update relationship only**:
+    /// ```json
+    /// {
+    ///   "relationshipToHead": 2
+    /// }
+    /// ```
+    ///
+    /// **Response**: Updated PersonDto with all person fields, computed fullNameArabic and age.
+    /// Note: gender, nationality, and relationshipToHead are returned as strings (e.g., "Male", "Syrian", "Spouse")
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="householdId">Household ID the person belongs to</param>
+    /// <param name="personId">Person ID to update</param>
+    /// <param name="command">Person update data</param>
+    /// <returns>Updated person details</returns>
+    /// <response code="200">Person updated successfully.</response>
+    /// <response code="400">Validation error (invalid national ID format, future date of birth, etc.).</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only update persons in your own surveys.</response>
+    /// <response code="404">Survey, household, or person not found.</response>
+    [HttpPut("{surveyId}/households/{householdId}/persons/{personId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(PersonDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PersonDto>> UpdatePersonInSurvey(
+        Guid surveyId,
+        Guid householdId,
+        Guid personId,
+        [FromBody] UpdatePersonInSurveyCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.HouseholdId = householdId;
+        command.PersonId = personId;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Get all persons in household
     /// عرض أفراد الأسرة
     /// </summary>
@@ -1983,6 +2071,101 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
+    /// Update identification document
+    /// تحديث وثيقة الهوية
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004 - Office Survey - Update Identification Document
+    /// تحديث وثيقة هوية مرفقة
+    ///
+    /// **Purpose**: Updates an existing identification document's metadata and optionally replaces the file.
+    /// Only provided fields will be updated; omitted fields retain their current values.
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
+    ///
+    /// **Prerequisites**:
+    /// - Survey must be in Draft status
+    /// - Evidence must belong to the survey's building context (via person → household → property unit)
+    ///
+    /// **What it does**:
+    /// - Updates document metadata (description, dates, authority, reference number)
+    /// - Optionally replaces the uploaded file with a new one
+    /// - Optionally re-links the document to a different person
+    /// - Validates file type and size (if new file provided)
+    /// - Preserves existing values for fields not provided
+    ///
+    /// **When to use**:
+    /// - Correct document metadata (wrong date, authority, etc.)
+    /// - Replace a poor-quality scan with a better one
+    /// - Re-link document to the correct person
+    /// - Add missing metadata (notes, reference numbers)
+    ///
+    /// **File Requirements** (only if replacing):
+    /// - Format: PDF, JPG, JPEG, PNG, GIF, WebP, TIFF
+    /// - Max size: 15MB
+    /// - File is optional - omit to keep existing file
+    ///
+    /// **Document Metadata** (all optional - only provided fields update):
+    /// - personId: Re-link to a different person (guid)
+    /// - description: Document description (max 500 chars)
+    /// - documentIssuedDate: When document was issued (cannot be future)
+    /// - documentExpiryDate: When document expires (must be after issue date)
+    /// - issuingAuthority: Who issued (max 200 chars, e.g., "Ministry of Interior")
+    /// - documentReferenceNumber: Official document number (max 100 chars)
+    /// - notes: Additional notes (max 1000 chars)
+    ///
+    /// **Example - Update metadata only** (multipart/form-data):
+    /// ```
+    /// Description: National ID Card - Updated
+    /// DocumentIssuedDate: 2020-01-15
+    /// IssuingAuthority: Ministry of Interior
+    /// DocumentReferenceNumber: 123456789
+    /// ```
+    ///
+    /// **Example - Replace file and update** (multipart/form-data):
+    /// ```
+    /// File: new-scan.pdf (binary)
+    /// Description: National ID Card - Rescanned
+    /// Notes: Better quality scan
+    /// ```
+    ///
+    /// **Example - Re-link to different person** (multipart/form-data):
+    /// ```
+    /// PersonId: new-person-guid-here
+    /// ```
+    ///
+    /// **Response**: Updated EvidenceDto with file details.
+    /// Note: evidenceType is returned as string (e.g., "IdentificationDocument")
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="evidenceId">Evidence ID to update</param>
+    /// <param name="command">Update command with optional file and metadata (from form)</param>
+    /// <returns>Updated evidence record</returns>
+    /// <response code="200">Document updated successfully.</response>
+    /// <response code="400">Validation error (invalid file type, size exceeded, expiry before issue date, etc.).</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only update evidence in your own surveys.</response>
+    /// <response code="404">Survey, evidence, or person not found.</response>
+    [HttpPut("{surveyId}/evidence/identification/{evidenceId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> UpdateIdentificationDocument(
+        Guid surveyId,
+        Guid evidenceId,
+        [FromForm] UpdateIdentificationDocumentCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.EvidenceId = evidenceId;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Upload tenure/ownership document
     /// </summary>
     /// <remarks>
@@ -2068,6 +2251,108 @@ public class SurveysController : ControllerBase
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetEvidenceById), new { evidenceId = result.Id }, result);
+    }
+
+    /// <summary>
+    /// Update tenure/ownership document
+    /// تحديث وثيقة الملكية/الإيجار
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004 - Office Survey - Update Tenure Document
+    /// تحديث وثيقة إثبات الملكية أو الإيجار
+    ///
+    /// **Purpose**: Updates an existing tenure/ownership document's metadata and optionally replaces the file.
+    /// Only provided fields will be updated; omitted fields retain their current values.
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
+    ///
+    /// **Prerequisites**:
+    /// - Survey must be in Draft status
+    /// - Evidence must belong to the survey's building context (via relation → property unit)
+    ///
+    /// **What it does**:
+    /// - Updates document metadata (type, description, dates, authority, reference number)
+    /// - Optionally replaces the uploaded file with a new one
+    /// - Optionally re-links the document to a different person-property relation
+    /// - Optionally changes the evidence type (e.g., from OwnershipDeed to RentalContract)
+    /// - Validates file type and size (if new file provided)
+    /// - Preserves existing values for fields not provided
+    ///
+    /// **When to use**:
+    /// - Correct document metadata (wrong type, date, authority, etc.)
+    /// - Replace a poor-quality scan with a better one
+    /// - Re-link document to the correct person-property relation
+    /// - Change evidence type classification
+    /// - Add missing metadata (notes, reference numbers)
+    ///
+    /// **File Requirements** (only if replacing):
+    /// - Format: PDF, JPG, JPEG, PNG, GIF, WebP, TIFF, DOC, DOCX
+    /// - Max size: 25MB
+    /// - File is optional - omit to keep existing file
+    ///
+    /// **Document Metadata** (all optional - only provided fields update):
+    /// - personPropertyRelationId: Re-link to a different relation (guid)
+    /// - evidenceType: Change type (int, send as integer, returned as string)
+    ///   - 2 = OwnershipDeed, 3 = RentalContract, 4 = UtilityBill,
+    ///     8 = InheritanceDocument, 9 = CourtOrder, 10 = MunicipalRecord, etc.
+    /// - description: Document description (max 500 chars)
+    /// - documentIssuedDate: When document was issued (cannot be future)
+    /// - documentExpiryDate: When document expires (must be after issue date)
+    /// - issuingAuthority: Who issued (max 200 chars, e.g., "Real Estate Registry", "Court")
+    /// - documentReferenceNumber: Official registration/deed number (max 100 chars)
+    /// - notes: Additional notes (max 1000 chars)
+    ///
+    /// **Example - Update metadata only** (multipart/form-data):
+    /// ```
+    /// EvidenceType: 3
+    /// Description: Rental Contract - Updated
+    /// DocumentIssuedDate: 2022-03-01
+    /// DocumentExpiryDate: 2025-03-01
+    /// IssuingAuthority: Municipal Office
+    /// DocumentReferenceNumber: RC-2022-456789
+    /// ```
+    ///
+    /// **Example - Replace file** (multipart/form-data):
+    /// ```
+    /// File: updated-deed.pdf (binary)
+    /// Description: Property Deed - Rescanned
+    /// Notes: Higher resolution scan
+    /// ```
+    ///
+    /// **Example - Re-link to different relation** (multipart/form-data):
+    /// ```
+    /// PersonPropertyRelationId: new-relation-guid-here
+    /// ```
+    ///
+    /// **Response**: Updated EvidenceDto with file details.
+    /// Note: evidenceType is returned as string (e.g., "OwnershipDeed", "RentalContract")
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="evidenceId">Evidence ID to update</param>
+    /// <param name="command">Update command with optional file and metadata (from form)</param>
+    /// <returns>Updated evidence record</returns>
+    /// <response code="200">Document updated successfully.</response>
+    /// <response code="400">Validation error (invalid file type, size exceeded, invalid evidence type, expiry before issue date, etc.).</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only update evidence in your own surveys.</response>
+    /// <response code="404">Survey, evidence, or person-property relation not found.</response>
+    [HttpPut("{surveyId}/evidence/tenure/{evidenceId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> UpdateTenureDocument(
+        Guid surveyId,
+        Guid evidenceId,
+        [FromForm] UpdateTenureDocumentCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.EvidenceId = evidenceId;
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>

@@ -13,6 +13,7 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
     private readonly ISurveyRepository _surveyRepository;
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly IPersonRepository _personRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
 
@@ -20,12 +21,14 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         ISurveyRepository surveyRepository,
         IPersonPropertyRelationRepository relationRepository,
         IPropertyUnitRepository propertyUnitRepository,
+        IPersonRepository personRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService)
     {
         _surveyRepository = surveyRepository;
         _relationRepository = relationRepository;
         _propertyUnitRepository = propertyUnitRepository;
+        _personRepository = personRepository;
         _currentUserService = currentUserService;
         _auditService = auditService;
     }
@@ -59,6 +62,8 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         // Capture old values for audit
         var oldValues = new
         {
+            relation.PersonId,
+            relation.PropertyUnitId,
             RelationType = relation.RelationType.ToString(),
             OccupancyType = relation.OccupancyType?.ToString(),
             relation.HasEvidence,
@@ -66,6 +71,26 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             relation.ContractDetails,
             relation.Notes
         };
+
+        // Update PersonId if provided
+        if (request.PersonId.HasValue && request.PersonId.Value != relation.PersonId)
+        {
+            var person = await _personRepository.GetByIdAsync(request.PersonId.Value, cancellationToken)
+                ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
+            relation.UpdatePersonId(request.PersonId.Value, currentUserId);
+        }
+
+        // Update PropertyUnitId if provided
+        if (request.PropertyUnitId.HasValue && request.PropertyUnitId.Value != relation.PropertyUnitId)
+        {
+            var newUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken)
+                ?? throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
+
+            if (newUnit.BuildingId != survey.BuildingId)
+                throw new ValidationException($"Property unit {request.PropertyUnitId} does not belong to survey building {survey.BuildingId}");
+
+            relation.UpdatePropertyUnitId(request.PropertyUnitId.Value, currentUserId);
+        }
 
         // Determine effective values for business validation
         var effectiveRelationType = request.RelationType ?? relation.RelationType;
@@ -99,6 +124,8 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
 
         // Build changed fields list for audit
         var changedFields = new List<string>();
+        if (request.PersonId.HasValue) changedFields.Add("PersonId");
+        if (request.PropertyUnitId.HasValue) changedFields.Add("PropertyUnitId");
         if (request.RelationType.HasValue) changedFields.Add("RelationType");
         if (request.OccupancyType.HasValue || request.ClearOccupancyType) changedFields.Add("OccupancyType");
         if (request.HasEvidence.HasValue) changedFields.Add("HasEvidence");

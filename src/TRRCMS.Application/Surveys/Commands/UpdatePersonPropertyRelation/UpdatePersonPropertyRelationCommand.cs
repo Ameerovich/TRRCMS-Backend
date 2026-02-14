@@ -14,6 +14,17 @@ public class UpdatePersonPropertyRelationCommand : IRequest<PersonPropertyRelati
     public Guid RelationId { get; set; }
 
     /// <summary>
+    /// Person ID to re-link this relation to a different person
+    /// </summary>
+    public Guid? PersonId { get; set; }
+
+    /// <summary>
+    /// Property unit ID to re-link this relation to a different property unit
+    /// Must belong to the survey's building
+    /// </summary>
+    public Guid? PropertyUnitId { get; set; }
+
+    /// <summary>
     /// نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
     public RelationType? RelationType { get; set; }

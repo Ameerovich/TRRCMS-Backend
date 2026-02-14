@@ -24,6 +24,11 @@ public class UpdatePropertyUnitInSurveyCommand : IRequest<PropertyUnitDto>
     // All fields are optional - only provided fields will be updated
 
     /// <summary>
+    /// Unit identifier within building (رقم الوحدة)
+    /// </summary>
+    public string? UnitIdentifier { get; set; }
+
+    /// <summary>
     /// Floor number (رقم الطابق)
     /// </summary>
     public int? FloorNumber { get; set; }

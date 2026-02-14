@@ -142,6 +142,12 @@ public class PersonPropertyRelation : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
+    public void UpdatePropertyUnitId(Guid newPropertyUnitId, Guid modifiedByUserId)
+    {
+        PropertyUnitId = newPropertyUnitId;
+        MarkAsModified(modifiedByUserId);
+    }
+
     public void Terminate(DateTime endDate, Guid modifiedByUserId)
     {
         IsActive = false;

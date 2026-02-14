@@ -69,9 +69,29 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
         }
 
+        // Update property unit if provided
+        if (request.PropertyUnitId.HasValue && request.PropertyUnitId.Value != household.PropertyUnitId)
+        {
+            var newPropertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken);
+            if (newPropertyUnit == null)
+            {
+                throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
+            }
+
+            // Verify property unit belongs to the survey's building
+            if (newPropertyUnit.BuildingId != survey.BuildingId)
+            {
+                throw new ValidationException(
+                    $"Property unit {request.PropertyUnitId} does not belong to survey building {survey.BuildingId}");
+            }
+
+            household.UpdatePropertyUnit(request.PropertyUnitId.Value, currentUserId);
+        }
+
         // Track old values for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
+            household.PropertyUnitId,
             household.HeadOfHouseholdName,
             household.HouseholdSize,
             household.MaleCount,
@@ -128,6 +148,7 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         // Track new values
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
         {
+            household.PropertyUnitId,
             household.HeadOfHouseholdName,
             household.HouseholdSize,
             household.MaleCount,

@@ -17,6 +17,11 @@ public class UpdatePropertyUnitInSurveyCommandValidator : AbstractValidator<Upda
             .NotEmpty()
             .WithMessage("Property unit ID is required");
 
+        RuleFor(x => x.UnitIdentifier)
+            .MaximumLength(50)
+            .When(x => !string.IsNullOrEmpty(x.UnitIdentifier))
+            .WithMessage("Unit identifier (رقم الوحدة) must not exceed 50 characters");
+
         RuleFor(x => x.UnitType)
             .InclusiveBetween(1, 5)
             .When(x => x.UnitType.HasValue)

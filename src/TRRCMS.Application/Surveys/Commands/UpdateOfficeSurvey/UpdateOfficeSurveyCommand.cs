@@ -22,6 +22,13 @@ public class UpdateOfficeSurveyCommand : IRequest<SurveyDto>
     /// </summary>
     public Guid? PropertyUnitId { get; set; }
 
+    // ==================== SURVEY DATE ====================
+
+    /// <summary>
+    /// Date when survey is being conducted
+    /// </summary>
+    public DateTime? SurveyDate { get; set; }
+
     // ==================== SURVEY METADATA ====================
 
     /// <summary>

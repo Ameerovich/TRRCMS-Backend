@@ -429,6 +429,15 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Update survey date
+    /// </summary>
+    public void UpdateSurveyDate(DateTime surveyDate, Guid modifiedByUserId)
+    {
+        SurveyDate = surveyDate;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Verify survey can be modified (must be Draft)
     /// </summary>
     public void EnsureCanModify()

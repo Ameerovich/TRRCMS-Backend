@@ -204,6 +204,15 @@ public class Household : BaseAuditableEntity
     // ==================== DOMAIN METHODS ====================
 
     /// <summary>
+    /// Update the property unit this household belongs to
+    /// </summary>
+    public void UpdatePropertyUnit(Guid propertyUnitId, Guid modifiedByUserId)
+    {
+        PropertyUnitId = propertyUnitId;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Update basic info
     /// </summary>
     public void UpdateBasicInfo(

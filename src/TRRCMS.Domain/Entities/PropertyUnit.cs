@@ -275,6 +275,15 @@ public class PropertyUnit : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Update unit identifier
+    /// </summary>
+    public void UpdateUnitIdentifier(string unitIdentifier, Guid modifiedByUserId)
+    {
+        UnitIdentifier = unitIdentifier;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Update unit status and damage level
     /// </summary>
     public void UpdateStatus(PropertyUnitStatus status, DamageLevel? damageLevel, Guid modifiedByUserId)

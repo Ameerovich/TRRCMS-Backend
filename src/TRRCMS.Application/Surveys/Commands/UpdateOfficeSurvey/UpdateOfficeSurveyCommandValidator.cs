@@ -16,6 +16,13 @@ public class UpdateOfficeSurveyCommandValidator : AbstractValidator<UpdateOffice
             .NotEmpty()
             .WithMessage("Survey ID is required");
 
+        // ==================== SURVEY DATE ====================
+
+        RuleFor(x => x.SurveyDate)
+            .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
+            .When(x => x.SurveyDate.HasValue)
+            .WithMessage("Survey date cannot be in the future");
+
         // ==================== INTERVIEWEE DETAILS ====================
 
         RuleFor(x => x.IntervieweeName)

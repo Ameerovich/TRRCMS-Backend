@@ -147,5 +147,33 @@ public class Evidence : BaseAuditableEntity
         return newVersion;
     }
 
+    public void UpdateDescription(string description, Guid modifiedByUserId)
+    {
+        Description = description;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    public void UpdateEvidenceType(EvidenceType evidenceType, Guid modifiedByUserId)
+    {
+        EvidenceType = evidenceType;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    public void UpdateFileInfo(
+        string filePath,
+        string originalFileName,
+        long fileSizeBytes,
+        string mimeType,
+        string? fileHash,
+        Guid modifiedByUserId)
+    {
+        FilePath = filePath;
+        OriginalFileName = originalFileName;
+        FileSizeBytes = fileSizeBytes;
+        MimeType = mimeType;
+        FileHash = fileHash;
+        MarkAsModified(modifiedByUserId);
+    }
+
     public bool IsExpired() => DocumentExpiryDate.HasValue && DocumentExpiryDate.Value < DateTime.UtcNow;
 }

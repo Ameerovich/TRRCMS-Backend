@@ -20,6 +20,13 @@ public class UpdateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// </summary>
     public Guid HouseholdId { get; set; }
 
+    // ==================== PROPERTY UNIT ====================
+
+    /// <summary>
+    /// Property unit ID to move this household to (must belong to the survey's building)
+    /// </summary>
+    public Guid? PropertyUnitId { get; set; }
+
     // ==================== BASIC INFORMATION ====================
     // Note: HeadOfHouseholdName is NOT set here.
     // Use PUT {surveyId}/households/{householdId}/head/{personId} to designate the head.
