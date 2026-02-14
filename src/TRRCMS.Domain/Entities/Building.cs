@@ -370,11 +370,11 @@ public class Building : BaseAuditableEntity
         string communityCode,
         string neighborhoodCode,
         string buildingNumber,
-        string governorateName,
-        string districtName,
-        string subDistrictName,
-        string communityName,
-        string neighborhoodName,
+        string? governorateName,
+        string? districtName,
+        string? subDistrictName,
+        string? communityName,
+        string? neighborhoodName,
         Guid modifiedByUserId)
     {
         GovernorateCode = governorateCode;
@@ -383,11 +383,13 @@ public class Building : BaseAuditableEntity
         CommunityCode = communityCode;
         NeighborhoodCode = neighborhoodCode;
         BuildingNumber = buildingNumber;
-        GovernorateName = governorateName;
-        DistrictName = districtName;
-        SubDistrictName = subDistrictName;
-        CommunityName = communityName;
-        NeighborhoodName = neighborhoodName;
+
+        // Only update names if provided
+        if (governorateName != null) GovernorateName = governorateName;
+        if (districtName != null) DistrictName = districtName;
+        if (subDistrictName != null) SubDistrictName = subDistrictName;
+        if (communityName != null) CommunityName = communityName;
+        if (neighborhoodName != null) NeighborhoodName = neighborhoodName;
 
         // Regenerate Building ID (رمز البناء) - stored without dashes
         BuildingId = $"{governorateCode}{districtCode}{subDistrictCode}" +

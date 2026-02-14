@@ -17,11 +17,6 @@ public class UpdateHouseholdInSurveyCommandValidator : AbstractValidator<UpdateH
             .NotEmpty()
             .WithMessage("Household ID is required");
 
-        RuleFor(x => x.HeadOfHouseholdName)
-            .MaximumLength(200)
-            .When(x => !string.IsNullOrEmpty(x.HeadOfHouseholdName))
-            .WithMessage("Head of household name must not exceed 200 characters");
-
         RuleFor(x => x.HouseholdSize)
             .GreaterThan(0)
             .When(x => x.HouseholdSize.HasValue)

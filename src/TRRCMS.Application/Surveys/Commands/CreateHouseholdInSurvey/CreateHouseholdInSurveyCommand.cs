@@ -21,11 +21,8 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     public Guid? PropertyUnitId { get; set; }
 
     // ==================== BASIC INFORMATION ====================
-
-    /// <summary>
-    /// Head of household name (رب الأسرة/العميل) - optional for office survey
-    /// </summary>
-    public string? HeadOfHouseholdName { get; set; }
+    // Note: HeadOfHouseholdName is NOT set here.
+    // Use PUT {surveyId}/households/{householdId}/head/{personId} to designate the head.
 
     /// <summary>
     /// Total household size (عدد الأفراد) - required

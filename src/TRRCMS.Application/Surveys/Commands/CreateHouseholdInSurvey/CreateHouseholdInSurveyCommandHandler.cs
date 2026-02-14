@@ -78,9 +78,10 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
         }
 
         // Create household with full composition
+        // Note: HeadOfHouseholdName is not set here - use SetHouseholdHead endpoint to link a Person as head
         var household = Household.Create(
             propertyUnitId: propertyUnitId.Value,
-            headOfHouseholdName: request.HeadOfHouseholdName,
+            headOfHouseholdName: null,
             householdSize: request.HouseholdSize,
             maleCount: request.MaleCount,
             femaleCount: request.FemaleCount,
@@ -103,14 +104,13 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
         // Audit logging
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,
-            actionDescription: $"Created household for {request.HeadOfHouseholdName} in survey {survey.ReferenceCode}",
+            actionDescription: $"Created household in survey {survey.ReferenceCode}",
             entityType: "Household",
             entityId: household.Id,
-            entityIdentifier: request.HeadOfHouseholdName,
+            entityIdentifier: household.Id.ToString(),
             oldValues: null,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
-                household.HeadOfHouseholdName,
                 household.HouseholdSize,
                 household.MaleCount,
                 household.FemaleCount,

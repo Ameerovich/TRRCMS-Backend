@@ -7,7 +7,8 @@ namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 /// <summary>
 /// Update building attributes and details
 /// UC-000: Manage Building Data
-/// Note: Administrative codes (governorate, district, etc.) cannot be changed after creation
+/// Note: To update building code (17 digits), provide all 6 administrative codes.
+/// Location names are optional - if not provided, existing names are preserved.
 /// </summary>
 public class UpdateBuildingCommand : IRequest<BuildingDto>
 {
@@ -49,27 +50,27 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     public string? BuildingNumber { get; set; }
 
     /// <summary>
-    /// Governorate name in Arabic
+    /// Governorate name in Arabic (optional - existing name preserved if not provided)
     /// </summary>
     public string? GovernorateName { get; set; }
 
     /// <summary>
-    /// District name in Arabic
+    /// District name in Arabic (optional - existing name preserved if not provided)
     /// </summary>
     public string? DistrictName { get; set; }
 
     /// <summary>
-    /// Sub-district name in Arabic
+    /// Sub-district name in Arabic (optional - existing name preserved if not provided)
     /// </summary>
     public string? SubDistrictName { get; set; }
 
     /// <summary>
-    /// Community name in Arabic
+    /// Community name in Arabic (optional - existing name preserved if not provided)
     /// </summary>
     public string? CommunityName { get; set; }
 
     /// <summary>
-    /// Neighborhood name in Arabic
+    /// Neighborhood name in Arabic (optional - existing name preserved if not provided)
     /// </summary>
     public string? NeighborhoodName { get; set; }
 

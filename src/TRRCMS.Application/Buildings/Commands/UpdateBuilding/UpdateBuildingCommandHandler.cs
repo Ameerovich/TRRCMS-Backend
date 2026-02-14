@@ -42,18 +42,14 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
         var oldValues = new Dictionary<string, object?>();
         var newValues = new Dictionary<string, object?>();
 
-        // Update administrative codes (building code - 17 digits) if provided
+        // Update administrative codes (building code - 17 digits) if all 6 codes are provided
+        // Names are optional - only codes are required to trigger the update
         if (!string.IsNullOrEmpty(request.GovernorateCode) &&
             !string.IsNullOrEmpty(request.DistrictCode) &&
             !string.IsNullOrEmpty(request.SubDistrictCode) &&
             !string.IsNullOrEmpty(request.CommunityCode) &&
             !string.IsNullOrEmpty(request.NeighborhoodCode) &&
-            !string.IsNullOrEmpty(request.BuildingNumber) &&
-            !string.IsNullOrEmpty(request.GovernorateName) &&
-            !string.IsNullOrEmpty(request.DistrictName) &&
-            !string.IsNullOrEmpty(request.SubDistrictName) &&
-            !string.IsNullOrEmpty(request.CommunityName) &&
-            !string.IsNullOrEmpty(request.NeighborhoodName))
+            !string.IsNullOrEmpty(request.BuildingNumber))
         {
             oldValues["BuildingId"] = building.BuildingId;
             newValues["BuildingId"] = $"{request.GovernorateCode}{request.DistrictCode}{request.SubDistrictCode}" +

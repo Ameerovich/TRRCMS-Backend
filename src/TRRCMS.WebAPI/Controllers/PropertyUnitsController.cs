@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.PropertyUnits.Commands.CreatePropertyUnit;
+using TRRCMS.Application.PropertyUnits.Commands.DeletePropertyUnit;
 using TRRCMS.Application.PropertyUnits.Commands.UpdatePropertyUnit;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.PropertyUnits.Queries.GetAllPropertyUnits;
@@ -521,5 +523,71 @@ public class PropertyUnitsController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
+    }
+
+    // ==================== DELETE ====================
+
+    /// <summary>
+    /// Soft delete a property unit and all related data
+    /// حذف الوحدة العقارية مع جميع البيانات المرتبطة
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: Remove a property unit that was added by mistake or is no longer relevant
+    ///
+    /// **Required Permission**: PropertyUnits_Create (6001) - CanCreatePropertyUnits policy
+    ///
+    /// **Cascade Delete Behavior**:
+    /// This operation will soft delete:
+    /// - The PropertyUnit itself
+    /// - All Households in this unit
+    /// - All Persons in those households
+    /// - All PersonPropertyRelations for those persons and this unit
+    /// - All Evidences linked to those relations and persons
+    ///
+    /// **Important**: Only works when the related survey is in **Draft** status.
+    /// If the survey is Finalized or Completed, the delete will be rejected.
+    ///
+    /// **Example Request**:
+    /// ```
+    /// DELETE /api/v1/PropertyUnits/7e439aab-5dd1-4a8a-b6c4-265008e53b86
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "primaryEntityId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "primaryEntityType": "PropertyUnit",
+    ///   "affectedEntities": [
+    ///     { "entityId": "7e439aab-...", "entityType": "PropertyUnit", "entityIdentifier": "1A" },
+    ///     { "entityId": "aaa11111-...", "entityType": "Household", "entityIdentifier": "أحمد محمد" },
+    ///     { "entityId": "bbb22222-...", "entityType": "Person", "entityIdentifier": "محمد أحمد الخالد" },
+    ///     { "entityId": "ccc33333-...", "entityType": "PersonPropertyRelation", "entityIdentifier": "Relation Owner" },
+    ///     { "entityId": "ddd44444-...", "entityType": "Evidence", "entityIdentifier": "national_id.pdf" }
+    ///   ],
+    ///   "totalAffected": 5,
+    ///   "deletedAtUtc": "2026-02-14T10:00:00Z",
+    ///   "message": "PropertyUnit deleted successfully along with 1 household(s), 1 person(s), 1 relation(s), and 1 evidence(s)"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="id">Property unit ID (GUID) to delete</param>
+    /// <returns>Delete result with all affected entity IDs</returns>
+    /// <response code="200">Property unit and related data deleted successfully</response>
+    /// <response code="400">Survey is not in Draft status or property unit is already deleted</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires PropertyUnits_Create (6001) permission</response>
+    /// <response code="404">Property unit not found</response>
+    [HttpDelete("{id}")]
+    [Authorize(Policy = "CanCreatePropertyUnits")]
+    [ProducesResponseType(typeof(DeleteResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeleteResultDto>> DeletePropertyUnit(Guid id)
+    {
+        var command = new DeletePropertyUnitCommand { PropertyUnitId = id };
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 }

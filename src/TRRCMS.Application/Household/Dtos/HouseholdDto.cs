@@ -1,4 +1,5 @@
-﻿using TRRCMS.Domain.Enums;
+﻿using System.Text.Json.Serialization;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Households.Dtos;
 
@@ -45,13 +46,15 @@ public class HouseholdDto
     // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
 
     /// <summary>
-    /// Occupancy type (نوع الإشغال) - Enum: 1=OwnerOccupied, 2=TenantOccupied, 3=FamilyOccupied, etc.
+    /// Occupancy type (نوع الإشغال) - Returned as string: "OwnerOccupied", "TenantOccupied", "FamilyOccupied", etc.
     /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public OccupancyType? OccupancyType { get; set; }
 
     /// <summary>
-    /// Occupancy nature (طبيعة الإشغال) - Enum: 1=LegalFormal, 2=Informal, 3=Customary, etc.
+    /// Occupancy nature (طبيعة الإشغال) - Returned as string: "LegalFormal", "Informal", "Customary", etc.
     /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public OccupancyNature? OccupancyNature { get; set; }
 
     /// <summary>

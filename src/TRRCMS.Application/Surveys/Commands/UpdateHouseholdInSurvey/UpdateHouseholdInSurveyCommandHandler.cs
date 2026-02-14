@@ -86,14 +86,14 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         });
 
         // Update basic info if provided
-        if (!string.IsNullOrEmpty(request.HeadOfHouseholdName) ||
-            request.HouseholdSize.HasValue ||
+        // Note: HeadOfHouseholdName is managed via SetHouseholdHead endpoint, not here
+        if (request.HouseholdSize.HasValue ||
             request.Notes != null ||
             request.OccupancyType.HasValue ||
             request.OccupancyNature.HasValue)
         {
             household.UpdateBasicInfo(
-                headOfHouseholdName: request.HeadOfHouseholdName ?? household.HeadOfHouseholdName,
+                headOfHouseholdName: household.HeadOfHouseholdName,
                 householdSize: request.HouseholdSize ?? household.HouseholdSize,
                 notes: request.Notes ?? household.Notes,
                 occupancyType: request.OccupancyType ?? household.OccupancyType,

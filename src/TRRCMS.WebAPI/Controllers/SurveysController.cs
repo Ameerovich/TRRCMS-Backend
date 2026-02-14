@@ -337,22 +337,67 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Update office survey
+    /// Update office survey details
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-004/UC-005 - Update office survey details
-    /// 
-    /// **Purpose**: Updates office survey fields (only for Draft surveys).
-    /// 
-    /// **Updateable fields**:
-    /// - PropertyUnitId, IntervieweeName, IntervieweeRelationship, Notes, DurationMinutes
-    /// - Office-specific: OfficeLocation, RegistrationNumber, AppointmentReference, ContactPhone, ContactEmail, InPersonVisit
-    /// 
+    ///
+    /// **Purpose**: Updates office survey fields. Only for Draft surveys. Only provided fields will be updated.
+    ///
     /// **Required permissions**: CanEditOwnSurveys
+    ///
+    /// **Updateable fields** (all optional):
+    /// - `propertyUnitId`: Link/change property unit
+    /// - `intervieweeName`: Claimant/interviewee name (اسم المستجوب)
+    /// - `intervieweeRelationship`: Relationship to property (علاقة المستجوب بالعقار)
+    /// - `notes`: General notes (ملاحظات)
+    /// - `durationMinutes`: Interview duration
+    /// - `officeLocation`: Office location (موقع المكتب)
+    /// - `registrationNumber`: Registration number (رقم التسجيل)
+    /// - `appointmentReference`: Appointment reference (مرجع الموعد)
+    /// - `contactPhone`: Contact phone (هاتف التواصل)
+    /// - `contactEmail`: Contact email (بريد التواصل)
+    /// - `inPersonVisit`: Whether claimant visited in person (زيارة شخصية)
+    ///
+    /// **Example Request**:
+    /// ```json
+    /// {
+    ///   "intervieweeName": "أحمد محمد الخالد",
+    ///   "intervieweeRelationship": "مالك العقار",
+    ///   "contactPhone": "+963912345678",
+    ///   "contactEmail": "ahmed@example.com",
+    ///   "notes": "تم تقديم وثائق ملكية إضافية",
+    ///   "durationMinutes": 45
+    /// }
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "referenceCode": "OFC-2026-00001",
+    ///   "buildingId": "12345678-1234-1234-1234-123456789012",
+    ///   "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "surveyDate": "2026-02-14T10:00:00Z",
+    ///   "status": "Draft",
+    ///   "surveyType": "Office",
+    ///   "intervieweeName": "أحمد محمد الخالد",
+    ///   "intervieweeRelationship": "مالك العقار",
+    ///   "notes": "تم تقديم وثائق ملكية إضافية",
+    ///   "durationMinutes": 45,
+    ///   "createdAtUtc": "2026-02-14T08:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-02-14T10:30:00Z"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Office survey ID</param>
-    /// <param name="command">Update data</param>
-    /// <returns>Updated survey</returns>
+    /// <param name="command">Update data (only include fields to change)</param>
+    /// <returns>Updated survey details</returns>
+    /// <response code="200">Survey updated successfully</response>
+    /// <response code="400">Validation error or survey not in Draft status</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized - requires CanEditOwnSurveys</response>
+    /// <response code="404">Survey not found</response>
     [HttpPut("office/{id}")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status200OK)]
@@ -441,22 +486,41 @@ public class SurveysController : ControllerBase
 
     /// <summary>
     /// Finalize office survey (change status to Finalized)
+    /// إنهاء المسح المكتبي
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-004 S21 - Mark office survey as finalized
-    /// 
+    ///
     /// **Purpose**: Transitions the survey status from Draft to Finalized.
-    /// Does NOT create claims — use the process-claims endpoint for that.
-    /// 
+    /// Does NOT create claims — use the `POST /api/v1/surveys/office/{id}/process-claims` endpoint for that.
+    ///
     /// **What it does**:
     /// - Validates survey is an office survey in Draft status
     /// - Marks the survey as Finalized via domain method
     /// - Logs the status change in audit trail
-    /// 
+    /// - Once finalized, survey data can no longer be modified
+    ///
     /// **Required permissions**: CanFinalizeSurveys
+    ///
+    /// **Workflow**:
+    /// 1. Complete all data entry (households, persons, relations, evidence)
+    /// 2. Process claims: `POST /api/v1/surveys/office/{id}/process-claims`
+    /// 3. Finalize survey: `POST /api/v1/surveys/office/{id}/finalize`
+    ///
+    /// **Example Request**:
+    /// ```
+    /// POST /api/v1/surveys/office/3fa85f64-5717-4562-b3fc-2c963f66afa6/finalize
+    /// ```
+    ///
+    /// **Response**: 200 OK (no body)
     /// </remarks>
     /// <param name="id">Office survey ID</param>
     /// <returns>200 OK on success</returns>
+    /// <response code="200">Survey finalized successfully</response>
+    /// <response code="400">Survey is not in Draft status or is not an office survey</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized - requires CanFinalizeSurveys</response>
+    /// <response code="404">Survey not found</response>
     [HttpPost("office/{id}/finalize")]
     [Authorize(Policy = "CanFinalizeSurveys")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -476,17 +540,56 @@ public class SurveysController : ControllerBase
 
     /// <summary>
     /// Save survey progress as draft (works for both field and office surveys)
+    /// حفظ مسودة المسح
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-002/UC-005 - Save draft and exit safely
-    /// 
-    /// **Purpose**: Saves current survey progress without finalizing.
-    /// 
+    ///
+    /// **Purpose**: Saves current survey progress without finalizing. Use this to preserve
+    /// work-in-progress before navigating away or closing the application.
+    ///
     /// **Required permissions**: CanEditOwnSurveys
+    ///
+    /// **Updateable fields** (all optional):
+    /// - `propertyUnitId`: Link/update property unit
+    /// - `gpsCoordinates`: GPS location (format: "latitude,longitude")
+    /// - `intervieweeName`: Interviewee name
+    /// - `intervieweeRelationship`: Interviewee relationship to property
+    /// - `notes`: General notes
+    /// - `durationMinutes`: Duration so far
+    ///
+    /// **Example Request**:
+    /// ```json
+    /// {
+    ///   "gpsCoordinates": "36.2021,37.1343",
+    ///   "intervieweeName": "محمد أحمد",
+    ///   "notes": "تم مقابلة المالك - يحتاج لزيارة ثانية",
+    ///   "durationMinutes": 30
+    /// }
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "referenceCode": "OFC-2026-00001",
+    ///   "status": "Draft",
+    ///   "surveyType": "Office",
+    ///   "intervieweeName": "محمد أحمد",
+    ///   "notes": "تم مقابلة المالك - يحتاج لزيارة ثانية",
+    ///   "durationMinutes": 30,
+    ///   "lastModifiedAtUtc": "2026-02-14T11:00:00Z"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Survey ID to update</param>
     /// <param name="command">Draft update data (all fields optional)</param>
     /// <returns>Updated survey details</returns>
+    /// <response code="200">Draft saved successfully</response>
+    /// <response code="400">Validation error or survey not in Draft status</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized - requires CanEditOwnSurveys</response>
+    /// <response code="404">Survey not found</response>
     [HttpPut("{id}/draft")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status200OK)]
@@ -505,16 +608,44 @@ public class SurveysController : ControllerBase
 
     /// <summary>
     /// Get survey by ID (works for both field and office surveys)
+    /// عرض تفاصيل المسح
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-002 - Resume draft survey
-    /// 
+    ///
     /// **Purpose**: Retrieves complete survey details to resume work or view progress.
-    /// 
+    /// Works for both field and office surveys.
+    ///
     /// **Required permissions**: CanViewOwnSurveys
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "referenceCode": "OFC-2026-00001",
+    ///   "buildingId": "12345678-1234-1234-1234-123456789012",
+    ///   "buildingNumber": "00001",
+    ///   "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "unitIdentifier": "1A",
+    ///   "fieldCollectorId": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
+    ///   "surveyDate": "2026-02-14T10:00:00Z",
+    ///   "status": "Draft",
+    ///   "surveyType": "Office",
+    ///   "intervieweeName": "محمد أحمد الخالد",
+    ///   "intervieweeRelationship": "مالك",
+    ///   "notes": null,
+    ///   "durationMinutes": null,
+    ///   "createdAtUtc": "2026-02-14T08:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-02-14T10:30:00Z"
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="id">Survey ID to retrieve</param>
     /// <returns>Complete survey details</returns>
+    /// <response code="200">Survey found and returned</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized - requires CanViewOwnSurveys</response>
+    /// <response code="404">Survey not found</response>
     [HttpGet("{id}")]
     [Authorize(Policy = "CanViewOwnSurveys")]
     [ProducesResponseType(typeof(SurveyDto), StatusCodes.Status200OK)]
@@ -910,19 +1041,49 @@ public class SurveysController : ControllerBase
 
     /// <summary>
     /// Get all households for survey
+    /// عرض جميع الأسر في المسح
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-001 Stage 3 - View all households during survey
-    /// 
-    /// **Purpose**: Retrieves all households linked to the survey's property unit.
-    /// 
+    ///
+    /// **Purpose**: Retrieves all households linked to the survey's property unit(s).
+    ///
     /// **Required Permission**: CanViewOwnSurveys
-    /// 
-    /// **Response**: List of households (may be empty if none created yet)
+    ///
+    /// **Response**: List of households with demographics (may be empty if none created yet)
+    ///
+    /// **Note**: `occupancyType` and `occupancyNature` are returned as **string** enum names in responses.
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// [
+    ///   {
+    ///     "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///     "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///     "propertyUnitIdentifier": "1A",
+    ///     "headOfHouseholdName": "أحمد محمد الخالد",
+    ///     "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///     "householdSize": 5,
+    ///     "occupancyType": "OwnerOccupied",
+    ///     "occupancyNature": "LegalFormal",
+    ///     "maleCount": 1,
+    ///     "femaleCount": 1,
+    ///     "maleChildCount": 2,
+    ///     "femaleChildCount": 1,
+    ///     "maleElderlyCount": 0,
+    ///     "femaleElderlyCount": 0,
+    ///     "maleDisabledCount": 0,
+    ///     "femaleDisabledCount": 0,
+    ///     "notes": "أسرة من خمسة أفراد",
+    ///     "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///     "isDeleted": false
+    ///   }
+    /// ]
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID</param>
     /// <returns>List of households for this survey</returns>
-    /// <response code="200">Success. Returns array of households.</response>
+    /// <response code="200">Success. Returns array of households (may be empty).</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only view households for your own surveys.</response>
     /// <response code="404">Survey not found.</response>
@@ -941,35 +1102,36 @@ public class SurveysController : ControllerBase
 
     /// <summary>
     /// Create household in survey context
+    /// تسجيل الأسرة - تسجيل تفاصيل الإشغال
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - Household Registration
-    /// تسجيل الأسرة - تسجيل تفاصيل الإشغال
-    /// 
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Household Registration
+    ///
     /// **Purpose**: Creates a new household and links it to the survey's property unit.
-    /// 
+    ///
+    /// **Important**: The head of household is NOT set during creation.
+    /// After creating the household and adding persons, use
+    /// `PUT /api/v1/surveys/{surveyId}/households/{householdId}/head/{personId}`
+    /// to designate the household head.
+    ///
     /// **Required Permission**: CanEditOwnSurveys
-    /// 
-    /// **Form Fields (Arabic)**:
-    /// - رب الأسرة/العميل: HeadOfHouseholdName (required)
-    /// - عدد الأفراد: HouseholdSize (required)
-    /// - ادخل ملاحظاتك: Notes (optional)
-    /// 
-    /// **تكوين الأسرة (Family Composition)**:
-    /// - عدد البالغين الذكور: MaleCount
-    /// - عدد البالغين الإناث: FemaleCount  
-    /// - عدد الأطفال الذكور (أقل من 18): MaleChildCount
-    /// - عدد الأطفال الإناث (أقل من 18): FemaleChildCount
-    /// - عدد كبار السن الذكور (أكثر من 65): MaleElderlyCount
-    /// - عدد كبار السن الإناث (أكثر من 65): FemaleElderlyCount
-    /// - عدد المعاقين الذكور: MaleDisabledCount
-    /// - عدد المعاقين الإناث: FemaleDisabledCount
-    /// 
-    /// **Example Request**:
+    ///
+    /// **Request Fields**:
+    /// - `householdSize` (required): عدد الأفراد (1-50)
+    /// - `occupancyType` (optional): نوع الإشغال - **send as integer**: 1=OwnerOccupied, 2=TenantOccupied, 3=FamilyOccupied, 4=MixedOccupancy, 5=Vacant, 6=TemporarySeasonal, 7=CommercialUse, 8=Abandoned, 9=Disputed, 99=Unknown
+    /// - `occupancyNature` (optional): طبيعة الإشغال - **send as integer**: 1=LegalFormal, 2=Informal, 3=Customary, 4=TemporaryEmergency, 5=Authorized, 6=Unauthorized, 7=PendingRegularization, 8=Contested, 99=Unknown
+    /// - `notes` (optional): ملاحظات
+    /// - `maleCount` / `femaleCount`: عدد البالغين
+    /// - `maleChildCount` / `femaleChildCount`: عدد الأطفال (أقل من 18)
+    /// - `maleElderlyCount` / `femaleElderlyCount`: عدد كبار السن (أكثر من 65)
+    /// - `maleDisabledCount` / `femaleDisabledCount`: عدد المعاقين
+    ///
+    /// **Example Request** (occupancyType/occupancyNature sent as integers):
     /// ```json
     /// {
-    ///   "headOfHouseholdName": "أحمد محمد علي",
     ///   "householdSize": 5,
+    ///   "occupancyType": 1,
+    ///   "occupancyNature": 1,
     ///   "maleCount": 1,
     ///   "femaleCount": 1,
     ///   "maleChildCount": 2,
@@ -981,6 +1143,35 @@ public class SurveysController : ControllerBase
     ///   "notes": "أسرة من خمسة أفراد"
     /// }
     /// ```
+    ///
+    /// **Example Response** (occupancyType/occupancyNature returned as strings):
+    /// ```json
+    /// {
+    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "propertyUnitIdentifier": "1A",
+    ///   "headOfHouseholdName": null,
+    ///   "headOfHouseholdPersonId": null,
+    ///   "householdSize": 5,
+    ///   "occupancyType": "OwnerOccupied",
+    ///   "occupancyNature": "LegalFormal",
+    ///   "maleCount": 1,
+    ///   "femaleCount": 1,
+    ///   "maleChildCount": 2,
+    ///   "femaleChildCount": 1,
+    ///   "maleElderlyCount": 0,
+    ///   "femaleElderlyCount": 0,
+    ///   "maleDisabledCount": 0,
+    ///   "femaleDisabledCount": 0,
+    ///   "notes": "أسرة من خمسة أفراد",
+    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "isDeleted": false
+    /// }
+    /// ```
+    ///
+    /// **Next Steps**:
+    /// 1. Add persons: `POST /api/v1/surveys/{surveyId}/households/{householdId}/persons`
+    /// 2. Set head: `PUT /api/v1/surveys/{surveyId}/households/{householdId}/head/{personId}`
     /// </remarks>
     /// <param name="surveyId">Survey ID to create household for</param>
     /// <param name="command">Household creation data</param>
@@ -1010,23 +1201,43 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Get household details
+    /// Get household details by ID
+    /// عرض تفاصيل الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - View household information
-    /// 
-    /// **Purpose**: Retrieves complete household details.
-    /// 
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - View household information
+    ///
+    /// **Purpose**: Retrieves complete household details including occupancy and demographic data.
+    ///
     /// **Required Permission**: CanViewOwnSurveys
-    /// 
-    /// **Response Fields**:
-    /// - Identifiers (id, propertyUnitId)
-    /// - Basic info (headOfHouseholdName, householdSize, notes)
-    /// - Adults composition (maleCount, femaleCount)
-    /// - Children composition (maleChildCount, femaleChildCount)
-    /// - Elderly composition (maleElderlyCount, femaleElderlyCount)
-    /// - Disabled composition (maleDisabledCount, femaleDisabledCount)
-    /// - Audit fields (createdAtUtc, lastModifiedAtUtc)
+    ///
+    /// **Note**: `occupancyType` and `occupancyNature` are returned as **string** enum names.
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "propertyUnitIdentifier": "1A",
+    ///   "headOfHouseholdName": "أحمد محمد الخالد",
+    ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "householdSize": 5,
+    ///   "occupancyType": "OwnerOccupied",
+    ///   "occupancyNature": "LegalFormal",
+    ///   "notes": "أسرة من خمسة أفراد",
+    ///   "maleCount": 1,
+    ///   "femaleCount": 1,
+    ///   "maleChildCount": 2,
+    ///   "femaleChildCount": 1,
+    ///   "maleElderlyCount": 0,
+    ///   "femaleElderlyCount": 0,
+    ///   "maleDisabledCount": 0,
+    ///   "femaleDisabledCount": 0,
+    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "lastModifiedAtUtc": null,
+    ///   "isDeleted": false
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID to retrieve</param>
@@ -1061,21 +1272,63 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Update household in survey context
+    /// Update household in survey context (partial update)
+    /// تحديث بيانات الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - Update household during survey
-    /// 
-    /// **Purpose**: Updates existing household details. Only provided fields will be updated.
-    /// 
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Update household during survey
+    ///
+    /// **Purpose**: Updates existing household details. Only provided fields will be updated (PATCH-style).
+    ///
     /// **Required Permission**: CanEditOwnSurveys
-    /// 
-    /// **Example Request** (partial update - only updates provided fields):
+    ///
+    /// **Important**: The head of household name is NOT updated here.
+    /// Use `PUT {surveyId}/households/{householdId}/head/{personId}` to set/change the household head.
+    ///
+    /// **Updateable Fields** (all optional - only provided fields are updated):
+    /// - `householdSize`: عدد الأفراد
+    /// - `notes`: ملاحظات
+    /// - `occupancyType`: نوع الإشغال - **send as integer**: 1=OwnerOccupied, 2=TenantOccupied, 3=FamilyOccupied, 4=MixedOccupancy, 5=Vacant, 6=TemporarySeasonal, 7=CommercialUse, 8=Abandoned, 9=Disputed, 99=Unknown
+    /// - `occupancyNature`: طبيعة الإشغال - **send as integer**: 1=LegalFormal, 2=Informal, 3=Customary, 4=TemporaryEmergency, 5=Authorized, 6=Unauthorized, 7=PendingRegularization, 8=Contested, 99=Unknown
+    /// - `maleCount` / `femaleCount`: عدد البالغين
+    /// - `maleChildCount` / `femaleChildCount`: عدد الأطفال (أقل من 18)
+    /// - `maleElderlyCount` / `femaleElderlyCount`: عدد كبار السن (أكثر من 65)
+    /// - `maleDisabledCount` / `femaleDisabledCount`: عدد المعاقين
+    ///
+    /// **Example Request** (occupancyType/occupancyNature sent as integers):
     /// ```json
     /// {
     ///   "householdSize": 6,
+    ///   "occupancyType": 2,
+    ///   "occupancyNature": 2,
     ///   "maleChildCount": 3,
     ///   "notes": "ولد طفل ذكر جديد"
+    /// }
+    /// ```
+    ///
+    /// **Example Response** (occupancyType/occupancyNature returned as strings):
+    /// ```json
+    /// {
+    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "propertyUnitIdentifier": "1A",
+    ///   "headOfHouseholdName": "أحمد محمد الخالد",
+    ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "householdSize": 6,
+    ///   "occupancyType": "TenantOccupied",
+    ///   "occupancyNature": "Informal",
+    ///   "maleCount": 1,
+    ///   "femaleCount": 1,
+    ///   "maleChildCount": 3,
+    ///   "femaleChildCount": 1,
+    ///   "maleElderlyCount": 0,
+    ///   "femaleElderlyCount": 0,
+    ///   "maleDisabledCount": 0,
+    ///   "femaleDisabledCount": 0,
+    ///   "notes": "ولد طفل ذكر جديد",
+    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-02-14T12:00:00Z",
+    ///   "isDeleted": false
     /// }
     /// ```
     /// </remarks>
@@ -1084,7 +1337,7 @@ public class SurveysController : ControllerBase
     /// <param name="command">Household update data (all fields optional)</param>
     /// <returns>Updated household details</returns>
     /// <response code="200">Household updated successfully.</response>
-    /// <response code="400">Validation error.</response>
+    /// <response code="400">Validation error or survey not in Draft status.</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only update households for your own surveys.</response>
     /// <response code="404">Survey or household not found.</response>
@@ -1197,16 +1450,67 @@ public class SurveysController : ControllerBase
 
     /// <summary>
     /// Get all persons in household
+    /// عرض أفراد الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - View household members
-    /// عرض أفراد الأسرة
-    /// 
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - View household members
+    ///
     /// **Purpose**: Lists all registered persons/members in a household.
-    /// 
+    ///
     /// **Required Permission**: Surveys_ViewOwn (CanViewOwnSurveys)
-    /// 
-    /// **Response**: Array of persons ordered by creation date
+    ///
+    /// **Response**: Array of PersonDto ordered by creation date. Each person includes:
+    /// - Personal info: familyNameArabic, firstNameArabic, fatherNameArabic, motherNameArabic
+    /// - Identity: nationalId, gender (enum), nationality (enum), dateOfBirth
+    /// - Contact: email, mobileNumber, phoneNumber
+    /// - Household context: householdId, relationshipToHead (enum)
+    /// - Computed: fullNameArabic, age
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// [
+    ///   {
+    ///     "id": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///     "familyNameArabic": "الأحمد",
+    ///     "firstNameArabic": "محمد",
+    ///     "fatherNameArabic": "أحمد",
+    ///     "motherNameArabic": "فاطمة",
+    ///     "nationalId": "00123456789",
+    ///     "gender": "Male",
+    ///     "nationality": "Syrian",
+    ///     "dateOfBirth": "1985-06-15T00:00:00Z",
+    ///     "email": "example@email.com",
+    ///     "mobileNumber": "+963912345678",
+    ///     "phoneNumber": null,
+    ///     "householdId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///     "relationshipToHead": "Head",
+    ///     "fullNameArabic": "محمد أحمد الأحمد",
+    ///     "age": 40,
+    ///     "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///     "isDeleted": false
+    ///   },
+    ///   {
+    ///     "id": "9ac13f62-9345-5234-b2cd-ae963g44cde8",
+    ///     "familyNameArabic": "الأحمد",
+    ///     "firstNameArabic": "سارة",
+    ///     "fatherNameArabic": "علي",
+    ///     "motherNameArabic": "نورة",
+    ///     "nationalId": null,
+    ///     "gender": "Female",
+    ///     "nationality": "Syrian",
+    ///     "dateOfBirth": "1990-03-20T00:00:00Z",
+    ///     "email": null,
+    ///     "mobileNumber": null,
+    ///     "phoneNumber": null,
+    ///     "householdId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///     "relationshipToHead": "Spouse",
+    ///     "fullNameArabic": "سارة علي الأحمد",
+    ///     "age": 35,
+    ///     "createdAtUtc": "2026-02-14T10:05:00Z",
+    ///     "isDeleted": false
+    ///   }
+    /// ]
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID to get persons for</param>
@@ -1235,33 +1539,58 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Set household head
+    /// Set household head (designate a person as رب الأسرة)
+    /// تعيين رب الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - Designate household head
-    /// 
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Designate household head
+    ///
     /// **Purpose**: Links a Person entity as the official head of household.
-    /// 
+    ///
+    /// **Required Permission**: CanEditOwnSurveys
+    ///
     /// **What it does**:
     /// - Designates a person as head of household
-    /// - Updates household's HeadOfHouseholdPersonId
+    /// - Updates household's `headOfHouseholdPersonId` and `headOfHouseholdName`
     /// - Creates audit trail
-    /// 
-    /// **When to use**:
-    /// - After adding persons to household
-    /// - To officially designate the household head
-    /// - Person must already be member of this household
-    /// 
-    /// **Important**: Person must belong to this household (HouseholdId must match)
-    /// 
-    /// **Required permissions**: CanEditOwnSurveys
-    /// 
-    /// **Response**: Returns updated household with linked head
+    ///
+    /// **Important**: Person must already be a member of this household (householdId must match)
+    ///
+    /// **Example Request**:
+    /// ```
+    /// PUT /api/v1/surveys/{surveyId}/households/{householdId}/head/{personId}
+    /// ```
+    /// No request body needed — person ID is in the URL.
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "propertyUnitIdentifier": "1A",
+    ///   "headOfHouseholdName": "محمد أحمد الأحمد",
+    ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "householdSize": 5,
+    ///   "occupancyType": "OwnerOccupied",
+    ///   "occupancyNature": "LegalFormal",
+    ///   "maleCount": 1,
+    ///   "femaleCount": 1,
+    ///   "maleChildCount": 2,
+    ///   "femaleChildCount": 1,
+    ///   "maleElderlyCount": 0,
+    ///   "femaleElderlyCount": 0,
+    ///   "maleDisabledCount": 0,
+    ///   "femaleDisabledCount": 0,
+    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-02-14T11:00:00Z",
+    ///   "isDeleted": false
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID</param>
-    /// <param name="personId">Person ID to set as head</param>
-    /// <returns>Updated household details</returns>
+    /// <param name="personId">Person ID to set as head (must belong to this household)</param>
+    /// <returns>Updated household details with linked head</returns>
     /// <response code="200">Household head set successfully.</response>
     /// <response code="400">Person doesn't belong to this household.</response>
     /// <response code="401">Not authenticated. Login required.</response>
@@ -1293,54 +1622,83 @@ public class SurveysController : ControllerBase
 
     /// <summary>
     /// Link person to property unit with relation type
+    /// ربط شخص بوحدة عقارية
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - Establish person-property relationship
-    /// 
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Establish person-property relationship
+    ///
     /// **Purpose**: Creates relationship between person and property unit for ownership/tenancy tracking.
-    /// 
+    ///
     /// **What it does**:
     /// - Creates PersonPropertyRelation record
-    /// - Links person to property unit
-    /// - Records relationship type (Owner, Tenant, Occupant, etc.)
+    /// - Links person to property unit with specified relation type
+    /// - Records occupancy type and evidence availability
     /// - Validates person and unit belong to same survey building
-    /// 
-    /// **When to use**:
-    /// - To establish ownership claims
-    /// - To document tenancy arrangements
-    /// - To link occupants to units
-    /// - For tenure rights documentation
-    /// 
-    /// **Relationship types**:
-    /// - Owner: Legal owner of the property
-    /// - Heirs: Inherited ownership rights
-    /// - Tenant: Renter/tenant with lease
-    /// - Occupant: Current occupant without formal tenure
-    /// - Claimant: Claiming ownership/rights
-    /// - Co-owner: Shared ownership
-    /// 
-    /// **Important**: 
-    /// - Person and property unit must be in same building
-    /// - Used for later claims processing
-    /// - Ownership relations (Owner, Heirs) qualify for automatic claim creation
-    /// 
+    ///
     /// **Required permissions**: CanEditOwnSurveys
-    /// 
-    /// **Example**:
+    ///
+    /// **Request Fields**:
+    /// - `personId` (required): Person to link
+    /// - `relationType` (required): نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
+    /// - `occupancyType` (optional): نوع الإشغال - OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
+    /// - `hasEvidence` (required): هل يوجد دليل؟ - Whether evidence documents are available
+    /// - `ownershipShare` (optional): حصة الملكية - Decimal 0.0 to 1.0
+    /// - `contractDetails` (optional): تفاصيل العقد
+    /// - `notes` (optional): ملاحظات
+    ///
+    /// **Important**:
+    /// - Person and property unit must be in same building
+    /// - Ownership relations (Owner, Heir) qualify for automatic claim creation
+    /// - Set `hasEvidence: true` when evidence documents will be uploaded
+    ///
+    /// **Example Request - Owner**:
     /// ```json
     /// {
-    ///   "personId": "person-guid-here",
-    ///   "relationType": "Owner",
-    ///   "startDate": "2010-01-01",
-    ///   "notes": "Primary owner with deed documentation"
+    ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "relationType": 1,
+    ///   "occupancyType": 1,
+    ///   "hasEvidence": true,
+    ///   "ownershipShare": 1.0,
+    ///   "notes": "مالك أصلي مع وثائق ملكية"
     /// }
     /// ```
-    /// 
-    /// **Response**: Created relation record with details
+    ///
+    /// **Example Request - Tenant**:
+    /// ```json
+    /// {
+    ///   "personId": "9ac13f62-9345-5234-b2cd-ae963g44cde8",
+    ///   "relationType": 3,
+    ///   "occupancyType": 2,
+    ///   "hasEvidence": false,
+    ///   "contractDetails": "عقد إيجار شفهي",
+    ///   "notes": "مستأجر منذ 2020"
+    /// }
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "relationType": "Owner",
+    ///   "occupancyType": "OwnerOccupied",
+    ///   "hasEvidence": true,
+    ///   "ownershipShare": 1.0,
+    ///   "contractDetails": null,
+    ///   "notes": "مالك أصلي مع وثائق ملكية",
+    ///   "isActive": true,
+    ///   "durationInDays": null,
+    ///   "isOngoing": true,
+    ///   "evidenceCount": 0,
+    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "isDeleted": false
+    /// }
+    /// ```
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="unitId">Property unit ID</param>
-    /// <param name="command">Link command with personId and relationType</param>
+    /// <param name="command">Link command with personId, relationType, and occupancy details</param>
     /// <returns>Created relation details</returns>
     /// <response code="201">Person linked to property unit successfully.</response>
     /// <response code="400">Person already linked to this unit or unit not in survey building.</response>
@@ -2067,22 +2425,64 @@ public class SurveysController : ControllerBase
     }
     /// <summary>
     /// Update person-property relation (partial update - PATCH)
+    /// تحديث العلاقة بين الشخص والوحدة العقارية
     /// </summary>
     /// <remarks>
-    /// Only provided fields are updated. Use Clear* flags to set fields to null.
-    /// 
-    /// **Enum Values**:
-    /// - RelationType: Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
-    /// - ContractType: FullOwnership=1, SharedOwnership=2, LongTermRental=3, ShortTermRental=4, 
-    ///                 InformalTenure=5, UnauthorizedOccupation=6, CustomaryRights=7, InheritanceBased=8,
-    ///                 HostedGuest=9, TemporaryShelter=10, GovernmentAllocation=11, Usufruct=12, Other=99
-    /// 
-    /// **Example Request**:
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Update relation details
+    ///
+    /// **Purpose**: Partially updates a person-property relation. Only provided fields are updated.
+    /// Use `Clear*` flags to explicitly set nullable fields to null.
+    ///
+    /// **Required Permission**: CanEditOwnSurveys
+    ///
+    /// **Updateable Fields** (all optional):
+    /// - `relationType`: نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
+    /// - `occupancyType`: نوع الإشغال - OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
+    /// - `hasEvidence`: هل يوجد دليل؟ - true/false
+    /// - `ownershipShare`: حصة الملكية - 0.0 to 1.0
+    /// - `contractDetails`: تفاصيل العقد
+    /// - `notes`: ملاحظات
+    ///
+    /// **Clear Flags** (set to true to explicitly null a field):
+    /// - `clearOccupancyType`: Set occupancyType to null
+    /// - `clearOwnershipShare`: Set ownershipShare to null
+    /// - `clearContractDetails`: Set contractDetails to null
+    /// - `clearNotes`: Set notes to null
+    ///
+    /// **Example Request - Update relation type and occupancy**:
     /// ```json
     /// {
-    ///   "contractType": 2,
-    ///   "ownershipShare": 0.5,
+    ///   "relationType": 3,
+    ///   "occupancyType": 2,
+    ///   "hasEvidence": true,
+    ///   "ownershipShare": 0.5
+    /// }
+    /// ```
+    ///
+    /// **Example Request - Clear notes field**:
+    /// ```json
+    /// {
     ///   "clearNotes": true
+    /// }
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
+    ///   "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "relationType": "Tenant",
+    ///   "occupancyType": "TenantOccupied",
+    ///   "hasEvidence": true,
+    ///   "ownershipShare": 0.5,
+    ///   "contractDetails": null,
+    ///   "notes": null,
+    ///   "isActive": true,
+    ///   "evidenceCount": 2,
+    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-02-14T12:00:00Z",
+    ///   "isDeleted": false
     /// }
     /// ```
     /// </remarks>
@@ -2105,11 +2505,38 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Delete person-property relation
+    /// Delete person-property relation (soft delete with cascade)
+    /// حذف العلاقة بين الشخص والوحدة العقارية
     /// </summary>
-    /// <param name="surveyId">Survey ID</param>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Remove person-property relation
+    ///
+    /// **Purpose**: Soft-deletes a person-property relation and optionally deletes associated evidence files.
+    ///
+    /// **Required Permission**: CanEditOwnSurveys
+    ///
+    /// **What it does**:
+    /// - Marks the relation as deleted (soft delete)
+    /// - If `deleteEvidenceFiles=true` (default): also removes evidence documents linked to this relation
+    /// - Creates audit trail for the deletion
+    ///
+    /// **Important**: Only works for surveys in Draft status
+    ///
+    /// **Example Request**:
+    /// ```
+    /// DELETE /api/v1/surveys/3fa85f64-5717-4562-b3fc-2c963f66afa6/relations/a1b2c3d4-e5f6-7890-abcd-ef1234567890?deleteEvidenceFiles=true
+    /// ```
+    ///
+    /// **Response**: 204 No Content (success, no body)
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="relationId">Relation ID to delete</param>
     /// <param name="deleteEvidenceFiles">Also delete evidence files from storage (default: true)</param>
+    /// <response code="204">Relation deleted successfully.</response>
+    /// <response code="400">Survey not in Draft status.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only delete from your own surveys.</response>
+    /// <response code="404">Survey or relation not found.</response>
     [HttpDelete("{surveyId}/relations/{relationId}")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -2132,17 +2559,65 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Get evidences for a relation (صور المستندات)
+    /// Get evidences for a person-property relation (صور المستندات)
     /// </summary>
     /// <remarks>
-    /// **EvidenceType Enum Values**:
-    /// - IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, UtilityBill=4,
-    ///   Photo=5, OfficialLetter=6, CourtOrder=7, InheritanceDocument=8, TaxReceipt=9, Other=99
+    /// **Use Case**: UC-001 Stage 4 / UC-004 - View evidence for a specific relation
+    ///
+    /// **Purpose**: Retrieves all evidence documents linked to a person-property relation.
+    /// Supports filtering by evidence type and version control.
+    ///
+    /// **Required Permission**: CanViewOwnSurveys
+    ///
+    /// **Query Parameters**:
+    /// - `evidenceType` (optional): Filter by type - IdentificationDocument=1, OwnershipDeed=2,
+    ///   RentalContract=3, UtilityBill=4, Photo=5, OfficialLetter=6, CourtOrder=7,
+    ///   InheritanceDocument=8, TaxReceipt=9, Other=99
+    /// - `onlyCurrentVersions` (optional, default: true): Only return current versions
+    ///
+    /// **Example Request**:
+    /// ```
+    /// GET /api/v1/surveys/{surveyId}/relations/{relationId}/evidences?evidenceType=2&amp;onlyCurrentVersions=true
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// [
+    ///   {
+    ///     "id": "e1f2a3b4-c5d6-7890-ef12-345678901234",
+    ///     "evidenceType": "OwnershipDeed",
+    ///     "description": "صك ملكية العقار",
+    ///     "originalFileName": "property-deed.pdf",
+    ///     "filePath": "/evidence/surveys/abc/property-deed.pdf",
+    ///     "fileSizeBytes": 245760,
+    ///     "mimeType": "application/pdf",
+    ///     "fileHash": "sha256-abc123...",
+    ///     "documentIssuedDate": "2015-06-20T00:00:00Z",
+    ///     "documentExpiryDate": null,
+    ///     "issuingAuthority": "السجل العقاري",
+    ///     "documentReferenceNumber": "DEED-2015-123456",
+    ///     "notes": null,
+    ///     "versionNumber": 1,
+    ///     "previousVersionId": null,
+    ///     "isCurrentVersion": true,
+    ///     "personId": null,
+    ///     "personPropertyRelationId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    ///     "claimId": null,
+    ///     "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///     "isDeleted": false,
+    ///     "isExpired": false
+    ///   }
+    /// ]
+    /// ```
     /// </remarks>
-    /// <param name="surveyId">Survey ID</param>
-    /// <param name="relationId">Relation ID</param>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="relationId">Relation ID to get evidences for</param>
     /// <param name="evidenceType">Optional: Filter by evidence type (integer enum value)</param>
     /// <param name="onlyCurrentVersions">Only current versions (default: true)</param>
+    /// <response code="200">Success. Returns array of evidences (may be empty).</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only view evidences for your own surveys.</response>
+    /// <response code="404">Survey or relation not found.</response>
     [HttpGet("{surveyId}/relations/{relationId}/evidences")]
     [Authorize(Policy = "CanViewOwnSurveys")]
     [ProducesResponseType(typeof(List<EvidenceDto>), StatusCodes.Status200OK)]

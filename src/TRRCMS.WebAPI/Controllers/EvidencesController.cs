@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Evidences.Commands.CreateEvidence;
+using TRRCMS.Application.Evidences.Commands.DeleteEvidence;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Evidences.Queries.GetAllEvidences;
 using TRRCMS.Application.Evidences.Queries.GetEvidence;
@@ -332,6 +334,65 @@ public class EvidencesController : ControllerBase
         if (result == null)
             return NotFound(new { message = $"Evidence with ID {id} not found" });
 
+        return Ok(result);
+    }
+
+    // ==================== DELETE ====================
+
+    /// <summary>
+    /// Soft delete an evidence record
+    /// حذف مستند/دليل
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: Remove evidence that was uploaded by mistake or is no longer relevant
+    ///
+    /// **Required Permission**: Evidence_Upload (2001) - CanUploadEvidence policy
+    ///
+    /// **What it does**:
+    /// - Marks the evidence record as deleted (soft delete)
+    /// - Does NOT cascade to other entities (evidence is a leaf entity)
+    /// - Creates an audit trail entry
+    ///
+    /// **Important**: Only works when the related survey is in **Draft** status.
+    /// If the survey is Finalized or Completed, the delete will be rejected.
+    ///
+    /// **Example Request**:
+    /// ```
+    /// DELETE /api/v1/Evidences/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "primaryEntityId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "primaryEntityType": "Evidence",
+    ///   "affectedEntities": [
+    ///     { "entityId": "3fa85f64-...", "entityType": "Evidence", "entityIdentifier": "national_id.pdf" }
+    ///   ],
+    ///   "totalAffected": 1,
+    ///   "deletedAtUtc": "2026-02-14T10:00:00Z",
+    ///   "message": "Evidence deleted successfully"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="id">Evidence ID (GUID) to delete</param>
+    /// <returns>Delete result with affected entity ID</returns>
+    /// <response code="200">Evidence deleted successfully</response>
+    /// <response code="400">Survey is not in Draft status or evidence is already deleted</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires Evidence_Upload (2001) permission</response>
+    /// <response code="404">Evidence not found</response>
+    [HttpDelete("{id}")]
+    [Authorize(Policy = "CanUploadEvidence")]
+    [ProducesResponseType(typeof(DeleteResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeleteResultDto>> Delete(Guid id)
+    {
+        var command = new Application.Evidences.Commands.DeleteEvidence.DeleteEvidenceCommand { EvidenceId = id };
+        var result = await _mediator.Send(command);
         return Ok(result);
     }
 }

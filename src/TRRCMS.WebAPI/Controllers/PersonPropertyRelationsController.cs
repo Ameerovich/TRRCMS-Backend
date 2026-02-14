@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.PersonPropertyRelations.Commands.CreatePersonPropertyRelation;
+using TRRCMS.Application.PersonPropertyRelations.Commands.DeletePersonPropertyRelation;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.PersonPropertyRelations.Queries.GetAllPersonPropertyRelations;
 using TRRCMS.Application.PersonPropertyRelations.Queries.GetPersonPropertyRelation;
@@ -355,6 +357,67 @@ public class PersonPropertyRelationsController : ControllerBase
         if (result == null)
             return NotFound(new { message = $"Person-property relation with ID {id} not found" });
 
+        return Ok(result);
+    }
+
+    // ==================== DELETE ====================
+
+    /// <summary>
+    /// Soft delete a person-property relation and all related evidences
+    /// حذف علاقة الشخص بالعقار مع جميع المستندات المرتبطة
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: Remove a relation that was created by mistake or is no longer valid
+    ///
+    /// **Required Permission**: Surveys_EditAll (7006) - CanEditAllSurveys policy
+    ///
+    /// **Cascade Delete Behavior**:
+    /// This operation will soft delete:
+    /// - The PersonPropertyRelation itself
+    /// - All Evidences linked to this relation (ownership deeds, rental contracts, etc.)
+    ///
+    /// **Important**: Only works when the related survey is in **Draft** status.
+    /// If the survey is Finalized or Completed, the delete will be rejected.
+    ///
+    /// **Example Request**:
+    /// ```
+    /// DELETE /api/v1/PersonPropertyRelations/d6ad6c6f-9e89-4190-930d-c6d3ab7b8f8d
+    /// ```
+    ///
+    /// **Example Response**:
+    /// ```json
+    /// {
+    ///   "primaryEntityId": "d6ad6c6f-9e89-4190-930d-c6d3ab7b8f8d",
+    ///   "primaryEntityType": "PersonPropertyRelation",
+    ///   "affectedEntities": [
+    ///     { "entityId": "d6ad6c6f-...", "entityType": "PersonPropertyRelation", "entityIdentifier": "Relation Owner" },
+    ///     { "entityId": "e7be7d7g-...", "entityType": "Evidence", "entityIdentifier": "tabu_green.pdf" },
+    ///     { "entityId": "f8cf8e8h-...", "entityType": "Evidence", "entityIdentifier": "rental_contract.pdf" }
+    ///   ],
+    ///   "totalAffected": 3,
+    ///   "deletedAtUtc": "2026-02-14T10:00:00Z",
+    ///   "message": "PersonPropertyRelation deleted successfully along with 2 evidence(s)"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="id">Relation ID (GUID) to delete</param>
+    /// <returns>Delete result with all affected entity IDs</returns>
+    /// <response code="200">Relation and related evidences deleted successfully</response>
+    /// <response code="400">Survey is not in Draft status or relation is already deleted</response>
+    /// <response code="401">Not authenticated - valid JWT token required</response>
+    /// <response code="403">Not authorized - requires Surveys_EditAll permission</response>
+    /// <response code="404">Relation not found</response>
+    [HttpDelete("{id}")]
+    [Authorize(Policy = "CanEditAllSurveys")]
+    [ProducesResponseType(typeof(DeleteResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeleteResultDto>> DeleteRelation(Guid id)
+    {
+        var command = new DeletePersonPropertyRelationCommand { RelationId = id };
+        var result = await _mediator.Send(command);
         return Ok(result);
     }
 }
