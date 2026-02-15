@@ -36,12 +36,12 @@ public class SurveyDto
     /// <summary>
     /// Survey status (Draft, Completed, Finalized, etc.)
     /// </summary>
-    public string Status { get; set; } = string.Empty;
+    public int Status { get; set; }
 
     /// <summary>
     /// Survey type (Field or Office)
     /// </summary>
-    public string SurveyType { get; set; } = string.Empty;
+    public int SurveyType { get; set; }
 
     /// <summary>
     /// GPS coordinates where survey was conducted

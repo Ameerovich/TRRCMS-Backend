@@ -1,6 +1,4 @@
-﻿using TRRCMS.Domain.Enums;
-
-namespace TRRCMS.Application.Users.Dtos;
+﻿namespace TRRCMS.Application.Users.Dtos;
 
 /// <summary>
 /// Base data transfer object for User entity
@@ -17,8 +15,7 @@ public class UserDto
     public string? PhoneNumber { get; set; }
     public string? Organization { get; set; }
     public string? JobTitle { get; set; }
-    public UserRole Role { get; set; }
-    public string RoleName { get; set; } = string.Empty;
+    public int Role { get; set; }
     public bool HasMobileAccess { get; set; }
     public bool HasDesktopAccess { get; set; }
     public bool IsActive { get; set; }

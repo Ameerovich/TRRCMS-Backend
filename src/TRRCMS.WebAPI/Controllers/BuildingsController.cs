@@ -141,15 +141,15 @@ public class BuildingsController : ControllerBase
     ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "buildingId": "01010100300200001",
     ///   "buildingIdFormatted": "01-01-01-003-002-00001",
-    ///   "buildingType": "Residential",
-    ///   "status": "Existing",
+    ///   "buildingType": 1,
+    ///   "status": 1,
     ///   "latitude": 36.2021,
     ///   "longitude": 37.1343,
     ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
     ///   "createdAtUtc": "2026-01-31T10:00:00Z"
     /// }
     /// ```
-    /// 
+    ///
     /// **Geometry in Response:**
     /// - If `buildingGeometryWkt` was provided as POLYGON, `latitude`/`longitude` are the centroid
     /// - If only `latitude`/`longitude` were provided, `buildingGeometryWkt` returns a POINT geometry
@@ -212,8 +212,8 @@ public class BuildingsController : ControllerBase
     ///   "neighborhoodCode": "002",
     ///   "neighborhoodName": "العزيزية",
     ///   "buildingNumber": "00001",
-    ///   "buildingType": "Residential",
-    ///   "status": "Existing",
+    ///   "buildingType": 1,
+    ///   "status": 1,
     ///   "numberOfPropertyUnits": 10,
     ///   "numberOfApartments": 8,
     ///   "numberOfShops": 2,
@@ -349,8 +349,8 @@ public class BuildingsController : ControllerBase
     ///       "id": "guid-here",
     ///       "buildingId": "01010100300200001",
     ///       "buildingIdFormatted": "01-01-01-003-002-00001",
-    ///       "buildingType": "Residential",
-    ///       "status": "Existing",
+    ///       "buildingType": 1,
+    ///       "status": 1,
     ///       "latitude": 36.2021,
     ///       "longitude": 37.1343,
     ///       "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))"
@@ -494,8 +494,8 @@ public class BuildingsController : ControllerBase
     ///   "latitude": 36.2021,
     ///   "longitude": 37.1343,
     ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
-    ///   "buildingType": "Residential",
-    ///   "status": "Existing"
+    ///   "buildingType": 1,
+    ///   "status": 1
     /// }
     /// ```
     /// </remarks>
@@ -631,8 +631,8 @@ public class BuildingsController : ControllerBase
     ///     "latitude": 36.2021,
     ///     "longitude": 37.1343,
     ///     "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
-    ///     "status": "Existing",
-    ///     "buildingType": "Residential",
+    ///     "status": 1,
+    ///     "buildingType": 1,
     ///     "numberOfPropertyUnits": 8,
     ///     "numberOfApartments": 6,
     ///     "numberOfShops": 2
@@ -745,8 +745,8 @@ public class BuildingsController : ControllerBase
     ///       "latitude": 36.2021,
     ///       "longitude": 37.1343,
     ///       "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
-    ///       "buildingType": "Residential",
-    ///       "status": "Existing",
+    ///       "buildingType": 1,
+    ///       "status": 1,
     ///       "numberOfPropertyUnits": 8,
     ///       "neighborhoodName": "العزيزية",
     ///       "communityName": "الجميلية"

@@ -74,14 +74,15 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
                 throw new ValidationException("Ownership share cannot exceed 1.0 (100%)");
         }
 
-        // Create relation using factory method with new signature
+        // Create relation using factory method — link to originating survey
         var relation = PersonPropertyRelation.Create(
             request.PersonId,
             request.PropertyUnitId,
             request.RelationType,
             request.OccupancyType,
             request.HasEvidence,
-            currentUserId);
+            currentUserId,
+            surveyId: request.SurveyId);
 
         // Update with additional details using simplified signature
         relation.UpdateRelationDetails(

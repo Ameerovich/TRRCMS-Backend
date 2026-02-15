@@ -23,13 +23,16 @@ public class ImportService : IImportService
 {
     private readonly ImportPipelineSettings _settings;
     private readonly ILogger<ImportService> _logger;
+    private readonly IVocabularyVersionProvider _vocabularyVersionProvider;
 
     public ImportService(
         IOptions<ImportPipelineSettings> settings,
-        ILogger<ImportService> logger)
+        ILogger<ImportService> logger,
+        IVocabularyVersionProvider vocabularyVersionProvider)
     {
         _settings = settings.Value;
         _logger = logger;
+        _vocabularyVersionProvider = vocabularyVersionProvider;
     }
 
     // ==================== CHECKSUM & INTEGRITY ====================
@@ -176,8 +179,10 @@ public class ImportService : IImportService
 
     // ==================== VOCABULARY COMPATIBILITY ====================
 
-    public VocabularyCompatibilityResult CheckVocabularyCompatibility(ManifestData manifest)
+    public async Task<VocabularyCompatibilityResult> CheckVocabularyCompatibilityAsync(ManifestData manifest, CancellationToken cancellationToken = default)
     {
+        var serverVersions = await _vocabularyVersionProvider.GetAllCurrentVersionsAsync(cancellationToken);
+
         var result = new VocabularyCompatibilityResult
         {
             IsCompatible = true,
@@ -189,7 +194,7 @@ public class ImportService : IImportService
 
         foreach (var (domain, packageVersionStr) in manifest.VocabVersions)
         {
-            if (!_settings.ServerVocabularyVersions.TryGetValue(domain, out var serverVersionStr))
+            if (!serverVersions.TryGetValue(domain, out var serverVersionStr))
             {
                 // Server doesn't know this vocabulary domain — warn but accept
                 result.Items.Add(new VocabularyCheckItem

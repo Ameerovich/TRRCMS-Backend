@@ -1,5 +1,4 @@
-﻿using System.Text.Json.Serialization;
-using TRRCMS.Domain.Enums;
+﻿using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Persons.Dtos;
 
@@ -46,13 +45,11 @@ public class PersonDto
     /// <summary>
     /// الجنس - Gender (returned as string: "Male", "Female")
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public Gender? Gender { get; set; }
 
     /// <summary>
     /// الجنسية - Nationality (returned as string: "Syrian", "Palestinian", etc.)
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public Nationality? Nationality { get; set; }
 
     /// <summary>
@@ -87,7 +84,6 @@ public class PersonDto
     /// <summary>
     /// Relationship to head of household (علاقة برب الأسرة) - returned as string: "Head", "Spouse", "Son", etc.
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public RelationshipToHead? RelationshipToHead { get; set; }
 
     // ==================== AUDIT FIELDS ====================

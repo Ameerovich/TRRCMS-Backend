@@ -81,6 +81,11 @@ public interface IUnitOfWork : IDisposable
     /// </summary>
     INeighborhoodRepository Neighborhoods { get; }
 
+    /// <summary>
+    /// Vocabulary repository - controlled vocabularies with versioning
+    /// </summary>
+    IVocabularyRepository Vocabularies { get; }
+
     // ==================== TRANSACTION OPERATIONS ====================
 
     /// <summary>

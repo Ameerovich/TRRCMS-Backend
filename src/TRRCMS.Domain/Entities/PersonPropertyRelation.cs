@@ -13,6 +13,12 @@ public class PersonPropertyRelation : BaseAuditableEntity
     public Guid PropertyUnitId { get; private set; }
 
     /// <summary>
+    /// The survey that created this relation. Used to scope claim creation
+    /// to only relations created within a specific survey context.
+    /// </summary>
+    public Guid? SurveyId { get; private set; }
+
+    /// <summary>
     /// Relation type (نوع العلاقة) - Owner, Occupant, Tenant, Guest, Heir, Other
     /// </summary>
     public RelationType RelationType { get; private set; }
@@ -48,6 +54,7 @@ public class PersonPropertyRelation : BaseAuditableEntity
     // Navigation properties
     public virtual Person Person { get; private set; } = null!;
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
+    public virtual Survey? Survey { get; private set; }
     public virtual ICollection<Evidence> Evidences { get; private set; }
 
     private PersonPropertyRelation() : base()
@@ -63,7 +70,8 @@ public class PersonPropertyRelation : BaseAuditableEntity
         RelationType relationType,
         OccupancyType? occupancyType,
         bool hasEvidence,
-        Guid createdByUserId)
+        Guid createdByUserId,
+        Guid? surveyId = null)
     {
         var relation = new PersonPropertyRelation
         {
@@ -72,6 +80,7 @@ public class PersonPropertyRelation : BaseAuditableEntity
             RelationType = relationType,
             OccupancyType = occupancyType,
             HasEvidence = hasEvidence,
+            SurveyId = surveyId,
             IsActive = true
         };
         relation.MarkAsCreated(createdByUserId);

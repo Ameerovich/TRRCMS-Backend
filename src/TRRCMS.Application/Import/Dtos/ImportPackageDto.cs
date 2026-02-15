@@ -23,7 +23,7 @@ public class ImportPackageDto
 
     // ==================== STATUS ====================
 
-    public string Status { get; set; } = string.Empty;
+    public int Status { get; set; }
     public DateTime? ImportedDate { get; set; }
     public Guid? ImportedByUserId { get; set; }
     public DateTime? ValidationStartedDate { get; set; }

@@ -100,17 +100,17 @@ public class BuildingDto
     /// Building type (نوع البناء)
     /// Values: Residential, Commercial, MixedUse, Industrial
     /// </summary>
-    public string BuildingType { get; set; } = string.Empty;
+    public int BuildingType { get; set; }
 
     /// <summary>
     /// Building status (حالة البناء)
     /// </summary>
-    public string Status { get; set; } = string.Empty;
+    public int Status { get; set; }
 
     /// <summary>
     /// Damage level (مستوى الضرر)
     /// </summary>
-    public string? DamageLevel { get; set; }
+    public int? DamageLevel { get; set; }
 
     /// <summary>
     /// Number of property units (عدد الوحدات)

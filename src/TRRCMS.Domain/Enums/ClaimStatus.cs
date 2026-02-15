@@ -8,41 +8,49 @@ public enum ClaimStatus
     /// <summary>
     /// Draft - not yet finalized (مسودة)
     /// </summary>
+    [ArabicLabel("مسودة")]
     Draft = 1,
 
     /// <summary>
     /// Finalized - ready for review (نهائي)
     /// Per UC-001 S25, UC-004 S21: "mark as finalized"
     /// </summary>
+    [ArabicLabel("نهائي")]
     Finalized = 2,
 
     /// <summary>
     /// Under review (قيد المراجعة)
     /// </summary>
+    [ArabicLabel("قيد المراجعة")]
     UnderReview = 3,
 
     /// <summary>
     /// Approved (موافق عليه)
     /// </summary>
+    [ArabicLabel("موافق عليه")]
     Approved = 4,
 
     /// <summary>
     /// Rejected (مرفوض)
     /// </summary>
+    [ArabicLabel("مرفوض")]
     Rejected = 5,
 
     /// <summary>
     /// Pending additional evidence (بانتظار مستندات إضافية)
     /// </summary>
+    [ArabicLabel("بانتظار مستندات إضافية")]
     PendingEvidence = 6,
 
     /// <summary>
     /// Disputed - conflicting claims exist (متنازع عليه)
     /// </summary>
+    [ArabicLabel("متنازع عليه")]
     Disputed = 7,
 
     /// <summary>
     /// Archived (مؤرشف)
     /// </summary>
+    [ArabicLabel("مؤرشف")]
     Archived = 99
 }

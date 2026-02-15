@@ -1,6 +1,4 @@
-﻿using TRRCMS.Domain.Enums;
-
-namespace TRRCMS.Application.Users.Dtos;
+﻿namespace TRRCMS.Application.Users.Dtos;
 
 /// <summary>
 /// Lightweight DTO for user list views
@@ -12,8 +10,7 @@ public class UserListDto
     public string Username { get; set; } = string.Empty;
     public string FullNameArabic { get; set; } = string.Empty;
     public string? Email { get; set; }
-    public UserRole Role { get; set; }
-    public string RoleName { get; set; } = string.Empty;
+    public int Role { get; set; }
     public bool IsActive { get; set; }
     public bool IsLockedOut { get; set; }
     public string? Organization { get; set; }

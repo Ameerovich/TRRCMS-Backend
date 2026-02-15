@@ -92,7 +92,7 @@ public class CreatedClaimSummaryDto
     /// <summary>
     /// The relation type that triggered claim creation (Owner, Heir)
     /// </summary>
-    public string RelationType { get; set; } = string.Empty;
+    public int RelationType { get; set; }
 
     /// <summary>
     /// Person ID of the claimant

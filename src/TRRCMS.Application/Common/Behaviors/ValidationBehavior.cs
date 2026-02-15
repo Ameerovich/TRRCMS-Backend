@@ -1,11 +1,14 @@
 ﻿using FluentValidation;
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
+using ValidationException = TRRCMS.Application.Common.Exceptions.ValidationException;
 
 namespace TRRCMS.Application.Common.Behaviors;
 
 /// <summary>
-/// MediatR pipeline behavior that validates commands/queries using FluentValidation
-/// Runs before the command handler executes
+/// MediatR pipeline behavior that validates commands/queries using FluentValidation.
+/// Runs before the command handler executes.
+/// Throws <see cref="ValidationException"/> with field-level errors when validation fails.
 /// </summary>
 public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
@@ -41,7 +44,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
             .Where(failure => failure != null)
             .ToList();
 
-        // If there are validation errors, throw ValidationException
+        // If there are validation errors, throw our custom ValidationException
         if (failures.Any())
         {
             throw new ValidationException(failures);

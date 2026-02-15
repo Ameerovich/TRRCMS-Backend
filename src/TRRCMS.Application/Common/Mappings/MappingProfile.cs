@@ -19,9 +19,9 @@ public class MappingProfile : Profile
     {
         // Building mappings
         CreateMap<Building, BuildingDto>()
-           .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => src.BuildingType.ToString()))
-           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
-           .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? src.DamageLevel.ToString() : null))
+           .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => (int)src.BuildingType))
+           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+           .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? (int?)src.DamageLevel : null))
            .ForMember(dest => dest.LocationDescription, opt => opt.MapFrom(src => src.LocationDescription));
 
         // PropertyUnit mapping
@@ -32,8 +32,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.BuildingNumber, opt => opt.Ignore()) // Set in handler
             .ForMember(dest => dest.UnitIdentifier, opt => opt.MapFrom(src => src.UnitIdentifier))
             .ForMember(dest => dest.FloorNumber, opt => opt.MapFrom(src => src.FloorNumber))
-            .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => src.UnitType.ToString()))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => (int)src.UnitType))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
             .ForMember(dest => dest.AreaSquareMeters, opt => opt.MapFrom(src => src.AreaSquareMeters))
             .ForMember(dest => dest.NumberOfRooms, opt => opt.MapFrom(src => src.NumberOfRooms))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
@@ -126,8 +126,8 @@ public class MappingProfile : Profile
 
         // Document mappings
         CreateMap<Document, DocumentDto>()
-            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => src.DocumentType.ToString()))
-            .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => src.VerificationStatus.ToString()))
+            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => (int)src.DocumentType))
+            .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => (int)src.VerificationStatus))
             .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()))
             .ForMember(dest => dest.IsExpiringSoon, opt => opt.MapFrom(src => src.IsExpiringSoon()));
 
@@ -158,26 +158,26 @@ public class MappingProfile : Profile
 
         // User mappings - Base DTO
         CreateMap<User, UserDto>()
-            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => (int)src.Role))
             .ForMember(dest => dest.SupervisorName, opt => opt.MapFrom(src =>
                 src.Supervisor != null ? src.Supervisor.FullNameArabic : null));
 
         // User mappings - List DTO (lightweight for GetAllUsers)
         CreateMap<User, UserListDto>()
-            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()));
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => (int)src.Role));
 
         // User mappings - Detail DTO (includes permissions for GetUser)
         CreateMap<User, UserDetailDto>()
-            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => (int)src.Role))
             .ForMember(dest => dest.SupervisorName, opt => opt.MapFrom(src =>
                 src.Supervisor != null ? src.Supervisor.FullNameArabic : null))
             .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src =>
-                src.Permissions.Where(p => p.IsActive).Select(p => p.Permission.ToString()).ToList()))
+                src.Permissions.Where(p => p.IsActive).Select(p => (int)p.Permission).ToList()))
             .ForMember(dest => dest.ActivePermissionsCount, opt => opt.MapFrom(src =>
                 src.Permissions.Count(p => p.IsActive)));
         // AuditLog mappings (for GetUserAuditLog)
         CreateMap<AuditLog, AuditLogDto>()
-            .ForMember(dest => dest.Action, opt => opt.MapFrom(src => src.ActionType.ToString()))
+            .ForMember(dest => dest.Action, opt => opt.MapFrom(src => (int)src.ActionType))
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Username))
             .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.ActionDescription))
             .ForMember(dest => dest.Changes, opt => opt.MapFrom(src =>
@@ -189,7 +189,8 @@ public class MappingProfile : Profile
             ));
         // Survey mappings
         CreateMap<Survey, SurveyDto>()
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.SurveyType, opt => opt.MapFrom(src => (int)src.Type))
             .ForMember(dest => dest.BuildingNumber, opt => opt.MapFrom(src =>
                 src.Building != null ? src.Building.BuildingNumber : null))
             .ForMember(dest => dest.BuildingAddress, opt => opt.MapFrom(src =>
@@ -201,7 +202,7 @@ public class MappingProfile : Profile
 
         // Office Survey Detail mappings
         CreateMap<Survey, OfficeSurveyDetailDto>()
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
             .ForMember(dest => dest.BuildingNumber, opt => opt.MapFrom(src =>
                 src.Building != null ? src.Building.BuildingNumber : null))
             .ForMember(dest => dest.BuildingAddress, opt => opt.MapFrom(src =>
@@ -229,7 +230,7 @@ public class MappingProfile : Profile
 
             // ImportPackage
         CreateMap<ImportPackage, ImportPackageDto>()
-           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
            .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()));
 
 

@@ -41,13 +41,13 @@ public class PropertyUnitDto
     /// Property unit type (نوع الوحدة)
     /// Values: "Apartment", "Shop", "Office", "Warehouse", "Other"
     /// </summary>
-    public string UnitType { get; set; } = string.Empty;
+    public int UnitType { get; set; }
 
     /// <summary>
     /// Property unit status (حالة الوحدة)
     /// Values: "Occupied", "Vacant", "Damaged", "UnderRenovation", "Uninhabitable", "Locked", "Unknown"
     /// </summary>
-    public string Status { get; set; } = string.Empty;
+    public int Status { get; set; }
 
     /// <summary>
     /// Area in square meters (مساحة القسم)

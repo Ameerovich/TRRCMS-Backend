@@ -2294,6 +2294,10 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasComment("تاريخ بدء العلاقة - Start date of the relation (deprecated for office survey)");
 
+                    b.Property<Guid?>("SurveyId")
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to the originating Survey — scopes claim creation to this survey's relations only");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ContractType")
@@ -2313,6 +2317,9 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.HasIndex("RelationType")
                         .HasDatabaseName("IX_PersonPropertyRelation_RelationType");
+
+                    b.HasIndex("SurveyId")
+                        .HasDatabaseName("IX_PersonPropertyRelation_SurveyId");
 
                     b.HasIndex("IsActive", "IsDeleted")
                         .HasDatabaseName("IX_PersonPropertyRelation_IsActive_IsDeleted");
@@ -4251,6 +4258,156 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.ToTable("UserPermissions", (string)null);
                 });
 
+            modelBuilder.Entity("TRRCMS.Domain.Entities.Vocabulary", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowCustomValues")
+                        .HasColumnType("boolean")
+                        .HasComment("Whether custom values can be added");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Category grouping (e.g., Demographics, Property, Legal)");
+
+                    b.Property<string>("ChangeLog")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("Changelog for this version");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasComment("Description of this vocabulary");
+
+                    b.Property<string>("DisplayNameArabic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Display name in Arabic");
+
+                    b.Property<string>("DisplayNameEnglish")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Display name in English");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasComment("Whether this vocabulary is active");
+
+                    b.Property<bool>("IsCurrentVersion")
+                        .HasColumnType("boolean")
+                        .HasComment("Whether this is the active version");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsMandatory")
+                        .HasColumnType("boolean")
+                        .HasComment("Whether this vocabulary is mandatory");
+
+                    b.Property<bool>("IsSystemVocabulary")
+                        .HasColumnType("boolean")
+                        .HasComment("System-defined vocabulary (cannot be deleted)");
+
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LastUsedDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when vocabulary was last used");
+
+                    b.Property<int>("MajorVersion")
+                        .HasColumnType("integer")
+                        .HasComment("Major version number");
+
+                    b.Property<string>("MinimumCompatibleVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasComment("Minimum compatible version for imports");
+
+                    b.Property<int>("MinorVersion")
+                        .HasColumnType("integer")
+                        .HasComment("Minor version number");
+
+                    b.Property<int>("PatchVersion")
+                        .HasColumnType("integer")
+                        .HasComment("Patch version number");
+
+                    b.Property<Guid?>("PreviousVersionId")
+                        .HasColumnType("uuid")
+                        .HasComment("Reference to previous version");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("integer")
+                        .HasComment("How many times this vocabulary has been used");
+
+                    b.Property<int>("ValueCount")
+                        .HasColumnType("integer")
+                        .HasComment("Number of values in this vocabulary");
+
+                    b.Property<string>("ValuesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasComment("Vocabulary values as JSON array");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasComment("Semantic version: MAJOR.MINOR.PATCH");
+
+                    b.Property<DateTime>("VersionDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date when this version was created");
+
+                    b.Property<string>("VocabularyName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasComment("Vocabulary identifier (e.g., 'gender', 'relation_type')");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Category")
+                        .HasDatabaseName("IX_Vocabularies_Category");
+
+                    b.HasIndex("PreviousVersionId");
+
+                    b.HasIndex("VocabularyName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Vocabularies_VocabularyName_Current")
+                        .HasFilter("\"IsCurrentVersion\" = true AND \"IsDeleted\" = false");
+
+                    b.HasIndex("VocabularyName", "IsCurrentVersion")
+                        .HasDatabaseName("IX_Vocabularies_Name_IsCurrent");
+
+                    b.ToTable("Vocabularies", (string)null);
+                });
+
             modelBuilder.Entity("TRRCMS.Domain.Entities.AuditLog", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.AuditLog", "ParentAuditLog")
@@ -4425,9 +4582,16 @@ namespace TRRCMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TRRCMS.Domain.Entities.Survey", "Survey")
+                        .WithMany()
+                        .HasForeignKey("SurveyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Person");
 
                     b.Navigation("PropertyUnit");
+
+                    b.Navigation("Survey");
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.PropertyUnit", b =>
@@ -4582,6 +4746,16 @@ namespace TRRCMS.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.Vocabulary", b =>
+                {
+                    b.HasOne("TRRCMS.Domain.Entities.Vocabulary", "PreviousVersion")
+                        .WithMany()
+                        .HasForeignKey("PreviousVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("PreviousVersion");
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Building", b =>

@@ -14,7 +14,7 @@ public class DocumentDto
     /// <summary>
     /// Document type (enum converted to string)
     /// </summary>
-    public string DocumentType { get; set; } = string.Empty;
+    public int DocumentType { get; set; }
 
     /// <summary>
     /// Document number/reference
@@ -58,7 +58,7 @@ public class DocumentDto
     /// <summary>
     /// Verification status (enum converted to string)
     /// </summary>
-    public string VerificationStatus { get; set; } = string.Empty;
+    public int VerificationStatus { get; set; }
 
     /// <summary>
     /// Date when document was verified

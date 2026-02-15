@@ -120,9 +120,9 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             NeighborhoodName = building.NeighborhoodName,
 
             // Attributes
-            BuildingType = building.BuildingType.ToString(),
-            Status = building.Status.ToString(),
-            DamageLevel = building.DamageLevel?.ToString(),
+            BuildingType = (int)building.BuildingType,
+            Status = (int)building.Status,
+            DamageLevel = building.DamageLevel.HasValue ? (int?)building.DamageLevel : null,
             NumberOfPropertyUnits = building.NumberOfPropertyUnits,
             NumberOfApartments = building.NumberOfApartments,
             NumberOfShops = building.NumberOfShops,

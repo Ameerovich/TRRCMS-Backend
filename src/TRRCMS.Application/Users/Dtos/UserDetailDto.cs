@@ -12,7 +12,7 @@ public class UserDetailDto : UserDto
     /// List of active permissions granted to this user
     /// Format: Permission enum names as strings (e.g., "Claims_ViewAll")
     /// </summary>
-    public List<string> Permissions { get; set; } = new();
+    public List<int> Permissions { get; set; } = new();
 
     /// <summary>
     /// Count of active permissions

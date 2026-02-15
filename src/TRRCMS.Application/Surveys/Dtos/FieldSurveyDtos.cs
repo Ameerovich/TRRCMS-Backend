@@ -32,8 +32,8 @@ public class FieldSurveyDetailDto
     // ==================== SURVEY DETAILS ====================
 
     public DateTime SurveyDate { get; set; }
-    public string Status { get; set; } = string.Empty;
-    public string SurveyType { get; set; } = string.Empty;
+    public int Status { get; set; }
+    public int SurveyType { get; set; }
     public string? GpsCoordinates { get; set; }
     public string? IntervieweeName { get; set; }
     public string? IntervieweeRelationship { get; set; }
@@ -50,7 +50,7 @@ public class FieldSurveyDetailDto
 
     public Guid? ClaimId { get; set; }
     public string? ClaimNumber { get; set; }
-    public string? ClaimStatus { get; set; }
+    public int? ClaimStatus { get; set; }
 
     // ==================== RELATED DATA ====================
 

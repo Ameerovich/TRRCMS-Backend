@@ -382,8 +382,8 @@ public class SurveysController : ControllerBase
     ///   "buildingId": "12345678-1234-1234-1234-123456789012",
     ///   "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///   "surveyDate": "2026-02-14T10:00:00Z",
-    ///   "status": "Draft",
-    ///   "surveyType": "Office",
+    ///   "status": 1,
+    ///   "surveyType": 2,
     ///   "intervieweeName": "أحمد محمد الخالد",
     ///   "intervieweeRelationship": "مالك العقار",
     ///   "notes": "تم تقديم وثائق ملكية إضافية",
@@ -430,7 +430,9 @@ public class SurveysController : ControllerBase
     /// **What it does**:
     /// - Validates survey has required data (property unit linked)
     /// - Collects data summary (households, persons, relations, evidence)
-    /// - If AutoCreateClaim=true AND ownership relations exist:
+    /// - **Only considers relations created within THIS survey** (scoped by SurveyId FK on PersonPropertyRelation)
+    /// - Relations from other surveys referencing the same property unit are NOT included
+    /// - If AutoCreateClaim=true AND ownership/heir relations exist in this survey:
     ///   - Creates one claim per Owner/Heir relation
     ///   - Generates claim number (CLM-YYYY-NNNNNNNNN) per claim
     ///   - Sets ClaimSource=OfficeSubmission
@@ -460,8 +462,8 @@ public class SurveysController : ControllerBase
     ///   "claimNumber": "CLM-2026-000000001",
     ///   "claimsCreatedCount": 2,
     ///   "createdClaims": [
-    ///     { "claimNumber": "CLM-2026-000000001", "relationType": "Owner", ... },
-    ///     { "claimNumber": "CLM-2026-000000002", "relationType": "Heir", ... }
+    ///     { "claimNumber": "CLM-2026-000000001", "relationType": 1, ... },
+    ///     { "claimNumber": "CLM-2026-000000002", "relationType": 5, ... }
     ///   ],
     ///   "dataSummary": { ... },
     ///   "warnings": []
@@ -576,8 +578,8 @@ public class SurveysController : ControllerBase
     /// {
     ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "referenceCode": "OFC-2026-00001",
-    ///   "status": "Draft",
-    ///   "surveyType": "Office",
+    ///   "status": 1,
+    ///   "surveyType": 2,
     ///   "intervieweeName": "محمد أحمد",
     ///   "notes": "تم مقابلة المالك - يحتاج لزيارة ثانية",
     ///   "durationMinutes": 30,
@@ -632,8 +634,8 @@ public class SurveysController : ControllerBase
     ///   "unitIdentifier": "1A",
     ///   "fieldCollectorId": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
     ///   "surveyDate": "2026-02-14T10:00:00Z",
-    ///   "status": "Draft",
-    ///   "surveyType": "Office",
+    ///   "status": 1,
+    ///   "surveyType": 2,
     ///   "intervieweeName": "محمد أحمد الخالد",
     ///   "intervieweeRelationship": "مالك",
     ///   "notes": null,
@@ -695,8 +697,8 @@ public class SurveysController : ControllerBase
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "G-1",
     ///     "floorNumber": 0,
-    ///     "unitType": "Shop",
-    ///     "status": "Occupied",
+    ///     "unitType": 2,
+    ///     "status": 1,
     ///     "areaSquareMeters": 45.0,
     ///     "numberOfRooms": null,
     ///     "description": "محل تجاري"
@@ -707,8 +709,8 @@ public class SurveysController : ControllerBase
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "1A",
     ///     "floorNumber": 1,
-    ///     "unitType": "Apartment",
-    ///     "status": "Occupied",
+    ///     "unitType": 1,
+    ///     "status": 1,
     ///     "areaSquareMeters": 85.5,
     ///     "numberOfRooms": 3,
     ///     "description": "شقة سكنية"
@@ -809,8 +811,8 @@ public class SurveysController : ControllerBase
     ///   "buildingNumber": "00001",
     ///   "unitIdentifier": "1A",
     ///   "floorNumber": 1,
-    ///   "unitType": "Apartment",
-    ///   "status": "Occupied",
+    ///   "unitType": 1,
+    ///   "status": 1,
     ///   "areaSquareMeters": 85.5,
     ///   "numberOfRooms": 3,
     ///   "description": "شقة سكنية مؤلفة من 3 غرف وصالة",
@@ -841,23 +843,8 @@ public class SurveysController : ControllerBase
         [FromBody] CreatePropertyUnitInSurveyCommand command)
     {
         command.SurveyId = surveyId;
-        try
-        {
-            var result = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetSurvey), new { id = surveyId }, result);
-        }
-        catch (Application.Common.Exceptions.ValidationException ex)
-        {
-            if (ex.Message.Contains("already exists"))
-            {
-                return Conflict(new { message = ex.Message });
-            }
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Application.Common.Exceptions.NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetSurvey), new { id = surveyId }, result);
     }
 
     /// <summary>
@@ -916,8 +903,8 @@ public class SurveysController : ControllerBase
     ///   "buildingNumber": "00001",
     ///   "unitIdentifier": "1A",
     ///   "floorNumber": 1,
-    ///   "unitType": "Apartment",
-    ///   "status": "Damaged",
+    ///   "unitType": 1,
+    ///   "status": 3,
     ///   "areaSquareMeters": 85.5,
     ///   "numberOfRooms": 3,
     ///   "description": "أضرار في السقف والجدران بسبب تسرب المياه",
@@ -949,19 +936,8 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         command.PropertyUnitId = unitId;
-        try
-        {
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Application.Common.Exceptions.ValidationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Application.Common.Exceptions.NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
 
     /// <summary>
@@ -997,7 +973,7 @@ public class SurveysController : ControllerBase
     ///   "referenceCode": "SRV-20260129-0001",
     ///   "buildingId": "building-guid",
     ///   "propertyUnitId": "unit-guid",
-    ///   "status": "Draft",
+    ///   "status": 1,
     ///   ...
     /// }
     /// ```
@@ -1026,19 +1002,8 @@ public class SurveysController : ControllerBase
             SurveyId = surveyId,
             PropertyUnitId = unitId
         };
-        try
-        {
-            var result = await _mediator.Send(command);
-            return Ok(result);
-        }
-        catch (Application.Common.Exceptions.ValidationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Application.Common.Exceptions.NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return Ok(result);
     }
     // ==================== HOUSEHOLD MANAGEMENT ====================
 
@@ -1055,7 +1020,7 @@ public class SurveysController : ControllerBase
     ///
     /// **Response**: List of households with demographics (may be empty if none created yet)
     ///
-    /// **Note**: `occupancyType` and `occupancyNature` are returned as **string** enum names in responses.
+    /// **Note**: `occupancyType` and `occupancyNature` are returned as **integer** codes in responses. Use the Vocabularies API to get labels.
     ///
     /// **Example Response**:
     /// ```json
@@ -1067,8 +1032,8 @@ public class SurveysController : ControllerBase
     ///     "headOfHouseholdName": "أحمد محمد الخالد",
     ///     "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///     "householdSize": 5,
-    ///     "occupancyType": "OwnerOccupied",
-    ///     "occupancyNature": "LegalFormal",
+    ///     "occupancyType": 1,
+    ///     "occupancyNature": 1,
     ///     "maleCount": 1,
     ///     "femaleCount": 1,
     ///     "maleChildCount": 2,
@@ -1147,7 +1112,7 @@ public class SurveysController : ControllerBase
     /// }
     /// ```
     ///
-    /// **Example Response** (occupancyType/occupancyNature returned as strings):
+    /// **Example Response** (occupancyType/occupancyNature returned as integers):
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
@@ -1156,8 +1121,8 @@ public class SurveysController : ControllerBase
     ///   "headOfHouseholdName": null,
     ///   "headOfHouseholdPersonId": null,
     ///   "householdSize": 5,
-    ///   "occupancyType": "OwnerOccupied",
-    ///   "occupancyNature": "LegalFormal",
+    ///   "occupancyType": 1,
+    ///   "occupancyNature": 1,
     ///   "maleCount": 1,
     ///   "femaleCount": 1,
     ///   "maleChildCount": 2,
@@ -1214,7 +1179,7 @@ public class SurveysController : ControllerBase
     ///
     /// **Required Permission**: CanViewOwnSurveys
     ///
-    /// **Note**: `occupancyType` and `occupancyNature` are returned as **string** enum names.
+    /// **Note**: `occupancyType` and `occupancyNature` are returned as **integer** codes. Use the Vocabularies API to get labels.
     ///
     /// **Example Response**:
     /// ```json
@@ -1225,8 +1190,8 @@ public class SurveysController : ControllerBase
     ///   "headOfHouseholdName": "أحمد محمد الخالد",
     ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "householdSize": 5,
-    ///   "occupancyType": "OwnerOccupied",
-    ///   "occupancyNature": "LegalFormal",
+    ///   "occupancyType": 1,
+    ///   "occupancyNature": 1,
     ///   "notes": "أسرة من خمسة أفراد",
     ///   "maleCount": 1,
     ///   "femaleCount": 1,
@@ -1309,7 +1274,7 @@ public class SurveysController : ControllerBase
     /// }
     /// ```
     ///
-    /// **Example Response** (occupancyType/occupancyNature returned as strings):
+    /// **Example Response** (occupancyType/occupancyNature returned as integers):
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
@@ -1318,8 +1283,8 @@ public class SurveysController : ControllerBase
     ///   "headOfHouseholdName": "أحمد محمد الخالد",
     ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "householdSize": 6,
-    ///   "occupancyType": "TenantOccupied",
-    ///   "occupancyNature": "Informal",
+    ///   "occupancyType": 2,
+    ///   "occupancyNature": 2,
     ///   "maleCount": 1,
     ///   "femaleCount": 1,
     ///   "maleChildCount": 3,
@@ -1504,7 +1469,7 @@ public class SurveysController : ControllerBase
     /// ```
     ///
     /// **Response**: Updated PersonDto with all person fields, computed fullNameArabic and age.
-    /// Note: gender, nationality, and relationshipToHead are returned as strings (e.g., "Male", "Syrian", "Spouse")
+    /// Note: gender, nationality, and relationshipToHead are returned as integers (e.g., 1, 1, 2). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID the person belongs to</param>
@@ -1564,14 +1529,14 @@ public class SurveysController : ControllerBase
     ///     "fatherNameArabic": "أحمد",
     ///     "motherNameArabic": "فاطمة",
     ///     "nationalId": "00123456789",
-    ///     "gender": "Male",
-    ///     "nationality": "Syrian",
+    ///     "gender": 1,
+    ///     "nationality": 1,
     ///     "dateOfBirth": "1985-06-15T00:00:00Z",
     ///     "email": "example@email.com",
     ///     "mobileNumber": "+963912345678",
     ///     "phoneNumber": null,
     ///     "householdId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///     "relationshipToHead": "Head",
+    ///     "relationshipToHead": 1,
     ///     "fullNameArabic": "محمد أحمد الأحمد",
     ///     "age": 40,
     ///     "createdAtUtc": "2026-02-14T10:00:00Z",
@@ -1584,14 +1549,14 @@ public class SurveysController : ControllerBase
     ///     "fatherNameArabic": "علي",
     ///     "motherNameArabic": "نورة",
     ///     "nationalId": null,
-    ///     "gender": "Female",
-    ///     "nationality": "Syrian",
+    ///     "gender": 2,
+    ///     "nationality": 1,
     ///     "dateOfBirth": "1990-03-20T00:00:00Z",
     ///     "email": null,
     ///     "mobileNumber": null,
     ///     "phoneNumber": null,
     ///     "householdId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///     "relationshipToHead": "Spouse",
+    ///     "relationshipToHead": 2,
     ///     "fullNameArabic": "سارة علي الأحمد",
     ///     "age": 35,
     ///     "createdAtUtc": "2026-02-14T10:05:00Z",
@@ -1659,8 +1624,8 @@ public class SurveysController : ControllerBase
     ///   "headOfHouseholdName": "محمد أحمد الأحمد",
     ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "householdSize": 5,
-    ///   "occupancyType": "OwnerOccupied",
-    ///   "occupancyNature": "LegalFormal",
+    ///   "occupancyType": 1,
+    ///   "occupancyNature": 1,
     ///   "maleCount": 1,
     ///   "femaleCount": 1,
     ///   "maleChildCount": 2,
@@ -1718,10 +1683,11 @@ public class SurveysController : ControllerBase
     /// **Purpose**: Creates relationship between person and property unit for ownership/tenancy tracking.
     ///
     /// **What it does**:
-    /// - Creates PersonPropertyRelation record
+    /// - Creates PersonPropertyRelation record linked to THIS survey (via SurveyId FK)
     /// - Links person to property unit with specified relation type
     /// - Records occupancy type and evidence availability
     /// - Validates person and unit belong to same survey building
+    /// - Only relations created through this endpoint are considered for claim creation when processing the survey
     ///
     /// **Required permissions**: CanEditOwnSurveys
     ///
@@ -1769,8 +1735,8 @@ public class SurveysController : ControllerBase
     ///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///   "relationType": "Owner",
-    ///   "occupancyType": "OwnerOccupied",
+    ///   "relationType": 1,
+    ///   "occupancyType": 1,
     ///   "hasEvidence": true,
     ///   "ownershipShare": 1.0,
     ///   "contractDetails": null,
@@ -1859,8 +1825,8 @@ public class SurveysController : ControllerBase
     ///     "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     ///     "personId": "11111111-2222-3333-4444-555555555555",
     ///     "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///     "relationType": "Owner",
-    ///     "occupancyType": "OwnerOccupied",
+    ///     "relationType": 1,
+    ///     "occupancyType": 1,
     ///     "hasEvidence": true,
     ///     "ownershipShare": 0.5,
     ///     "contractDetails": "عقد ملكية مسجل في السجل العقاري",
@@ -1877,8 +1843,8 @@ public class SurveysController : ControllerBase
     ///     "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
     ///     "personId": "22222222-3333-4444-5555-666666666666",
     ///     "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///     "relationType": "Tenant",
-    ///     "occupancyType": "TenantOccupied",
+    ///     "relationType": 3,
+    ///     "occupancyType": 2,
     ///     "hasEvidence": false,
     ///     "ownershipShare": null,
     ///     "contractDetails": null,
@@ -2043,7 +2009,7 @@ public class SurveysController : ControllerBase
     /// ```
     ///
     /// **Response**: Evidence record with file details.
-    /// Note: evidenceType is returned as string (e.g., "IdentificationDocument")
+    /// Note: evidenceType is returned as integer (e.g., 1 for IdentificationDocument). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="command">Upload command with file and metadata (from form)</param>
@@ -2135,7 +2101,7 @@ public class SurveysController : ControllerBase
     /// ```
     ///
     /// **Response**: Updated EvidenceDto with file details.
-    /// Note: evidenceType is returned as string (e.g., "IdentificationDocument")
+    /// Note: evidenceType is returned as integer (e.g., 1 for IdentificationDocument). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="evidenceId">Evidence ID to update</param>
@@ -2200,7 +2166,7 @@ public class SurveysController : ControllerBase
     /// - Required: File, person-property relation ID
     /// - Optional: Description (defaults to filename if not provided)
     ///
-    /// **Evidence Types** (send as integer, returned as string):
+    /// **Evidence Types** (sent and returned as integer):
     /// - 2 = OwnershipDeed (default), 3 = RentalContract, 4 = UtilityBill,
     ///   8 = InheritanceDocument, 9 = CourtOrder, 10 = MunicipalRecord, etc.
     ///
@@ -2226,7 +2192,7 @@ public class SurveysController : ControllerBase
     /// ```
     ///
     /// **Response**: Evidence record with file details.
-    /// Note: evidenceType is returned as string (e.g., "OwnershipDeed", "RentalContract")
+    /// Note: evidenceType is returned as integer (e.g., 2 for OwnershipDeed, 3 for RentalContract). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="command">Upload command with file and metadata (from form)</param>
@@ -2292,7 +2258,7 @@ public class SurveysController : ControllerBase
     ///
     /// **Document Metadata** (all optional - only provided fields update):
     /// - personPropertyRelationId: Re-link to a different relation (guid)
-    /// - evidenceType: Change type (int, send as integer, returned as string)
+    /// - evidenceType: Change type (integer, sent and returned as integer)
     ///   - 2 = OwnershipDeed, 3 = RentalContract, 4 = UtilityBill,
     ///     8 = InheritanceDocument, 9 = CourtOrder, 10 = MunicipalRecord, etc.
     /// - description: Document description (max 500 chars)
@@ -2325,7 +2291,7 @@ public class SurveysController : ControllerBase
     /// ```
     ///
     /// **Response**: Updated EvidenceDto with file details.
-    /// Note: evidenceType is returned as string (e.g., "OwnershipDeed", "RentalContract")
+    /// Note: evidenceType is returned as integer (e.g., 2 for OwnershipDeed, 3 for RentalContract). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="evidenceId">Evidence ID to update</param>
@@ -2707,38 +2673,78 @@ public class SurveysController : ControllerBase
         return Ok(result);
     }
     /// <summary>
-    /// Update person-property relation (partial update - PATCH)
+    /// Update person-property relation (partial update)
     /// تحديث العلاقة بين الشخص والوحدة العقارية
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Update relation details
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Update an existing person-property relationship
     ///
-    /// **Purpose**: Partially updates a person-property relation. Only provided fields are updated.
-    /// Use `Clear*` flags to explicitly set nullable fields to null.
+    /// **Purpose**: Partially updates an existing person-property relation created by
+    /// **LinkPersonToPropertyUnit** (POST). Only provided fields are updated; omitted fields
+    /// remain unchanged. Use `Clear*` flags to explicitly set nullable fields to null.
     ///
     /// **Required Permission**: CanEditOwnSurveys
     ///
-    /// **Updateable Fields** (all optional):
+    /// **Prerequisites**:
+    /// - Survey must be in **Draft** status
+    /// - Current user must be the survey's field collector
+    /// - Relation must belong to the survey's building
+    ///
+    /// **What it does**:
+    /// - Validates the relation belongs to the survey's building context
+    /// - Updates only the fields you provide (partial update)
+    /// - If `personId` is provided, re-links the relation to a different person
+    /// - If `propertyUnitId` is provided, re-links to a different property unit (must belong to same building)
+    /// - Validates ownership share business rules when relation type is Owner
+    /// - Records all changes in audit trail
+    ///
+    /// **Request Fields** (all optional - mirrors LinkPersonToPropertyUnit fields):
+    /// - `personId`: إعادة ربط بشخص آخر - Re-link to a different person (Guid)
+    /// - `propertyUnitId`: إعادة ربط بوحدة أخرى - Re-link to a different property unit (Guid, must belong to survey building)
     /// - `relationType`: نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// - `occupancyType`: نوع الإشغال - OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
-    /// - `hasEvidence`: هل يوجد دليل؟ - true/false
-    /// - `ownershipShare`: حصة الملكية - 0.0 to 1.0
-    /// - `contractDetails`: تفاصيل العقد
-    /// - `notes`: ملاحظات
+    /// - `hasEvidence`: هل يوجد دليل؟ - Whether evidence documents are available (true/false)
+    /// - `ownershipShare`: حصة الملكية - Decimal 0.0 to 1.0 (required if relationType is Owner)
+    /// - `contractDetails`: تفاصيل العقد - Contract/agreement details (max 2000 chars)
+    /// - `notes`: ملاحظات - Additional notes (max 2000 chars)
     ///
-    /// **Clear Flags** (set to true to explicitly null a field):
+    /// **Clear Flags** (set to `true` to explicitly null a field):
     /// - `clearOccupancyType`: Set occupancyType to null
     /// - `clearOwnershipShare`: Set ownershipShare to null
     /// - `clearContractDetails`: Set contractDetails to null
     /// - `clearNotes`: Set notes to null
     ///
-    /// **Example Request - Update relation type and occupancy**:
+    /// **Important**:
+    /// - If changing `relationType` to Owner, `ownershipShare` must be provided (or already set)
+    /// - If re-linking `propertyUnitId`, the new unit must belong to the same building as the survey
+    /// - If re-linking `personId`, the new person must exist in the system
+    /// - The relation's `surveyId` (set at creation time) is immutable and cannot be changed via update
+    /// - Response matches the same `PersonPropertyRelationDto` returned by LinkPersonToPropertyUnit
+    ///
+    /// **Example Request - Change relation type from Owner to Tenant**:
     /// ```json
     /// {
     ///   "relationType": 3,
     ///   "occupancyType": 2,
-    ///   "hasEvidence": true,
-    ///   "ownershipShare": 0.5
+    ///   "hasEvidence": false,
+    ///   "clearOwnershipShare": true,
+    ///   "contractDetails": "عقد إيجار شفهي",
+    ///   "notes": "تم تغيير العلاقة من مالك إلى مستأجر"
+    /// }
+    /// ```
+    ///
+    /// **Example Request - Re-link to a different person**:
+    /// ```json
+    /// {
+    ///   "personId": "9ac13f62-9345-5234-b2cd-ae963g44cde8"
+    /// }
+    /// ```
+    ///
+    /// **Example Request - Update ownership share only**:
+    /// ```json
+    /// {
+    ///   "ownershipShare": 0.75,
+    ///   "notes": "تم تعديل حصة الملكية بعد تقسيم الورثة"
     /// }
     /// ```
     ///
@@ -2749,26 +2755,39 @@ public class SurveysController : ControllerBase
     /// }
     /// ```
     ///
-    /// **Example Response**:
+    /// **Example Response** (same structure as LinkPersonToPropertyUnit):
     /// ```json
     /// {
     ///   "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "propertyUnitId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///   "relationType": "Tenant",
-    ///   "occupancyType": "TenantOccupied",
-    ///   "hasEvidence": true,
-    ///   "ownershipShare": 0.5,
-    ///   "contractDetails": null,
-    ///   "notes": null,
+    ///   "relationType": 3,
+    ///   "occupancyType": 2,
+    ///   "hasEvidence": false,
+    ///   "ownershipShare": null,
+    ///   "contractDetails": "عقد إيجار شفهي",
+    ///   "notes": "تم تغيير العلاقة من مالك إلى مستأجر",
     ///   "isActive": true,
+    ///   "durationInDays": null,
+    ///   "isOngoing": true,
     ///   "evidenceCount": 2,
     ///   "createdAtUtc": "2026-02-14T10:00:00Z",
-    ///   "lastModifiedAtUtc": "2026-02-14T12:00:00Z",
+    ///   "createdBy": "user-guid",
+    ///   "lastModifiedAtUtc": "2026-02-14T14:30:00Z",
+    ///   "lastModifiedBy": "user-guid",
     ///   "isDeleted": false
     /// }
     /// ```
     /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization and building context validation</param>
+    /// <param name="relationId">Relation ID to update (from the relation created by LinkPersonToPropertyUnit)</param>
+    /// <param name="command">Update command with optional fields matching LinkPersonToPropertyUnit</param>
+    /// <returns>Updated relation details (same PersonPropertyRelationDto as LinkPersonToPropertyUnit)</returns>
+    /// <response code="200">Relation updated successfully.</response>
+    /// <response code="400">Validation failed. Ownership share required for Owner type, or unit not in survey building.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only update relations in your own surveys.</response>
+    /// <response code="404">Survey, relation, person, or property unit not found.</response>
     [HttpPatch("{surveyId}/relations/{relationId}")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [ProducesResponseType(typeof(PersonPropertyRelationDto), StatusCodes.Status200OK)]
@@ -2868,7 +2887,7 @@ public class SurveysController : ControllerBase
     /// [
     ///   {
     ///     "id": "e1f2a3b4-c5d6-7890-ef12-345678901234",
-    ///     "evidenceType": "OwnershipDeed",
+    ///     "evidenceType": 2,
     ///     "description": "صك ملكية العقار",
     ///     "originalFileName": "property-deed.pdf",
     ///     "filePath": "/evidence/surveys/abc/property-deed.pdf",

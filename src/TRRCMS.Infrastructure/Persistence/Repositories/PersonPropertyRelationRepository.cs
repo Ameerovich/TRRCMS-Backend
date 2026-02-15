@@ -69,6 +69,16 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IEnumerable<PersonPropertyRelation>> GetBySurveyIdWithEvidencesAsync(Guid surveyId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<PersonPropertyRelation>()
+            .Include(r => r.Person)
+            .Include(r => r.PropertyUnit)
+            .Include(r => r.Evidences.Where(e => !e.IsDeleted && e.IsCurrentVersion))
+            .Where(r => r.SurveyId == surveyId && !r.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<PersonPropertyRelation>> GetActiveRelationsByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<PersonPropertyRelation>()

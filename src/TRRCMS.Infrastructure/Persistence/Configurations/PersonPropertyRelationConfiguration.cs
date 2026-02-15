@@ -19,6 +19,10 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
             .IsRequired()
             .HasComment("Foreign key to PropertyUnit");
 
+        builder.Property(ppr => ppr.SurveyId)
+            .IsRequired(false)
+            .HasComment("Foreign key to the originating Survey — scopes claim creation to this survey's relations only");
+
         // RelationType stored as int in database (enum conversion)
         builder.Property(ppr => ppr.RelationType)
             .IsRequired()
@@ -103,8 +107,15 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
         builder.HasIndex(ppr => new { ppr.IsActive, ppr.IsDeleted }).HasDatabaseName("IX_PersonPropertyRelation_IsActive_IsDeleted");
         builder.HasIndex(ppr => ppr.RelationType).HasDatabaseName("IX_PersonPropertyRelation_RelationType");
         builder.HasIndex(ppr => ppr.ContractType).HasDatabaseName("IX_PersonPropertyRelation_ContractType");
+        builder.HasIndex(ppr => ppr.SurveyId).HasDatabaseName("IX_PersonPropertyRelation_SurveyId");
 
         // Relationships
+        builder.HasOne(ppr => ppr.Survey)
+            .WithMany()
+            .HasForeignKey(ppr => ppr.SurveyId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne(ppr => ppr.Person)
             .WithMany(p => p.PropertyRelations)
             .HasForeignKey(ppr => ppr.PersonId)

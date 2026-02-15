@@ -166,8 +166,8 @@ public class PropertyUnitsController : ControllerBase
     ///   "buildingNumber": "00001",
     ///   "unitIdentifier": "1A",
     ///   "floorNumber": 1,
-    ///   "unitType": "Apartment",
-    ///   "status": "Occupied",
+    ///   "unitType": 1,
+    ///   "status": 1,
     ///   "areaSquareMeters": 85.5,
     ///   "numberOfRooms": 3,
     ///   "description": "شقة سكنية بإطلالة على الحديقة",
@@ -175,9 +175,9 @@ public class PropertyUnitsController : ControllerBase
     ///   "lastModifiedAtUtc": null
     /// }
     /// ```
-    /// 
-    /// **Note:** Response returns `unitType` and `status` as strings for display,
-    /// but requests accept integer values.
+    ///
+    /// **Note:** Both requests and responses use integer values for `unitType` and `status`.
+    /// See enum tables above for mappings.
     /// </remarks>
     /// <param name="command">Property unit creation data</param>
     /// <returns>Created property unit with generated ID</returns>
@@ -265,8 +265,8 @@ public class PropertyUnitsController : ControllerBase
     ///   "buildingNumber": "00001",
     ///   "unitIdentifier": "1A",
     ///   "floorNumber": 1,
-    ///   "unitType": "Apartment",
-    ///   "status": "Occupied",
+    ///   "unitType": 1,
+    ///   "status": 1,
     ///   "areaSquareMeters": 95.0,
     ///   "numberOfRooms": 4,
     ///   "description": "تم إضافة غرفة جديدة بعد الترميم",
@@ -329,8 +329,8 @@ public class PropertyUnitsController : ControllerBase
     ///   "buildingNumber": "00001",
     ///   "unitIdentifier": "1A",
     ///   "floorNumber": 1,
-    ///   "unitType": "Apartment",
-    ///   "status": "Occupied",
+    ///   "unitType": 1,
+    ///   "status": 1,
     ///   "areaSquareMeters": 85.5,
     ///   "numberOfRooms": 3,
     ///   "description": "شقة سكنية بإطلالة على الحديقة",
@@ -395,8 +395,8 @@ public class PropertyUnitsController : ControllerBase
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "1A",
     ///     "floorNumber": 1,
-    ///     "unitType": "Apartment",
-    ///     "status": "Occupied",
+    ///     "unitType": 1,
+    ///     "status": 1,
     ///     "areaSquareMeters": 85.5,
     ///     "numberOfRooms": 3,
     ///     "description": "شقة سكنية",
@@ -408,8 +408,8 @@ public class PropertyUnitsController : ControllerBase
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "G-1",
     ///     "floorNumber": 0,
-    ///     "unitType": "Shop",
-    ///     "status": "Vacant",
+    ///     "unitType": 2,
+    ///     "status": 2,
     ///     "areaSquareMeters": 45.0,
     ///     "numberOfRooms": null,
     ///     "description": "محل تجاري في الطابق الأرضي",
@@ -465,8 +465,8 @@ public class PropertyUnitsController : ControllerBase
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "G-1",
     ///     "floorNumber": 0,
-    ///     "unitType": "Shop",
-    ///     "status": "Occupied",
+    ///     "unitType": 2,
+    ///     "status": 1,
     ///     "areaSquareMeters": 50.0,
     ///     "numberOfRooms": null,
     ///     "description": "محل بقالة"
@@ -477,8 +477,8 @@ public class PropertyUnitsController : ControllerBase
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "1A",
     ///     "floorNumber": 1,
-    ///     "unitType": "Apartment",
-    ///     "status": "Occupied",
+    ///     "unitType": 1,
+    ///     "status": 1,
     ///     "areaSquareMeters": 85.5,
     ///     "numberOfRooms": 3,
     ///     "description": "شقة سكنية"
@@ -489,8 +489,8 @@ public class PropertyUnitsController : ControllerBase
     ///     "buildingNumber": "00001",
     ///     "unitIdentifier": "1B",
     ///     "floorNumber": 1,
-    ///     "unitType": "Apartment",
-    ///     "status": "Vacant",
+    ///     "unitType": 1,
+    ///     "status": 2,
     ///     "areaSquareMeters": 90.0,
     ///     "numberOfRooms": 3,
     ///     "description": null

@@ -60,6 +60,8 @@ builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ISurveyRepository, SurveyRepository>();
 builder.Services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
+builder.Services.AddScoped<IVocabularyRepository, VocabularyRepository>();
+builder.Services.AddScoped<IVocabularyVersionProvider, DatabaseVocabularyVersionProvider>();
 
 // ============== AUTHENTICATION SERVICES ==============
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -511,7 +513,29 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// SCOPE 3: Vocabulary seeding (separate scope = fresh DbContext)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        await VocabularySeedData.SeedAsync(context);
+        logger.LogInformation("Vocabulary seed data applied successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while seeding vocabularies");
+    }
+}
+
 // ============== MIDDLEWARE ==============
+
+// Global exception handler — must be FIRST so it catches exceptions from all downstream middleware
+app.UseMiddleware<TRRCMS.WebAPI.Middleware.GlobalExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.PersonPropertyRelations.Dtos;
@@ -13,17 +12,15 @@ public class PersonPropertyRelationDto
     public Guid PropertyUnitId { get; set; }
 
     /// <summary>
-    /// نوع العلاقة - Returned as string: "Owner", "Occupant", "Tenant", "Guest", "Heir", "Other"
+    /// نوع العلاقة - Returned as integer: Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public RelationType RelationType { get; set; }
 
     // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
 
     /// <summary>
-    /// نوع الإشغال - Returned as string: "OwnerOccupied", "TenantOccupied", "FamilyOccupied", etc.
+    /// نوع الإشغال - Returned as integer: OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
     public OccupancyType? OccupancyType { get; set; }
 
     /// <summary>

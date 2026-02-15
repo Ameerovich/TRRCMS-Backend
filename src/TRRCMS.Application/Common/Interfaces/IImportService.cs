@@ -72,7 +72,7 @@ public interface IImportService
     /// </summary>
     /// <param name="manifest">Parsed manifest containing package vocabulary versions.</param>
     /// <returns>Compatibility result with per-domain details.</returns>
-    VocabularyCompatibilityResult CheckVocabularyCompatibility(ManifestData manifest);
+    Task<VocabularyCompatibilityResult> CheckVocabularyCompatibilityAsync(ManifestData manifest, CancellationToken cancellationToken = default);
 
     // ==================== FILE MANAGEMENT ====================
 

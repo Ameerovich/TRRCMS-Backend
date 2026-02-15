@@ -67,8 +67,8 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
             PropertyUnitId = survey.PropertyUnitId,
             FieldCollectorId = survey.FieldCollectorId,
             SurveyDate = survey.SurveyDate,
-            Status = survey.Status.ToString(),
-            SurveyType = survey.SurveyType,
+            Status = (int)survey.Status,
+            SurveyType = (int)survey.Type,
             GpsCoordinates = survey.GpsCoordinates,
             IntervieweeName = survey.IntervieweeName,
             IntervieweeRelationship = survey.IntervieweeRelationship,
@@ -181,7 +181,7 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
             {
                 result.ClaimId = claim.Id;
                 result.ClaimNumber = claim.ClaimNumber;
-                result.ClaimStatus = claim.Status.ToString();
+                result.ClaimStatus = (int)claim.Status;
             }
         }
 

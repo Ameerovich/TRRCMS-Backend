@@ -125,7 +125,7 @@ public class UploadPackageCommandHandler : IRequestHandler<UploadPackageCommand,
             // ============================================================
             // STEP 6: Check vocabulary compatibility
             // ============================================================
-            var vocabResult = _importService.CheckVocabularyCompatibility(manifest);
+            var vocabResult = await _importService.CheckVocabularyCompatibilityAsync(manifest, cancellationToken);
 
             _logger.LogInformation(
                 "Vocabulary check: Compatible={IsCompatible}, FullyCompatible={IsFully}",
@@ -271,7 +271,7 @@ public class UploadPackageCommandHandler : IRequestHandler<UploadPackageCommand,
             PackageExportedDate = entity.PackageExportedDate,
             ExportedByUserId = entity.ExportedByUserId,
             DeviceId = entity.DeviceId,
-            Status = entity.Status.ToString(),
+            Status = (int)entity.Status,
             ImportedDate = entity.ImportedDate,
             ImportedByUserId = entity.ImportedByUserId,
             ValidationStartedDate = entity.ValidationStartedDate,

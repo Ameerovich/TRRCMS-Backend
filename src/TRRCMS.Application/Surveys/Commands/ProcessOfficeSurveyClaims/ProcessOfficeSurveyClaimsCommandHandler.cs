@@ -77,8 +77,14 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
         var propertyUnit = await _propertyUnitRepository.GetByIdAsync(survey.PropertyUnitId.Value, cancellationToken);
         var households = (await _householdRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
-        // Use WithEvidences variant so each relation has its Evidence collection loaded
-        var relations = (await _personPropertyRelationRepository.GetByPropertyUnitIdWithEvidencesAsync(
+        // ── CRITICAL: Only fetch relations created within THIS survey ──
+        // This ensures claims are scoped to the current survey only,
+        // not to all relations ever created for this property unit.
+        var surveyRelations = (await _personPropertyRelationRepository.GetBySurveyIdWithEvidencesAsync(
+            request.SurveyId, cancellationToken)).ToList();
+
+        // Also get all relations on the property unit for the data summary (informational)
+        var allPropertyUnitRelations = (await _personPropertyRelationRepository.GetByPropertyUnitIdWithEvidencesAsync(
             survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
         // Get all evidence for the survey context (for the data summary)
@@ -91,14 +97,14 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
             personCount += persons.Count;
         }
 
-        // Filter ownership/heir relations — each one can generate a claim
-        var ownershipRelations = relations.Where(r =>
+        // Filter ownership/heir relations — ONLY from this survey's relations
+        var ownershipRelations = surveyRelations.Where(r =>
             r.RelationType == RelationType.Owner ||
             r.RelationType == RelationType.Heir).ToList();
 
         if (!households.Any()) warnings.Add("No households captured in this survey.");
         if (personCount == 0) warnings.Add("No persons captured in this survey.");
-        if (!relations.Any()) warnings.Add("No person-property relations captured.");
+        if (!surveyRelations.Any()) warnings.Add("No person-property relations created in this survey.");
         if (!allEvidence.Any()) warnings.Add("No evidence uploaded for this survey.");
 
         // ── Apply final notes / duration ──
@@ -181,7 +187,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         TypeOfWorks = typeOfWorks,
                         HasEvidence = relationHasEvidence,
                         SourceRelationId = relation.Id,
-                        RelationType = relation.RelationType.ToString(),
+                        RelationType = (int)relation.RelationType,
                         PersonId = person.Id,
                         PropertyUnitId = survey.PropertyUnitId.Value
                     });
@@ -248,7 +254,8 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                     PropertyUnits = 1,
                     Households = households.Count,
                     Persons = personCount,
-                    Relations = relations.Count,
+                    SurveyRelations = surveyRelations.Count,
+                    TotalPropertyUnitRelations = allPropertyUnitRelations.Count,
                     OwnershipRelations = ownershipRelations.Count,
                     Evidence = allEvidence.Count
                 }
@@ -274,7 +281,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                 PropertyUnitsCount = 1,
                 HouseholdsCount = households.Count,
                 PersonsCount = personCount,
-                RelationsCount = relations.Count,
+                RelationsCount = surveyRelations.Count,
                 OwnershipRelationsCount = ownershipRelations.Count,
                 EvidenceCount = allEvidence.Count,
                 TotalEvidenceSizeBytes = totalEvidenceSize

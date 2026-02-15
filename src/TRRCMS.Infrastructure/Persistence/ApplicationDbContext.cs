@@ -45,6 +45,13 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // ==================== VOCABULARIES ====================
+    /// <summary>
+    /// Controlled vocabularies with semantic versioning.
+    /// Provides bilingual labels for enum-backed dropdowns.
+    /// </summary>
+    public DbSet<Vocabulary> Vocabularies => Set<Vocabulary>();
+
     // TODO: Add other entities later as we implement them
     // public DbSet<Certificate> Certificates => Set<Certificate>();
     // etc.
