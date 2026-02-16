@@ -573,84 +573,57 @@ static async Task SeedUsersIfNeeded(
     IPasswordHasher passwordHasher,
     ILogger logger)
 {
-    // Check if admin exists
-    var adminExists = await userRepository.GetByUsernameAsync("admin");
-    if (adminExists == null)
+    // All test users for development — one per role
+    var testUsers = new[]
     {
-        logger.LogInformation("Creating admin user.");
+        new { Username = "admin",       Password = "Admin@123",   NameAr = "المسؤول الرئيسي",         NameEn = "System Administrator",  Email = "admin@trrcms.local",       Phone = (string?)null,            Role = UserRole.Administrator,   Mobile = false, Desktop = true,  Org = "UN-Habitat",          Job = "Administrator" },
+        new { Username = "datamanager", Password = "Data@123",    NameAr = "مدير البيانات",            NameEn = "Data Manager",          Email = "datamanager@trrcms.local", Phone = (string?)"+963-11-2234567", Role = UserRole.DataManager,     Mobile = false, Desktop = true,  Org = "UN-Habitat",          Job = "Data Manager" },
+        new { Username = "clerk",       Password = "Clerk@123",   NameAr = "موظف المكتب",             NameEn = "Office Clerk",          Email = "clerk@trrcms.local",       Phone = (string?)"+963-11-3234567", Role = UserRole.OfficeClerk,     Mobile = false, Desktop = true,  Org = "Aleppo Municipality", Job = "Office Clerk" },
+        new { Username = "collector",   Password = "Field@123",   NameAr = "جامع البيانات الميداني",   NameEn = "Field Data Collector",  Email = "collector@trrcms.local",   Phone = (string?)"+963-11-4234567", Role = UserRole.FieldCollector,  Mobile = true,  Desktop = false, Org = "UN-Habitat",          Job = "Field Collector" },
+        new { Username = "supervisor",  Password = "Super@123",   NameAr = "المشرف الميداني",          NameEn = "Field Supervisor",      Email = "supervisor@trrcms.local",  Phone = (string?)"+963-11-5234567", Role = UserRole.FieldSupervisor, Mobile = false, Desktop = true,  Org = "UN-Habitat",          Job = "Field Supervisor" },
+        new { Username = "analyst",     Password = "Analyst@123", NameAr = "المحلل",                  NameEn = "Data Analyst",          Email = "analyst@trrcms.local",     Phone = (string?)"+963-11-6234567", Role = UserRole.Analyst,         Mobile = false, Desktop = true,  Org = "UN-Habitat",          Job = "Data Analyst" }
+    };
 
-        // Hash password with salt
-        string salt;
-        string passwordHash = passwordHasher.HashPassword("Admin@123", out salt);
-
-        // Correct parameter order matching User.Create() signature
-        var admin = User.Create(
-            username: "admin",
-            fullNameArabic: "ÇáãÓÄæá ÇáÑÆíÓí",
-            passwordHash: passwordHash,
-            passwordSalt: salt,  // Salt passed directly as parameter
-            role: UserRole.Administrator,
-            hasMobileAccess: false,
-            hasDesktopAccess: true,
-            email: "admin@trrcms.local",
-            phoneNumber: null,
-            createdByUserId: Guid.Empty
-        );
-
-        // Set English name using UpdateProfile (since Create doesn't accept it)
-        admin.UpdateProfile(
-            fullNameArabic: "ÇáãÓÄæá ÇáÑÆíÓí",
-            fullNameEnglish: "System Administrator",
-            email: "admin@trrcms.local",
-            phoneNumber: null,
-            organization: "UN-Habitat",
-            jobTitle: "Administrator",
-            modifiedByUserId: Guid.Empty
-        );
-
-        context.Users.Add(admin);
-        await context.SaveChangesAsync();
-
-        logger.LogInformation("Admin user created successfully");
-    }
-
-    // Check if analyst exists
-    var analystExists = await userRepository.GetByUsernameAsync("analyst");
-    if (analystExists == null)
+    foreach (var u in testUsers)
     {
-        logger.LogInformation("Creating analyst user.");
+        var existing = await userRepository.GetByUsernameAsync(u.Username);
+        if (existing != null)
+        {
+            logger.LogInformation("User '{Username}' already exists — skipping.", u.Username);
+            continue;
+        }
 
-        // Hash password with salt
-        string salt;
-        string passwordHash = passwordHasher.HashPassword("Analyst@123", out salt);
+        logger.LogInformation("Creating user '{Username}' ({Role}).", u.Username, u.Role);
 
-        var analyst = User.Create(
-            username: "analyst",
-            fullNameArabic: "ÇáãÍáá ÇáäÙÇã",
+        string passwordHash = passwordHasher.HashPassword(u.Password, out string salt);
+
+        var user = User.Create(
+            username: u.Username,
+            fullNameArabic: u.NameAr,
             passwordHash: passwordHash,
             passwordSalt: salt,
-            role: UserRole.Analyst,
-            hasMobileAccess: false,
-            hasDesktopAccess: true,
-            email: "analyst@trrcms.local",
-            phoneNumber: null,
+            role: u.Role,
+            hasMobileAccess: u.Mobile,
+            hasDesktopAccess: u.Desktop,
+            email: u.Email,
+            phoneNumber: u.Phone,
             createdByUserId: Guid.Empty
         );
 
-        analyst.UpdateProfile(
-            fullNameArabic: "ÇáãÍáá ÇáäÙÇã",
-            fullNameEnglish: "System Analyst",
-            email: "analyst@trrcms.local",
-            phoneNumber: null,
-            organization: "UN-Habitat",
-            jobTitle: "Analyst",
+        user.UpdateProfile(
+            fullNameArabic: u.NameAr,
+            fullNameEnglish: u.NameEn,
+            email: u.Email,
+            phoneNumber: u.Phone,
+            organization: u.Org,
+            jobTitle: u.Job,
             modifiedByUserId: Guid.Empty
         );
 
-        context.Users.Add(analyst);
+        context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Analyst user created successfully");
+        logger.LogInformation("User '{Username}' created successfully.", u.Username);
     }
 }
 
