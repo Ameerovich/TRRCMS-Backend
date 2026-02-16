@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using TRRCMS.Application.Claims.Dtos;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Claims.Commands.UpdateClaim;
 
@@ -17,14 +16,14 @@ public class UpdateClaimCommand : IRequest<ClaimDto>
 
     // Claim Classification
     public string? ClaimType { get; set; }
-    public CasePriority? Priority { get; set; }
+    public int? Priority { get; set; }
 
     // Tenure Details
-    public TenureContractType? TenureContractType { get; set; }
+    public int? TenureContractType { get; set; }
     public string? TenureContractDetails { get; set; }
 
     // Status (optional - careful with state machine)
-    public ClaimStatus? Status { get; set; }
+    public int? Status { get; set; }
 
     // Additional Information
     public string? ProcessingNotes { get; set; }

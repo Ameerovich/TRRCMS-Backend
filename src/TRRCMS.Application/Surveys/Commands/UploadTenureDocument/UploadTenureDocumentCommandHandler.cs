@@ -89,7 +89,7 @@ public class UploadTenureDocumentCommandHandler : IRequestHandler<UploadTenureDo
 
         // Create Evidence entity using EvidenceType enum
         var evidence = Evidence.Create(
-            evidenceType: request.EvidenceType,
+            evidenceType: (EvidenceType)request.EvidenceType,
             description: request.Description ?? request.File.FileName,
             originalFileName: request.File.FileName,
             filePath: filePath,

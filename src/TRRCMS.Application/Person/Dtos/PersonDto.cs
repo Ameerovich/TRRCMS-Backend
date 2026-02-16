@@ -1,6 +1,4 @@
-﻿using TRRCMS.Domain.Enums;
-
-namespace TRRCMS.Application.Persons.Dtos;
+﻿namespace TRRCMS.Application.Persons.Dtos;
 
 /// <summary>
 /// Simplified Person DTO for frontend form
@@ -43,14 +41,14 @@ public class PersonDto
     public string? NationalId { get; set; }
 
     /// <summary>
-    /// الجنس - Gender (returned as string: "Male", "Female")
+    /// الجنس - Gender. Returned as integer: Male=1, Female=2
     /// </summary>
-    public Gender? Gender { get; set; }
+    public int? Gender { get; set; }
 
     /// <summary>
-    /// الجنسية - Nationality (returned as string: "Syrian", "Palestinian", etc.)
+    /// الجنسية - Nationality. Returned as integer: Syrian=1, Palestinian=2, etc.
     /// </summary>
-    public Nationality? Nationality { get; set; }
+    public int? Nationality { get; set; }
 
     /// <summary>
     /// تاريخ الميلاد - Date of birth (full date or year-only)
@@ -82,9 +80,9 @@ public class PersonDto
     public Guid? HouseholdId { get; set; }
 
     /// <summary>
-    /// Relationship to head of household (علاقة برب الأسرة) - returned as string: "Head", "Spouse", "Son", etc.
+    /// Relationship to head of household (علاقة برب الأسرة). Returned as integer: Head=1, Spouse=2, Son=3, etc.
     /// </summary>
-    public RelationshipToHead? RelationshipToHead { get; set; }
+    public int? RelationshipToHead { get; set; }
 
     // ==================== AUDIT FIELDS ====================
 

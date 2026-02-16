@@ -1,5 +1,3 @@
-using TRRCMS.Domain.Enums;
-
 namespace TRRCMS.Application.Evidences.Dtos;
 
 /// <summary>
@@ -10,9 +8,9 @@ public class EvidenceDto
     public Guid Id { get; set; }
 
     /// <summary>
-    /// نوع الدليل - Returned as string: "IdentificationDocument", "OwnershipDeed", "RentalContract", etc.
+    /// نوع الدليل - Returned as integer: IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, etc.
     /// </summary>
-    public EvidenceType EvidenceType { get; set; }
+    public int EvidenceType { get; set; }
     public string Description { get; set; } = string.Empty;
 
     // File information

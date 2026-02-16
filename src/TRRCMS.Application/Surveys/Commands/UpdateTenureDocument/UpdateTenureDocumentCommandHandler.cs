@@ -127,7 +127,7 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
         // Update evidence type if provided
         if (request.EvidenceType.HasValue)
         {
-            evidence.UpdateEvidenceType(request.EvidenceType.Value, currentUserId);
+            evidence.UpdateEvidenceType((EvidenceType)request.EvidenceType.Value, currentUserId);
         }
 
         // Update description if provided

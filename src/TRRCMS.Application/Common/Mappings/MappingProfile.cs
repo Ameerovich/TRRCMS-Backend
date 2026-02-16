@@ -50,8 +50,8 @@ public class MappingProfile : Profile
                     .ForMember(dest => dest.FatherNameArabic, opt => opt.MapFrom(src => src.FatherNameArabic))
                     .ForMember(dest => dest.MotherNameArabic, opt => opt.MapFrom(src => src.MotherNameArabic))
                     .ForMember(dest => dest.NationalId, opt => opt.MapFrom(src => src.NationalId))
-                    .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
-                    .ForMember(dest => dest.Nationality, opt => opt.MapFrom(src => src.Nationality))
+                    .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.HasValue ? (int?)src.Gender : null))
+                    .ForMember(dest => dest.Nationality, opt => opt.MapFrom(src => src.Nationality.HasValue ? (int?)src.Nationality : null))
                     .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
 
                     // Contact information
@@ -61,7 +61,7 @@ public class MappingProfile : Profile
 
                     // Household context
                     .ForMember(dest => dest.HouseholdId, opt => opt.MapFrom(src => src.HouseholdId))
-                    .ForMember(dest => dest.RelationshipToHead, opt => opt.MapFrom(src => src.RelationshipToHead))
+                    .ForMember(dest => dest.RelationshipToHead, opt => opt.MapFrom(src => src.RelationshipToHead.HasValue ? (int?)src.RelationshipToHead : null))
 
                     // Audit fields
                     .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
@@ -84,8 +84,8 @@ public class MappingProfile : Profile
        .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
 
        // Occupancy information (NEW FOR OFFICE SURVEY)
-       .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType))
-       .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature))
+       .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? (int?)src.OccupancyType : null))
+       .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? (int?)src.OccupancyNature : null))
 
        // Adults composition
        .ForMember(dest => dest.MaleCount, opt => opt.MapFrom(src => src.MaleCount))
@@ -115,13 +115,15 @@ public class MappingProfile : Profile
 
         // PersonPropertyRelation mappings
         CreateMap<PersonPropertyRelation, PersonPropertyRelationDto>()
-            .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType))
+            .ForMember(dest => dest.RelationType, opt => opt.MapFrom(src => (int)src.RelationType))
+            .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? (int?)src.OccupancyType : null))
             .ForMember(dest => dest.HasEvidence, opt => opt.MapFrom(src => src.HasEvidence))
             .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src => src.IsActive))
             .ForMember(dest => dest.DurationInDays, opt => opt.Ignore()); // No longer calculated from dates
 
         // Evidence mappings
         CreateMap<Evidence, EvidenceDto>()
+            .ForMember(dest => dest.EvidenceType, opt => opt.MapFrom(src => (int)src.EvidenceType))
             .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()));
 
         // Document mappings
@@ -133,6 +135,13 @@ public class MappingProfile : Profile
 
         // Claim mappings
         CreateMap<Claim, TRRCMS.Application.Claims.Dtos.ClaimDto>()
+            .ForMember(dest => dest.ClaimSource, opt => opt.MapFrom(src => (int)src.ClaimSource))
+            .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => (int)src.Priority))
+            .ForMember(dest => dest.LifecycleStage, opt => opt.MapFrom(src => (int)src.LifecycleStage))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.TenureContractType, opt => opt.MapFrom(src => src.TenureContractType.HasValue ? (int?)src.TenureContractType : null))
+            .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => (int)src.VerificationStatus))
+            .ForMember(dest => dest.CertificateStatus, opt => opt.MapFrom(src => (int)src.CertificateStatus))
             .ForMember(dest => dest.IsOverdue, opt => opt.MapFrom(src => src.IsOverdue()))
             .ForMember(dest => dest.DaysUntilDeadline, opt => opt.MapFrom(src =>
                 src.TargetCompletionDate.HasValue

@@ -1,6 +1,5 @@
 using MediatR;
 using TRRCMS.Application.Persons.Dtos;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdatePersonInSurvey;
 
@@ -55,12 +54,12 @@ public class UpdatePersonInSurveyCommand : IRequest<PersonDto>
     /// <summary>
     /// الجنس - Gender
     /// </summary>
-    public Gender? Gender { get; set; }
+    public int? Gender { get; set; }
 
     /// <summary>
     /// الجنسية - Nationality
     /// </summary>
-    public Nationality? Nationality { get; set; }
+    public int? Nationality { get; set; }
 
     /// <summary>
     /// تاريخ الميلاد - Date of birth
@@ -89,5 +88,5 @@ public class UpdatePersonInSurveyCommand : IRequest<PersonDto>
     /// <summary>
     /// Relationship to head of household
     /// </summary>
-    public RelationshipToHead? RelationshipToHead { get; set; }
+    public int? RelationshipToHead { get; set; }
 }

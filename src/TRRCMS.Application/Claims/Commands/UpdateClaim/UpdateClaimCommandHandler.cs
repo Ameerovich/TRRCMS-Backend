@@ -78,7 +78,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
         {
             claim.UpdateClassification(
                 request.ClaimType ?? claim.ClaimType,
-                request.Priority ?? claim.Priority,
+                request.Priority.HasValue ? (CasePriority)request.Priority.Value : claim.Priority,
                 currentUserId);
 
             if (!string.IsNullOrWhiteSpace(request.ClaimType)) changedFields.Add("ClaimType");
@@ -89,7 +89,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
         if (request.TenureContractType.HasValue)
         {
             claim.UpdateTenureContract(
-                request.TenureContractType.Value,
+                (TenureContractType)request.TenureContractType.Value,
                 request.TenureContractDetails,
                 currentUserId);
 
@@ -102,7 +102,8 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
         if (request.Status.HasValue)
         {
             // Map status to lifecycle stage
-            var lifecycleStage = request.Status.Value switch
+            var statusEnum = (ClaimStatus)request.Status.Value;
+            var lifecycleStage = statusEnum switch
             {
                 ClaimStatus.Draft => LifecycleStage.DraftPendingSubmission,
                 ClaimStatus.Finalized => LifecycleStage.Submitted,

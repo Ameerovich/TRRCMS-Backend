@@ -5,6 +5,7 @@ using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 
@@ -67,8 +68,8 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
             motherNameArabic: request.MotherNameArabic,
             nationalId: request.NationalId,
             dateOfBirth: request.DateOfBirth,
-            gender: request.Gender,
-            nationality: request.Nationality,
+            gender: request.Gender.HasValue ? (Gender)request.Gender.Value : (Gender?)null,
+            nationality: request.Nationality.HasValue ? (Nationality)request.Nationality.Value : (Nationality?)null,
             email: request.Email,
             mobileNumber: request.MobileNumber,
             phoneNumber: request.PhoneNumber,
@@ -77,7 +78,7 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
         // Assign to household
         if (request.RelationshipToHead.HasValue)
         {
-            person.AssignToHousehold(request.HouseholdId, request.RelationshipToHead.Value, currentUserId);
+            person.AssignToHousehold(request.HouseholdId, (RelationshipToHead)request.RelationshipToHead.Value, currentUserId);
         }
 
         // Save to repository

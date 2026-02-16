@@ -25,7 +25,7 @@ public class CreateClaimCommand : IRequest<ClaimDto>
     /// <summary>
     /// How the claim entered the system (required)
     /// </summary>
-    public ClaimSource ClaimSource { get; set; }
+    public int ClaimSource { get; set; }
     
     /// <summary>
     /// User ID creating this claim (required)
@@ -42,12 +42,12 @@ public class CreateClaimCommand : IRequest<ClaimDto>
     /// <summary>
     /// Priority level (defaults to Normal if not specified)
     /// </summary>
-    public CasePriority Priority { get; set; } = CasePriority.Normal;
+    public int Priority { get; set; } = (int)CasePriority.Normal;
     
     /// <summary>
     /// Type of tenure contract
     /// </summary>
-    public TenureContractType? TenureContractType { get; set; }
+    public int? TenureContractType { get; set; }
     
     /// <summary>
     /// Ownership share (fraction out of 2400)

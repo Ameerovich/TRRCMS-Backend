@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using TRRCMS.Application.Evidences.Dtos;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateTenureDocument;
 
@@ -34,7 +33,7 @@ public class UpdateTenureDocumentCommand : IRequest<EvidenceDto>
     /// <summary>
     /// Evidence type - OwnershipDeed=2, RentalContract=3, InheritanceDocument=8, etc.
     /// </summary>
-    public EvidenceType? EvidenceType { get; set; }
+    public int? EvidenceType { get; set; }
 
     /// <summary>
     /// Document description

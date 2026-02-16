@@ -1,6 +1,4 @@
-﻿using TRRCMS.Domain.Enums;
-
-namespace TRRCMS.Application.Households.Dtos;
+﻿namespace TRRCMS.Application.Households.Dtos;
 
 /// <summary>
 /// Simplified Household DTO - matches frontend form fields
@@ -45,14 +43,14 @@ public class HouseholdDto
     // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
 
     /// <summary>
-    /// Occupancy type (نوع الإشغال) - Returned as string: "OwnerOccupied", "TenantOccupied", "FamilyOccupied", etc.
+    /// Occupancy type (نوع الإشغال) - Returned as integer: OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
     /// </summary>
-    public OccupancyType? OccupancyType { get; set; }
+    public int? OccupancyType { get; set; }
 
     /// <summary>
-    /// Occupancy nature (طبيعة الإشغال) - Returned as string: "LegalFormal", "Informal", "Customary", etc.
+    /// Occupancy nature (طبيعة الإشغال) - Returned as integer: LegalFormal=1, Informal=2, Customary=3, etc.
     /// </summary>
-    public OccupancyNature? OccupancyNature { get; set; }
+    public int? OccupancyNature { get; set; }
 
     /// <summary>
     /// Notes/observations (ادخل ملاحظاتك)

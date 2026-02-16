@@ -30,7 +30,7 @@ public class UploadTenureDocumentCommand : IRequest<EvidenceDto>
     /// Evidence type - OwnershipDeed=2, RentalContract=3, InheritanceDocument=8, etc.
     /// Defaults to OwnershipDeed if not specified
     /// </summary>
-    public EvidenceType EvidenceType { get; set; } = EvidenceType.OwnershipDeed;
+    public int EvidenceType { get; set; } = (int)Domain.Enums.EvidenceType.OwnershipDeed;
 
     /// <summary>
     /// Document description (optional - e.g., "Property Deed", "Rental Contract", "Inheritance Document")

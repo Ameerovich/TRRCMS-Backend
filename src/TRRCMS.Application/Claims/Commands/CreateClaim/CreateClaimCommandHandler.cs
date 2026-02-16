@@ -65,15 +65,15 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
             propertyUnitId: request.PropertyUnitId,
             primaryClaimantId: request.PrimaryClaimantId,
             claimType: request.ClaimType,
-            claimSource: request.ClaimSource,
+            claimSource: (ClaimSource)request.ClaimSource,
             createdByUserId: request.CreatedByUserId
         );
         // ================================================================================
 
         // Set priority if different from default
-        if (request.Priority != CasePriority.Normal)
+        if ((CasePriority)request.Priority != CasePriority.Normal)
         {
-            claim.SetPriority(request.Priority, request.CreatedByUserId);
+            claim.SetPriority((CasePriority)request.Priority, request.CreatedByUserId);
         }
 
         // Set optional tenure details if provided
@@ -81,7 +81,7 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
             || request.TenureStartDate.HasValue || request.TenureEndDate.HasValue)
         {
             claim.UpdateTenureDetails(
-                tenureType: request.TenureContractType,
+                tenureType: request.TenureContractType.HasValue ? (TenureContractType)request.TenureContractType.Value : (TenureContractType?)null,
                 ownershipShare: request.OwnershipShare,
                 tenureStartDate: request.TenureStartDate,
                 tenureEndDate: request.TenureEndDate,

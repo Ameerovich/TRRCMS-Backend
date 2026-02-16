@@ -1,6 +1,5 @@
 using MediatR;
 using TRRCMS.Application.Persons.Dtos;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 
@@ -50,12 +49,12 @@ public class AddPersonToHouseholdCommand : IRequest<PersonDto>
     /// <summary>
     /// الجنس - Gender (optional)
     /// </summary>
-    public Gender? Gender { get; set; }
+    public int? Gender { get; set; }
 
     /// <summary>
     /// الجنسية - Nationality (optional)
     /// </summary>
-    public Nationality? Nationality { get; set; }
+    public int? Nationality { get; set; }
 
     /// <summary>
     /// تاريخ الميلاد - Date of birth (full date or year-only, optional)
@@ -84,5 +83,5 @@ public class AddPersonToHouseholdCommand : IRequest<PersonDto>
     /// <summary>
     /// Relationship to head of household (optional)
     /// </summary>
-    public RelationshipToHead? RelationshipToHead { get; set; }
+    public int? RelationshipToHead { get; set; }
 }

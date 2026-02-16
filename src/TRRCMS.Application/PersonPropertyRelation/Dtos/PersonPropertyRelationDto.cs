@@ -1,5 +1,3 @@
-using TRRCMS.Domain.Enums;
-
 namespace TRRCMS.Application.PersonPropertyRelations.Dtos;
 
 /// <summary>
@@ -14,14 +12,14 @@ public class PersonPropertyRelationDto
     /// <summary>
     /// نوع العلاقة - Returned as integer: Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
-    public RelationType RelationType { get; set; }
+    public int RelationType { get; set; }
 
     // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
 
     /// <summary>
     /// نوع الإشغال - Returned as integer: OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
     /// </summary>
-    public OccupancyType? OccupancyType { get; set; }
+    public int? OccupancyType { get; set; }
 
     /// <summary>
     /// هل يوجد دليل؟ - Indicates if evidence documents are available

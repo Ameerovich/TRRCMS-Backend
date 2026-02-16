@@ -33,12 +33,12 @@ public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPe
         // Ownership share required for Owner
         RuleFor(x => x.OwnershipShare)
             .NotNull()
-            .When(x => x.RelationType == RelationType.Owner)
+            .When(x => x.RelationType == (int)RelationType.Owner)
             .WithMessage("Ownership share is required for Owner relation type");
 
         RuleFor(x => x.OwnershipShare)
             .GreaterThan(0)
-            .When(x => x.RelationType == RelationType.Owner && x.OwnershipShare.HasValue)
+            .When(x => x.RelationType == (int)RelationType.Owner && x.OwnershipShare.HasValue)
             .WithMessage("Ownership share must be greater than 0 for Owner relation type");
 
         RuleFor(x => x.OwnershipShare)

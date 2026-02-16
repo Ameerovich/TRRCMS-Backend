@@ -67,7 +67,7 @@ public class GetEvidencesByRelationQueryHandler : IRequestHandler<GetEvidencesBy
         return new EvidenceDto
         {
             Id = e.Id,
-            EvidenceType = e.EvidenceType,
+            EvidenceType = (int)e.EvidenceType,
             Description = e.Description,
             OriginalFileName = e.OriginalFileName,
             FilePath = e.FilePath,

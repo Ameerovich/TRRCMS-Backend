@@ -93,8 +93,8 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         }
 
         // Determine effective values for business validation
-        var effectiveRelationType = request.RelationType ?? relation.RelationType;
-        var effectiveOccupancyType = request.ClearOccupancyType ? null : (request.OccupancyType ?? relation.OccupancyType);
+        var effectiveRelationType = request.RelationType.HasValue ? (RelationType)request.RelationType.Value : relation.RelationType;
+        var effectiveOccupancyType = request.ClearOccupancyType ? null : (request.OccupancyType.HasValue ? (OccupancyType?)request.OccupancyType.Value : relation.OccupancyType);
         var effectiveHasEvidence = request.HasEvidence ?? relation.HasEvidence;
         var effectiveOwnershipShare = request.ClearOwnershipShare ? null : (request.OwnershipShare ?? relation.OwnershipShare);
         var effectiveContractDetails = request.ClearContractDetails ? null : (request.ContractDetails ?? relation.ContractDetails);
@@ -160,8 +160,8 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             Id = r.Id,
             PersonId = r.PersonId,
             PropertyUnitId = r.PropertyUnitId,
-            RelationType = r.RelationType,
-            OccupancyType = r.OccupancyType,
+            RelationType = (int)r.RelationType,
+            OccupancyType = r.OccupancyType.HasValue ? (int)r.OccupancyType.Value : (int?)null,
             HasEvidence = r.HasEvidence,
             OwnershipShare = r.OwnershipShare,
             ContractDetails = r.ContractDetails,

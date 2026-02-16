@@ -1,5 +1,3 @@
-using TRRCMS.Domain.Enums;
-
 namespace TRRCMS.Application.Surveys.Dtos;
 
 /// <summary>
@@ -41,21 +39,21 @@ public class CreatedClaimSummaryDto
     /// Default: OfficeSubmission (2) for office survey finalization.
     /// Maps to UI: المصدر
     /// </summary>
-    public ClaimSource ClaimSource { get; set; } = ClaimSource.OfficeSubmission;
+    public int ClaimSource { get; set; } = 2;
 
     /// <summary>
     /// Case priority level.
     /// Default: Normal (2).
     /// Maps to UI: الأولوية
     /// </summary>
-    public CasePriority CasePriority { get; set; } = CasePriority.Normal;
+    public int CasePriority { get; set; } = 2;
 
     /// <summary>
     /// Claim status.
     /// Default: Draft (1).
     /// Maps to UI: حالة الحالة
     /// </summary>
-    public ClaimStatus ClaimStatus { get; set; } = ClaimStatus.Draft;
+    public int ClaimStatus { get; set; } = 1;
 
     /// <summary>
     /// The UTC date when the related survey was created.

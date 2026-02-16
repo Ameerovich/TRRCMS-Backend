@@ -66,7 +66,7 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
             throw new ValidationException($"Person is already linked with relation type: {existingRelation.RelationType}");
 
         // Business validations
-        if (request.RelationType == RelationType.Owner)
+        if ((RelationType)request.RelationType == RelationType.Owner)
         {
             if (!request.OwnershipShare.HasValue || request.OwnershipShare <= 0)
                 throw new ValidationException("Ownership share is required for Owner type and must be > 0");
@@ -78,16 +78,16 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
         var relation = PersonPropertyRelation.Create(
             request.PersonId,
             request.PropertyUnitId,
-            request.RelationType,
-            request.OccupancyType,
+            (RelationType)request.RelationType,
+            request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : (OccupancyType?)null,
             request.HasEvidence,
             currentUserId,
             surveyId: request.SurveyId);
 
         // Update with additional details using simplified signature
         relation.UpdateRelationDetails(
-            request.RelationType,
-            request.OccupancyType,
+            (RelationType)request.RelationType,
+            request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : (OccupancyType?)null,
             request.HasEvidence,
             request.OwnershipShare,
             request.ContractDetails,
@@ -100,7 +100,7 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
         // Audit log
         await _auditService.LogActionAsync(
             AuditActionType.Create,
-            $"Linked person {person.GetFullNameArabic()} to property unit {propertyUnit.UnitIdentifier} as {request.RelationType}",
+            $"Linked person {person.GetFullNameArabic()} to property unit {propertyUnit.UnitIdentifier} as {(RelationType)request.RelationType}",
             "PersonPropertyRelation",
             relation.Id,
             $"{person.GetFullNameArabic()} - {propertyUnit.UnitIdentifier}",
@@ -110,8 +110,8 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
                 relation.Id,
                 request.PersonId,
                 request.PropertyUnitId,
-                RelationType = request.RelationType.ToString(),
-                OccupancyType = request.OccupancyType?.ToString(),
+                RelationType = ((RelationType)request.RelationType).ToString(),
+                OccupancyType = request.OccupancyType.HasValue ? ((OccupancyType)request.OccupancyType.Value).ToString() : null,
                 request.HasEvidence,
                 request.OwnershipShare
             }),
@@ -132,8 +132,8 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
             Id = r.Id,
             PersonId = r.PersonId,
             PropertyUnitId = r.PropertyUnitId,
-            RelationType = r.RelationType,
-            OccupancyType = r.OccupancyType,
+            RelationType = (int)r.RelationType,
+            OccupancyType = r.OccupancyType.HasValue ? (int)r.OccupancyType.Value : (int?)null,
             HasEvidence = r.HasEvidence,
             OwnershipShare = r.OwnershipShare,
             ContractDetails = r.ContractDetails,

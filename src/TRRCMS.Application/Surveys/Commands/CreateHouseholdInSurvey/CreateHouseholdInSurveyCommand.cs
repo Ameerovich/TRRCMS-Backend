@@ -1,6 +1,5 @@
 using MediatR;
 using TRRCMS.Application.Households.Dtos;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 
@@ -39,12 +38,12 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// <summary>
     /// Occupancy type (نوع الإشغال) - Enum: 1=OwnerOccupied, 2=TenantOccupied, etc.
     /// </summary>
-    public OccupancyType? OccupancyType { get; set; }
+    public int? OccupancyType { get; set; }
 
     /// <summary>
     /// Occupancy nature (طبيعة الإشغال) - Enum: 1=LegalFormal, 2=Informal, 3=Customary, etc.
     /// </summary>
-    public OccupancyNature? OccupancyNature { get; set; }
+    public int? OccupancyNature { get; set; }
 
     // ==================== ADULTS COMPOSITION ====================
 

@@ -92,8 +92,8 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
             maleDisabledCount: request.MaleDisabledCount,
             femaleDisabledCount: request.FemaleDisabledCount,
             notes: request.Notes,
-            occupancyType: request.OccupancyType,
-            occupancyNature: request.OccupancyNature,
+            occupancyType: request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : (OccupancyType?)null,
+            occupancyNature: request.OccupancyNature.HasValue ? (OccupancyNature)request.OccupancyNature.Value : (OccupancyNature?)null,
             createdByUserId: currentUserId
         );
 

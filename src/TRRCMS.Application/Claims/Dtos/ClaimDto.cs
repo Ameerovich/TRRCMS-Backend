@@ -1,5 +1,3 @@
-using TRRCMS.Domain.Enums;
-
 namespace TRRCMS.Application.Claims.Dtos;
 
 /// <summary>
@@ -18,13 +16,13 @@ public class ClaimDto
     // ==================== CLAIM CLASSIFICATION ====================
     
     public string ClaimType { get; set; } = string.Empty;
-    public ClaimSource ClaimSource { get; set; }
-    public CasePriority Priority { get; set; }
+    public int ClaimSource { get; set; }
+    public int Priority { get; set; }
     
     // ==================== LIFECYCLE MANAGEMENT ====================
     
-    public LifecycleStage LifecycleStage { get; set; }
-    public ClaimStatus Status { get; set; }
+    public int LifecycleStage { get; set; }
+    public int Status { get; set; }
     public DateTime? SubmittedDate { get; set; }
     public Guid? SubmittedByUserId { get; set; }
     public DateTime? DecisionDate { get; set; }
@@ -38,7 +36,7 @@ public class ClaimDto
     
     // ==================== TENURE DETAILS ====================
     
-    public TenureContractType? TenureContractType { get; set; }
+    public int? TenureContractType { get; set; }
     public int? OwnershipShare { get; set; }
     public DateTime? TenureStartDate { get; set; }
     public DateTime? TenureEndDate { get; set; }
@@ -63,7 +61,7 @@ public class ClaimDto
     
     // ==================== REVIEW & VERIFICATION ====================
     
-    public VerificationStatus VerificationStatus { get; set; }
+    public int VerificationStatus { get; set; }
     public DateTime? VerificationDate { get; set; }
     public Guid? VerifiedByUserId { get; set; }
     public string? VerificationNotes { get; set; }
@@ -76,7 +74,7 @@ public class ClaimDto
     
     // ==================== CERTIFICATE ====================
     
-    public CertificateStatus CertificateStatus { get; set; }
+    public int CertificateStatus { get; set; }
     
     // ==================== NOTES & HISTORY ====================
     

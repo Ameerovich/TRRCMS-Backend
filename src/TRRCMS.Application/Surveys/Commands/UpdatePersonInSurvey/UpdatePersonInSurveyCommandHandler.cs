@@ -97,8 +97,8 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
             motherNameArabic: request.MotherNameArabic ?? person.MotherNameArabic,
             nationalId: request.NationalId ?? person.NationalId,
             dateOfBirth: request.DateOfBirth ?? person.DateOfBirth,
-            gender: request.Gender ?? person.Gender,
-            nationality: request.Nationality ?? person.Nationality,
+            gender: request.Gender.HasValue ? (Gender)request.Gender.Value : person.Gender,
+            nationality: request.Nationality.HasValue ? (Nationality)request.Nationality.Value : person.Nationality,
             modifiedByUserId: currentUserId);
 
         // Update contact info if any contact field is provided
@@ -114,7 +114,7 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
         // Update relationship to head if provided
         if (request.RelationshipToHead.HasValue)
         {
-            person.AssignToHousehold(request.HouseholdId, request.RelationshipToHead.Value, currentUserId);
+            person.AssignToHousehold(request.HouseholdId, (RelationshipToHead)request.RelationshipToHead.Value, currentUserId);
         }
 
         // Save changes

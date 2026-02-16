@@ -116,8 +116,8 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
                 headOfHouseholdName: household.HeadOfHouseholdName,
                 householdSize: request.HouseholdSize ?? household.HouseholdSize,
                 notes: request.Notes ?? household.Notes,
-                occupancyType: request.OccupancyType ?? household.OccupancyType,
-                occupancyNature: request.OccupancyNature ?? household.OccupancyNature,
+                occupancyType: request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : household.OccupancyType,
+                occupancyNature: request.OccupancyNature.HasValue ? (OccupancyNature)request.OccupancyNature.Value : household.OccupancyNature,
                 modifiedByUserId: currentUserId
             );
         }

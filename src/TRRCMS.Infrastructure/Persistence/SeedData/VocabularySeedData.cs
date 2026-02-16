@@ -20,7 +20,7 @@ public static class VocabularySeedData
     /// <summary>
     /// Seed version — bump this when enum values change to trigger re-seed.
     /// </summary>
-    private const string SeedVersion = "1.0.0";
+    private const string SeedVersion = "1.1.0";
 
     /// <summary>
     /// Enum types to seed as vocabularies, with their metadata.
@@ -64,6 +64,16 @@ public static class VocabularySeedData
         // Operations
         Def<TransferStatus>("transfer_status", "حالة النقل", "Transfer Status", "Operations"),
         Def<ReferralRole>("referral_role", "دور الإحالة", "Referral Role", "Operations"),
+
+        // Property Units
+        Def<PropertyUnitType>("property_unit_type", "نوع الوحدة العقارية", "Property Unit Type", "Property"),
+        Def<PropertyUnitStatus>("property_unit_status", "حالة الوحدة العقارية", "Property Unit Status", "Property"),
+
+        // System
+        Def<UserRole>("user_role", "دور المستخدم", "User Role", "System"),
+        Def<ImportStatus>("import_status", "حالة الاستيراد", "Import Status", "System"),
+        Def<Permission>("permission", "الصلاحية", "Permission", "System"),
+        Def<AuditActionType>("audit_action_type", "نوع إجراء التدقيق", "Audit Action Type", "System"),
     };
 
     /// <summary>
