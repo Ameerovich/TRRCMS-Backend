@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Claims.Commands.CreateClaim;
 
@@ -20,19 +21,22 @@ public class CreateClaimCommandValidator : AbstractValidator<CreateClaimCommand>
             .MaximumLength(100).WithMessage("Claim type must not exceed 100 characters");
 
         RuleFor(x => x.ClaimSource)
-            .IsInEnum().WithMessage("Invalid claim source");
+            .Must(v => Enum.IsDefined(typeof(ClaimSource), v))
+            .WithMessage("Invalid claim source");
 
         RuleFor(x => x.CreatedByUserId)
             .NotEmpty().WithMessage("Created by user ID is required");
 
-        // ==================== ENUM VALIDATIONS ====================
+        // ==================== ENUM VALIDATIONS (int fields) ====================
 
         RuleFor(x => x.Priority)
-            .IsInEnum().WithMessage("Invalid case priority value");
+            .Must(v => Enum.IsDefined(typeof(CasePriority), v))
+            .WithMessage("Invalid case priority value");
 
         RuleFor(x => x.TenureContractType)
-            .IsInEnum().WithMessage("Invalid tenure contract type")
-            .When(x => x.TenureContractType.HasValue);
+            .Must(v => Enum.IsDefined(typeof(TenureContractType), v!.Value))
+            .When(x => x.TenureContractType.HasValue)
+            .WithMessage("Invalid tenure contract type");
 
         // ==================== OWNERSHIP SHARE ====================
 

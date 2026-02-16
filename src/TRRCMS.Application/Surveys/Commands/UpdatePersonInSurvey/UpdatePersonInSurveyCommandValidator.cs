@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdatePersonInSurvey;
 
@@ -84,7 +85,7 @@ public class UpdatePersonInSurveyCommandValidator : AbstractValidator<UpdatePers
         // ==================== HOUSEHOLD RELATIONSHIP ====================
 
         RuleFor(x => x.RelationshipToHead)
-            .IsInEnum()
+            .Must(v => Enum.IsDefined(typeof(RelationshipToHead), v!.Value))
             .When(x => x.RelationshipToHead.HasValue)
             .WithMessage("علاقة الشخص برب الأسرة غير صالحة");
     }

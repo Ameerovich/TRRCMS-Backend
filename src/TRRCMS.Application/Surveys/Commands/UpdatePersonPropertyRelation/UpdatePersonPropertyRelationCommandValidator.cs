@@ -15,15 +15,15 @@ public class UpdatePersonPropertyRelationCommandValidator : AbstractValidator<Up
             .NotEmpty()
             .WithMessage("Relation ID is required");
 
-        // RelationType enum validation (optional for partial update)
+        // RelationType enum validation (optional int field for partial update)
         RuleFor(x => x.RelationType)
-            .IsInEnum()
+            .Must(v => Enum.IsDefined(typeof(RelationType), v!.Value))
             .When(x => x.RelationType.HasValue)
             .WithMessage("Invalid relation type");
 
-        // OccupancyType enum validation (optional)
+        // OccupancyType enum validation (optional int field)
         RuleFor(x => x.OccupancyType)
-            .IsInEnum()
+            .Must(v => Enum.IsDefined(typeof(OccupancyType), v!.Value))
             .When(x => x.OccupancyType.HasValue)
             .WithMessage("Invalid occupancy type");
 

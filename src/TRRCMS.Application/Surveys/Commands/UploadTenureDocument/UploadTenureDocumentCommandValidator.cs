@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UploadTenureDocument;
 
@@ -52,9 +53,9 @@ public class UploadTenureDocumentCommandValidator : AbstractValidator<UploadTenu
             .When(x => x.File != null)
             .WithMessage("Only image files, PDFs, and Word documents are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF, DOC, DOCX)");
 
-        // Evidence type validation
+        // Evidence type validation (int field)
         RuleFor(x => x.EvidenceType)
-            .IsInEnum()
+            .Must(v => Enum.IsDefined(typeof(EvidenceType), v))
             .WithMessage("Invalid evidence type");
 
         RuleFor(x => x.Description)

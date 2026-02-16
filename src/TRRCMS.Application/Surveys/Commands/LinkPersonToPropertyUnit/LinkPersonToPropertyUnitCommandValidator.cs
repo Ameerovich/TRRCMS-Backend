@@ -19,14 +19,14 @@ public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPe
             .NotEmpty()
             .WithMessage("Property Unit ID is required");
 
-        // RelationType enum validation
+        // RelationType enum validation (int field)
         RuleFor(x => x.RelationType)
-            .IsInEnum()
+            .Must(v => Enum.IsDefined(typeof(RelationType), v))
             .WithMessage("Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other");
 
-        // OccupancyType enum validation (optional field)
+        // OccupancyType enum validation (optional int field)
         RuleFor(x => x.OccupancyType)
-            .IsInEnum()
+            .Must(v => Enum.IsDefined(typeof(OccupancyType), v!.Value))
             .When(x => x.OccupancyType.HasValue)
             .WithMessage("Invalid occupancy type");
 
