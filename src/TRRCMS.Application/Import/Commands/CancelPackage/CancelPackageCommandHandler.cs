@@ -46,7 +46,7 @@ public class CancelPackageCommandHandler : IRequestHandler<CancelPackageCommand,
 
         if (terminalStatuses.Contains(package.Status))
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot cancel package in '{package.Status}' status. " +
                 "Only active (non-terminal) imports can be cancelled.");
         }

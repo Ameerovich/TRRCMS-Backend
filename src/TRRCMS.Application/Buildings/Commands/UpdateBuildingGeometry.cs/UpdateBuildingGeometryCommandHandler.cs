@@ -2,6 +2,7 @@
 using MediatR;
 using System.Text.Json;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Enums;
 
@@ -34,7 +35,7 @@ public class UpdateBuildingGeometryCommandHandler : IRequestHandler<UpdateBuildi
 
         // Get building
         var building = await _buildingRepository.GetByIdAsync(request.BuildingId, cancellationToken)
-            ?? throw new KeyNotFoundException($"Building with ID {request.BuildingId} not found");
+            ?? throw new NotFoundException($"Building with ID {request.BuildingId} not found");
 
         // Track changes for audit
         var changedFields = new List<string>();

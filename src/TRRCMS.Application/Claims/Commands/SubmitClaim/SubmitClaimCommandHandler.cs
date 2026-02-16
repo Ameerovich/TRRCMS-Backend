@@ -1,4 +1,5 @@
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Claims.Commands.SubmitClaim;
@@ -23,7 +24,7 @@ public class SubmitClaimCommandHandler : IRequestHandler<SubmitClaimCommand, Uni
         
         if (claim == null)
         {
-            throw new InvalidOperationException($"Claim with ID {request.ClaimId} not found.");
+            throw new NotFoundException($"Claim with ID {request.ClaimId} not found.");
         }
         
         // Submit claim using domain method

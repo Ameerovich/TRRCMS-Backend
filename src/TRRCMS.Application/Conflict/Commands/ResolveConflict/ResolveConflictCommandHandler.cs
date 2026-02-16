@@ -1,4 +1,5 @@
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Conflicts.Dtos;
 using TRRCMS.Domain.Enums;
@@ -61,12 +62,12 @@ public class ResolveConflictCommandHandler
 
         // 1. Load and validate conflict
         var conflict = await _conflictRepository.GetByIdAsync(request.ConflictId, cancellationToken)
-            ?? throw new InvalidOperationException(
+            ?? throw new NotFoundException(
                 $"Conflict with ID {request.ConflictId} not found.");
 
         if (conflict.Status != "PendingReview")
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Conflict {conflict.ConflictNumber} is in '{conflict.Status}' status " +
                 "and cannot be resolved. Only PendingReview conflicts can be resolved.");
         }
@@ -86,7 +87,7 @@ public class ResolveConflictCommandHandler
 
             if (!mergeResult.Success)
             {
-                throw new InvalidOperationException(
+                throw new ConflictException(
                     $"Merge failed for conflict {conflict.ConflictNumber}: {mergeResult.ErrorMessage}");
             }
 

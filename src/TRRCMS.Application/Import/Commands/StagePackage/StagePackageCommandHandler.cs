@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Domain.Entities.Staging;
@@ -77,14 +78,14 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         // STEP 1: Load and validate package
         // ============================================================
         var package = await _packageRepository.GetByIdAsync(request.ImportPackageId, cancellationToken)
-            ?? throw new KeyNotFoundException(
+            ?? throw new NotFoundException(
                 $"Import package not found: {request.ImportPackageId}");
 
         // Allow staging from Validating (fresh upload) or ValidationFailed (retry)
         if (package.Status != ImportStatus.Validating &&
             package.Status != ImportStatus.ValidationFailed)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot stage package with status '{package.Status}'. " +
                 $"Expected Validating or ValidationFailed.");
         }

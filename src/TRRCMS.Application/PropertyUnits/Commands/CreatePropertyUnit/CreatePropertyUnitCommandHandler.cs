@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.PropertyUnits.Dtos;
@@ -43,7 +44,7 @@ public class CreatePropertyUnitCommandHandler : IRequestHandler<CreatePropertyUn
         var building = await _buildingRepository.GetByIdAsync(request.BuildingId, cancellationToken);
         if (building == null)
         {
-            throw new InvalidOperationException($"Building with ID {request.BuildingId} not found");
+            throw new NotFoundException($"Building with ID {request.BuildingId} not found");
         }
 
         // Check if unit identifier already exists for this building
@@ -54,7 +55,7 @@ public class CreatePropertyUnitCommandHandler : IRequestHandler<CreatePropertyUn
 
         if (existingUnit != null)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Property unit with identifier '{request.UnitIdentifier}' already exists in this building.");
         }
 

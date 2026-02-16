@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Auth.Commands.ChangePassword;
@@ -38,7 +39,7 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         if (user == null)
         {
-            throw new KeyNotFoundException($"User with ID {request.UserId} not found.");
+            throw new NotFoundException($"User with ID {request.UserId} not found.");
         }
 
         // Step 4: Verify current password

@@ -75,7 +75,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         var allowedStatuses = new[] { ImportStatus.ReviewingConflicts, ImportStatus.ReadyToCommit, ImportStatus.Staging };
         if (!allowedStatuses.Contains(package.Status))
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot approve package for commit. Current status is '{package.Status}'. " +
                 $"Expected: {string.Join(", ", allowedStatuses)}.");
         }
@@ -86,7 +86,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
 
         if (unresolvedCount > 0)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot approve for commit: {unresolvedCount} unresolved conflict(s) remain. " +
                 "Resolve all conflicts before approving.");
         }

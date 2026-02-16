@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Domain.Enums;
@@ -53,13 +54,13 @@ public class DetectDuplicatesCommandHandler
         // STEP 1: Load and validate package
         // ============================================================
         var package = await _packageRepository.GetByIdAsync(request.ImportPackageId, cancellationToken)
-            ?? throw new KeyNotFoundException(
+            ?? throw new NotFoundException(
                 $"Import package not found: {request.ImportPackageId}");
 
         if (package.Status != ImportStatus.Staging &&
             package.Status != ImportStatus.ReviewingConflicts)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot run duplicate detection on package with status '{package.Status}'. " +
                 $"Expected Staging or ReviewingConflicts.");
         }

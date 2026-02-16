@@ -43,7 +43,7 @@ public class QuarantinePackageCommandHandler : IRequestHandler<QuarantinePackage
 
         if (terminalStatuses.Contains(package.Status))
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot quarantine package in '{package.Status}' status. " +
                 "Only active (non-terminal) imports can be quarantined.");
         }

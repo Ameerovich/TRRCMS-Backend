@@ -1,4 +1,5 @@
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Conflicts.Dtos;
 using TRRCMS.Domain.Enums;
@@ -41,19 +42,19 @@ public class EscalateConflictCommandHandler
             ?? throw new UnauthorizedAccessException("User not authenticated.");
 
         var conflict = await _conflictRepository.GetByIdAsync(request.ConflictId, cancellationToken)
-            ?? throw new InvalidOperationException(
+            ?? throw new NotFoundException(
                 $"Conflict with ID {request.ConflictId} not found.");
 
         if (conflict.Status != "PendingReview")
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Conflict {conflict.ConflictNumber} is in '{conflict.Status}' status " +
                 "and cannot be escalated. Only PendingReview conflicts can be escalated.");
         }
 
         if (conflict.IsEscalated)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Conflict {conflict.ConflictNumber} has already been escalated.");
         }
 

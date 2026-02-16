@@ -1,4 +1,5 @@
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Conflicts.Dtos;
 
@@ -28,7 +29,7 @@ public class GetConflictDetailsQueryHandler
 
         if (conflict is null)
         {
-            throw new InvalidOperationException(
+            throw new NotFoundException(
                 $"Conflict resolution with ID {request.Id} not found.");
         }
 

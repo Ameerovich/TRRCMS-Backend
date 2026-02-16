@@ -67,7 +67,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         // 2. Validate pre-conditions
         if (package.Status != ImportStatus.ReadyToCommit)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot commit package. Current status is '{package.Status}'. " +
                 "Package must be in 'ReadyToCommit' status. Call approve endpoint first.");
         }
@@ -77,7 +77,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
 
         if (unresolvedCount > 0)
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"Cannot commit: {unresolvedCount} unresolved conflict(s) remain.");
         }
 

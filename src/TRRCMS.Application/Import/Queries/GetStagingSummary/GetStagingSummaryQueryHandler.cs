@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Domain.Common;
@@ -50,7 +51,7 @@ public class GetStagingSummaryQueryHandler : IRequestHandler<GetStagingSummaryQu
         CancellationToken cancellationToken)
     {
         var package = await _packageRepository.GetByIdAsync(request.ImportPackageId, cancellationToken)
-            ?? throw new KeyNotFoundException(
+            ?? throw new NotFoundException(
                 $"Import package not found: {request.ImportPackageId}");
 
         var dto = new StagingSummaryDto

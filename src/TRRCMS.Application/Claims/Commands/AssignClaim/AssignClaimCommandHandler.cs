@@ -1,4 +1,5 @@
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Claims.Commands.AssignClaim;
@@ -23,7 +24,7 @@ public class AssignClaimCommandHandler : IRequestHandler<AssignClaimCommand, Uni
         
         if (claim == null)
         {
-            throw new InvalidOperationException($"Claim with ID {request.ClaimId} not found.");
+            throw new NotFoundException($"Claim with ID {request.ClaimId} not found.");
         }
         
         // Assign claim using domain method

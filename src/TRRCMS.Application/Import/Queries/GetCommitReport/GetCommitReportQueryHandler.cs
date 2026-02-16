@@ -59,7 +59,7 @@ public class GetCommitReportQueryHandler : IRequestHandler<GetCommitReportQuery,
         var validStatuses = new[] { ImportStatus.Completed, ImportStatus.PartiallyCompleted, ImportStatus.Failed };
         if (!validStatuses.Contains(package.Status))
         {
-            throw new InvalidOperationException(
+            throw new ConflictException(
                 $"No commit report available. Package status is '{package.Status}'. " +
                 "Commit report is only available after commit has been attempted.");
         }

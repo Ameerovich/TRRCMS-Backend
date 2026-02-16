@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 
@@ -36,7 +37,7 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
         var existingBuilding = await _buildingRepository.GetByBuildingIdAsync(buildingIdCode, cancellationToken);
         if (existingBuilding != null)
         {
-            throw new InvalidOperationException($"Building with code {buildingIdCode} already exists.");
+            throw new ConflictException($"Building with code {buildingIdCode} already exists.");
         }
 
         // Create building entity

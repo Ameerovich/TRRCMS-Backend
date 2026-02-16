@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Claims.Dtos;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Extensions; // For AuditExtensions
 using TRRCMS.Domain.Entities;
@@ -51,7 +52,7 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
                 cancellationToken: cancellationToken
             );
 
-            throw new InvalidOperationException($"Property unit with ID {request.PropertyUnitId} does not exist.");
+            throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} does not exist.");
         }
         // Generate next sequential claim number (e.g., CLM-2026-000000001)
         var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(cancellationToken);
