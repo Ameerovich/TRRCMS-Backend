@@ -65,16 +65,12 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
         // ==================== RELATION DETAILS ====================
 
         builder.Property(r => r.RelationType)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(r => r.RelationTypeOtherDesc)
             .HasMaxLength(200);
 
-        builder.Property(r => r.ContractType)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(r => r.ContractType);
 
         builder.Property(r => r.ContractTypeOtherDesc)
             .HasMaxLength(200);

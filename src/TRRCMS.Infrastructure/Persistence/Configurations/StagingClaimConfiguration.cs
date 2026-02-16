@@ -74,31 +74,21 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
             .HasMaxLength(50);
 
         builder.Property(c => c.ClaimSource)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(c => c.Priority)
             .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(20)
             .HasDefaultValue(CasePriority.Normal);
 
         builder.Property(c => c.LifecycleStage)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .HasComment("Optional — auto-set to DraftPendingSubmission during commit");
 
         builder.Property(c => c.Status)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .HasComment("Optional — auto-set to Draft during commit");
 
         // ==================== TENURE DETAILS ====================
 
-        builder.Property(c => c.TenureContractType)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(c => c.TenureContractType);
 
         builder.Property(c => c.OwnershipShare)
             .HasComment("Ownership percentage (0-100)");
@@ -140,8 +130,6 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         // ==================== VERIFICATION ====================
 
         builder.Property(c => c.VerificationStatus)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .HasComment("Optional — auto-set to Pending during commit");
 
         builder.Property(c => c.VerificationNotes)

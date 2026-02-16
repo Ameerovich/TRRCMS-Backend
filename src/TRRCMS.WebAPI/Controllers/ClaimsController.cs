@@ -9,6 +9,8 @@ using TRRCMS.Application.Claims.Commands.VerifyClaim;
 using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Claims.Queries.GetAllClaims;
 using TRRCMS.Application.Claims.Queries.GetClaim;
+using TRRCMS.Application.Claims.Queries.GetClaimSummaries;
+using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.WebAPI.Controllers;
@@ -130,6 +132,45 @@ public class ClaimsController : ControllerBase
 
         var claims = await _mediator.Send(query);
         return Ok(claims);
+    }
+
+    /// <summary>
+    /// Get claim summaries with optional filtering.
+    /// Returns lightweight DTOs suitable for the claims overview / case list UI.
+    /// All enum filters accept integer codes matching the Vocabulary API.
+    /// </summary>
+    /// <param name="claimStatus">Filter by claim status (int). Draft=1, Finalized=2, etc.</param>
+    /// <param name="claimSource">Filter by claim source (int). FieldCollection=1, OfficeSubmission=2, etc.</param>
+    /// <param name="createdByUserId">Filter by the user who created the claim</param>
+    /// <param name="surveyVisitId">Filter by linked survey visit ID</param>
+    /// <param name="buildingCode">Filter by building code (17-digit GGDDSSCCNCNNBBBBB)</param>
+    /// <returns>List of claim summaries matching filter criteria</returns>
+    /// <response code="200">Claim summaries retrieved successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission (Claims_ViewAll)</response>
+    [HttpGet("summaries")]
+    [Authorize(Policy = "CanViewAllClaims")]
+    [ProducesResponseType(typeof(List<CreatedClaimSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<List<CreatedClaimSummaryDto>>> GetClaimSummaries(
+        [FromQuery] int? claimStatus = null,
+        [FromQuery] int? claimSource = null,
+        [FromQuery] Guid? createdByUserId = null,
+        [FromQuery] Guid? surveyVisitId = null,
+        [FromQuery] string? buildingCode = null)
+    {
+        var query = new GetClaimSummariesQuery
+        {
+            ClaimStatus = claimStatus,
+            ClaimSource = claimSource,
+            CreatedByUserId = createdByUserId,
+            SurveyVisitId = surveyVisitId,
+            BuildingCode = buildingCode
+        };
+
+        var summaries = await _mediator.Send(query);
+        return Ok(summaries);
     }
 
     /// <summary>

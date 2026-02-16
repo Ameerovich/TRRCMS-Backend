@@ -94,9 +94,7 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
             .HasComment("PendingReview, Resolved, Ignored");
 
         builder.Property(c => c.ResolutionAction)
-            .HasConversion<string>()
-            .HasMaxLength(30)
-            .HasComment("KeepBoth, Merge, KeepFirst, KeepSecond, Ignored, etc.");
+            .HasComment("KeepBoth, Merge, KeepFirst, KeepSecond, Ignored, etc. - stored as integer");
 
         builder.Property(c => c.DetectedDate)
             .IsRequired();

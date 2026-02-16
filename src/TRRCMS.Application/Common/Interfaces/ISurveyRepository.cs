@@ -53,6 +53,12 @@ public interface ISurveyRepository
     /// </summary>
     Task<int> GetNextReferenceSequenceAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Get surveys linked to the given claim IDs (via Survey.ClaimId).
+    /// Returns one survey per claim (the first match).
+    /// </summary>
+    Task<Dictionary<Guid, Survey>> GetByClaimIdsAsync(IEnumerable<Guid> claimIds, CancellationToken cancellationToken = default);
+
     // ==================== FIELD SURVEY METHODS ====================
 
     /// <summary>

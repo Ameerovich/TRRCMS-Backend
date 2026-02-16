@@ -74,12 +74,6 @@ public enum Nationality
     Iranian = 11,
 
     /// <summary>
-    /// Kurdish (كردي)
-    /// </summary>
-    [ArabicLabel("كردي")]
-    Kurdish = 12,
-
-    /// <summary>
     /// Stateless (عديم الجنسية)
     /// </summary>
     [ArabicLabel("عديم الجنسية")]

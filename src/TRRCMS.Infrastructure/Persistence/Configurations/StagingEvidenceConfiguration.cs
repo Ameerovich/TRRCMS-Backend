@@ -65,9 +65,7 @@ public class StagingEvidenceConfiguration : IEntityTypeConfiguration<StagingEvid
         // ==================== EVIDENCE METADATA ====================
 
         builder.Property(e => e.EvidenceType)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(e => e.Description)
             .IsRequired()

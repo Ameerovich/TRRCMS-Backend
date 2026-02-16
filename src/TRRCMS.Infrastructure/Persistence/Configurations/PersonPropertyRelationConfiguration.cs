@@ -47,12 +47,10 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
 
         // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
 
-        // OccupancyType stored as string (nullable enum conversion)
+        // OccupancyType stored as integer (nullable enum)
         builder.Property(ppr => ppr.OccupancyType)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .IsRequired(false)
-            .HasComment("نوع الإشغال - Occupancy type (enum): OwnerOccupied=1, TenantOccupied=2, etc.");
+            .HasComment("نوع الإشغال - Occupancy type enum stored as integer");
 
         builder.Property(ppr => ppr.HasEvidence)
             .IsRequired()

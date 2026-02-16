@@ -38,19 +38,13 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
             .IsRequired(false);
 
         builder.Property(p => p.UnitType)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(p => p.Status)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(p => p.DamageLevel)
-            .IsRequired(false)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired(false);
 
         builder.Property(p => p.AreaSquareMeters)
             .IsRequired(false)
@@ -68,14 +62,10 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
         // ==================== OCCUPANCY INFORMATION ====================
 
         builder.Property(p => p.OccupancyType)
-            .IsRequired(false)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired(false);
 
         builder.Property(p => p.OccupancyNature)
-            .IsRequired(false)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired(false);
 
         builder.Property(p => p.NumberOfHouseholds)
             .IsRequired(false);

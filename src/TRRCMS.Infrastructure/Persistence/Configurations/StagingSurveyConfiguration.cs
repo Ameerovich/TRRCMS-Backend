@@ -75,13 +75,9 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         // ==================== SURVEY CLASSIFICATION ====================
 
         builder.Property(s => s.Type)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .HasComment("Optional — auto-set (Field/Office) during commit");
 
         builder.Property(s => s.Source)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .HasComment("Optional — auto-set during commit");
 
         builder.Property(s => s.SurveyTypeName)
@@ -94,8 +90,6 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
             .IsRequired();
 
         builder.Property(s => s.Status)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .HasComment("Optional — auto-set to Draft during commit");
 
         builder.Property(s => s.GpsCoordinates)

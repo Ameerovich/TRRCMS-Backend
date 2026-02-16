@@ -43,16 +43,12 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
 
         builder.Property(h => h.OccupancyType)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .IsRequired(false)
-            .HasComment("نوع الإشغال - Occupancy type (enum converted to string): OwnerOccupied, TenantOccupied, etc.");
+            .HasComment("نوع الإشغال - Occupancy type enum stored as integer");
 
         builder.Property(h => h.OccupancyNature)
-            .HasConversion<string>()
-            .HasMaxLength(50)
             .IsRequired(false)
-            .HasComment("طبيعة الإشغال - Occupancy nature (enum converted to string): LegalFormal, Informal, Customary, etc.");
+            .HasComment("طبيعة الإشغال - Occupancy nature enum stored as integer");
 
         // ==================== ADULTS BY GENDER ====================
 

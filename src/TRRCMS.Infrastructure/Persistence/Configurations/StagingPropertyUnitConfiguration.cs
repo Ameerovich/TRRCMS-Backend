@@ -66,14 +66,10 @@ public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<Staging
         // ==================== UNIT ATTRIBUTES ====================
 
         builder.Property(u => u.UnitType)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(u => u.Status)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(u => u.FloorNumber)
             .HasComment("Floor number (0=Ground, 1=First, -1=Basement)");
@@ -84,9 +80,7 @@ public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<Staging
         builder.Property(u => u.OccupancyStatus)
             .HasMaxLength(50);
 
-        builder.Property(u => u.DamageLevel)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(u => u.DamageLevel);
 
         builder.Property(u => u.AreaSquareMeters)
             .HasPrecision(10, 2);
@@ -99,13 +93,9 @@ public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<Staging
 
         // ==================== OCCUPANCY ====================
 
-        builder.Property(u => u.OccupancyType)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(u => u.OccupancyType);
 
-        builder.Property(u => u.OccupancyNature)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(u => u.OccupancyNature);
 
         // ==================== UTILITIES ====================
 

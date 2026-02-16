@@ -130,6 +130,21 @@ public interface IClaimRepository
         DateTime endDate, 
         CancellationToken cancellationToken = default);
     
+    // ==================== FILTERED QUERY ====================
+
+    /// <summary>
+    /// Get claims with combined server-side filtering.
+    /// Includes PropertyUnit (with Building) and PrimaryClaimant navigation properties.
+    /// All filters are AND-combined; null filters are ignored.
+    /// </summary>
+    Task<List<Claim>> GetFilteredAsync(
+        ClaimStatus? status,
+        ClaimSource? source,
+        Guid? createdByUserId,
+        Guid? claimId,
+        string? buildingCode = null,
+        CancellationToken cancellationToken = default);
+
     // ==================== EXISTENCE CHECKS ====================
     
     /// <summary>

@@ -108,18 +108,12 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
         // ==================== BUILDING ATTRIBUTES ====================
 
         builder.Property(b => b.BuildingType)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(b => b.Status)
-            .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(50);
+            .IsRequired();
 
-        builder.Property(b => b.DamageLevel)
-            .HasConversion<string>()
-            .HasMaxLength(50);
+        builder.Property(b => b.DamageLevel);
 
         // ==================== UNIT COUNTS (from command — required) ====================
 

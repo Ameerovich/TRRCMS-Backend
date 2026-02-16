@@ -246,8 +246,40 @@ public class ClaimRepository : IClaimRepository
             .ToListAsync(cancellationToken);
     }
     
+    // ==================== FILTERED QUERY ====================
+
+    public async Task<List<Claim>> GetFilteredAsync(
+        ClaimStatus? status,
+        ClaimSource? source,
+        Guid? createdByUserId,
+        Guid? claimId,
+        string? buildingCode = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Claims
+            .Include(c => c.PropertyUnit)
+                .ThenInclude(pu => pu.Building)
+            .Include(c => c.PrimaryClaimant)
+            .AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(c => c.Status == status.Value);
+        if (source.HasValue)
+            query = query.Where(c => c.ClaimSource == source.Value);
+        if (createdByUserId.HasValue)
+            query = query.Where(c => c.CreatedBy == createdByUserId.Value);
+        if (claimId.HasValue)
+            query = query.Where(c => c.Id == claimId.Value);
+        if (!string.IsNullOrWhiteSpace(buildingCode))
+            query = query.Where(c => c.PropertyUnit.Building.BuildingId == buildingCode);
+
+        return await query
+            .OrderByDescending(c => c.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     // ==================== EXISTENCE CHECKS ====================
-    
+
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Claims.AnyAsync(c => c.Id == id, cancellationToken);

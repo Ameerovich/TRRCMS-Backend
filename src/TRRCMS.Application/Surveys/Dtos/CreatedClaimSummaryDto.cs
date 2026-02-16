@@ -101,4 +101,16 @@ public class CreatedClaimSummaryDto
     /// Property Unit ID
     /// </summary>
     public Guid PropertyUnitId { get; set; }
+
+    /// <summary>
+    /// Building code (17-digit GGDDSSCCNCNNBBBBB format).
+    /// Maps to UI: رمز المبنى
+    /// </summary>
+    public string BuildingCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// ID of the survey that created this claim.
+    /// Maps to UI: معرف الزيارة
+    /// </summary>
+    public Guid? SurveyId { get; set; }
 }

@@ -106,6 +106,20 @@ public class SurveyRepository : ISurveyRepository
         return sequences.Max() + 1;
     }
 
+    public async Task<Dictionary<Guid, Survey>> GetByClaimIdsAsync(
+        IEnumerable<Guid> claimIds, CancellationToken cancellationToken = default)
+    {
+        var ids = claimIds.ToList();
+        if (ids.Count == 0)
+            return new Dictionary<Guid, Survey>();
+
+        return await _context.Surveys
+            .Where(s => s.ClaimId.HasValue && ids.Contains(s.ClaimId.Value) && !s.IsDeleted)
+            .GroupBy(s => s.ClaimId!.Value)
+            .Select(g => g.OrderByDescending(s => s.SurveyDate).First())
+            .ToDictionaryAsync(s => s.ClaimId!.Value, cancellationToken);
+    }
+
     // ==================== FIELD SURVEY METHODS ====================
 
     public async Task<List<Survey>> GetByFieldCollectorAsync(Guid fieldCollectorId, CancellationToken cancellationToken = default)

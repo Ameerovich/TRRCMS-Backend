@@ -68,9 +68,7 @@ public class ImportPackageConfiguration : IEntityTypeConfiguration<ImportPackage
 
         builder.Property(p => p.Status)
             .IsRequired()
-            .HasConversion<string>()
-            .HasMaxLength(30)
-            .HasComment("Current import workflow status");
+            .HasComment("Current import workflow status - stored as integer");
 
         builder.Property(p => p.ImportedDate)
             .HasComment("Date when package was uploaded to desktop system");
