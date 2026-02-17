@@ -1,5 +1,5 @@
 using FluentValidation;
-using TRRCMS.Domain.Enums;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateTenureDocument;
 
@@ -19,7 +19,7 @@ public class UpdateTenureDocumentCommandValidator : AbstractValidator<UpdateTenu
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     };
 
-    public UpdateTenureDocumentCommandValidator()
+    public UpdateTenureDocumentCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
@@ -47,7 +47,7 @@ public class UpdateTenureDocumentCommandValidator : AbstractValidator<UpdateTenu
 
         // Evidence type validation (optional int field for update)
         RuleFor(x => x.EvidenceType)
-            .Must(v => Enum.IsDefined(typeof(EvidenceType), v!.Value))
+            .Must(v => vocabService.IsValidCode("evidence_type", v!.Value))
             .When(x => x.EvidenceType.HasValue)
             .WithMessage("Invalid evidence type");
 

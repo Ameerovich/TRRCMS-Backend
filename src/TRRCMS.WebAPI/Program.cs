@@ -62,6 +62,7 @@ builder.Services.AddScoped<ISurveyRepository, SurveyRepository>();
 builder.Services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
 builder.Services.AddScoped<IVocabularyRepository, VocabularyRepository>();
 builder.Services.AddScoped<IVocabularyVersionProvider, DatabaseVocabularyVersionProvider>();
+builder.Services.AddSingleton<IVocabularyValidationService, CachedVocabularyValidationService>();
 
 // ============== AUTHENTICATION SERVICES ==============
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -529,6 +530,12 @@ using (var scope = app.Services.CreateScope())
     {
         logger.LogError(ex, "An error occurred while seeding vocabularies");
     }
+}
+
+// SCOPE 4: Warm vocabulary validation cache (after seeding, before serving requests)
+{
+    var vocabValidation = app.Services.GetRequiredService<IVocabularyValidationService>();
+    await vocabValidation.WarmupAsync();
 }
 
 // ============== MIDDLEWARE ==============

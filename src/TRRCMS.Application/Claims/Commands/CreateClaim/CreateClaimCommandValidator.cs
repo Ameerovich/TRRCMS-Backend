@@ -1,5 +1,5 @@
 using FluentValidation;
-using TRRCMS.Domain.Enums;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Claims.Commands.CreateClaim;
 
@@ -9,7 +9,7 @@ namespace TRRCMS.Application.Claims.Commands.CreateClaim;
 /// </summary>
 public class CreateClaimCommandValidator : AbstractValidator<CreateClaimCommand>
 {
-    public CreateClaimCommandValidator()
+    public CreateClaimCommandValidator(IVocabularyValidationService vocabService)
     {
         // ==================== REQUIRED FIELDS ====================
 
@@ -21,7 +21,7 @@ public class CreateClaimCommandValidator : AbstractValidator<CreateClaimCommand>
             .MaximumLength(100).WithMessage("Claim type must not exceed 100 characters");
 
         RuleFor(x => x.ClaimSource)
-            .Must(v => Enum.IsDefined(typeof(ClaimSource), v))
+            .Must(v => vocabService.IsValidCode("claim_source", v))
             .WithMessage("Invalid claim source");
 
         RuleFor(x => x.CreatedByUserId)
@@ -30,11 +30,11 @@ public class CreateClaimCommandValidator : AbstractValidator<CreateClaimCommand>
         // ==================== ENUM VALIDATIONS (int fields) ====================
 
         RuleFor(x => x.Priority)
-            .Must(v => Enum.IsDefined(typeof(CasePriority), v))
+            .Must(v => vocabService.IsValidCode("case_priority", v))
             .WithMessage("Invalid case priority value");
 
         RuleFor(x => x.TenureContractType)
-            .Must(v => Enum.IsDefined(typeof(TenureContractType), v!.Value))
+            .Must(v => vocabService.IsValidCode("tenure_contract_type", v!.Value))
             .When(x => x.TenureContractType.HasValue)
             .WithMessage("Invalid tenure contract type");
 

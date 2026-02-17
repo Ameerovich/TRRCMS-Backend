@@ -1,5 +1,5 @@
 using FluentValidation;
-using TRRCMS.Domain.Enums;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 
@@ -9,7 +9,7 @@ namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 /// </summary>
 public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonToHouseholdCommand>
 {
-    public AddPersonToHouseholdCommandValidator()
+    public AddPersonToHouseholdCommandValidator(IVocabularyValidationService vocabService)
     {
         // ==================== IDs ====================
 
@@ -84,7 +84,7 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
         // ==================== HOUSEHOLD RELATIONSHIP ====================
 
         RuleFor(x => x.RelationshipToHead)
-            .Must(v => Enum.IsDefined(typeof(RelationshipToHead), v!.Value))
+            .Must(v => vocabService.IsValidCode("relationship_to_head", v!.Value))
             .When(x => x.RelationshipToHead.HasValue)
             .WithMessage("علاقة الشخص برب الأسرة غير صالحة");
     }

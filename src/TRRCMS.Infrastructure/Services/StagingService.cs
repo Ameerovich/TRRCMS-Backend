@@ -28,6 +28,7 @@ public class StagingService : IStagingService
     private readonly IStagingRepository<StagingClaim> _claimRepo;
     private readonly IStagingRepository<StagingSurvey> _surveyRepo;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IVocabularyValidationService _vocabService;
     private readonly ILogger<StagingService> _logger;
 
     public StagingService(
@@ -40,6 +41,7 @@ public class StagingService : IStagingService
         IStagingRepository<StagingClaim> claimRepo,
         IStagingRepository<StagingSurvey> surveyRepo,
         IFileStorageService fileStorageService,
+        IVocabularyValidationService vocabService,
         ILogger<StagingService> logger)
     {
         _buildingRepo = buildingRepo;
@@ -51,6 +53,7 @@ public class StagingService : IStagingService
         _claimRepo = claimRepo;
         _surveyRepo = surveyRepo;
         _fileStorageService = fileStorageService;
+        _vocabService = vocabService;
         _logger = logger;
     }
 
@@ -137,8 +140,8 @@ public class StagingService : IStagingService
                 communityCode: GetString(reader, "community_code"),
                 neighborhoodCode: GetString(reader, "neighborhood_code"),
                 buildingNumber: GetString(reader, "building_number"),
-                buildingType: GetEnum<BuildingType>(reader, "building_type"),
-                status: GetEnum<BuildingStatus>(reader, "building_status"),
+                buildingType: GetEnum<BuildingType>(reader, "building_type", "building_type"),
+                status: GetEnum<BuildingStatus>(reader, "building_status", "building_status"),
                 numberOfPropertyUnits: GetInt(reader, "number_of_property_units"),
                 numberOfApartments: GetInt(reader, "number_of_apartments"),
                 numberOfShops: GetInt(reader, "number_of_shops"),
@@ -153,7 +156,7 @@ public class StagingService : IStagingService
                 subDistrictName: GetNullableString(reader, "sub_district_name"),
                 communityName: GetNullableString(reader, "community_name"),
                 neighborhoodName: GetNullableString(reader, "neighborhood_name"),
-                damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level"),
+                damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level", "damage_level"),
                 numberOfFloors: GetNullableInt(reader, "number_of_floors"),
                 yearOfConstruction: GetNullableInt(reader, "year_of_construction"));
 
@@ -187,17 +190,17 @@ public class StagingService : IStagingService
                 originalEntityId: GetGuid(reader, "id"),
                 originalBuildingId: GetGuid(reader, "building_id"),
                 unitIdentifier: GetString(reader, "unit_identifier"),
-                unitType: GetEnum<PropertyUnitType>(reader, "unit_type"),
-                status: GetEnum<PropertyUnitStatus>(reader, "status"),
+                unitType: GetEnum<PropertyUnitType>(reader, "unit_type", "property_unit_type"),
+                status: GetEnum<PropertyUnitStatus>(reader, "status", "property_unit_status"),
                 floorNumber: GetNullableInt(reader, "floor_number"),
                 numberOfRooms: GetNullableInt(reader, "number_of_rooms"),
                 areaSquareMeters: GetNullableDecimal(reader, "area_square_meters"),
                 description: GetNullableString(reader, "description"),
                 occupancyStatus: GetNullableString(reader, "occupancy_status"),
-                damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level"),
+                damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level", "damage_level"),
                 estimatedAreaSqm: GetNullableDecimal(reader, "estimated_area_sqm"),
-                occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type"),
-                occupancyNature: GetNullableEnum<OccupancyNature>(reader, "occupancy_nature"));
+                occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
+                occupancyNature: GetNullableEnum<OccupancyNature>(reader, "occupancy_nature", "occupancy_nature"));
 
             entities.Add(entity);
         }
@@ -316,9 +319,9 @@ public class StagingService : IStagingService
                 originalEntityId: GetGuid(reader, "id"),
                 originalPersonId: GetGuid(reader, "person_id"),
                 originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
-                relationType: GetEnum<RelationType>(reader, "relation_type"),
+                relationType: GetEnum<RelationType>(reader, "relation_type", "relation_type"),
                 relationTypeOtherDesc: GetNullableString(reader, "relation_type_other_desc"),
-                contractType: GetNullableEnum<TenureContractType>(reader, "contract_type"),
+                contractType: GetNullableEnum<TenureContractType>(reader, "contract_type", "tenure_contract_type"),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
                 startDate: GetNullableDateTime(reader, "start_date"),
                 endDate: GetNullableDateTime(reader, "end_date"),
@@ -354,10 +357,10 @@ public class StagingService : IStagingService
                 originalEntityId: GetGuid(reader, "id"),
                 originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
                 claimType: GetString(reader, "claim_type"),
-                claimSource: GetEnum<ClaimSource>(reader, "claim_source"),
+                claimSource: GetEnum<ClaimSource>(reader, "claim_source", "claim_source"),
                 originalPrimaryClaimantId: GetNullableGuid(reader, "primary_claimant_id"),
-                priority: GetEnum(reader, "priority", CasePriority.Normal),
-                tenureContractType: GetNullableEnum<TenureContractType>(reader, "tenure_contract_type"),
+                priority: GetEnum(reader, "priority", "case_priority", CasePriority.Normal),
+                tenureContractType: GetNullableEnum<TenureContractType>(reader, "tenure_contract_type", "tenure_contract_type"),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
                 tenureStartDate: GetNullableDateTime(reader, "tenure_start_date"),
                 tenureEndDate: GetNullableDateTime(reader, "tenure_end_date"),
@@ -403,9 +406,9 @@ public class StagingService : IStagingService
                 notes: GetNullableString(reader, "notes"),
                 originalFieldCollectorId: GetNullableGuid(reader, "field_collector_id"),
                 referenceCode: GetNullableString(reader, "reference_code"),
-                type: GetNullableEnum<SurveyType>(reader, "type"),
-                source: GetNullableEnum<SurveySource>(reader, "source"),
-                status: GetNullableEnum<SurveyStatus>(reader, "status"));
+                type: GetNullableEnum<SurveyType>(reader, "type", "survey_type"),
+                source: GetNullableEnum<SurveySource>(reader, "source", "survey_source"),
+                status: GetNullableEnum<SurveyStatus>(reader, "status", "survey_status"));
 
             entities.Add(entity);
         }
@@ -459,7 +462,7 @@ public class StagingService : IStagingService
             var entity = StagingEvidence.Create(
                 importPackageId: packageId,
                 originalEntityId: originalId,
-                evidenceType: GetEnum<EvidenceType>(reader, "evidence_type"),
+                evidenceType: GetEnum<EvidenceType>(reader, "evidence_type", "evidence_type"),
                 description: GetString(reader, "description", ""),
                 originalFileName: originalFileName,
                 filePath: filePath,
@@ -643,28 +646,28 @@ public class StagingService : IStagingService
         return DateTime.TryParse(value.ToString(), out var result) ? result.ToUniversalTime() : null;
     }
 
-    private static T GetEnum<T>(SqliteDataReader reader, string column, T defaultValue = default!)
+    private T GetEnum<T>(SqliteDataReader reader, string column, string vocabularyName, T defaultValue = default!)
         where T : struct, Enum
     {
         if (!HasColumn(reader, column)) return defaultValue;
         var value = reader[column];
         if (value is DBNull || value == null) return defaultValue;
         var str = value.ToString();
-        if (int.TryParse(str, out var intVal) && Enum.IsDefined(typeof(T), intVal))
+        if (int.TryParse(str, out var intVal) && _vocabService.IsValidCode(vocabularyName, intVal))
             return (T)(object)intVal;
         if (Enum.TryParse<T>(str, ignoreCase: true, out var enumVal))
             return enumVal;
         return defaultValue;
     }
 
-    private static T? GetNullableEnum<T>(SqliteDataReader reader, string column)
+    private T? GetNullableEnum<T>(SqliteDataReader reader, string column, string vocabularyName)
         where T : struct, Enum
     {
         if (!HasColumn(reader, column)) return null;
         var value = reader[column];
         if (value is DBNull || value == null) return null;
         var str = value.ToString();
-        if (int.TryParse(str, out var intVal) && Enum.IsDefined(typeof(T), intVal))
+        if (int.TryParse(str, out var intVal) && _vocabService.IsValidCode(vocabularyName, intVal))
             return (T)(object)intVal;
         if (Enum.TryParse<T>(str, ignoreCase: true, out var enumVal))
             return enumVal;

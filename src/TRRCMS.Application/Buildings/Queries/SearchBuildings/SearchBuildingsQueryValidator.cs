@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Buildings.Queries.SearchBuildings;
 
@@ -11,7 +12,7 @@ public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQu
     private static readonly string[] AllowedSortFields =
         { "buildingid", "createddate", "status", "buildingtype" };
 
-    public SearchBuildingsQueryValidator()
+    public SearchBuildingsQueryValidator(IVocabularyValidationService vocabService)
     {
         // ==================== ADMINISTRATIVE CODES ====================
 
@@ -50,12 +51,14 @@ public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQu
         // ==================== ENUM FILTERS ====================
 
         RuleFor(x => x.Status)
-            .IsInEnum().WithMessage("Invalid building status value")
-            .When(x => x.Status.HasValue);
+            .Must(v => vocabService.IsValidCode("building_status", (int)v!.Value))
+            .When(x => x.Status.HasValue)
+            .WithMessage("Invalid building status value");
 
         RuleFor(x => x.BuildingType)
-            .IsInEnum().WithMessage("Invalid building type value")
-            .When(x => x.BuildingType.HasValue);
+            .Must(v => vocabService.IsValidCode("building_type", (int)v!.Value))
+            .When(x => x.BuildingType.HasValue)
+            .WithMessage("Invalid building type value");
 
         // ==================== PAGINATION ====================
 

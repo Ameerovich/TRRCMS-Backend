@@ -1,11 +1,11 @@
 using FluentValidation;
-using TRRCMS.Domain.Enums;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdatePersonPropertyRelation;
 
 public class UpdatePersonPropertyRelationCommandValidator : AbstractValidator<UpdatePersonPropertyRelationCommand>
 {
-    public UpdatePersonPropertyRelationCommandValidator()
+    public UpdatePersonPropertyRelationCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
@@ -17,13 +17,13 @@ public class UpdatePersonPropertyRelationCommandValidator : AbstractValidator<Up
 
         // RelationType enum validation (optional int field for partial update)
         RuleFor(x => x.RelationType)
-            .Must(v => Enum.IsDefined(typeof(RelationType), v!.Value))
+            .Must(v => vocabService.IsValidCode("relation_type", v!.Value))
             .When(x => x.RelationType.HasValue)
             .WithMessage("Invalid relation type");
 
         // OccupancyType enum validation (optional int field)
         RuleFor(x => x.OccupancyType)
-            .Must(v => Enum.IsDefined(typeof(OccupancyType), v!.Value))
+            .Must(v => vocabService.IsValidCode("occupancy_type", v!.Value))
             .When(x => x.OccupancyType.HasValue)
             .WithMessage("Invalid occupancy type");
 

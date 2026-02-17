@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Evidences.Commands.CreateEvidence;
 
@@ -21,12 +22,13 @@ public class CreateEvidenceCommandValidator : AbstractValidator<CreateEvidenceCo
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     };
 
-    public CreateEvidenceCommandValidator()
+    public CreateEvidenceCommandValidator(IVocabularyValidationService vocabService)
     {
         // ==================== REQUIRED FIELDS ====================
 
         RuleFor(x => x.EvidenceType)
-            .IsInEnum().WithMessage("Invalid evidence type");
+            .Must(v => vocabService.IsValidCode("evidence_type", (int)v))
+            .WithMessage("Invalid evidence type");
 
         RuleFor(x => x.Description)
             .NotEmpty().WithMessage("Description is required")

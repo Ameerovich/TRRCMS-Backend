@@ -25,6 +25,7 @@ public class DataConsistencyValidator : IStagingValidator
     private readonly IStagingRepository<StagingEvidence> _evidenceRepo;
     private readonly IStagingRepository<StagingClaim> _claimRepo;
     private readonly IStagingRepository<StagingSurvey> _surveyRepo;
+    private readonly IVocabularyValidationService _vocabService;
 
     public DataConsistencyValidator(
         IStagingRepository<StagingBuilding> buildingRepo,
@@ -34,7 +35,8 @@ public class DataConsistencyValidator : IStagingValidator
         IStagingRepository<StagingPersonPropertyRelation> relationRepo,
         IStagingRepository<StagingEvidence> evidenceRepo,
         IStagingRepository<StagingClaim> claimRepo,
-        IStagingRepository<StagingSurvey> surveyRepo)
+        IStagingRepository<StagingSurvey> surveyRepo,
+        IVocabularyValidationService vocabService)
     {
         _buildingRepo = buildingRepo;
         _unitRepo = unitRepo;
@@ -44,6 +46,7 @@ public class DataConsistencyValidator : IStagingValidator
         _evidenceRepo = evidenceRepo;
         _claimRepo = claimRepo;
         _surveyRepo = surveyRepo;
+        _vocabService = vocabService;
     }
 
     public async Task<ValidatorResult> ValidateAsync(
@@ -87,7 +90,7 @@ public class DataConsistencyValidator : IStagingValidator
         };
     }
 
-    private static async Task<(int Checked, int Errors, int Warnings)> ValidateEntitiesAsync<T>(
+    private async Task<(int Checked, int Errors, int Warnings)> ValidateEntitiesAsync<T>(
         IStagingRepository<T> repo, Guid packageId,
         Func<T, (List<string> errors, List<string> warnings)> validateFunc,
         CancellationToken ct)
@@ -129,7 +132,7 @@ public class DataConsistencyValidator : IStagingValidator
 
     // ==================== PER-ENTITY VALIDATION RULES ====================
 
-    private static (List<string>, List<string>) ValidateBuilding(StagingBuilding b)
+    private (List<string>, List<string>) ValidateBuilding(StagingBuilding b)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
@@ -152,8 +155,8 @@ public class DataConsistencyValidator : IStagingValidator
         if (string.IsNullOrWhiteSpace(b.BuildingNumber)) errors.Add("BuildingNumber is required");
         else if (b.BuildingNumber.Length != 5) errors.Add("BuildingNumber must be 5 digits");
 
-        if (!Enum.IsDefined(b.BuildingType)) errors.Add($"Invalid BuildingType: {b.BuildingType}");
-        if (!Enum.IsDefined(b.Status)) errors.Add($"Invalid BuildingStatus: {b.Status}");
+        if (!_vocabService.IsValidCode("building_type", (int)b.BuildingType)) errors.Add($"Invalid BuildingType: {b.BuildingType}");
+        if (!_vocabService.IsValidCode("building_status", (int)b.Status)) errors.Add($"Invalid BuildingStatus: {b.Status}");
 
         if (b.NumberOfPropertyUnits < 0) errors.Add("NumberOfPropertyUnits cannot be negative");
         if (b.NumberOfApartments < 0) errors.Add("NumberOfApartments cannot be negative");
@@ -171,22 +174,22 @@ public class DataConsistencyValidator : IStagingValidator
         return (errors, warnings);
     }
 
-    private static (List<string>, List<string>) ValidatePropertyUnit(StagingPropertyUnit u)
+    private (List<string>, List<string>) ValidatePropertyUnit(StagingPropertyUnit u)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
 
         if (u.OriginalBuildingId == Guid.Empty) errors.Add("OriginalBuildingId is required");
         if (string.IsNullOrWhiteSpace(u.UnitIdentifier)) errors.Add("UnitIdentifier is required");
-        if (!Enum.IsDefined(u.UnitType)) errors.Add($"Invalid UnitType: {u.UnitType}");
-        if (!Enum.IsDefined(u.Status)) errors.Add($"Invalid PropertyUnitStatus: {u.Status}");
+        if (!_vocabService.IsValidCode("property_unit_type", (int)u.UnitType)) errors.Add($"Invalid UnitType: {u.UnitType}");
+        if (!_vocabService.IsValidCode("property_unit_status", (int)u.Status)) errors.Add($"Invalid PropertyUnitStatus: {u.Status}");
         if (u.AreaSquareMeters.HasValue && u.AreaSquareMeters <= 0)
             warnings.Add("AreaSquareMeters should be positive");
 
         return (errors, warnings);
     }
 
-    private static (List<string>, List<string>) ValidatePerson(StagingPerson p)
+    private (List<string>, List<string>) ValidatePerson(StagingPerson p)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
@@ -204,7 +207,7 @@ public class DataConsistencyValidator : IStagingValidator
         return (errors, warnings);
     }
 
-    private static (List<string>, List<string>) ValidateHousehold(StagingHousehold h)
+    private (List<string>, List<string>) ValidateHousehold(StagingHousehold h)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
@@ -217,14 +220,14 @@ public class DataConsistencyValidator : IStagingValidator
         return (errors, warnings);
     }
 
-    private static (List<string>, List<string>) ValidateRelation(StagingPersonPropertyRelation r)
+    private (List<string>, List<string>) ValidateRelation(StagingPersonPropertyRelation r)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
 
         if (r.OriginalPersonId == Guid.Empty) errors.Add("OriginalPersonId is required");
         if (r.OriginalPropertyUnitId == Guid.Empty) errors.Add("OriginalPropertyUnitId is required");
-        if (!Enum.IsDefined(r.RelationType)) errors.Add($"Invalid RelationType: {r.RelationType}");
+        if (!_vocabService.IsValidCode("relation_type", (int)r.RelationType)) errors.Add($"Invalid RelationType: {r.RelationType}");
 
         if (r.OwnershipShare.HasValue && (r.OwnershipShare < 0 || r.OwnershipShare > 100))
             errors.Add($"OwnershipShare must be 0-100, got {r.OwnershipShare}");
@@ -232,12 +235,12 @@ public class DataConsistencyValidator : IStagingValidator
         return (errors, warnings);
     }
 
-    private static (List<string>, List<string>) ValidateEvidence(StagingEvidence e)
+    private (List<string>, List<string>) ValidateEvidence(StagingEvidence e)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
 
-        if (!Enum.IsDefined(e.EvidenceType)) errors.Add($"Invalid EvidenceType: {e.EvidenceType}");
+        if (!_vocabService.IsValidCode("evidence_type", (int)e.EvidenceType)) errors.Add($"Invalid EvidenceType: {e.EvidenceType}");
         if (string.IsNullOrWhiteSpace(e.OriginalFileName)) errors.Add("OriginalFileName is required");
         if (e.FileSizeBytes <= 0) warnings.Add("FileSizeBytes is 0 or negative");
 
@@ -248,19 +251,19 @@ public class DataConsistencyValidator : IStagingValidator
         return (errors, warnings);
     }
 
-    private static (List<string>, List<string>) ValidateClaim(StagingClaim c)
+    private (List<string>, List<string>) ValidateClaim(StagingClaim c)
     {
         var errors = new List<string>();
         var warnings = new List<string>();
 
         if (c.OriginalPropertyUnitId == Guid.Empty) errors.Add("OriginalPropertyUnitId is required");
         if (string.IsNullOrWhiteSpace(c.ClaimType)) errors.Add("ClaimType is required");
-        if (!Enum.IsDefined(c.ClaimSource)) errors.Add($"Invalid ClaimSource: {c.ClaimSource}");
+        if (!_vocabService.IsValidCode("claim_source", (int)c.ClaimSource)) errors.Add($"Invalid ClaimSource: {c.ClaimSource}");
 
         return (errors, warnings);
     }
 
-    private static (List<string>, List<string>) ValidateSurvey(StagingSurvey s)
+    private (List<string>, List<string>) ValidateSurvey(StagingSurvey s)
     {
         var errors = new List<string>();
         var warnings = new List<string>();

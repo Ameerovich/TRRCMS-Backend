@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Buildings.Queries.GetBuildingsInPolygon;
 
@@ -8,7 +9,7 @@ namespace TRRCMS.Application.Buildings.Queries.GetBuildingsInPolygon;
 /// </summary>
 public class GetBuildingsInPolygonQueryValidator : AbstractValidator<GetBuildingsInPolygonQuery>
 {
-    public GetBuildingsInPolygonQueryValidator()
+    public GetBuildingsInPolygonQueryValidator(IVocabularyValidationService vocabService)
     {
         // ==================== POLYGON INPUT ====================
         // Either PolygonWkt or Coordinates must be provided
@@ -53,16 +54,19 @@ public class GetBuildingsInPolygonQueryValidator : AbstractValidator<GetBuilding
         // ==================== ENUM FILTERS ====================
 
         RuleFor(x => x.BuildingType)
-            .IsInEnum().WithMessage("Invalid building type value")
-            .When(x => x.BuildingType.HasValue);
+            .Must(v => vocabService.IsValidCode("building_type", (int)v!.Value))
+            .When(x => x.BuildingType.HasValue)
+            .WithMessage("Invalid building type value");
 
         RuleFor(x => x.Status)
-            .IsInEnum().WithMessage("Invalid building status value")
-            .When(x => x.Status.HasValue);
+            .Must(v => vocabService.IsValidCode("building_status", (int)v!.Value))
+            .When(x => x.Status.HasValue)
+            .WithMessage("Invalid building status value");
 
         RuleFor(x => x.DamageLevel)
-            .IsInEnum().WithMessage("Invalid damage level value")
-            .When(x => x.DamageLevel.HasValue);
+            .Must(v => vocabService.IsValidCode("damage_level", (int)v!.Value))
+            .When(x => x.DamageLevel.HasValue)
+            .WithMessage("Invalid damage level value");
 
         // ==================== PAGINATION ====================
 

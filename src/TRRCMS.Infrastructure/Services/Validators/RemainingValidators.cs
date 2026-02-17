@@ -390,15 +390,18 @@ public class VocabularyVersionValidator : IStagingValidator
     private readonly IStagingRepository<StagingBuilding> _buildingRepo;
     private readonly IStagingRepository<StagingPropertyUnit> _unitRepo;
     private readonly IStagingRepository<StagingClaim> _claimRepo;
+    private readonly IVocabularyValidationService _vocabService;
 
     public VocabularyVersionValidator(
         IStagingRepository<StagingBuilding> buildingRepo,
         IStagingRepository<StagingPropertyUnit> unitRepo,
-        IStagingRepository<StagingClaim> claimRepo)
+        IStagingRepository<StagingClaim> claimRepo,
+        IVocabularyValidationService vocabService)
     {
         _buildingRepo = buildingRepo;
         _unitRepo = unitRepo;
         _claimRepo = claimRepo;
+        _vocabService = vocabService;
     }
 
     public async Task<ValidatorResult> ValidateAsync(Guid importPackageId, CancellationToken ct = default)
@@ -413,9 +416,9 @@ public class VocabularyVersionValidator : IStagingValidator
         {
             checked_++;
             var warns = new List<string>();
-            if (!Enum.IsDefined(b.BuildingType)) warns.Add($"Unknown BuildingType value: {(int)b.BuildingType}");
-            if (!Enum.IsDefined(b.Status)) warns.Add($"Unknown BuildingStatus value: {(int)b.Status}");
-            if (b.DamageLevel.HasValue && !Enum.IsDefined(b.DamageLevel.Value)) warns.Add($"Unknown DamageLevel value: {(int)b.DamageLevel.Value}");
+            if (!_vocabService.IsValidCode("building_type", (int)b.BuildingType)) warns.Add($"Unknown BuildingType value: {(int)b.BuildingType}");
+            if (!_vocabService.IsValidCode("building_status", (int)b.Status)) warns.Add($"Unknown BuildingStatus value: {(int)b.Status}");
+            if (b.DamageLevel.HasValue && !_vocabService.IsValidCode("damage_level", (int)b.DamageLevel.Value)) warns.Add($"Unknown DamageLevel value: {(int)b.DamageLevel.Value}");
 
             if (warns.Count > 0) { AppendWarnings(b, warns); warnings += warns.Count; modBuildings.Add(b); }
         }
@@ -426,8 +429,8 @@ public class VocabularyVersionValidator : IStagingValidator
         {
             checked_++;
             var warns = new List<string>();
-            if (!Enum.IsDefined(u.UnitType)) warns.Add($"Unknown PropertyUnitType value: {(int)u.UnitType}");
-            if (!Enum.IsDefined(u.Status)) warns.Add($"Unknown PropertyUnitStatus value: {(int)u.Status}");
+            if (!_vocabService.IsValidCode("property_unit_type", (int)u.UnitType)) warns.Add($"Unknown PropertyUnitType value: {(int)u.UnitType}");
+            if (!_vocabService.IsValidCode("property_unit_status", (int)u.Status)) warns.Add($"Unknown PropertyUnitStatus value: {(int)u.Status}");
 
             if (warns.Count > 0) { AppendWarnings(u, warns); warnings += warns.Count; modUnits.Add(u); }
         }
@@ -438,8 +441,8 @@ public class VocabularyVersionValidator : IStagingValidator
         {
             checked_++;
             var warns = new List<string>();
-            if (!Enum.IsDefined(c.ClaimSource)) warns.Add($"Unknown ClaimSource value: {(int)c.ClaimSource}");
-            if (!Enum.IsDefined(c.Priority)) warns.Add($"Unknown CasePriority value: {(int)c.Priority}");
+            if (!_vocabService.IsValidCode("claim_source", (int)c.ClaimSource)) warns.Add($"Unknown ClaimSource value: {(int)c.ClaimSource}");
+            if (!_vocabService.IsValidCode("case_priority", (int)c.Priority)) warns.Add($"Unknown CasePriority value: {(int)c.Priority}");
 
             if (warns.Count > 0) { AppendWarnings(c, warns); warnings += warns.Count; modClaims.Add(c); }
         }

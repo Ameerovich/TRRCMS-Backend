@@ -1,11 +1,12 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 
 public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPersonToPropertyUnitCommand>
 {
-    public LinkPersonToPropertyUnitCommandValidator()
+    public LinkPersonToPropertyUnitCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
@@ -21,12 +22,12 @@ public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPe
 
         // RelationType enum validation (int field)
         RuleFor(x => x.RelationType)
-            .Must(v => Enum.IsDefined(typeof(RelationType), v))
+            .Must(v => vocabService.IsValidCode("relation_type", v))
             .WithMessage("Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other");
 
         // OccupancyType enum validation (optional int field)
         RuleFor(x => x.OccupancyType)
-            .Must(v => Enum.IsDefined(typeof(OccupancyType), v!.Value))
+            .Must(v => vocabService.IsValidCode("occupancy_type", v!.Value))
             .When(x => x.OccupancyType.HasValue)
             .WithMessage("Invalid occupancy type");
 

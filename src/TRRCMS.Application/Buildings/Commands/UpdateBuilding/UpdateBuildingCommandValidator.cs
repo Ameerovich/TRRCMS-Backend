@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 
@@ -8,7 +9,7 @@ namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 /// </summary>
 public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCommand>
 {
-    public UpdateBuildingCommandValidator()
+    public UpdateBuildingCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.BuildingId)
             .NotEmpty()
@@ -16,13 +17,13 @@ public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCo
 
         // Building type validation
         RuleFor(x => x.BuildingType)
-            .IsInEnum()
+            .Must(v => vocabService.IsValidCode("building_type", (int)v!.Value))
             .When(x => x.BuildingType.HasValue)
             .WithMessage("Invalid building type");
 
         // Building status validation
         RuleFor(x => x.BuildingStatus)
-            .IsInEnum()
+            .Must(v => vocabService.IsValidCode("building_status", (int)v!.Value))
             .When(x => x.BuildingStatus.HasValue)
             .WithMessage("Invalid building status");
 
@@ -59,7 +60,7 @@ public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCo
 
         // Syria geographic bounds for coordinates
         // FIX: Use decimal suffix (m) to match decimal? property type
-        // Syria approximate bounds: Lat 32.0°N - 37.5°N, Lng 35.5°E - 42.5°E
+        // Syria approximate bounds: Lat 32.0ï¿½N - 37.5ï¿½N, Lng 35.5ï¿½E - 42.5ï¿½E
 
         RuleFor(x => x.Latitude)
             .InclusiveBetween(32.0m, 37.5m)

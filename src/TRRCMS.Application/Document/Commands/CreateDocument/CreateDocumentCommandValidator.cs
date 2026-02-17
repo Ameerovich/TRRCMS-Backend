@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Documents.Commands.CreateDocument;
 
@@ -8,12 +9,13 @@ namespace TRRCMS.Application.Documents.Commands.CreateDocument;
 /// </summary>
 public class CreateDocumentCommandValidator : AbstractValidator<CreateDocumentCommand>
 {
-    public CreateDocumentCommandValidator()
+    public CreateDocumentCommandValidator(IVocabularyValidationService vocabService)
     {
         // ==================== REQUIRED FIELDS ====================
 
         RuleFor(x => x.DocumentType)
-            .IsInEnum().WithMessage("Invalid document type");
+            .Must(v => vocabService.IsValidCode("document_type", (int)v))
+            .WithMessage("Invalid document type");
 
         RuleFor(x => x.CreatedByUserId)
             .NotEmpty().WithMessage("Created by user ID is required");

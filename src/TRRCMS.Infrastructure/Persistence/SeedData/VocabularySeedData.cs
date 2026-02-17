@@ -18,11 +18,6 @@ public static class VocabularySeedData
     private static readonly Guid SystemUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
 
     /// <summary>
-    /// Seed version — bump this when enum values change to trigger re-seed.
-    /// </summary>
-    private const string SeedVersion = "1.1.0";
-
-    /// <summary>
     /// Enum types to seed as vocabularies, with their metadata.
     /// </summary>
     private static readonly VocabularyEnumDefinition[] EnumDefinitions = new[]
@@ -76,9 +71,13 @@ public static class VocabularySeedData
         Def<AuditActionType>("audit_action_type", "نوع إجراء التدقيق", "Audit Action Type", "System"),
     };
 
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     /// <summary>
-    /// Seed all vocabularies from enum definitions.
-    /// Skips existing vocabularies that already match the current seed version.
+    /// Seed all vocabularies from enum definitions using additive merge logic.
+    /// - Vocabulary doesn't exist → create from enum values (first install).
+    /// - Vocabulary exists → only append new enum values not already present.
+    ///   Admin-added or admin-modified values are never removed or overwritten.
     /// </summary>
     public static async Task SeedAsync(ApplicationDbContext context, CancellationToken cancellationToken = default)
     {
@@ -88,21 +87,11 @@ public static class VocabularySeedData
                 .Where(v => !v.IsDeleted && v.VocabularyName == def.VocabularyName && v.IsCurrentVersion)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (existing != null && existing.Version == SeedVersion)
-                continue; // Already seeded with this version
-
-            var valuesJson = BuildValuesJson(def.EnumType);
-            var valueCount = CountEnumValues(def.EnumType);
-
-            if (existing != null)
+            if (existing == null)
             {
-                // Create a minor version bump
-                var newVersion = existing.CreateMinorVersion(valuesJson, "Seed data updated", SystemUserId);
-                await context.Vocabularies.AddAsync(newVersion, cancellationToken);
-            }
-            else
-            {
-                // Create new vocabulary
+                // First install — create vocabulary from enum
+                var valuesJson = BuildValuesJson(def.EnumType);
+
                 var vocabulary = Vocabulary.Create(
                     vocabularyName: def.VocabularyName,
                     displayNameArabic: def.DisplayNameArabic,
@@ -116,9 +105,103 @@ public static class VocabularySeedData
 
                 await context.Vocabularies.AddAsync(vocabulary, cancellationToken);
             }
+            else
+            {
+                // Additive merge: only append enum values not already in the vocabulary
+                var enumValues = GetEnumValues(def.EnumType);
+                var existingValues = ParseValues(existing.ValuesJson);
+                var existingCodes = existingValues.Select(v => v.Code).ToHashSet();
+
+                var newValues = enumValues.Where(v => !existingCodes.Contains(v.Code)).ToList();
+
+                if (newValues.Count > 0)
+                {
+                    // Determine next display order
+                    var maxOrder = existingValues.Count > 0
+                        ? existingValues.Max(v => v.DisplayOrder) + 1
+                        : 0;
+
+                    foreach (var val in newValues)
+                    {
+                        val.DisplayOrder = maxOrder++;
+                        existingValues.Add(val);
+                    }
+
+                    var mergedJson = JsonSerializer.Serialize(existingValues.Select(v => new
+                    {
+                        code = v.Code,
+                        labelAr = v.LabelAr,
+                        labelEn = v.LabelEn,
+                        description = v.Description,
+                        displayOrder = v.DisplayOrder
+                    }));
+
+                    var newVersion = existing.CreateMinorVersion(
+                        mergedJson,
+                        $"System: added {newValues.Count} new enum value(s) from code deployment",
+                        SystemUserId);
+
+                    await context.Vocabularies.AddAsync(newVersion, cancellationToken);
+                }
+            }
         }
 
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Get enum values as SeedValue objects for comparison.
+    /// </summary>
+    private static List<SeedValue> GetEnumValues(Type enumType)
+    {
+        var values = new List<SeedValue>();
+        var fields = enumType.GetFields(BindingFlags.Public | BindingFlags.Static);
+        var order = 0;
+
+        foreach (var field in fields)
+        {
+            var enumValue = (int)field.GetValue(null)!;
+            var arabicAttr = field.GetCustomAttribute<ArabicLabelAttribute>();
+            var labelAr = arabicAttr?.Label ?? field.Name;
+            var labelEn = FormatEnumName(field.Name);
+
+            values.Add(new SeedValue
+            {
+                Code = enumValue,
+                LabelAr = labelAr,
+                LabelEn = labelEn,
+                DisplayOrder = order++
+            });
+        }
+
+        return values;
+    }
+
+    /// <summary>
+    /// Parse existing vocabulary values from JSON.
+    /// </summary>
+    private static List<SeedValue> ParseValues(string valuesJson)
+    {
+        if (string.IsNullOrWhiteSpace(valuesJson) || valuesJson == "[]")
+            return new List<SeedValue>();
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<SeedValue>>(valuesJson, JsonOptions) ?? new List<SeedValue>();
+        }
+        catch
+        {
+            return new List<SeedValue>();
+        }
+    }
+
+    private class SeedValue
+    {
+        public int Code { get; set; }
+        public string LabelAr { get; set; } = "";
+        public string LabelEn { get; set; } = "";
+        public string? Description { get; set; }
+        public int DisplayOrder { get; set; }
     }
 
     /// <summary>
@@ -167,11 +250,6 @@ public static class VocabularySeedData
             result.Append(name[i]);
         }
         return result.ToString();
-    }
-
-    private static int CountEnumValues(Type enumType)
-    {
-        return Enum.GetValues(enumType).Length;
     }
 
     private static VocabularyEnumDefinition Def<TEnum>(string name, string ar, string en, string category) where TEnum : Enum

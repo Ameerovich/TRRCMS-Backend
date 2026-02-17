@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.PersonPropertyRelations.Commands.CreatePersonPropertyRelation;
@@ -10,7 +11,7 @@ namespace TRRCMS.Application.PersonPropertyRelations.Commands.CreatePersonProper
 /// </summary>
 public class CreatePersonPropertyRelationCommandValidator : AbstractValidator<CreatePersonPropertyRelationCommand>
 {
-    public CreatePersonPropertyRelationCommandValidator()
+    public CreatePersonPropertyRelationCommandValidator(IVocabularyValidationService vocabService)
     {
         // ==================== REQUIRED IDs ====================
 
@@ -23,13 +24,13 @@ public class CreatePersonPropertyRelationCommandValidator : AbstractValidator<Cr
         // ==================== RELATION TYPE ====================
 
         RuleFor(x => x.RelationType)
-            .IsInEnum()
+            .Must(v => vocabService.IsValidCode("relation_type", (int)v))
             .WithMessage("Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other");
 
         // ==================== OCCUPANCY TYPE ====================
 
         RuleFor(x => x.OccupancyType)
-            .IsInEnum()
+            .Must(v => vocabService.IsValidCode("occupancy_type", (int)v!.Value))
             .When(x => x.OccupancyType.HasValue)
             .WithMessage("Invalid occupancy type");
 

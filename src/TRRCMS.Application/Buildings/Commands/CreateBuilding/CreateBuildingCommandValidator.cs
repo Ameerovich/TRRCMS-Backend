@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
 
@@ -11,7 +12,7 @@ namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
 /// </summary>
 public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCommand>
 {
-    public CreateBuildingCommandValidator()
+    public CreateBuildingCommandValidator(IVocabularyValidationService vocabService)
     {
         // ==================== ADMINISTRATIVE CODES ====================
 
@@ -66,10 +67,12 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
         // ==================== BUILDING ATTRIBUTES ====================
 
         RuleFor(x => x.BuildingType)
-            .IsInEnum().WithMessage("Invalid building type (نوع البناء)");
+            .Must(v => vocabService.IsValidCode("building_type", (int)v))
+            .WithMessage("Invalid building type (نوع البناء)");
 
         RuleFor(x => x.BuildingStatus)
-            .IsInEnum().WithMessage("Invalid building status (حالة البناء)");
+            .Must(v => vocabService.IsValidCode("building_status", (int)v))
+            .WithMessage("Invalid building status (حالة البناء)");
 
         RuleFor(x => x.NumberOfPropertyUnits)
             .GreaterThanOrEqualTo(0).WithMessage("Number of property units cannot be negative")
