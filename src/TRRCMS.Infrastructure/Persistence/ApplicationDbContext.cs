@@ -118,9 +118,13 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<StagingSurvey> StagingSurveys => Set<StagingSurvey>();
 
+    /// <summary>
+    /// LAN Sync sessions (telemetry + auditability)
+    /// </summary>
+    public DbSet<SyncSession> SyncSessions => Set<SyncSession>();
+
+
     // TODO: Add other entities later as we implement them
-    // public DbSet<Certificate> Certificates => Set<Certificate>();
-    // etc.
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

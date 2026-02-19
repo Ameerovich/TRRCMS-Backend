@@ -121,8 +121,30 @@ public interface IBuildingAssignmentRepository
         bool sortDescending = false,
         CancellationToken cancellationToken = default);
 
+    // ==================== SYNC QUERIES ====================
+
+    /// <summary>
+    /// Get all active assignments for a field collector whose transfer status is
+    /// <see cref="TransferStatus.Pending"/> or <see cref="TransferStatus.Failed"/>.
+    /// Results are eagerly loaded with the parent <c>Building</c> and its
+    /// <c>PropertyUnits</c> so that the sync handler can build the full payload
+    /// without additional round-trips.
+    ///
+    /// An optional <paramref name="modifiedSinceUtc"/> filter restricts results to
+    /// assignments that were created or last modified after the given timestamp,
+    /// enabling incremental sync (tablet sends its last-synced-at timestamp).
+    /// Pass <c>null</c> to retrieve all pending/failed assignments.
+    ///
+    /// Used by: <c>GetSyncAssignmentsQueryHandler</c> — Sync Step 3.
+    /// UC-012: Assign Buildings to Field Collectors.
+    /// </summary>
+    Task<List<BuildingAssignment>> GetPendingOrFailedByFieldCollectorAsync(
+        Guid fieldCollectorId,
+        DateTime? modifiedSinceUtc = null,
+        CancellationToken cancellationToken = default);
+
     // ==================== REVISIT QUERIES ====================
-    
+
     /// <summary>
     /// Get revisit assignments for a building
     /// </summary>

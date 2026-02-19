@@ -391,4 +391,11 @@ public enum Permission
     /// </summary>
     [ArabicLabel("استعادة النظام")]
     System_Restore = 9003,
+
+    /// <summary>
+    /// Sync data over LAN (Field Collector, Field Supervisor, Admin)
+    /// </summary>
+    [ArabicLabel("مزامنة النظام")]
+    System_Sync = 9010,
+
 }

@@ -131,6 +131,15 @@ builder.Services.AddScoped<IDuplicateDetectionService, DuplicateDetectionService
 // Commmit pipeline service
 builder.Services.AddScoped<ICommitService, CommitService>();
 
+builder.Services.AddScoped<ISyncSessionRepository, SyncSessionRepository>();
+builder.Services.AddScoped<IBuildingAssignmentRepository, BuildingAssignmentRepository>();
+
+// ============== SYNC PACKAGE STORE ==============
+// Stores incoming .uhc packages from tablets to a local quarantine directory.
+// Replace with a cloud-based implementation (Azure Blob, S3) for multi-node deployments.
+builder.Services.AddScoped<ISyncPackageStore, LocalSyncPackageStore>();
+
+
 // ============== MEDIATOR ==============
 builder.Services.AddMediatR(cfg =>
 {
@@ -390,6 +399,13 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("CanImportSurveys", policy =>
         policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Import)));
+
+    // ==================== SYNC POLICIES ====================
+
+    // Granted to FieldCollector, FieldSupervisor, and Administrator.
+    // Required by all SyncController endpoints (Sync Protocol Steps 1–4).
+    options.AddPolicy("CanSyncData", policy =>
+        policy.Requirements.Add(new PermissionRequirement(Permission.System_Sync)));
 });
 
 // ============== CONTROLLERS ==============

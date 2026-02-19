@@ -279,6 +279,39 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
         return (assignments, totalCount);
     }
 
+    // ==================== SYNC QUERIES ====================
+
+    /// <inheritdoc />
+    public async Task<List<BuildingAssignment>> GetPendingOrFailedByFieldCollectorAsync(
+        Guid fieldCollectorId,
+        DateTime? modifiedSinceUtc = null,
+        CancellationToken cancellationToken = default)
+    {
+        // Base filter: active assignments whose transfer is not yet acknowledged.
+        var query = _context.BuildingAssignments
+            .Include(ba => ba.Building)
+                .ThenInclude(b => b.PropertyUnits)
+            .Where(ba =>
+                ba.FieldCollectorId == fieldCollectorId &&
+                ba.IsActive &&
+                (ba.TransferStatus == TransferStatus.Pending ||
+                 ba.TransferStatus == TransferStatus.Failed));
+
+        // Optional incremental sync: only return assignments touched since
+        // the tablet's last sync timestamp (tablet sends its last-synced-at value).
+        if (modifiedSinceUtc.HasValue)
+        {
+            query = query.Where(ba =>
+                ba.CreatedAtUtc >= modifiedSinceUtc.Value ||
+                ba.LastModifiedAtUtc >= modifiedSinceUtc.Value);
+        }
+
+        return await query
+            .OrderBy(ba => ba.Priority)       // Urgent/High before Normal
+            .ThenBy(ba => ba.AssignedDate)    // Oldest first within the same priority level
+            .ToListAsync(cancellationToken);
+    }
+
     // ==================== REVISIT QUERIES ====================
 
     public async Task<List<BuildingAssignment>> GetRevisitAssignmentsAsync(

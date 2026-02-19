@@ -86,6 +86,12 @@ public interface IUnitOfWork : IDisposable
     /// </summary>
     IVocabularyRepository Vocabularies { get; }
 
+    /// <summary>
+    /// Sync session repository - tracks LAN sync sessions
+    /// </summary>
+    ISyncSessionRepository SyncSessions { get; }
+
+
     // ==================== TRANSACTION OPERATIONS ====================
 
     /// <summary>

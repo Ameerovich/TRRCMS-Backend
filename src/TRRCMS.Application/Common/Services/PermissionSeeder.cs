@@ -110,7 +110,8 @@ public static class PermissionSeeder
             Permission.System_Import,
             Permission.System_Export,
             Permission.System_Backup,
-            Permission.System_Restore
+            Permission.System_Restore,
+            Permission.System_Sync    // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
         };
     }
 
@@ -214,7 +215,10 @@ public static class PermissionSeeder
             Permission.Surveys_ViewOwn,     // UC-002: View own surveys to resume
             Permission.Surveys_EditOwn,     // UC-002: Edit/update own draft surveys
             Permission.Surveys_Finalize,    // UC-002: Finalize completed surveys
-            Permission.Surveys_Export       // Export to .uhc for sync
+            Permission.Surveys_Export,      // Export to .uhc for sync
+
+            // ==================== SYSTEM ====================
+            Permission.System_Sync          // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
             // No Surveys_View/ViewAll - cannot see other collectors' surveys
             // No Surveys_EditAll - cannot edit others' surveys
             // No Surveys_Import - done by office staff
@@ -256,7 +260,10 @@ public static class PermissionSeeder
             Permission.Surveys_View,        // View all surveys for supervision
             Permission.Surveys_ViewAll,     // View all surveys (alias)
             Permission.Surveys_ViewOwn,     // View own if created any
-            Permission.Surveys_Export       // Export for reporting
+            Permission.Surveys_Export,      // Export for reporting
+
+            // ==================== SYSTEM ====================
+            Permission.System_Sync          // Tablet LAN sync — supervisor may trigger sync sessions
             // No Surveys_Create - supervisors don't create surveys
             // No Surveys_EditOwn/EditAll - supervisors review, not edit
             // No Surveys_Finalize - collectors finalize their own
