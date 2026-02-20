@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Infrastructure.Persistence.Repositories;
 
@@ -50,6 +51,34 @@ public class PropertyUnitRepository : IPropertyUnitRepository
         return await _context.PropertyUnits
             .Where(p => !p.IsDeleted && p.BuildingId == buildingId)
             .OrderBy(p => p.FloorNumber)
+            .ThenBy(p => p.UnitIdentifier)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<PropertyUnit>> GetFilteredAsync(
+        Guid? buildingId,
+        PropertyUnitType? unitType,
+        PropertyUnitStatus? status,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.PropertyUnits
+            .Where(p => !p.IsDeleted)
+            .AsQueryable();
+
+        // Apply filters (AND-combined)
+        if (buildingId.HasValue)
+            query = query.Where(p => p.BuildingId == buildingId.Value);
+
+        if (unitType.HasValue)
+            query = query.Where(p => p.UnitType == unitType.Value);
+
+        if (status.HasValue)
+            query = query.Where(p => p.Status == status.Value);
+
+        // Order by BuildingId, then FloorNumber, then UnitIdentifier
+        return await query
+            .OrderBy(p => p.BuildingId)
+            .ThenBy(p => p.FloorNumber)
             .ThenBy(p => p.UnitIdentifier)
             .ToListAsync(cancellationToken);
     }

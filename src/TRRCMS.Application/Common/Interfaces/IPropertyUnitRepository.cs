@@ -1,4 +1,5 @@
 ﻿using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Common.Interfaces;
 
@@ -26,6 +27,22 @@ public interface IPropertyUnitRepository
     /// Get all property units for a specific building
     /// </summary>
     Task<List<PropertyUnit>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get property units with optional filtering
+    /// Filters are AND-combined (all must match if provided)
+    /// Results are ordered by BuildingId, FloorNumber, then UnitIdentifier
+    /// </summary>
+    /// <param name="buildingId">Filter by building ID (optional)</param>
+    /// <param name="unitType">Filter by property unit type (optional)</param>
+    /// <param name="status">Filter by property unit status (optional)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Filtered list of property units</returns>
+    Task<List<PropertyUnit>> GetFilteredAsync(
+        Guid? buildingId,
+        PropertyUnitType? unitType,
+        PropertyUnitStatus? status,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Add new property unit

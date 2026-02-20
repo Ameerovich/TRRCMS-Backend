@@ -371,67 +371,162 @@ public class PropertyUnitsController : ControllerBase
     // ==================== GET ALL ====================
 
     /// <summary>
-    /// Get all property units
+    /// Get all property units with optional filtering and grouping
     /// </summary>
     /// <remarks>
-    /// Retrieves all property units in the system.
-    /// 
-    /// **Use Case**: Reporting, data export, administrative review
-    /// 
+    /// Retrieves property units with optional filtering by building, type, and status.
+    /// Results are grouped by building by default.
+    /// عرض جميع الوحدات العقارية مع خيارات التصفية والتجميع
+    ///
+    /// **Use Case**: Building inventory, reporting, administrative review, filtered dashboards
+    ///
     /// **Required Permission**: PropertyUnits_View (6000) - CanViewPropertyUnits policy
-    /// 
-    /// **Note**: For large datasets, consider using:
-    /// - `GET /api/v1/PropertyUnits/building/{buildingId}` - Units by building
-    /// - `GET /api/v1/Surveys/{surveyId}/property-units` - Units in a survey
-    /// 
-    /// **Response**: Array of property units ordered by building and unit identifier.
-    /// 
-    /// **Example Response:**
-    /// ```json
-    /// [
-    ///   {
-    ///     "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///     "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    ///     "buildingNumber": "00001",
-    ///     "unitIdentifier": "1A",
-    ///     "floorNumber": 1,
-    ///     "unitType": 1,
-    ///     "status": 1,
-    ///     "areaSquareMeters": 85.5,
-    ///     "numberOfRooms": 3,
-    ///     "description": "شقة سكنية",
-    ///     "createdAtUtc": "2026-01-29T12:00:00Z"
-    ///   },
-    ///   {
-    ///     "id": "8f550bbc-6ee2-5b9b-c7d5-376119f64c97",
-    ///     "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    ///     "buildingNumber": "00001",
-    ///     "unitIdentifier": "G-1",
-    ///     "floorNumber": 0,
-    ///     "unitType": 2,
-    ///     "status": 2,
-    ///     "areaSquareMeters": 45.0,
-    ///     "numberOfRooms": null,
-    ///     "description": "محل تجاري في الطابق الأرضي",
-    ///     "createdAtUtc": "2026-01-29T12:00:00Z"
-    ///   }
-    /// ]
+    ///
+    /// **NEW FEATURES:**
+    /// - **Filter by Building**: Get units from specific building only
+    /// - **Filter by Type**: Get only apartments, shops, offices, etc.
+    /// - **Filter by Status**: Get only occupied, vacant, damaged units, etc.
+    /// - **Grouping**: Results grouped by building with statistics (default)
+    /// - **Flat List**: Option to get ungrouped flat list of all units
+    ///
+    /// **Filter Parameters (all optional, AND-combined):**
+    /// - `buildingId`: Filter by specific building (GUID)
+    /// - `unitType`: 1=Apartment, 2=Shop, 3=Office, 4=Warehouse, 5=Other
+    /// - `status`: 1=Occupied, 2=Vacant, 3=Damaged, 4=UnderRenovation, 5=Uninhabitable, 6=Locked, 99=Unknown
+    /// - `groupByBuilding`: true (default) = grouped, false = flat list
+    ///
+    /// **Query Examples:**
     /// ```
+    /// # All units grouped by building (default)
+    /// GET /api/v1/PropertyUnits
+    ///
+    /// # All apartments across all buildings
+    /// GET /api/v1/PropertyUnits?unitType=1
+    ///
+    /// # All vacant units
+    /// GET /api/v1/PropertyUnits?status=2
+    ///
+    /// # All shops in specific building
+    /// GET /api/v1/PropertyUnits?buildingId={guid}&amp;unitType=2
+    ///
+    /// # All damaged units (ungrouped flat list)
+    /// GET /api/v1/PropertyUnits?status=3&amp;groupByBuilding=false
+    ///
+    /// # All occupied apartments in specific building
+    /// GET /api/v1/PropertyUnits?buildingId={guid}&amp;unitType=1&amp;status=1
+    /// ```
+    ///
+    /// **Example Response (Grouped - Default):**
+    /// ```json
+    /// {
+    ///   "groupedByBuilding": [
+    ///     {
+    ///       "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///       "buildingNumber": "01-02-03-001-002-00001",
+    ///       "unitCount": 3,
+    ///       "propertyUnits": [
+    ///         {
+    ///           "id": "unit-guid-1",
+    ///           "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///           "buildingNumber": "01-02-03-001-002-00001",
+    ///           "unitIdentifier": "1A",
+    ///           "floorNumber": 1,
+    ///           "unitType": 1,
+    ///           "status": 1,
+    ///           "areaSquareMeters": 85.5,
+    ///           "numberOfRooms": 3,
+    ///           "description": "شقة سكنية",
+    ///           "createdAtUtc": "2026-01-29T12:00:00Z"
+    ///         },
+    ///         {
+    ///           "id": "unit-guid-2",
+    ///           "buildingId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///           "buildingNumber": "01-02-03-001-002-00001",
+    ///           "unitIdentifier": "2A",
+    ///           "floorNumber": 2,
+    ///           "unitType": 1,
+    ///           "status": 2,
+    ///           "areaSquareMeters": 90.0,
+    ///           "numberOfRooms": 3,
+    ///           "description": "شقة شاغرة",
+    ///           "createdAtUtc": "2026-01-29T12:00:00Z"
+    ///         }
+    ///       ]
+    ///     },
+    ///     {
+    ///       "buildingId": "4gb96f75-6828-5c73-d4e4-487220g75d08",
+    ///       "buildingNumber": "01-02-03-001-002-00002",
+    ///       "unitCount": 2,
+    ///       "propertyUnits": [
+    ///         {
+    ///           "id": "unit-guid-3",
+    ///           "buildingId": "4gb96f75-6828-5c73-d4e4-487220g75d08",
+    ///           "buildingNumber": "01-02-03-001-002-00002",
+    ///           "unitIdentifier": "G-1",
+    ///           "floorNumber": 0,
+    ///           "unitType": 2,
+    ///           "status": 1,
+    ///           "areaSquareMeters": 45.0,
+    ///           "description": "محل تجاري",
+    ///           "createdAtUtc": "2026-01-29T12:00:00Z"
+    ///         }
+    ///       ]
+    ///     }
+    ///   ],
+    ///   "totalUnits": 5,
+    ///   "totalBuildings": 2
+    /// }
+    /// ```
+    ///
+    /// **Response Fields:**
+    /// - `groupedByBuilding[]`: Array of buildings with their units
+    ///   - `buildingId`: Building unique identifier
+    ///   - `buildingNumber`: Building code (17-digit formatted)
+    ///   - `unitCount`: Number of units in this building (matching filters)
+    ///   - `propertyUnits[]`: Array of property units (ordered by floor, then identifier)
+    /// - `totalUnits`: Total count of units across all buildings (matching filters)
+    /// - `totalBuildings`: Total count of buildings containing units (matching filters)
+    ///
+    /// **Performance Notes:**
+    /// - Single database query with filters applied at database level
+    /// - Building data fetched in batch (no N+1 queries)
+    /// - Results ordered by building number, floor, and unit identifier
+    ///
+    /// **Validation:**
+    /// - Invalid `unitType` values (not 1-5) return 400 Bad Request
+    /// - Invalid `status` values (not 1-6 or 99) return 400 Bad Request
+    /// - Invalid `buildingId` GUID format returns 400 Bad Request
     /// </remarks>
-    /// <returns>List of all property units</returns>
-    /// <response code="200">Success - returns array of property units (may be empty)</response>
+    /// <param name="buildingId">Filter by building ID (optional)</param>
+    /// <param name="unitType">Filter by unit type: Apartment=1, Shop=2, Office=3, Warehouse=4, Other=5 (optional)</param>
+    /// <param name="status">Filter by status: Occupied=1, Vacant=2, Damaged=3, UnderRenovation=4, Uninhabitable=5, Locked=6, Unknown=99 (optional)</param>
+    /// <param name="groupByBuilding">Group results by building (default: true)</param>
+    /// <returns>Property units grouped by building with statistics</returns>
+    /// <response code="200">Success - returns grouped property units response</response>
+    /// <response code="400">Bad request - invalid filter values</response>
     /// <response code="401">Not authenticated - valid JWT token required</response>
     /// <response code="403">Not authorized - requires PropertyUnits_View (6000) permission</response>
     [HttpGet]
     [Authorize(Policy = "CanViewPropertyUnits")]
-    [ProducesResponseType(typeof(List<PropertyUnitDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GroupedPropertyUnitsResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<List<PropertyUnitDto>>> GetAllPropertyUnits()
+    public async Task<ActionResult<GroupedPropertyUnitsResponseDto>> GetAllPropertyUnits(
+        [FromQuery] Guid? buildingId,
+        [FromQuery] int? unitType,
+        [FromQuery] int? status,
+        [FromQuery] bool groupByBuilding = true)
     {
-        var query = new GetAllPropertyUnitsQuery();
-        var result = await _mediator.Send(query);
+        var query = new GetAllPropertyUnitsQuery
+        {
+            BuildingId = buildingId,
+            UnitType = unitType,
+            Status = status,
+            GroupByBuilding = groupByBuilding
+        };
 
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
 
