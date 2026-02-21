@@ -25,4 +25,10 @@
     <ProjectReference Include="..\TRRCMS.Infrastructure\TRRCMS.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Data\administrative_divisions.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

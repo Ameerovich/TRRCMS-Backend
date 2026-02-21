@@ -61,8 +61,18 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ISurveyRepository, SurveyRepository>();
 builder.Services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
 builder.Services.AddScoped<IVocabularyRepository, VocabularyRepository>();
+
+// Administrative Hierarchy Repositories
+builder.Services.AddScoped<IGovernorateRepository, GovernorateRepository>();
+builder.Services.AddScoped<IDistrictRepository, DistrictRepository>();
+builder.Services.AddScoped<ISubDistrictRepository, SubDistrictRepository>();
+builder.Services.AddScoped<ICommunityRepository, CommunityRepository>();
+
 builder.Services.AddScoped<IVocabularyVersionProvider, DatabaseVocabularyVersionProvider>();
 builder.Services.AddSingleton<IVocabularyValidationService, CachedVocabularyValidationService>();
+
+// ============== DATA SEEDING SERVICES ==============
+builder.Services.AddScoped<TRRCMS.Infrastructure.Data.AdministrativeHierarchySeeder>();
 
 // ============== AUTHENTICATION SERVICES ==============
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -548,7 +558,25 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// SCOPE 4: Warm vocabulary validation cache (after seeding, before serving requests)
+// SCOPE 4: Administrative Hierarchy seeding (separate scope = fresh DbContext)
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var seeder = services.GetRequiredService<TRRCMS.Infrastructure.Data.AdministrativeHierarchySeeder>();
+        await seeder.SeedAsync();
+        logger.LogInformation("Administrative hierarchy seed data applied successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while seeding administrative hierarchy");
+    }
+}
+
+// SCOPE 5: Warm vocabulary validation cache (after seeding, before serving requests)
 {
     var vocabValidation = app.Services.GetRequiredService<IVocabularyValidationService>();
     await vocabValidation.WarmupAsync();

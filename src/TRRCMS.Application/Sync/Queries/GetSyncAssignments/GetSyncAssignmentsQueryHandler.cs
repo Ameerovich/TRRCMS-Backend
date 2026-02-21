@@ -64,6 +64,11 @@ public sealed class GetSyncAssignmentsQueryHandler
             throw new UnauthorizedAccessException(
                 "The current user is not the field collector for this sync session.");
 
+        // Guard: only InProgress sessions may serve downloads.
+        if (session.SessionStatus != SyncSessionStatus.InProgress)
+            throw new InvalidOperationException(
+                $"Sync session '{request.SyncSessionId}' is not active (status: {session.SessionStatus}).");
+
         // ── 3. Load pending / failed assignments with full building details ─────────
         var assignments = await _assignmentRepo.GetPendingOrFailedByFieldCollectorAsync(
             fieldCollectorId: session.FieldCollectorId,

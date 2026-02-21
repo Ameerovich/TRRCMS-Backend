@@ -38,6 +38,27 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
 
+    // ==================== ADMINISTRATIVE HIERARCHY (Reference Data) ====================
+    /// <summary>
+    /// Governorate (محافظة) - Top-level administrative division
+    /// </summary>
+    public DbSet<Governorate> Governorates => Set<Governorate>();
+
+    /// <summary>
+    /// District (منطقة/قضاء) - Second-level administrative division under Governorate
+    /// </summary>
+    public DbSet<District> Districts => Set<District>();
+
+    /// <summary>
+    /// SubDistrict (ناحية) - Third-level administrative division under District
+    /// </summary>
+    public DbSet<SubDistrict> SubDistricts => Set<SubDistrict>();
+
+    /// <summary>
+    /// Community (قرية/مجتمع) - Fourth-level administrative division under SubDistrict
+    /// </summary>
+    public DbSet<Community> Communities => Set<Community>();
+
     // ==================== NEW: AUDIT LOG ====================
     /// <summary>
     /// Audit logs for comprehensive system action tracking

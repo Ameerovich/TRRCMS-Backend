@@ -23,6 +23,7 @@
   <ItemGroup>
     <Folder Include="Common\Behaviors\" />
     <Folder Include="Neighborhoods\Commands\" />
+    <Folder Include="Sync\Queries\" />
   </ItemGroup>
 
 </Project>

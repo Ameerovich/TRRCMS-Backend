@@ -306,8 +306,13 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
                 ba.LastModifiedAtUtc >= modifiedSinceUtc.Value);
         }
 
+        // Priority is stored as a string ("Urgent", "High", "Normal").
+        // Alphabetical sort would produce High → Normal → Urgent (wrong).
+        // Use a weighted expression so EF Core translates to: Urgent=0, High=1, Normal=2.
         return await query
-            .OrderBy(ba => ba.Priority)       // Urgent/High before Normal
+            .OrderBy(ba =>
+                ba.Priority == "Urgent" ? 0 :
+                ba.Priority == "High"   ? 1 : 2)
             .ThenBy(ba => ba.AssignedDate)    // Oldest first within the same priority level
             .ToListAsync(cancellationToken);
     }

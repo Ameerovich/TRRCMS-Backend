@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using TRRCMS.Application.AdministrativeDivisions.Dtos;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Documents.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
@@ -242,7 +243,11 @@ public class MappingProfile : Profile
            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
            .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()));
 
-
+        // Administrative Hierarchy mappings
+        CreateMap<Governorate, GovernorateDto>();
+        CreateMap<District, DistrictDto>();
+        CreateMap<SubDistrict, SubDistrictDto>();
+        CreateMap<Community, CommunityDto>();
     }
 
 }
