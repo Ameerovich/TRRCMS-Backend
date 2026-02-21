@@ -3,6 +3,7 @@ using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateTenureDocument;
@@ -17,6 +18,7 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
@@ -27,6 +29,7 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
         IPersonPropertyRelationRepository relationRepository,
         IPropertyUnitRepository propertyUnitRepository,
         IEvidenceRepository evidenceRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
         IFileStorageService fileStorageService,
         ICurrentUserService currentUserService,
         IAuditService auditService,
@@ -36,6 +39,7 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
         _relationRepository = relationRepository ?? throw new ArgumentNullException(nameof(relationRepository));
         _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
         _evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
+        _evidenceRelationRepository = evidenceRelationRepository ?? throw new ArgumentNullException(nameof(evidenceRelationRepository));
         _fileStorageService = fileStorageService ?? throw new ArgumentNullException(nameof(fileStorageService));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
@@ -56,14 +60,17 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Cannot update evidence for survey in {survey.Status} status. Only Draft surveys can be modified.");
 
-        // Get evidence
+        // Get evidence (includes EvidenceRelations)
         var evidence = await _evidenceRepository.GetByIdAsync(request.EvidenceId, cancellationToken)
             ?? throw new NotFoundException($"Evidence with ID {request.EvidenceId} not found");
 
-        // Validate evidence belongs to survey's building context (via relation → property unit)
-        if (evidence.PersonPropertyRelationId.HasValue)
+        // Validate evidence belongs to survey's building context (via EvidenceRelations → relation → property unit)
+        var activeRelations = await _evidenceRelationRepository.GetActiveByEvidenceIdAsync(
+            request.EvidenceId, cancellationToken);
+
+        foreach (var er in activeRelations)
         {
-            var relation = await _relationRepository.GetByIdAsync(evidence.PersonPropertyRelationId.Value, cancellationToken);
+            var relation = await _relationRepository.GetByIdAsync(er.PersonPropertyRelationId, cancellationToken);
             if (relation != null)
             {
                 var propertyUnit = await _propertyUnitRepository.GetByIdAsync(relation.PropertyUnitId, cancellationToken);
@@ -73,9 +80,10 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
         }
 
         // Capture old values for audit
+        var linkedRelationIds = activeRelations.Select(er => er.PersonPropertyRelationId).ToList();
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
-            evidence.PersonPropertyRelationId,
+            LinkedRelationIds = linkedRelationIds,
             EvidenceType = evidence.EvidenceType.ToString(),
             evidence.OriginalFileName,
             evidence.Description,
@@ -86,18 +94,36 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
             evidence.Notes
         });
 
-        // Update PersonPropertyRelationId if provided and different
-        if (request.PersonPropertyRelationId.HasValue && request.PersonPropertyRelationId.Value != evidence.PersonPropertyRelationId)
+        // Re-link to a different relation if requested
+        if (request.PersonPropertyRelationId.HasValue)
         {
-            var newRelation = await _relationRepository.GetByIdAsync(request.PersonPropertyRelationId.Value, cancellationToken)
-                ?? throw new NotFoundException($"Person-property relation with ID {request.PersonPropertyRelationId} not found");
+            var newRelationId = request.PersonPropertyRelationId.Value;
 
-            // Verify new relation belongs to survey's building
-            var newRelationUnit = await _propertyUnitRepository.GetByIdAsync(newRelation.PropertyUnitId, cancellationToken);
-            if (newRelationUnit == null || newRelationUnit.BuildingId != survey.BuildingId)
-                throw new ValidationException("Person-property relation does not belong to the survey's building");
+            // Check if this is an existing active link already
+            var existingLink = await _evidenceRelationRepository.LinkExistsAsync(
+                request.EvidenceId, newRelationId, cancellationToken);
 
-            evidence.LinkToRelation(request.PersonPropertyRelationId.Value, currentUserId);
+            if (!existingLink)
+            {
+                var newRelation = await _relationRepository.GetByIdAsync(newRelationId, cancellationToken)
+                    ?? throw new NotFoundException($"Person-property relation with ID {newRelationId} not found");
+
+                // Verify new relation belongs to survey's building
+                var newRelationUnit = await _propertyUnitRepository.GetByIdAsync(newRelation.PropertyUnitId, cancellationToken);
+                if (newRelationUnit == null || newRelationUnit.BuildingId != survey.BuildingId)
+                    throw new ValidationException("Person-property relation does not belong to the survey's building");
+
+                // Create new EvidenceRelation link
+                var evidenceRelation = EvidenceRelation.Create(
+                    evidenceId: request.EvidenceId,
+                    personPropertyRelationId: newRelationId,
+                    linkedBy: currentUserId);
+
+                await _evidenceRelationRepository.AddAsync(evidenceRelation, cancellationToken);
+
+                // Update HasEvidence flag on the new relation
+                newRelation.SetHasEvidence(true, currentUserId);
+            }
         }
 
         // Update file if provided
@@ -162,6 +188,9 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
         if (request.Notes != null) changedFields.Add("Notes");
 
         // Audit logging
+        var updatedRelationIds = (await _evidenceRelationRepository.GetActiveByEvidenceIdAsync(
+            request.EvidenceId, cancellationToken)).Select(er => er.PersonPropertyRelationId).ToList();
+
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
             actionDescription: $"Updated tenure document '{evidence.OriginalFileName}' in survey {survey.ReferenceCode}",
@@ -171,7 +200,7 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
             oldValues: oldValues,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
-                evidence.PersonPropertyRelationId,
+                LinkedRelationIds = updatedRelationIds,
                 EvidenceType = evidence.EvidenceType.ToString(),
                 evidence.OriginalFileName,
                 evidence.Description,

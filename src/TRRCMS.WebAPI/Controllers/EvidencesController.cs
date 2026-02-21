@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Evidences.Commands.CreateEvidence;
-using TRRCMS.Application.Evidences.Commands.DeleteEvidence;
+using TRRCMS.Application.Surveys.Commands.DeleteEvidence;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Evidences.Queries.GetAllEvidences;
 using TRRCMS.Application.Evidences.Queries.GetEvidence;
@@ -391,7 +391,7 @@ public class EvidencesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<DeleteResultDto>> Delete(Guid id)
     {
-        var command = new Application.Evidences.Commands.DeleteEvidence.DeleteEvidenceCommand { EvidenceId = id };
+        var command = new DeleteEvidenceCommand { EvidenceId = id };
         var result = await _mediator.Send(command);
         return Ok(result);
     }

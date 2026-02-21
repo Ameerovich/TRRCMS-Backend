@@ -28,7 +28,8 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
         return await _context.Set<PersonPropertyRelation>()
             .Include(r => r.Person)
             .Include(r => r.PropertyUnit)
-            .Include(r => r.Evidences.Where(e => !e.IsDeleted && e.IsCurrentVersion))
+            .Include(r => r.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
+                .ThenInclude(er => er.Evidence)
             .FirstOrDefaultAsync(r => r.Id == id && !r.IsDeleted, cancellationToken);
     }
 
@@ -64,7 +65,8 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
         return await _context.Set<PersonPropertyRelation>()
             .Include(r => r.Person)
             .Include(r => r.PropertyUnit)
-            .Include(r => r.Evidences.Where(e => !e.IsDeleted && e.IsCurrentVersion))
+            .Include(r => r.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
+                .ThenInclude(er => er.Evidence)
             .Where(r => r.PropertyUnitId == propertyUnitId && !r.IsDeleted)
             .ToListAsync(cancellationToken);
     }
@@ -74,7 +76,8 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
         return await _context.Set<PersonPropertyRelation>()
             .Include(r => r.Person)
             .Include(r => r.PropertyUnit)
-            .Include(r => r.Evidences.Where(e => !e.IsDeleted && e.IsCurrentVersion))
+            .Include(r => r.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
+                .ThenInclude(er => er.Evidence)
             .Where(r => r.SurveyId == surveyId && !r.IsDeleted)
             .ToListAsync(cancellationToken);
     }

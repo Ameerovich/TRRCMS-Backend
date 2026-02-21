@@ -55,13 +55,16 @@ public class PersonPropertyRelation : BaseAuditableEntity
     public virtual Person Person { get; private set; } = null!;
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
     public virtual Survey? Survey { get; private set; }
-    public virtual ICollection<Evidence> Evidences { get; private set; }
+    /// <summary>
+    /// Many-to-many links to Evidence via EvidenceRelation join entity
+    /// </summary>
+    public virtual ICollection<EvidenceRelation> EvidenceRelations { get; private set; }
 
     private PersonPropertyRelation() : base()
     {
         RelationType = RelationType.Other;
         IsActive = true;
-        Evidences = new List<Evidence>();
+        EvidenceRelations = new List<EvidenceRelation>();
     }
 
     public static PersonPropertyRelation Create(
@@ -168,6 +171,15 @@ public class PersonPropertyRelation : BaseAuditableEntity
     {
         IsActive = true;
         EndDate = null;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Set HasEvidence flag explicitly
+    /// </summary>
+    public void SetHasEvidence(bool hasEvidence, Guid modifiedByUserId)
+    {
+        HasEvidence = hasEvidence;
         MarkAsModified(modifiedByUserId);
     }
 }

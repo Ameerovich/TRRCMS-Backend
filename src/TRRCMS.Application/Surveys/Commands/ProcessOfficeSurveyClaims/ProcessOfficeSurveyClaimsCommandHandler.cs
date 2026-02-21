@@ -150,7 +150,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                     var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(cancellationToken);
 
                     // Check if this specific relation has tenure evidence attached
-                    var relationHasEvidence = relation.Evidences != null && relation.Evidences.Any(e => !e.IsDeleted && e.IsCurrentVersion);
+                    var relationHasEvidence = relation.EvidenceRelations != null && relation.EvidenceRelations.Any(er => er.IsActive && !er.IsDeleted);
 
                     var lifecycleStage = relationHasEvidence
                         ? LifecycleStage.DraftPendingSubmission

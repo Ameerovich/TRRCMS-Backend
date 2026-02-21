@@ -102,7 +102,7 @@ public class DeletePersonCommandHandler : IRequestHandler<DeletePersonCommand, D
 
         // CASCADE DELETE 2: Delete evidences directly linked to this person (not through relations)
         var personEvidences = await _evidenceRepository.GetByPersonIdAsync(request.PersonId, cancellationToken);
-        foreach (var evidence in personEvidences.Where(e => !e.IsDeleted && !e.PersonPropertyRelationId.HasValue))
+        foreach (var evidence in personEvidences.Where(e => !e.IsDeleted && !e.EvidenceRelations.Any(er => er.IsActive && !er.IsDeleted)))
         {
             evidence.MarkAsDeleted(currentUserId);
             await _evidenceRepository.UpdateAsync(evidence, cancellationToken);

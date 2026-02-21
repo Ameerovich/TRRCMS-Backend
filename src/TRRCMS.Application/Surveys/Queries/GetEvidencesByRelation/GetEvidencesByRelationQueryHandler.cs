@@ -83,8 +83,23 @@ public class GetEvidencesByRelationQueryHandler : IRequestHandler<GetEvidencesBy
             PreviousVersionId = e.PreviousVersionId,
             IsCurrentVersion = e.IsCurrentVersion,
             PersonId = e.PersonId,
-            PersonPropertyRelationId = e.PersonPropertyRelationId,
             ClaimId = e.ClaimId,
+            EvidenceRelations = e.EvidenceRelations?
+                .Where(er => er.IsActive && !er.IsDeleted)
+                .Select(er => new EvidenceRelationDto
+                {
+                    Id = er.Id,
+                    EvidenceId = er.EvidenceId,
+                    PersonPropertyRelationId = er.PersonPropertyRelationId,
+                    LinkReason = er.LinkReason,
+                    LinkedAtUtc = er.LinkedAtUtc,
+                    LinkedBy = er.LinkedBy,
+                    IsActive = er.IsActive,
+                    CreatedAtUtc = er.CreatedAtUtc,
+                    CreatedBy = er.CreatedBy,
+                    LastModifiedAtUtc = er.LastModifiedAtUtc,
+                    LastModifiedBy = er.LastModifiedBy
+                }).ToList(),
             CreatedAtUtc = e.CreatedAtUtc,
             CreatedBy = e.CreatedBy,
             LastModifiedAtUtc = e.LastModifiedAtUtc,

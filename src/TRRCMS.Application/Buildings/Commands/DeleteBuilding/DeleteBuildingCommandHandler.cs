@@ -151,7 +151,7 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
         }
 
         var evidences = await _evidenceRepository.GetByPersonIdAsync(personId, ct);
-        foreach (var evidence in evidences.Where(e => !e.IsDeleted && !e.PersonPropertyRelationId.HasValue && !affected.Any(ae => ae.EntityId == e.Id)))
+        foreach (var evidence in evidences.Where(e => !e.IsDeleted && !e.EvidenceRelations.Any(er => er.IsActive && !er.IsDeleted) && !affected.Any(ae => ae.EntityId == e.Id)))
         {
             evidence.MarkAsDeleted(userId);
             await _evidenceRepository.UpdateAsync(evidence, ct);

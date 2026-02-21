@@ -125,7 +125,11 @@ public class MappingProfile : Profile
         // Evidence mappings
         CreateMap<Evidence, EvidenceDto>()
             .ForMember(dest => dest.EvidenceType, opt => opt.MapFrom(src => (int)src.EvidenceType))
-            .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()));
+            .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()))
+            .ForMember(dest => dest.EvidenceRelations, opt => opt.MapFrom(src => src.EvidenceRelations));
+
+        // EvidenceRelation mappings (many-to-many join entity)
+        CreateMap<EvidenceRelation, EvidenceRelationDto>();
 
         // Document mappings
         CreateMap<Document, DocumentDto>()

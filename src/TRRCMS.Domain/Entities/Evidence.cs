@@ -35,14 +35,17 @@ public class Evidence : BaseAuditableEntity
 
     // Relationships
     public Guid? PersonId { get; private set; }
-    public Guid? PersonPropertyRelationId { get; private set; }
     public Guid? ClaimId { get; private set; }
 
     // Navigation properties
     public virtual Person? Person { get; private set; }
-    public virtual PersonPropertyRelation? PersonPropertyRelation { get; private set; }
     public virtual Claim? Claim { get; private set; }
     public virtual Evidence? PreviousVersion { get; private set; }
+
+    /// <summary>
+    /// Many-to-many links to PersonPropertyRelations via EvidenceRelation join entity
+    /// </summary>
+    public virtual ICollection<EvidenceRelation> EvidenceRelations { get; private set; }
 
     private Evidence() : base()
     {
@@ -53,6 +56,7 @@ public class Evidence : BaseAuditableEntity
         MimeType = string.Empty;
         VersionNumber = 1;
         IsCurrentVersion = true;
+        EvidenceRelations = new List<EvidenceRelation>();
     }
 
     public static Evidence Create(
@@ -87,9 +91,14 @@ public class Evidence : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
+    /// <summary>
+    /// Deprecated: Use EvidenceRelation.Create() for many-to-many linking.
+    /// </summary>
+    [Obsolete("Use EvidenceRelation.Create() instead. Evidence now supports many-to-many with PersonPropertyRelation.")]
     public void LinkToRelation(Guid relationId, Guid modifiedByUserId)
     {
-        PersonPropertyRelationId = relationId;
+        // No-op: PersonPropertyRelationId FK has been removed.
+        // Use EvidenceRelation.Create() to link evidence to relations.
         MarkAsModified(modifiedByUserId);
     }
 
@@ -140,7 +149,7 @@ public class Evidence : BaseAuditableEntity
             IsCurrentVersion = true,
             PreviousVersionId = Id,
             PersonId = PersonId,
-            PersonPropertyRelationId = PersonPropertyRelationId,
+            // Note: EvidenceRelations are NOT copied — re-link new version via EvidenceRelation.Create()
             ClaimId = ClaimId
         };
         newVersion.MarkAsCreated(createdByUserId);

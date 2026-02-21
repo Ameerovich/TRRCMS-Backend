@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Household> Households => Set<Household>();
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Evidence> Evidences => Set<Evidence>();
+    public DbSet<EvidenceRelation> EvidenceRelations => Set<EvidenceRelation>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<User> Users => Set<User>();

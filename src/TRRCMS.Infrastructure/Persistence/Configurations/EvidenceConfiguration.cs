@@ -61,7 +61,6 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
 
         // Foreign keys
         builder.Property(e => e.PersonId).IsRequired(false).HasComment("Foreign key to Person");
-        builder.Property(e => e.PersonPropertyRelationId).IsRequired(false).HasComment("Foreign key to PersonPropertyRelation");
         builder.Property(e => e.ClaimId).IsRequired(false).HasComment("Foreign key to Claim");
 
         // Audit fields
@@ -77,7 +76,6 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
         // Indexes
         builder.HasIndex(e => e.EvidenceType).HasDatabaseName("IX_Evidences_EvidenceType");
         builder.HasIndex(e => e.PersonId).HasDatabaseName("IX_Evidences_PersonId");
-        builder.HasIndex(e => e.PersonPropertyRelationId).HasDatabaseName("IX_Evidences_PersonPropertyRelationId");
         builder.HasIndex(e => e.ClaimId).HasDatabaseName("IX_Evidences_ClaimId");
         builder.HasIndex(e => e.IsCurrentVersion).HasDatabaseName("IX_Evidences_IsCurrentVersion");
         builder.HasIndex(e => new { e.IsCurrentVersion, e.IsDeleted }).HasDatabaseName("IX_Evidences_IsCurrentVersion_IsDeleted");
@@ -88,11 +86,6 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
         builder.HasOne(e => e.Person)
             .WithMany(p => p.Evidences)
             .HasForeignKey(e => e.PersonId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(e => e.PersonPropertyRelation)
-            .WithMany(ppr => ppr.Evidences)
-            .HasForeignKey(e => e.PersonPropertyRelationId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(e => e.PreviousVersion)

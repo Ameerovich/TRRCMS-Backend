@@ -693,7 +693,11 @@ public class CommitService : ICommitService
                 if (staging.OriginalPersonPropertyRelationId.HasValue &&
                     _idMap.TryGetValue(staging.OriginalPersonPropertyRelationId.Value, out var prodRelId))
                 {
-                    evidence.LinkToRelation(prodRelId, userId);
+                    var evidenceRelation = EvidenceRelation.Create(
+                        evidenceId: evidence.Id,
+                        personPropertyRelationId: prodRelId,
+                        linkedBy: userId);
+                    await _unitOfWork.EvidenceRelations.AddAsync(evidenceRelation, ct);
                 }
 
                 if (staging.OriginalClaimId.HasValue &&

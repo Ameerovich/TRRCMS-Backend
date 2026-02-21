@@ -15,6 +15,7 @@ using TRRCMS.Application.Surveys.Commands.DeleteEvidence;
 using TRRCMS.Application.Surveys.Commands.DeletePersonPropertyRelation;
 using TRRCMS.Application.Surveys.Commands.FinalizeFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
+using TRRCMS.Application.Surveys.Commands.LinkEvidenceToRelation;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 using TRRCMS.Application.Surveys.Commands.ProcessOfficeSurveyClaims;
@@ -2217,6 +2218,51 @@ public class SurveysController : ControllerBase
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
         return CreatedAtAction(nameof(GetEvidenceById), new { evidenceId = result.Id }, result);
+    }
+
+    /// <summary>
+    /// Link existing evidence to a person-property relation
+    /// ربط دليل موجود بعلاقة شخص-عقار
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-004 - Office Survey - Link Evidence to Relation (Many-to-Many)
+    /// ربط دليل موجود بعلاقة شخص-عقار أخرى
+    ///
+    /// **Purpose**: Links an existing evidence document to a person-property relation.
+    /// Enables sharing evidence across multiple relations (e.g., shared ownership deeds).
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
+    ///
+    /// **Prerequisites**:
+    /// - Survey must be in Draft status
+    /// - Evidence must exist
+    /// - Person-property relation must exist and belong to the survey's building
+    /// - Link must not already exist (no duplicates)
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="evidenceId">Evidence ID to link</param>
+    /// <param name="command">Link details including relation ID and optional reason</param>
+    /// <response code="201">Evidence linked to relation successfully.</response>
+    /// <response code="400">Duplicate link or relation not in survey's building.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only link evidence in your own surveys.</response>
+    /// <response code="404">Survey, evidence, or relation not found.</response>
+    [HttpPost("{surveyId}/evidence/{evidenceId}/link-to-relation")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> LinkEvidenceToRelation(
+        Guid surveyId,
+        Guid evidenceId,
+        [FromBody] LinkEvidenceToRelationCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.EvidenceId = evidenceId;
+        var result = await _mediator.Send(command);
+        return StatusCode(StatusCodes.Status201Created, result);
     }
 
     /// <summary>

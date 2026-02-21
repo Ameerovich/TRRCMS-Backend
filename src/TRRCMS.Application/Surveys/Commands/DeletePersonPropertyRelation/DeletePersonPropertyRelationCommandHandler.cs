@@ -12,6 +12,7 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
@@ -21,6 +22,7 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
         IPersonPropertyRelationRepository relationRepository,
         IPropertyUnitRepository propertyUnitRepository,
         IEvidenceRepository evidenceRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
         IFileStorageService fileStorageService,
         ICurrentUserService currentUserService,
         IAuditService auditService)
@@ -29,6 +31,7 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
         _relationRepository = relationRepository;
         _propertyUnitRepository = propertyUnitRepository;
         _evidenceRepository = evidenceRepository;
+        _evidenceRelationRepository = evidenceRelationRepository;
         _fileStorageService = fileStorageService;
         _currentUserService = currentUserService;
         _auditService = auditService;
@@ -49,7 +52,7 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Cannot modify survey in {survey.Status} status");
 
-        // Get and validate relation with evidences
+        // Get and validate relation with evidence relations
         var relation = await _relationRepository.GetByIdWithEvidencesAsync(request.RelationId, cancellationToken)
             ?? throw new NotFoundException($"Relation with ID {request.RelationId} not found");
 
@@ -61,6 +64,9 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
             throw new ValidationException("Relation does not belong to this survey's building");
 
         // Capture info for audit
+        var activeEvidenceRelations = relation.EvidenceRelations?
+            .Where(er => er.IsActive && !er.IsDeleted).ToList() ?? new List<Domain.Entities.EvidenceRelation>();
+
         var relationInfo = new
         {
             relation.Id,
@@ -69,16 +75,21 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
             RelationType = relation.RelationType.ToString(),
             ContractType = relation.ContractType?.ToString(),
             relation.OwnershipShare,
-            EvidenceCount = relation.Evidences?.Count ?? 0
+            EvidenceRelationCount = activeEvidenceRelations.Count
         };
 
-        // Delete associated evidence files and records
-        if (relation.Evidences != null && relation.Evidences.Any())
+        // Deactivate associated evidence relation links and optionally delete evidence files
+        foreach (var evidenceRelation in activeEvidenceRelations)
         {
-            foreach (var evidence in relation.Evidences.ToList())
+            // Deactivate the link
+            evidenceRelation.Deactivate(currentUserId, "Parent relation deleted");
+            await _evidenceRelationRepository.UpdateAsync(evidenceRelation, cancellationToken);
+
+            // Optionally delete the evidence files
+            if (request.DeleteEvidenceFiles && evidenceRelation.Evidence != null)
             {
-                // Delete file from storage if requested
-                if (request.DeleteEvidenceFiles && !string.IsNullOrEmpty(evidence.FilePath))
+                var evidence = evidenceRelation.Evidence;
+                if (!string.IsNullOrEmpty(evidence.FilePath))
                 {
                     try
                     {

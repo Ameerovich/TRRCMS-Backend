@@ -36,6 +36,7 @@ public class UnitOfWork : IUnitOfWork
     private INeighborhoodRepository? _neighborhoods;
     private IVocabularyRepository? _vocabularies;
     private ISyncSessionRepository? _syncSessions;
+    private IEvidenceRelationRepository? _evidenceRelations;
 
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService)
@@ -88,6 +89,9 @@ public class UnitOfWork : IUnitOfWork
         _vocabularies ??= new VocabularyRepository(_context);
     public ISyncSessionRepository SyncSessions =>
     _syncSessions ??= new SyncSessionRepository(_context);
+
+    public IEvidenceRelationRepository EvidenceRelations =>
+        _evidenceRelations ??= new EvidenceRelationRepository(_context);
 
 
     // ==================== TRANSACTION OPERATIONS ====================

@@ -91,6 +91,11 @@ public interface IUnitOfWork : IDisposable
     /// </summary>
     ISyncSessionRepository SyncSessions { get; }
 
+    /// <summary>
+    /// Evidence-relation join repository - many-to-many links between Evidence and PersonPropertyRelation
+    /// </summary>
+    IEvidenceRelationRepository EvidenceRelations { get; }
+
 
     // ==================== TRANSACTION OPERATIONS ====================
 

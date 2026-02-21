@@ -2,21 +2,25 @@ using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.Evidences.Commands.CreateEvidence;
 
 public class CreateEvidenceCommandHandler : IRequestHandler<CreateEvidenceCommand, EvidenceDto>
 {
     private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
 
     public CreateEvidenceCommandHandler(
         IEvidenceRepository evidenceRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
         ICurrentUserService currentUserService,
         IMapper mapper)
     {
         _evidenceRepository = evidenceRepository;
+        _evidenceRelationRepository = evidenceRelationRepository;
         _currentUserService = currentUserService;
         _mapper = mapper;
     }
@@ -52,9 +56,6 @@ public class CreateEvidenceCommandHandler : IRequestHandler<CreateEvidenceComman
         if (request.PersonId.HasValue)
             evidence.LinkToPerson(request.PersonId.Value, currentUserId);
 
-        if (request.PersonPropertyRelationId.HasValue)
-            evidence.LinkToRelation(request.PersonPropertyRelationId.Value, currentUserId);
-
         if (request.ClaimId.HasValue)
             evidence.LinkToClaim(request.ClaimId.Value, currentUserId);
 
@@ -76,8 +77,22 @@ public class CreateEvidenceCommandHandler : IRequestHandler<CreateEvidenceComman
         await _evidenceRepository.AddAsync(evidence, cancellationToken);
         await _evidenceRepository.SaveChangesAsync(cancellationToken);
 
-        var result = _mapper.Map<EvidenceDto>(evidence);
-        result.IsExpired = evidence.IsExpired();
+        // Create EvidenceRelation join entity if linked to a person-property relation
+        if (request.PersonPropertyRelationId.HasValue)
+        {
+            var evidenceRelation = EvidenceRelation.Create(
+                evidenceId: evidence.Id,
+                personPropertyRelationId: request.PersonPropertyRelationId.Value,
+                linkedBy: currentUserId);
+
+            await _evidenceRelationRepository.AddAsync(evidenceRelation, cancellationToken);
+            await _evidenceRelationRepository.SaveChangesAsync(cancellationToken);
+        }
+
+        // Re-fetch evidence with EvidenceRelations included
+        var updatedEvidence = await _evidenceRepository.GetByIdAsync(evidence.Id, cancellationToken);
+        var result = _mapper.Map<EvidenceDto>(updatedEvidence!);
+        result.IsExpired = updatedEvidence!.IsExpired();
         return result;
     }
 }

@@ -175,7 +175,7 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             DeletedAtUtc = r.DeletedAtUtc,
             DeletedBy = r.DeletedBy,
             IsOngoing = r.IsActive,
-            EvidenceCount = r.Evidences?.Count ?? 0
+            EvidenceCount = r.EvidenceRelations?.Count(er => er.IsActive && !er.IsDeleted) ?? 0
         };
     }
 }

@@ -34,8 +34,12 @@ public class EvidenceDto
 
     // Relationships
     public Guid? PersonId { get; set; }
-    public Guid? PersonPropertyRelationId { get; set; }
     public Guid? ClaimId { get; set; }
+
+    /// <summary>
+    /// Many-to-many links to PersonPropertyRelations via EvidenceRelation join entity
+    /// </summary>
+    public List<EvidenceRelationDto>? EvidenceRelations { get; set; }
 
     // Audit fields
     public DateTime CreatedAtUtc { get; set; }

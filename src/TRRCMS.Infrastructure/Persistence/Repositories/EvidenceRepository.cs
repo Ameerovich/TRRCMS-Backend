@@ -20,7 +20,8 @@ public class EvidenceRepository : IEvidenceRepository
     {
         return await _context.Set<Evidence>()
             .Include(e => e.Person)
-            .Include(e => e.PersonPropertyRelation)
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
+                .ThenInclude(er => er.PersonPropertyRelation)
             .Include(e => e.PreviousVersion)
             .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted, cancellationToken);
     }
@@ -29,7 +30,7 @@ public class EvidenceRepository : IEvidenceRepository
     {
         return await _context.Set<Evidence>()
             .Include(e => e.Person)
-            .Include(e => e.PersonPropertyRelation)
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => !e.IsDeleted)
             .ToListAsync(cancellationToken);
     }
@@ -38,7 +39,7 @@ public class EvidenceRepository : IEvidenceRepository
     {
         return await _context.Set<Evidence>()
             .Include(e => e.Person)
-            .Include(e => e.PersonPropertyRelation)
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => e.PersonId == personId && !e.IsDeleted)
             .ToListAsync(cancellationToken);
     }
@@ -47,8 +48,12 @@ public class EvidenceRepository : IEvidenceRepository
     {
         return await _context.Set<Evidence>()
             .Include(e => e.Person)
-            .Include(e => e.PersonPropertyRelation)
-            .Where(e => e.PersonPropertyRelationId == relationId && !e.IsDeleted)
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
+            .Where(e => e.EvidenceRelations.Any(er =>
+                er.PersonPropertyRelationId == relationId
+                && er.IsActive
+                && !er.IsDeleted)
+                && !e.IsDeleted)
             .ToListAsync(cancellationToken);
     }
 
@@ -60,8 +65,12 @@ public class EvidenceRepository : IEvidenceRepository
     {
         var query = _context.Set<Evidence>()
             .Include(e => e.Person)
-            .Include(e => e.PersonPropertyRelation)
-            .Where(e => e.PersonPropertyRelationId == relationId && !e.IsDeleted);
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
+            .Where(e => e.EvidenceRelations.Any(er =>
+                er.PersonPropertyRelationId == relationId
+                && er.IsActive
+                && !er.IsDeleted)
+                && !e.IsDeleted);
 
         if (evidenceType.HasValue)
             query = query.Where(e => e.EvidenceType == evidenceType.Value);
@@ -76,7 +85,7 @@ public class EvidenceRepository : IEvidenceRepository
     {
         return await _context.Set<Evidence>()
             .Include(e => e.Person)
-            .Include(e => e.PersonPropertyRelation)
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => e.ClaimId == claimId && !e.IsDeleted)
             .ToListAsync(cancellationToken);
     }
@@ -85,7 +94,7 @@ public class EvidenceRepository : IEvidenceRepository
     {
         return await _context.Set<Evidence>()
             .Include(e => e.Person)
-            .Include(e => e.PersonPropertyRelation)
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => e.IsCurrentVersion && !e.IsDeleted)
             .ToListAsync(cancellationToken);
     }
@@ -115,10 +124,11 @@ public class EvidenceRepository : IEvidenceRepository
         var query = _context.Evidences
             .Where(e => !e.IsDeleted)
             .Where(e => (e.PersonId.HasValue && personIds.Contains(e.PersonId.Value))
-                     || (e.PersonPropertyRelationId.HasValue && relationIds.Contains(e.PersonPropertyRelationId.Value)))
+                     || e.EvidenceRelations.Any(er =>
+                            er.IsActive && !er.IsDeleted
+                            && relationIds.Contains(er.PersonPropertyRelationId)))
             .Where(e => e.IsCurrentVersion);
 
-        // Apply evidence type filter using enum
         if (evidenceType.HasValue)
             query = query.Where(e => e.EvidenceType == evidenceType.Value);
 

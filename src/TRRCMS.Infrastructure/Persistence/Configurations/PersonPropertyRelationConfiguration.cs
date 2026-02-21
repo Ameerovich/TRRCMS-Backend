@@ -124,9 +124,10 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
             .HasForeignKey(ppr => ppr.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(ppr => ppr.Evidences)
-            .WithOne(e => e.PersonPropertyRelation)
-            .HasForeignKey(e => e.PersonPropertyRelationId)
+        // Many-to-many with Evidence through EvidenceRelation join entity
+        builder.HasMany(ppr => ppr.EvidenceRelations)
+            .WithOne(er => er.PersonPropertyRelation)
+            .HasForeignKey(er => er.PersonPropertyRelationId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

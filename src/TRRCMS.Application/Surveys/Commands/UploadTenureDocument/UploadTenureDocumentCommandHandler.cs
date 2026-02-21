@@ -18,6 +18,7 @@ public class UploadTenureDocumentCommandHandler : IRequestHandler<UploadTenureDo
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
@@ -28,6 +29,7 @@ public class UploadTenureDocumentCommandHandler : IRequestHandler<UploadTenureDo
         IPersonPropertyRelationRepository relationRepository,
         IPropertyUnitRepository propertyUnitRepository,
         IEvidenceRepository evidenceRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
         IFileStorageService fileStorageService,
         ICurrentUserService currentUserService,
         IAuditService auditService,
@@ -37,6 +39,7 @@ public class UploadTenureDocumentCommandHandler : IRequestHandler<UploadTenureDo
         _relationRepository = relationRepository ?? throw new ArgumentNullException(nameof(relationRepository));
         _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
         _evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
+        _evidenceRelationRepository = evidenceRelationRepository ?? throw new ArgumentNullException(nameof(evidenceRelationRepository));
         _fileStorageService = fileStorageService ?? throw new ArgumentNullException(nameof(fileStorageService));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
@@ -98,8 +101,6 @@ public class UploadTenureDocumentCommandHandler : IRequestHandler<UploadTenureDo
             fileHash: fileHash,
             createdByUserId: currentUserId);
 
-        evidence.LinkToRelation(request.PersonPropertyRelationId, currentUserId);
-
         evidence.UpdateMetadata(
             issuedDate: request.DocumentIssuedDate,
             expiryDate: request.DocumentExpiryDate,
@@ -110,6 +111,19 @@ public class UploadTenureDocumentCommandHandler : IRequestHandler<UploadTenureDo
 
         await _evidenceRepository.AddAsync(evidence, cancellationToken);
         await _evidenceRepository.SaveChangesAsync(cancellationToken);
+
+        // Create EvidenceRelation join entity (many-to-many link)
+        var evidenceRelation = EvidenceRelation.Create(
+            evidenceId: evidence.Id,
+            personPropertyRelationId: request.PersonPropertyRelationId,
+            linkedBy: currentUserId);
+
+        await _evidenceRelationRepository.AddAsync(evidenceRelation, cancellationToken);
+
+        // Update HasEvidence flag on the relation
+        relation.SetHasEvidence(true, currentUserId);
+
+        await _evidenceRelationRepository.SaveChangesAsync(cancellationToken);
 
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,

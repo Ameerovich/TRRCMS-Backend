@@ -18,6 +18,7 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
@@ -28,6 +29,7 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
         IPropertyUnitRepository propertyUnitRepository,
         IPersonPropertyRelationRepository relationRepository,
         IEvidenceRepository evidenceRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
         IFileStorageService fileStorageService,
         ICurrentUserService currentUserService,
         IAuditService auditService,
@@ -37,6 +39,7 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
         _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
         _relationRepository = relationRepository ?? throw new ArgumentNullException(nameof(relationRepository));
         _evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
+        _evidenceRelationRepository = evidenceRelationRepository ?? throw new ArgumentNullException(nameof(evidenceRelationRepository));
         _fileStorageService = fileStorageService ?? throw new ArgumentNullException(nameof(fileStorageService));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
@@ -66,9 +69,10 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
                 throw new ValidationException("Property unit does not belong to the survey's building");
         }
 
+        PersonPropertyRelation? relation = null;
         if (request.PersonPropertyRelationId.HasValue)
         {
-            var relation = await _relationRepository.GetByIdAsync(request.PersonPropertyRelationId.Value, cancellationToken)
+            relation = await _relationRepository.GetByIdAsync(request.PersonPropertyRelationId.Value, cancellationToken)
                 ?? throw new NotFoundException($"Person-property relation with ID {request.PersonPropertyRelationId} not found");
 
             var relationUnit = await _propertyUnitRepository.GetByIdAsync(relation.PropertyUnitId, cancellationToken);
@@ -108,9 +112,6 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
             fileHash: fileHash,
             createdByUserId: currentUserId);
 
-        if (request.PersonPropertyRelationId.HasValue)
-            evidence.LinkToRelation(request.PersonPropertyRelationId.Value, currentUserId);
-
         if (!string.IsNullOrWhiteSpace(request.Notes))
         {
             evidence.UpdateMetadata(
@@ -124,6 +125,19 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
 
         await _evidenceRepository.AddAsync(evidence, cancellationToken);
         await _evidenceRepository.SaveChangesAsync(cancellationToken);
+
+        // Create EvidenceRelation join entity if linked to a person-property relation
+        if (request.PersonPropertyRelationId.HasValue && relation != null)
+        {
+            var evidenceRelation = EvidenceRelation.Create(
+                evidenceId: evidence.Id,
+                personPropertyRelationId: request.PersonPropertyRelationId.Value,
+                linkedBy: currentUserId);
+
+            await _evidenceRelationRepository.AddAsync(evidenceRelation, cancellationToken);
+            relation.SetHasEvidence(true, currentUserId);
+            await _evidenceRelationRepository.SaveChangesAsync(cancellationToken);
+        }
 
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,
@@ -146,8 +160,10 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
             changedFields: "New Property Photo",
             cancellationToken: cancellationToken);
 
-        var result = _mapper.Map<EvidenceDto>(evidence);
-        result.IsExpired = evidence.IsExpired();
+        // Re-fetch evidence with EvidenceRelations included
+        var updatedEvidence = await _evidenceRepository.GetByIdAsync(evidence.Id, cancellationToken);
+        var result = _mapper.Map<EvidenceDto>(updatedEvidence!);
+        result.IsExpired = updatedEvidence!.IsExpired();
 
         return result;
     }
