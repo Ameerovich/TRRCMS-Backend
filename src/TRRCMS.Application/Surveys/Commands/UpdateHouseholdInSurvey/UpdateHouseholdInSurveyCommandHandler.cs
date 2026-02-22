@@ -14,24 +14,18 @@ namespace TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 /// </summary>
 public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouseholdInSurveyCommand, HouseholdDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IHouseholdRepository _householdRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public UpdateHouseholdInSurveyCommandHandler(
-        ISurveyRepository surveyRepository,
-        IHouseholdRepository householdRepository,
-        IPropertyUnitRepository propertyUnitRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _householdRepository = householdRepository ?? throw new ArgumentNullException(nameof(householdRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -44,7 +38,7 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken);
         if (survey == null)
         {
             throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
@@ -63,7 +57,7 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         }
 
         // Get household
-        var household = await _householdRepository.GetByIdAsync(request.HouseholdId, cancellationToken);
+        var household = await _unitOfWork.Households.GetByIdAsync(request.HouseholdId, cancellationToken);
         if (household == null)
         {
             throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
@@ -72,7 +66,7 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         // Update property unit if provided
         if (request.PropertyUnitId.HasValue && request.PropertyUnitId.Value != household.PropertyUnitId)
         {
-            var newPropertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken);
+            var newPropertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken);
             if (newPropertyUnit == null)
             {
                 throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
@@ -142,8 +136,8 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         }
 
         // Save changes
-        await _householdRepository.UpdateAsync(household, cancellationToken);
-        await _householdRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Households.UpdateAsync(household, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Track new values
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
@@ -176,7 +170,7 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         );
 
         // Get property unit for DTO
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(household.PropertyUnitId, cancellationToken);
+        var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(household.PropertyUnitId, cancellationToken);
 
         // Map to DTO
         var result = _mapper.Map<HouseholdDto>(household);

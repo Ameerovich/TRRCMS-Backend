@@ -15,24 +15,18 @@ namespace TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 /// </summary>
 public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouseholdInSurveyCommand, HouseholdDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IHouseholdRepository _householdRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public CreateHouseholdInSurveyCommandHandler(
-        ISurveyRepository surveyRepository,
-        IHouseholdRepository householdRepository,
-        IPropertyUnitRepository propertyUnitRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _householdRepository = householdRepository ?? throw new ArgumentNullException(nameof(householdRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -45,7 +39,7 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken);
         if (survey == null)
         {
             throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
@@ -71,7 +65,7 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
         }
 
         // Validate property unit exists
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(propertyUnitId.Value, cancellationToken);
+        var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(propertyUnitId.Value, cancellationToken);
         if (propertyUnit == null)
         {
             throw new NotFoundException($"Property unit with ID {propertyUnitId} not found");
@@ -98,8 +92,8 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
         );
 
         // Save household
-        await _householdRepository.AddAsync(household, cancellationToken);
-        await _householdRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Households.AddAsync(household, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Audit logging
         await _auditService.LogActionAsync(

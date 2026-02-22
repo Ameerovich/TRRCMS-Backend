@@ -20,6 +20,7 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
     private readonly IBuildingRepository _buildingRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISurveyReferenceCodeGenerator _refCodeGenerator;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
@@ -28,6 +29,7 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
         IBuildingRepository buildingRepository,
         IPropertyUnitRepository propertyUnitRepository,
         ICurrentUserService currentUserService,
+        ISurveyReferenceCodeGenerator refCodeGenerator,
         IAuditService auditService,
         IMapper mapper)
     {
@@ -35,6 +37,7 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
         _buildingRepository = buildingRepository ?? throw new ArgumentNullException(nameof(buildingRepository));
         _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _refCodeGenerator = refCodeGenerator ?? throw new ArgumentNullException(nameof(refCodeGenerator));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
@@ -73,8 +76,8 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
             }
         }
 
-        // Generate reference code for office survey (OFC-YYYY-NNNNN format)
-        var referenceCode = await GenerateOfficeReferenceCodeAsync(cancellationToken);
+        // Generate reference code via PostgreSQL sequence
+        var referenceCode = await _refCodeGenerator.GenerateNextAsync("OFC", cancellationToken);
 
         // Create office survey entity using new factory method
         var survey = Survey.CreateOfficeSurvey(
@@ -154,13 +157,4 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
         return result;
     }
 
-    /// <summary>
-    /// Generate unique reference code for office survey in format: OFC-YYYY-NNNNN
-    /// </summary>
-    private async Task<string> GenerateOfficeReferenceCodeAsync(CancellationToken cancellationToken)
-    {
-        var year = DateTime.UtcNow.Year;
-        var sequence = await _surveyRepository.GetNextReferenceSequenceAsync(cancellationToken);
-        return $"OFC-{year}-{sequence:D5}";
-    }
 }

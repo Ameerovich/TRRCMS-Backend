@@ -28,23 +28,20 @@ namespace TRRCMS.Application.Import.Commands.CommitPackage;
 /// </summary>
 public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand, CommitReportDto>
 {
-    private readonly IImportPackageRepository _importPackageRepository;
-    private readonly IConflictResolutionRepository _conflictResolutionRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICommitService _commitService;
     private readonly IStagingService _stagingService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<CommitPackageCommandHandler> _logger;
 
     public CommitPackageCommandHandler(
-        IImportPackageRepository importPackageRepository,
-        IConflictResolutionRepository conflictResolutionRepository,
+        IUnitOfWork unitOfWork,
         ICommitService commitService,
         IStagingService stagingService,
         ICurrentUserService currentUserService,
         ILogger<CommitPackageCommandHandler> logger)
     {
-        _importPackageRepository = importPackageRepository;
-        _conflictResolutionRepository = conflictResolutionRepository;
+        _unitOfWork = unitOfWork;
         _commitService = commitService;
         _stagingService = stagingService;
         _currentUserService = currentUserService;
@@ -58,7 +55,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         var stopwatch = Stopwatch.StartNew();
 
         // 1. Load and validate package
-        var package = await _importPackageRepository.GetByIdAsync(request.ImportPackageId, cancellationToken)
+        var package = await _unitOfWork.ImportPackages.GetByIdAsync(request.ImportPackageId, cancellationToken)
             ?? throw new NotFoundException($"ImportPackage with ID '{request.ImportPackageId}' was not found.");
 
         var userId = _currentUserService.UserId
@@ -72,7 +69,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                 "Package must be in 'ReadyToCommit' status. Call approve endpoint first.");
         }
 
-        var unresolvedCount = await _conflictResolutionRepository
+        var unresolvedCount = await _unitOfWork.ConflictResolutions
             .GetUnresolvedCountByPackageIdAsync(request.ImportPackageId, cancellationToken);
 
         if (unresolvedCount > 0)
@@ -87,8 +84,8 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
             package.PackageNumber, package.PackageId);
 
         package.StartCommit(userId);
-        await _importPackageRepository.UpdateAsync(package, cancellationToken);
-        await _importPackageRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         CommitReportDto report;
 
@@ -140,8 +137,8 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                     package.PackageNumber);
             }
 
-            await _importPackageRepository.UpdateAsync(package, cancellationToken);
-            await _importPackageRepository.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 6. Archive .uhc package (post-commit, non-transactional)
             if (report.TotalRecordsCommitted > 0)
@@ -152,8 +149,8 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                         request.ImportPackageId, userId, cancellationToken);
 
                     package.Archive(archivePath, userId);
-                    await _importPackageRepository.UpdateAsync(package, cancellationToken);
-                    await _importPackageRepository.SaveChangesAsync(cancellationToken);
+                    await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                     report.IsArchived = true;
                     report.ArchivePath = archivePath;
@@ -201,8 +198,8 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                 System.Text.Json.JsonSerializer.Serialize(new { ex.Message, ex.StackTrace }),
                 userId);
 
-            await _importPackageRepository.UpdateAsync(package, cancellationToken);
-            await _importPackageRepository.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             report = new CommitReportDto
             {

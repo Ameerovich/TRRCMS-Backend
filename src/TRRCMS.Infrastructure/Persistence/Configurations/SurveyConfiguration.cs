@@ -165,9 +165,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
             .IsRequired()
             .HasDefaultValue(false);
 
-        // Soft delete filter
-        builder.HasQueryFilter(s => !s.IsDeleted);
-
         // Index for date-based queries
         builder.HasIndex(s => s.SurveyDate)
             .HasDatabaseName("IX_Surveys_SurveyDate");

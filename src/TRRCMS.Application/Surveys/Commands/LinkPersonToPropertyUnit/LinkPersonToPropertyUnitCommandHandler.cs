@@ -10,27 +10,18 @@ namespace TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 
 public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPersonToPropertyUnitCommand, PersonPropertyRelationDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IPersonRepository _personRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
-    private readonly IPersonPropertyRelationRepository _relationRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
 
     public LinkPersonToPropertyUnitCommandHandler(
-        ISurveyRepository surveyRepository,
-        IPersonRepository personRepository,
-        IPropertyUnitRepository propertyUnitRepository,
-        IPersonPropertyRelationRepository relationRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService)
     {
-        _surveyRepository = surveyRepository;
-        _personRepository = personRepository;
-        _propertyUnitRepository = propertyUnitRepository;
-        _relationRepository = relationRepository;
-        _currentUserService = currentUserService;
-        _auditService = auditService;
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
     }
 
     public async Task<PersonPropertyRelationDto> Handle(LinkPersonToPropertyUnitCommand request, CancellationToken cancellationToken)
@@ -39,7 +30,7 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken)
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
@@ -49,18 +40,18 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
             throw new ValidationException($"Cannot modify survey in {survey.Status} status");
 
         // Get and validate person
-        var person = await _personRepository.GetByIdAsync(request.PersonId, cancellationToken)
+        var person = await _unitOfWork.Persons.GetByIdAsync(request.PersonId, cancellationToken)
             ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
 
         // Get and validate property unit
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId, cancellationToken)
+        var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(request.PropertyUnitId, cancellationToken)
             ?? throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
 
         if (propertyUnit.BuildingId != survey.BuildingId)
             throw new ValidationException("Property unit does not belong to the survey's building");
 
         // Check for existing relation
-        var existingRelation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
+        var existingRelation = await _unitOfWork.PersonPropertyRelations.GetByPersonAndPropertyUnitAsync(
             request.PersonId, request.PropertyUnitId, cancellationToken);
         if (existingRelation != null)
             throw new ValidationException($"Person is already linked with relation type: {existingRelation.RelationType}");
@@ -94,8 +85,8 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
             request.Notes,
             currentUserId);
 
-        await _relationRepository.AddAsync(relation, cancellationToken);
-        await _relationRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.PersonPropertyRelations.AddAsync(relation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Audit log
         await _auditService.LogActionAsync(

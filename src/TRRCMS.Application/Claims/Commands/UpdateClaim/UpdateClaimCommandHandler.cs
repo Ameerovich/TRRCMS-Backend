@@ -10,24 +10,21 @@ namespace TRRCMS.Application.Claims.Commands.UpdateClaim;
 
 public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, ClaimDto>
 {
-    private readonly IClaimRepository _claimRepository;
-    private readonly IPersonRepository _personRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public UpdateClaimCommandHandler(
-        IClaimRepository claimRepository,
-        IPersonRepository personRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
-        _claimRepository = claimRepository;
-        _personRepository = personRepository;
-        _currentUserService = currentUserService;
-        _auditService = auditService;
-        _mapper = mapper;
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
     public async Task<ClaimDto> Handle(
@@ -39,7 +36,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Get existing claim
-        var claim = await _claimRepository.GetByIdAsync(request.ClaimId, cancellationToken)
+        var claim = await _unitOfWork.Claims.GetByIdAsync(request.ClaimId, cancellationToken)
             ?? throw new NotFoundException($"Claim with ID {request.ClaimId} not found");
 
         // Store old values for audit
@@ -59,7 +56,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
         // Validate and update PrimaryClaimantId if provided
         if (request.PrimaryClaimantId.HasValue)
         {
-            var claimant = await _personRepository.GetByIdAsync(
+            var claimant = await _unitOfWork.Persons.GetByIdAsync(
                 request.PrimaryClaimantId.Value,
                 cancellationToken);
 
@@ -136,7 +133,8 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
         }
 
         // Save changes
-        await _claimRepository.UpdateAsync(claim, cancellationToken);
+        await _unitOfWork.Claims.UpdateAsync(claim, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Store new values for audit
         var newValues = new

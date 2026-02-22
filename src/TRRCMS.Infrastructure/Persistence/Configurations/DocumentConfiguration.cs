@@ -275,10 +275,5 @@ public class DocumentConfiguration : IEntityTypeConfiguration<Document>
         // Index on IsDeleted for soft delete filtering
         builder.HasIndex(d => d.IsDeleted)
             .HasDatabaseName("IX_Documents_IsDeleted");
-
-        // ==================== QUERY FILTERS ====================
-
-        // Global query filter to exclude soft-deleted records
-        builder.HasQueryFilter(d => !d.IsDeleted);
     }
 }

@@ -37,6 +37,8 @@ public class UnitOfWork : IUnitOfWork
     private IVocabularyRepository? _vocabularies;
     private ISyncSessionRepository? _syncSessions;
     private IEvidenceRelationRepository? _evidenceRelations;
+    private IImportPackageRepository? _importPackages;
+    private IConflictResolutionRepository? _conflictResolutions;
 
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService)
@@ -92,6 +94,12 @@ public class UnitOfWork : IUnitOfWork
 
     public IEvidenceRelationRepository EvidenceRelations =>
         _evidenceRelations ??= new EvidenceRelationRepository(_context);
+
+    public IImportPackageRepository ImportPackages =>
+        _importPackages ??= new ImportPackageRepository(_context);
+
+    public IConflictResolutionRepository ConflictResolutions =>
+        _conflictResolutions ??= new ConflictResolutionRepository(_context);
 
 
     // ==================== TRANSACTION OPERATIONS ====================

@@ -408,14 +408,12 @@ public class PersonsController : ControllerBase
     /// <response code="403">Not authorized - requires Surveys_ViewAll permission</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllSurveys")]
-    [ProducesResponseType(typeof(List<PersonDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<PersonDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<List<PersonDto>>> GetAllPersons()
+    public async Task<ActionResult<PagedResult<PersonDto>>> GetAllPersons([FromQuery] GetAllPersonsQuery query)
     {
-        var query = new GetAllPersonsQuery();
         var result = await _mediator.Send(query);
-
         return Ok(result);
     }
 

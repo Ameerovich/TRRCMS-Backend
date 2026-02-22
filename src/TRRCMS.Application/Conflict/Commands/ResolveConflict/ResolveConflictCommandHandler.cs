@@ -8,7 +8,7 @@ namespace TRRCMS.Application.Conflicts.Commands.ResolveConflict;
 
 /// <summary>
 /// Handler for <see cref="ResolveConflictCommand"/>.
-/// 
+///
 /// Orchestrates conflict resolution:
 /// 1. Validates conflict exists and is in PendingReview status.
 /// 2. Records the review attempt.
@@ -22,24 +22,20 @@ namespace TRRCMS.Application.Conflicts.Commands.ResolveConflict;
 public class ResolveConflictCommandHandler
     : IRequestHandler<ResolveConflictCommand, ConflictDetailDto>
 {
-    private readonly IConflictResolutionRepository _conflictRepository;
-    private readonly IImportPackageRepository _importPackageRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMergeService _personMergeService;
     private readonly IMergeService _propertyMergeService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
 
     public ResolveConflictCommandHandler(
-        IConflictResolutionRepository conflictRepository,
-        IImportPackageRepository importPackageRepository,
+        IUnitOfWork unitOfWork,
         IEnumerable<IMergeService> mergeServices,
         ICurrentUserService currentUserService,
         IAuditService auditService)
     {
-        _conflictRepository = conflictRepository
-            ?? throw new ArgumentNullException(nameof(conflictRepository));
-        _importPackageRepository = importPackageRepository
-            ?? throw new ArgumentNullException(nameof(importPackageRepository));
+        _unitOfWork = unitOfWork
+            ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService
             ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService
@@ -61,7 +57,7 @@ public class ResolveConflictCommandHandler
             ?? throw new UnauthorizedAccessException("User not authenticated.");
 
         // 1. Load and validate conflict
-        var conflict = await _conflictRepository.GetByIdAsync(request.ConflictId, cancellationToken)
+        var conflict = await _unitOfWork.ConflictResolutions.GetByIdAsync(request.ConflictId, cancellationToken)
             ?? throw new NotFoundException(
                 $"Conflict with ID {request.ConflictId} not found.");
 
@@ -124,8 +120,7 @@ public class ResolveConflictCommandHandler
                 modifiedByUserId: userId);
         }
 
-        await _conflictRepository.UpdateAsync(conflict, cancellationToken);
-        await _conflictRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.ConflictResolutions.UpdateAsync(conflict, cancellationToken);
 
         // 5. Check if all conflicts for package are resolved → transition package
         if (conflict.ImportPackageId.HasValue)
@@ -133,6 +128,9 @@ public class ResolveConflictCommandHandler
             await TryTransitionPackageToReadyAsync(
                 conflict.ImportPackageId.Value, userId, cancellationToken);
         }
+
+        // Single atomic save for both conflict resolution and package transition
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // 6. Audit log
         await _auditService.LogActionAsync(
@@ -175,16 +173,17 @@ public class ResolveConflictCommandHandler
 
     /// <summary>
     /// When all conflicts for a package are resolved, transition it to ReadyToCommit.
+    /// Changes are saved atomically with the conflict resolution by the caller.
     /// </summary>
     private async Task TryTransitionPackageToReadyAsync(
         Guid importPackageId, Guid userId, CancellationToken cancellationToken)
     {
-        var allResolved = await _conflictRepository
+        var allResolved = await _unitOfWork.ConflictResolutions
             .AreAllResolvedForPackageAsync(importPackageId, cancellationToken);
 
         if (!allResolved) return;
 
-        var package = await _importPackageRepository
+        var package = await _unitOfWork.ImportPackages
             .GetByIdAsync(importPackageId, cancellationToken);
 
         if (package is null) return;
@@ -192,8 +191,7 @@ public class ResolveConflictCommandHandler
         if (package.Status == ImportStatus.ReviewingConflicts)
         {
             package.MarkConflictsResolved(userId);
-            await _importPackageRepository.UpdateAsync(package, cancellationToken);
-            await _importPackageRepository.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
         }
     }
 

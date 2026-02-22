@@ -215,8 +215,5 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
         // Entity pair lookup: prevent duplicate conflict records for same entity pair
         builder.HasIndex(c => new { c.FirstEntityId, c.SecondEntityId })
             .HasDatabaseName("IX_ConflictResolutions_FirstEntityId_SecondEntityId");
-
-        // Soft-delete filter
-        builder.HasQueryFilter(c => !c.IsDeleted);
     }
 }

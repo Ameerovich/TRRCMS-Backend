@@ -1,11 +1,12 @@
-﻿using MediatR;
+using MediatR;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 
 namespace TRRCMS.Application.PersonPropertyRelations.Queries.GetAllPersonPropertyRelations;
 
 /// <summary>
-/// Query to get all person-property relations
+/// Query to get all person-property relations with pagination
 /// </summary>
-public class GetAllPersonPropertyRelationsQuery : IRequest<IEnumerable<PersonPropertyRelationDto>>
+public class GetAllPersonPropertyRelationsQuery : PagedQuery, IRequest<PagedResult<PersonPropertyRelationDto>>
 {
 }

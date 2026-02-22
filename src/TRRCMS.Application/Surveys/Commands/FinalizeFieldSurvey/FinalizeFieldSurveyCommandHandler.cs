@@ -12,33 +12,18 @@ namespace TRRCMS.Application.Surveys.Commands.FinalizeFieldSurvey;
 /// </summary>
 public class FinalizeFieldSurveyCommandHandler : IRequestHandler<FinalizeFieldSurveyCommand, FieldSurveyFinalizationResultDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
-    private readonly IPersonPropertyRelationRepository _personPropertyRelationRepository;
-    private readonly IHouseholdRepository _householdRepository;
-    private readonly IPersonRepository _personRepository;
-    private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public FinalizeFieldSurveyCommandHandler(
-        ISurveyRepository surveyRepository,
-        IPropertyUnitRepository propertyUnitRepository,
-        IPersonPropertyRelationRepository personPropertyRelationRepository,
-        IHouseholdRepository householdRepository,
-        IPersonRepository personRepository,
-        IEvidenceRepository evidenceRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
-        _personPropertyRelationRepository = personPropertyRelationRepository ?? throw new ArgumentNullException(nameof(personPropertyRelationRepository));
-        _householdRepository = householdRepository ?? throw new ArgumentNullException(nameof(householdRepository));
-        _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
-        _evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -51,7 +36,7 @@ public class FinalizeFieldSurveyCommandHandler : IRequestHandler<FinalizeFieldSu
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken)
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.Type != SurveyType.Field)
@@ -68,17 +53,17 @@ public class FinalizeFieldSurveyCommandHandler : IRequestHandler<FinalizeFieldSu
         if (!survey.PropertyUnitId.HasValue)
             throw new ValidationException("Survey must have a property unit linked before finalization.");
 
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(survey.PropertyUnitId.Value, cancellationToken);
-        var households = (await _householdRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
-        var relations = (await _personPropertyRelationRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
+        var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(survey.PropertyUnitId.Value, cancellationToken);
+        var households = (await _unitOfWork.Households.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
+        var relations = (await _unitOfWork.PersonPropertyRelations.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
         // Get evidence using EvidenceType? enum (null = no filter)
-        var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
+        var evidence = await _unitOfWork.Evidences.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
 
         var personCount = 0;
         foreach (var household in households)
         {
-            var persons = await _personRepository.GetByHouseholdIdAsync(household.Id, cancellationToken);
+            var persons = await _unitOfWork.Persons.GetByHouseholdIdAsync(household.Id, cancellationToken);
             personCount += persons.Count;
         }
 
@@ -119,8 +104,8 @@ public class FinalizeFieldSurveyCommandHandler : IRequestHandler<FinalizeFieldSu
 
         survey.MarkAsFinalized(currentUserId);
 
-        await _surveyRepository.UpdateAsync(survey, cancellationToken);
-        await _surveyRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Surveys.UpdateAsync(survey, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         await _auditService.LogActionAsync(
             actionType: AuditActionType.StatusChange,

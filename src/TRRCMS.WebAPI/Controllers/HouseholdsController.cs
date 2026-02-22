@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Households.Commands.CreateHousehold;
 using TRRCMS.Application.Households.Commands.UpdateHousehold;
 using TRRCMS.Application.Households.Dtos;
@@ -362,14 +363,12 @@ public class HouseholdsController : ControllerBase
     /// <response code="403">Not authorized - requires Surveys_ViewAll permission</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllSurveys")]
-    [ProducesResponseType(typeof(List<HouseholdDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<HouseholdDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<List<HouseholdDto>>> GetAllHouseholds()
+    public async Task<ActionResult<PagedResult<HouseholdDto>>> GetAllHouseholds([FromQuery] GetAllHouseholdsQuery query)
     {
-        var query = new GetAllHouseholdsQuery();
         var result = await _mediator.Send(query);
-
         return Ok(result);
     }
 }

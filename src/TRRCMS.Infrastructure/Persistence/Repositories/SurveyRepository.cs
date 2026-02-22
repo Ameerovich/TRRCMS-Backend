@@ -71,41 +71,6 @@ public class SurveyRepository : ISurveyRepository
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<int> GetNextReferenceSequenceAsync(CancellationToken cancellationToken = default)
-    {
-        // Get current year for reference code prefix
-        var currentYear = DateTime.UtcNow.Year;
-
-        // Get all reference codes for current year (both ALG- and OFC-)
-        var referenceCodes = await _context.Surveys
-            .Where(s => s.ReferenceCode.Contains($"-{currentYear}-"))
-            .Select(s => s.ReferenceCode)
-            .ToListAsync(cancellationToken);
-
-        // If no surveys exist for this year, start at 1
-        if (!referenceCodes.Any())
-            return 1;
-
-        // Extract sequence numbers and find max
-        var sequences = referenceCodes
-            .Select(code =>
-            {
-                var parts = code.Split('-');
-                if (parts.Length == 3 && int.TryParse(parts[2], out int seq))
-                    return seq;
-                return 0;
-            })
-            .Where(seq => seq > 0)
-            .ToList();
-
-        // If no valid sequences found, start at 1
-        if (!sequences.Any())
-            return 1;
-
-        // Return next sequence number
-        return sequences.Max() + 1;
-    }
-
     public async Task<Dictionary<Guid, Survey>> GetByClaimIdsAsync(
         IEnumerable<Guid> claimIds, CancellationToken cancellationToken = default)
     {

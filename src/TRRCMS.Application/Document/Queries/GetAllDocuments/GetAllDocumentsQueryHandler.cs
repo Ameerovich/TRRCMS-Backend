@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Documents.Dtos;
 
 namespace TRRCMS.Application.Documents.Queries.GetAllDocuments;
@@ -8,7 +9,7 @@ namespace TRRCMS.Application.Documents.Queries.GetAllDocuments;
 /// <summary>
 /// Handler for GetAllDocumentsQuery
 /// </summary>
-public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery, IEnumerable<DocumentDto>>
+public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery, PagedResult<DocumentDto>>
 {
     private readonly IDocumentRepository _documentRepository;
     private readonly IMapper _mapper;
@@ -21,9 +22,10 @@ public class GetAllDocumentsQueryHandler : IRequestHandler<GetAllDocumentsQuery,
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<DocumentDto>> Handle(GetAllDocumentsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<DocumentDto>> Handle(GetAllDocumentsQuery request, CancellationToken cancellationToken)
     {
         var documents = await _documentRepository.GetAllAsync(cancellationToken);
-        return _mapper.Map<IEnumerable<DocumentDto>>(documents);
+        var dtos = _mapper.Map<List<DocumentDto>>(documents);
+        return PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
     }
 }

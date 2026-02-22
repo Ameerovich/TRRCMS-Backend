@@ -14,22 +14,16 @@ namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 /// </summary>
 public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHouseholdCommand, PersonDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IHouseholdRepository _householdRepository;
-    private readonly IPersonRepository _personRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
 
     public AddPersonToHouseholdCommandHandler(
-        ISurveyRepository surveyRepository,
-        IHouseholdRepository householdRepository,
-        IPersonRepository personRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _householdRepository = householdRepository ?? throw new ArgumentNullException(nameof(householdRepository));
-        _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
@@ -41,7 +35,7 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Validate survey exists and user has access
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken);
         if (survey == null)
         {
             throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
@@ -54,7 +48,7 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
         }
 
         // Validate household exists
-        var household = await _householdRepository.GetByIdAsync(request.HouseholdId, cancellationToken);
+        var household = await _unitOfWork.Households.GetByIdAsync(request.HouseholdId, cancellationToken);
         if (household == null)
         {
             throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
@@ -82,8 +76,8 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
         }
 
         // Save to repository
-        await _personRepository.AddAsync(person, cancellationToken);
-        await _personRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Persons.AddAsync(person, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Map to DTO and return
         return _mapper.Map<PersonDto>(person);

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Documents.Commands.CreateDocument;
 using TRRCMS.Application.Documents.Dtos;
 using TRRCMS.Application.Documents.Queries.GetAllDocuments;
@@ -23,63 +24,63 @@ namespace TRRCMS.WebAPI.Controllers;
 /// 
 /// **Document Categories:**
 /// 
-/// **Property Ownership (ãáßíÉ ÇáÚÞÇÑ):**
-/// - 1 = TabuGreen (ØÇÈæ ÃÎÖÑ) - Official property deed
-/// - 2 = TabuRed (ØÇÈæ ÃÍãÑ) - Temporary/conditional deed
-/// - 3 = AgriculturalDeed (ÓÌá ÒÑÇÚí)
-/// - 4 = RealEstateRegistryExtract (ßÔÝ ÚÞÇÑí)
-/// - 5 = OwnershipCertificate (ÔåÇÏÉ ãáßíÉ)
+/// **Property Ownership (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 1 = TabuGreen (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½) - Official property deed
+/// - 2 = TabuRed (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½) - Temporary/conditional deed
+/// - 3 = AgriculturalDeed (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 4 = RealEstateRegistryExtract (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 5 = OwnershipCertificate (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
 /// 
-/// **Rental &amp; Tenancy (ÇáÅíÌÇÑ):**
-/// - 10 = RentalContract (ÚÞÏ ÅíÌÇÑ)
-/// - 11 = TenancyAgreement (ÇÊÝÇÞíÉ ÅíÌÇÑ)
-/// - 12 = RentReceipt (ÅíÕÇá ÅíÌÇÑ)
+/// **Rental &amp; Tenancy (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 10 = RentalContract (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 11 = TenancyAgreement (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 12 = RentReceipt (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
 /// 
-/// **Personal Identification (ÇáåæíÉ ÇáÔÎÕíÉ):**
-/// - 20 = NationalIdCard (ÈØÇÞÉ åæíÉ æØäíÉ)
-/// - 21 = Passport (ÌæÇÒ ÓÝÑ)
-/// - 22 = FamilyRegistry (ÞíÏ ÚÇÆáí)
-/// - 23 = BirthCertificate (ÔåÇÏÉ ãíáÇÏ)
-/// - 24 = MarriageCertificate (ÚÞÏ ÒæÇÌ)
+/// **Personal Identification (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 20 = NationalIdCard (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 21 = Passport (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½)
+/// - 22 = FamilyRegistry (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 23 = BirthCertificate (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 24 = MarriageCertificate (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 /// 
-/// **Utility Bills (ÝæÇÊíÑ ÇáÎÏãÇÊ):**
-/// - 30 = ElectricityBill (ÝÇÊæÑÉ ßåÑÈÇÁ)
-/// - 31 = WaterBill (ÝÇÊæÑÉ ãíÇå)
-/// - 32 = GasBill (ÝÇÊæÑÉ ÛÇÒ)
-/// - 33 = TelephoneBill (ÝÇÊæÑÉ åÇÊÝ)
+/// **Utility Bills (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 30 = ElectricityBill (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 31 = WaterBill (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+/// - 32 = GasBill (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½)
+/// - 33 = TelephoneBill (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 /// 
-/// **Legal Documents (ÇáæËÇÆÞ ÇáÞÇäæäíÉ):**
-/// - 40 = CourtOrder (Íßã ãÍßãÉ)
-/// - 41 = LegalNotification (ÅÔÚÇÑ ÞÇäæäí)
-/// - 42 = PowerOfAttorney (æßÇáÉ)
-/// - 43 = InheritanceDocument (æËíÞÉ ãíÑÇË)
-/// - 44 = DeathCertificate (ÔåÇÏÉ æÝÇÉ)
-/// - 45 = DivorceCertificate (æËíÞÉ ØáÇÞ)
+/// **Legal Documents (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 40 = CourtOrder (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 41 = LegalNotification (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 42 = PowerOfAttorney (ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 43 = InheritanceDocument (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 44 = DeathCertificate (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+/// - 45 = DivorceCertificate (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 /// 
-/// **Municipal Documents (æËÇÆÞ ÇáÈáÏíÉ):**
-/// - 50 = BuildingPermit (ÑÎÕÉ ÈäÇÁ)
-/// - 51 = OccupancyPermit (ÔåÇÏÉ ÅÔÛÇá)
-/// - 52 = PropertyTaxReceipt (ÅíÕÇá ÖÑíÈÉ ÚÞÇÑíÉ)
-/// - 53 = MunicipalityCertificate (ÔåÇÏÉ ÈáÏíÉ)
-/// - 54 = PlanningCertificate (ÔåÇÏÉ ÊÎØíØ)
+/// **Municipal Documents (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 50 = BuildingPermit (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+/// - 51 = OccupancyPermit (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 52 = PropertyTaxReceipt (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 53 = MunicipalityCertificate (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 54 = PlanningCertificate (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
 /// 
-/// **Supporting Documents (æËÇÆÞ ÏÇÚãÉ):**
-/// - 60 = Photograph (ÕæÑÉ ÝæÊæÛÑÇÝíÉ)
-/// - 61 = PropertySketch (ãÎØØ)
-/// - 62 = SurveyMap (ÎÑíØÉ ãÓÇÍíÉ)
-/// - 63 = WitnessStatement (ÔåÇÏÉ ÔåæÏ)
-/// - 64 = StatutoryDeclaration (ÅÞÑÇÑ ÞÇäæäí)
+/// **Supporting Documents (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 60 = Photograph (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 61 = PropertySketch (ï¿½ï¿½ï¿½ï¿½)
+/// - 62 = SurveyMap (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 63 = WitnessStatement (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+/// - 64 = StatutoryDeclaration (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
 /// 
-/// **Sale Documents (æËÇÆÞ ÇáÈíÚ):**
-/// - 70 = SaleContract (ÚÞÏ ÈíÚ)
-/// - 71 = PurchaseReceipt (ÅíÕÇá ÔÑÇÁ)
-/// - 72 = PreliminarySaleAgreement (ÚÞÏ ÈíÚ ÇÈÊÏÇÆí)
+/// **Sale Documents (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½):**
+/// - 70 = SaleContract (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½)
+/// - 71 = PurchaseReceipt (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+/// - 72 = PreliminarySaleAgreement (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
 /// 
 /// **Other:**
-/// - 80 = BankStatement (ßÔÝ ÍÓÇÈ Èäßí)
-/// - 81 = OfficialLetter (ÑÓÇáÉ ÑÓãíÉ)
-/// - 82 = NotarizedDocument (æËíÞÉ ãæËÞÉ)
-/// - 999 = Other (ÃÎÑì)
+/// - 80 = BankStatement (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+/// - 81 = OfficialLetter (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 82 = NotarizedDocument (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+/// - 999 = Other (ï¿½ï¿½ï¿½ï¿½)
 /// </remarks>
 [ApiController]
 [Route("api/v1/[controller]")]
@@ -122,17 +123,17 @@ public class DocumentsController : ControllerBase
     ///     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///     "documentType": "TabuGreen",
     ///     "documentNumber": "123456",
-    ///     "documentTitle": "ÓäÏ ãáßíÉ - ÍáÈ",
+    ///     "documentTitle": "ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½",
     ///     "issueDate": "2010-05-15T00:00:00Z",
     ///     "expiryDate": null,
-    ///     "issuingAuthority": "ÇáÓÌá ÇáÚÞÇÑí - ÍáÈ",
-    ///     "issuingPlace": "ÍáÈ",
+    ///     "issuingAuthority": "ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½",
+    ///     "issuingPlace": "ï¿½ï¿½ï¿½",
     ///     "isVerified": true,
     ///     "verificationStatus": "Verified",
     ///     "isLegallyValid": true,
     ///     "isOriginal": true,
     ///     "isNotarized": true,
-    ///     "notaryOffice": "ßÇÊÈ ÇáÚÏá - ÍáÈ",
+    ///     "notaryOffice": "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½",
     ///     "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///     "propertyUnitId": "1ab34c56-7890-4def-b123-456789abcdef",
     ///     "isExpired": false,
@@ -141,23 +142,22 @@ public class DocumentsController : ControllerBase
     /// ]
     /// ```
     /// </remarks>
+    /// <param name="query">Pagination parameters</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of all documents</returns>
+    /// <returns>Paginated list of all documents</returns>
     /// <response code="200">Documents retrieved successfully</response>
     /// <response code="401">Not authenticated - valid JWT token required</response>
     /// <response code="403">Missing required permission (Documents_ViewSensitive)</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllDocuments")]
-    [ProducesResponseType(typeof(IEnumerable<DocumentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<DocumentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IEnumerable<DocumentDto>>> GetAllDocuments(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<DocumentDto>>> GetAllDocuments([FromQuery] GetAllDocumentsQuery query, CancellationToken cancellationToken)
     {
         _logger.LogInformation("Getting all documents");
 
-        var query = new GetAllDocumentsQuery();
         var result = await _mediator.Send(query, cancellationToken);
-
         return Ok(result);
     }
 
@@ -185,16 +185,16 @@ public class DocumentsController : ControllerBase
     ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "documentType": "NationalIdCard",
     ///   "documentNumber": "01234567890",
-    ///   "documentTitle": "ÈØÇÞÉ åæíÉ - ÃÍãÏ ãÍãÏ",
+    ///   "documentTitle": "ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½",
     ///   "issueDate": "2020-01-15T00:00:00Z",
     ///   "expiryDate": "2030-01-15T00:00:00Z",
-    ///   "issuingAuthority": "æÒÇÑÉ ÇáÏÇÎáíÉ",
-    ///   "issuingPlace": "ÏãÔÞ",
+    ///   "issuingAuthority": "ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+    ///   "issuingPlace": "ï¿½ï¿½ï¿½ï¿½",
     ///   "isVerified": true,
     ///   "verificationStatus": "Verified",
     ///   "verificationDate": "2024-06-20T10:30:00Z",
     ///   "verifiedByUserId": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
-    ///   "verificationNotes": "Êã ÇáÊÍÞÞ ãä ÕÍÉ ÇáÈØÇÞÉ",
+    ///   "verificationNotes": "ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
     ///   "evidenceId": "8cd45e67-1234-5678-abcd-ef0123456789",
     ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "isLegallyValid": true,
@@ -262,28 +262,28 @@ public class DocumentsController : ControllerBase
     /// - `claimId`: Link to claim this document supports
     /// 
     /// **Common Document Types:**
-    /// - 1 = TabuGreen (ØÇÈæ ÃÎÖÑ)
-    /// - 2 = TabuRed (ØÇÈæ ÃÍãÑ)
-    /// - 10 = RentalContract (ÚÞÏ ÅíÌÇÑ)
-    /// - 20 = NationalIdCard (ÈØÇÞÉ åæíÉ)
-    /// - 22 = FamilyRegistry (ÞíÏ ÚÇÆáí)
-    /// - 40 = CourtOrder (Íßã ãÍßãÉ)
-    /// - 43 = InheritanceDocument (æËíÞÉ ãíÑÇË)
-    /// - 70 = SaleContract (ÚÞÏ ÈíÚ)
+    /// - 1 = TabuGreen (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    /// - 2 = TabuRed (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    /// - 10 = RentalContract (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+    /// - 20 = NationalIdCard (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    /// - 22 = FamilyRegistry (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+    /// - 40 = CourtOrder (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+    /// - 43 = InheritanceDocument (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½)
+    /// - 70 = SaleContract (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½)
     /// 
-    /// **Example request - Property Deed (ØÇÈæ):**
+    /// **Example request - Property Deed (ï¿½ï¿½ï¿½ï¿½):**
     /// ```json
     /// {
     ///   "documentType": 1,
     ///   "documentNumber": "123456",
-    ///   "documentTitle": "ÓäÏ ãáßíÉ - ÈäÇÁ ÑÞã 00001",
+    ///   "documentTitle": "ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ 00001",
     ///   "issueDate": "2010-05-15",
-    ///   "issuingAuthority": "ÇáÓÌá ÇáÚÞÇÑí - ÍáÈ",
-    ///   "issuingPlace": "ÍáÈ",
+    ///   "issuingAuthority": "ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½",
+    ///   "issuingPlace": "ï¿½ï¿½ï¿½",
     ///   "evidenceId": "8cd45e67-1234-5678-abcd-ef0123456789",
     ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "propertyUnitId": "1ab34c56-7890-4def-b123-456789abcdef",
-    ///   "notes": "ÕæÑÉ ØÈÞ ÇáÃÕá Úä ÇáÓäÏ ÇáÃÎÖÑ"
+    ///   "notes": "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"
     /// }
     /// ```
     /// 
@@ -292,11 +292,11 @@ public class DocumentsController : ControllerBase
     /// {
     ///   "documentType": 20,
     ///   "documentNumber": "01234567890",
-    ///   "documentTitle": "ÈØÇÞÉ åæíÉ - ÃÍãÏ ãÍãÏ Úáí",
+    ///   "documentTitle": "ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½",
     ///   "issueDate": "2020-01-15",
     ///   "expiryDate": "2030-01-15",
-    ///   "issuingAuthority": "æÒÇÑÉ ÇáÏÇÎáíÉ",
-    ///   "issuingPlace": "ÏãÔÞ",
+    ///   "issuingAuthority": "ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
+    ///   "issuingPlace": "ï¿½ï¿½ï¿½ï¿½",
     ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7"
     /// }
     /// ```
@@ -306,10 +306,10 @@ public class DocumentsController : ControllerBase
     /// {
     ///   "documentType": 10,
     ///   "documentNumber": "RC-2024-001",
-    ///   "documentTitle": "ÚÞÏ ÅíÌÇÑ Óäæí",
+    ///   "documentTitle": "ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½",
     ///   "issueDate": "2024-01-01",
     ///   "expiryDate": "2024-12-31",
-    ///   "issuingAuthority": "ßÇÊÈ ÇáÚÏá",
+    ///   "issuingAuthority": "ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½",
     ///   "personId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "propertyUnitId": "1ab34c56-7890-4def-b123-456789abcdef",
     ///   "personPropertyRelationId": "d6ad6c6f-9e89-4190-930d-c6d3ab7b8f8d"

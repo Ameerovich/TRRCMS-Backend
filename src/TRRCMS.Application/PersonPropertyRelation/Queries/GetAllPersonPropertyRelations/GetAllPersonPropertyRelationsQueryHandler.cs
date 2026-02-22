@@ -1,6 +1,7 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 
 namespace TRRCMS.Application.PersonPropertyRelations.Queries.GetAllPersonPropertyRelations;
@@ -8,7 +9,7 @@ namespace TRRCMS.Application.PersonPropertyRelations.Queries.GetAllPersonPropert
 /// <summary>
 /// Handler for GetAllPersonPropertyRelationsQuery
 /// </summary>
-public class GetAllPersonPropertyRelationsQueryHandler : IRequestHandler<GetAllPersonPropertyRelationsQuery, IEnumerable<PersonPropertyRelationDto>>
+public class GetAllPersonPropertyRelationsQueryHandler : IRequestHandler<GetAllPersonPropertyRelationsQuery, PagedResult<PersonPropertyRelationDto>>
 {
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IMapper _mapper;
@@ -21,9 +22,10 @@ public class GetAllPersonPropertyRelationsQueryHandler : IRequestHandler<GetAllP
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<PersonPropertyRelationDto>> Handle(GetAllPersonPropertyRelationsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<PersonPropertyRelationDto>> Handle(GetAllPersonPropertyRelationsQuery request, CancellationToken cancellationToken)
     {
         var relations = await _relationRepository.GetAllAsync(cancellationToken);
-        return _mapper.Map<IEnumerable<PersonPropertyRelationDto>>(relations);
+        var dtos = _mapper.Map<List<PersonPropertyRelationDto>>(relations);
+        return PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
     }
 }

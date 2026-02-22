@@ -16,30 +16,27 @@ namespace TRRCMS.Application.Claims.Commands.CreateClaim;
 /// </summary>
 public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, ClaimDto>
 {
-    private readonly IClaimRepository _claimRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IAuditService _auditService;
     private readonly IClaimNumberGenerator _claimNumberGenerator;
 
     public CreateClaimCommandHandler(
-        IClaimRepository claimRepository,
-        IPropertyUnitRepository propertyUnitRepository,
+        IUnitOfWork unitOfWork,
         IMapper mapper,
         IAuditService auditService,
-        IClaimNumberGenerator claimNumberGenerator) // NEW: Inject claim number generator
+        IClaimNumberGenerator claimNumberGenerator)
     {
-        _claimRepository = claimRepository ?? throw new ArgumentNullException(nameof(claimRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
-        _claimNumberGenerator = claimNumberGenerator ?? throw new ArgumentNullException(nameof(claimNumberGenerator)); 
+        _claimNumberGenerator = claimNumberGenerator ?? throw new ArgumentNullException(nameof(claimNumberGenerator));
     }
 
     public async Task<ClaimDto> Handle(CreateClaimCommand request, CancellationToken cancellationToken)
     {
         // Validate that property unit exists
-        var propertyUnitExists = await _propertyUnitRepository.ExistsAsync(request.PropertyUnitId, cancellationToken);
+        var propertyUnitExists = await _unitOfWork.PropertyUnits.ExistsAsync(request.PropertyUnitId, cancellationToken);
         if (!propertyUnitExists)
         {
             await _auditService.LogFailedActionAsync(
@@ -125,7 +122,7 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
         }
 
         // Check for conflicting claims on the same property unit
-        var conflictCount = await _claimRepository.GetConflictCountAsync(
+        var conflictCount = await _unitOfWork.Claims.GetConflictCountAsync(
             request.PropertyUnitId,
             cancellationToken
         );
@@ -140,8 +137,7 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
         }
 
         // Save claim to repository
-        await _claimRepository.AddAsync(claim, cancellationToken);
-        await _claimRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Claims.AddAsync(claim, cancellationToken);
 
         // Log the successful creation of the claim for audit trail
         await _auditService.LogClaimCreatedAsync(claim, cancellationToken);
@@ -149,7 +145,7 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
         // If conflicts exist, update existing claims to reflect the conflict
         if (conflictCount > 0)
         {
-            var existingClaim = await _claimRepository.GetByPropertyUnitIdAsync(
+            var existingClaim = await _unitOfWork.Claims.GetByPropertyUnitIdAsync(
                 request.PropertyUnitId,
                 cancellationToken
             );
@@ -160,8 +156,7 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
                     conflictCount: conflictCount + 1, // Now includes the new claim
                     modifiedByUserId: request.CreatedByUserId
                 );
-                await _claimRepository.UpdateAsync(existingClaim, cancellationToken);
-                await _claimRepository.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.Claims.UpdateAsync(existingClaim, cancellationToken);
 
                 // Log conflict detection
                 await _auditService.LogActionAsync(
@@ -178,8 +173,11 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
             }
         }
 
+        // Save all changes atomically (new claim + conflict updates)
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
         // Reload claim with navigation properties
-        var createdClaim = await _claimRepository.GetByIdAsync(claim.Id, cancellationToken);
+        var createdClaim = await _unitOfWork.Claims.GetByIdAsync(claim.Id, cancellationToken);
 
         // Map to DTO and return
         return _mapper.Map<ClaimDto>(createdClaim);

@@ -14,17 +14,20 @@ public class UpdateBuildingGeometryCommandHandler : IRequestHandler<UpdateBuildi
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
+    private readonly IGeometryConverter _geometryConverter;
 
     public UpdateBuildingGeometryCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService,
-        IMapper mapper)
+        IMapper mapper,
+        IGeometryConverter geometryConverter)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _auditService = auditService;
         _mapper = mapper;
+        _geometryConverter = geometryConverter;
     }
 
     public async Task<BuildingDto> Handle(UpdateBuildingGeometryCommand request, CancellationToken cancellationToken)
@@ -51,7 +54,8 @@ public class UpdateBuildingGeometryCommandHandler : IRequestHandler<UpdateBuildi
                 newValues["BuildingGeometryWkt"] = request.GeometryWkt;
                 changedFields.Add("BuildingGeometryWkt");
 
-                building.SetGeometry(request.GeometryWkt, currentUserId);
+                var geometry = _geometryConverter.ParseWkt(request.GeometryWkt);
+                building.SetGeometry(geometry, currentUserId);
             }
         }
 
@@ -66,7 +70,9 @@ public class UpdateBuildingGeometryCommandHandler : IRequestHandler<UpdateBuildi
                 newValues["Longitude"] = request.Longitude.Value;
                 changedFields.Add("Coordinates");
 
-                building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, currentUserId);
+                var fallbackPoint = _geometryConverter.CreatePoint(
+                    (double)request.Longitude.Value, (double)request.Latitude.Value);
+                building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, currentUserId, fallbackPoint);
             }
         }
 

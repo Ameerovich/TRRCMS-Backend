@@ -1,11 +1,12 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 
 namespace TRRCMS.Application.Buildings.Queries.GetAllBuildings;
 
-public class GetAllBuildingsQueryHandler : IRequestHandler<GetAllBuildingsQuery, List<BuildingDto>>
+public class GetAllBuildingsQueryHandler : IRequestHandler<GetAllBuildingsQuery, PagedResult<BuildingDto>>
 {
     private readonly IBuildingRepository _buildingRepository;
     private readonly IMapper _mapper;
@@ -18,9 +19,10 @@ public class GetAllBuildingsQueryHandler : IRequestHandler<GetAllBuildingsQuery,
         _mapper = mapper;
     }
 
-    public async Task<List<BuildingDto>> Handle(GetAllBuildingsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<BuildingDto>> Handle(GetAllBuildingsQuery request, CancellationToken cancellationToken)
     {
         var buildings = await _buildingRepository.GetAllAsync(cancellationToken);
-        return _mapper.Map<List<BuildingDto>>(buildings);
+        var dtos = _mapper.Map<List<BuildingDto>>(buildings);
+        return PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
     }
 }

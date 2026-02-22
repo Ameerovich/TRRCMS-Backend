@@ -1,5 +1,4 @@
 ﻿using NetTopologySuite.Geometries;
-using NetTopologySuite.IO;
 using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
@@ -271,49 +270,39 @@ public class Building : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Set building geometry from WKT string
-    /// Converts WKT to PostGIS Geometry type
+    /// Set building geometry (pre-parsed by IGeometryConverter).
+    /// Auto-computes centroid for polygon geometries.
     /// </summary>
-    public void SetGeometry(string geometryWkt, Guid modifiedByUserId)
+    public void SetGeometry(Geometry? geometry, Guid modifiedByUserId)
     {
-        if (string.IsNullOrWhiteSpace(geometryWkt))
-        {
-            BuildingGeometry = null;
-        }
-        else
-        {
-            var reader = new WKTReader();
-            BuildingGeometry = reader.Read(geometryWkt);
-            BuildingGeometry.SRID = 4326; // WGS84
+        BuildingGeometry = geometry;
 
-            // Auto-compute centroid from polygon so Latitude/Longitude are never null
-            // when a polygon geometry is provided
-            if (BuildingGeometry is Polygon or MultiPolygon)
-            {
-                var centroid = BuildingGeometry.Centroid;
-                Latitude = (decimal)centroid.Y;
-                Longitude = (decimal)centroid.X;
-            }
+        // Auto-compute centroid from polygon so Latitude/Longitude are never null
+        // when a polygon geometry is provided
+        if (geometry is Polygon or MultiPolygon)
+        {
+            var centroid = geometry.Centroid;
+            Latitude = (decimal)centroid.Y;
+            Longitude = (decimal)centroid.X;
         }
 
         MarkAsModified(modifiedByUserId);
     }
 
     /// <summary>
-    /// Set GPS coordinates
-    /// Creates a Point geometry if no geometry exists
+    /// Set GPS coordinates.
+    /// Optionally accepts a pre-built Point (from IGeometryConverter) to set as geometry
+    /// when no geometry exists yet.
     /// </summary>
-    public void SetCoordinates(decimal latitude, decimal longitude, Guid modifiedByUserId)
+    public void SetCoordinates(decimal latitude, decimal longitude, Guid modifiedByUserId, Point? fallbackPoint = null)
     {
         Latitude = latitude;
         Longitude = longitude;
 
-        // Create point geometry if no geometry exists
-        if (BuildingGeometry == null)
+        // Use provided point geometry if no geometry exists
+        if (BuildingGeometry == null && fallbackPoint != null)
         {
-            var geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
-            BuildingGeometry = geometryFactory.CreatePoint(
-                new Coordinate((double)longitude, (double)latitude));
+            BuildingGeometry = fallbackPoint;
         }
 
         MarkAsModified(modifiedByUserId);

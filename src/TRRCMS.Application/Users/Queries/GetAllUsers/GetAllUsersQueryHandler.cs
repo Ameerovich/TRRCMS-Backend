@@ -1,89 +1,66 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Users.Dtos;
 
-namespace TRRCMS.Application.Users.Queries.GetAllUsers
+namespace TRRCMS.Application.Users.Queries.GetAllUsers;
+
+/// <summary>
+/// Handler for fetching all users with optional filters and pagination.
+/// </summary>
+public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, PagedResult<UserListDto>>
 {
-    /// <summary>
-    /// Handler for fetching all users with optional filters and pagination.
-    /// </summary>
-    public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, GetAllUsersResponse>
+    private readonly IUserRepository _userRepository;
+    private readonly IMapper _mapper;
+
+    public GetAllUsersQueryHandler(IUserRepository userRepository, IMapper mapper)
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IMapper _mapper;
+        _userRepository = userRepository;
+        _mapper = mapper;
+    }
 
-        public GetAllUsersQueryHandler(IUserRepository userRepository, IMapper mapper)
+    public async Task<PagedResult<UserListDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
+    {
+        // 1) Load data (repository returns List<User>, so filtering is in-memory)
+        List<TRRCMS.Domain.Entities.User> users;
+
+        // Role filter first (preferred path)
+        if (request.Role.HasValue)
         {
-            _userRepository = userRepository;
-            _mapper = mapper;
+            var activeOnly = request.IsActive == true;
+            users = await _userRepository.GetUsersByRoleAsync(
+                role: request.Role.Value,
+                activeOnly: activeOnly,
+                cancellationToken: cancellationToken);
+        }
+        else
+        {
+            users = await _userRepository.GetAllAsync(cancellationToken);
         }
 
-        public async Task<GetAllUsersResponse> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
+        // 2) Apply IsActive filter
+        if (request.IsActive.HasValue)
         {
-            // 1) Load data (repository returns List<User>, so filtering is in-memory)
-            List<TRRCMS.Domain.Entities.User> users;
+            users = users.Where(u => u.IsActive == request.IsActive.Value).ToList();
+        }
 
-            // Role filter first (preferred path)
-            if (request.Role.HasValue)
-            {
-                // activeOnly defaults to true in repo; we control it explicitly:
-                // - if IsActive == true => activeOnly = true
-                // - if IsActive == false or null => activeOnly = false, then we filter below if needed
-                var activeOnly = request.IsActive == true;
-                users = await _userRepository.GetUsersByRoleAsync(
-                    role: request.Role.Value,
-                    activeOnly: activeOnly,
-                    cancellationToken: cancellationToken);
-            }
-            else
-            {
-                users = await _userRepository.GetAllAsync(cancellationToken);
-            }
+        // 3) Search (username/email/full name)
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var term = request.SearchTerm.Trim();
 
-            // 2) Apply IsActive filter (only needed when:
-            // - Role not provided (GetAllAsync returns all including inactive)
-            // - Role provided but IsActive is false (repo can't fetch "inactive only", so we filter)
-            if (request.IsActive.HasValue)
-            {
-                users = users.Where(u => u.IsActive == request.IsActive.Value).ToList();
-            }
-
-            // 3) Search (username/email/full Arabic name)
-            if (!string.IsNullOrWhiteSpace(request.SearchTerm))
-            {
-                var term = request.SearchTerm.Trim();
-
-                users = users.Where(u =>
-                        (!string.IsNullOrWhiteSpace(u.Username) && u.Username.Contains(term)) ||
-                        (!string.IsNullOrWhiteSpace(u.Email) && u.Email.Contains(term)) ||
-                        (!string.IsNullOrWhiteSpace(u.FullNameArabic) && u.FullNameArabic.Contains(term)) ||
-                        (!string.IsNullOrWhiteSpace(u.FullNameEnglish) && u.FullNameEnglish.Contains(term))
-                    )
-                    .ToList();
-            }
-
-            // 4) Pagination
-            var totalCount = users.Count;
-
-            var page = request.Page <= 0 ? 1 : request.Page;
-            var pageSize = request.PageSize <= 0 ? 20 : request.PageSize;
-
-            var pagedUsers = users
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+            users = users.Where(u =>
+                    (!string.IsNullOrWhiteSpace(u.Username) && u.Username.Contains(term)) ||
+                    (!string.IsNullOrWhiteSpace(u.Email) && u.Email.Contains(term)) ||
+                    (!string.IsNullOrWhiteSpace(u.FullNameArabic) && u.FullNameArabic.Contains(term)) ||
+                    (!string.IsNullOrWhiteSpace(u.FullNameEnglish) && u.FullNameEnglish.Contains(term))
+                )
                 .ToList();
-
-            // 5) Map using AutoMapper
-            var userDtos = _mapper.Map<List<UserListDto>>(pagedUsers);
-
-            return new GetAllUsersResponse
-            {
-                Users = userDtos,
-                TotalCount = totalCount,
-                Page = page,
-                PageSize = pageSize
-            };
         }
+
+        // 4) Map and paginate
+        var userDtos = _mapper.Map<List<UserListDto>>(users);
+        return PaginatedList.FromEnumerable(userDtos, request.PageNumber, request.PageSize);
     }
 }

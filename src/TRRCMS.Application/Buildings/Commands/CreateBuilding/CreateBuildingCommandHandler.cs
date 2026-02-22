@@ -14,13 +14,16 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
 {
     private readonly IBuildingRepository _buildingRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IGeometryConverter _geometryConverter;
 
     public CreateBuildingCommandHandler(
         IBuildingRepository buildingRepository,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IGeometryConverter geometryConverter)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
+        _geometryConverter = geometryConverter;
     }
 
     public async Task<BuildingDto> Handle(CreateBuildingCommand request, CancellationToken cancellationToken)
@@ -70,13 +73,16 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
         // Set coordinates if provided
         if (request.Latitude.HasValue && request.Longitude.HasValue)
         {
-            building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, userId);
+            var fallbackPoint = _geometryConverter.CreatePoint(
+                (double)request.Longitude.Value, (double)request.Latitude.Value);
+            building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, userId, fallbackPoint);
         }
 
         // Set geometry if provided
         if (!string.IsNullOrWhiteSpace(request.BuildingGeometryWkt))
         {
-            building.SetGeometry(request.BuildingGeometryWkt, userId);
+            var geometry = _geometryConverter.ParseWkt(request.BuildingGeometryWkt);
+            building.SetGeometry(geometry, userId);
         }
 
         // Set location description and notes

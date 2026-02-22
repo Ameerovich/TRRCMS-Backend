@@ -14,27 +14,18 @@ namespace TRRCMS.Application.Surveys.Commands.UpdatePersonInSurvey;
 /// </summary>
 public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonInSurveyCommand, PersonDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IHouseholdRepository _householdRepository;
-    private readonly IPersonRepository _personRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public UpdatePersonInSurveyCommandHandler(
-        ISurveyRepository surveyRepository,
-        IHouseholdRepository householdRepository,
-        IPersonRepository personRepository,
-        IPropertyUnitRepository propertyUnitRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _householdRepository = householdRepository ?? throw new ArgumentNullException(nameof(householdRepository));
-        _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -46,7 +37,7 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Validate survey exists and user has access
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken)
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
@@ -56,16 +47,16 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
             throw new ValidationException($"Cannot update persons for survey in {survey.Status} status. Only Draft surveys can be modified.");
 
         // Validate household exists
-        var household = await _householdRepository.GetByIdAsync(request.HouseholdId, cancellationToken)
+        var household = await _unitOfWork.Households.GetByIdAsync(request.HouseholdId, cancellationToken)
             ?? throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
 
         // Verify household belongs to survey's building
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(household.PropertyUnitId, cancellationToken);
+        var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(household.PropertyUnitId, cancellationToken);
         if (propertyUnit == null || propertyUnit.BuildingId != survey.BuildingId)
             throw new ValidationException("Household does not belong to this survey's building");
 
         // Get person
-        var person = await _personRepository.GetByIdAsync(request.PersonId, cancellationToken)
+        var person = await _unitOfWork.Persons.GetByIdAsync(request.PersonId, cancellationToken)
             ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
 
         // Verify person belongs to the specified household
@@ -118,8 +109,8 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
         }
 
         // Save changes
-        await _personRepository.UpdateAsync(person, cancellationToken);
-        await _personRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Persons.UpdateAsync(person, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Build changed fields list
         var changedFields = new List<string>();

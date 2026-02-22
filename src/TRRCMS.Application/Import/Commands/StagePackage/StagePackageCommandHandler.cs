@@ -23,7 +23,7 @@ namespace TRRCMS.Application.Import.Commands.StagePackage;
 /// </summary>
 public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, StagingSummaryDto>
 {
-    private readonly IImportPackageRepository _packageRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IStagingService _stagingService;
     private readonly IValidationPipeline _validationPipeline;
     private readonly IStagingRepository<StagingBuilding> _buildingRepo;
@@ -38,7 +38,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
     private readonly ILogger<StagePackageCommandHandler> _logger;
 
     public StagePackageCommandHandler(
-        IImportPackageRepository packageRepository,
+        IUnitOfWork unitOfWork,
         IStagingService stagingService,
         IValidationPipeline validationPipeline,
         IStagingRepository<StagingBuilding> buildingRepo,
@@ -52,7 +52,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         ICurrentUserService currentUserService,
         ILogger<StagePackageCommandHandler> logger)
     {
-        _packageRepository = packageRepository;
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _stagingService = stagingService;
         _validationPipeline = validationPipeline;
         _buildingRepo = buildingRepo;
@@ -77,7 +77,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         // ============================================================
         // STEP 1: Load and validate package
         // ============================================================
-        var package = await _packageRepository.GetByIdAsync(request.ImportPackageId, cancellationToken)
+        var package = await _unitOfWork.ImportPackages.GetByIdAsync(request.ImportPackageId, cancellationToken)
             ?? throw new NotFoundException(
                 $"Import package not found: {request.ImportPackageId}");
 
@@ -113,8 +113,8 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             // Note: AddValidationResults transitions to Staging when errorCount=0.
             // The status is now ImportStatus.Staging.
 
-            await _packageRepository.UpdateAsync(package, cancellationToken);
-            await _packageRepository.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // ============================================================
             // STEP 4: Unpack .uhc → staging tables
@@ -180,8 +180,8 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             // AddValidationResults transitions to ValidationFailed if errors > 0,
             // or to Staging if errors = 0. We want Staging to proceed to duplicate detection.
 
-            await _packageRepository.UpdateAsync(package, cancellationToken);
-            await _packageRepository.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // ============================================================
             // STEP 7: Build response DTO
@@ -202,8 +202,8 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
                 JsonSerializer.Serialize(new { ex.Message, ex.StackTrace }),
                 userId);
 
-            await _packageRepository.UpdateAsync(package, cancellationToken);
-            await _packageRepository.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             throw;
         }

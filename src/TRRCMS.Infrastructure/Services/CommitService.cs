@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NetTopologySuite.IO;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Application.Import.Models;
@@ -48,8 +47,10 @@ public class CommitService : ICommitService
     private readonly IStagingRepository<StagingSurvey> _stagingSurveyRepo;
     private readonly IImportPackageRepository _importPackageRepository;
     private readonly IClaimNumberGenerator _claimNumberGenerator;
+    private readonly ISurveyReferenceCodeGenerator _surveyRefCodeGenerator;
     private readonly IImportService _importService;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IGeometryConverter _geometryConverter;
     private readonly ImportPipelineSettings _settings;
     private readonly ILogger<CommitService> _logger;
 
@@ -68,8 +69,10 @@ public class CommitService : ICommitService
         IStagingRepository<StagingSurvey> stagingSurveyRepo,
         IImportPackageRepository importPackageRepository,
         IClaimNumberGenerator claimNumberGenerator,
+        ISurveyReferenceCodeGenerator surveyRefCodeGenerator,
         IImportService importService,
         IFileStorageService fileStorageService,
+        IGeometryConverter geometryConverter,
         IOptions<ImportPipelineSettings> settings,
         ILogger<CommitService> logger)
     {
@@ -84,8 +87,10 @@ public class CommitService : ICommitService
         _stagingSurveyRepo = stagingSurveyRepo;
         _importPackageRepository = importPackageRepository;
         _claimNumberGenerator = claimNumberGenerator;
+        _surveyRefCodeGenerator = surveyRefCodeGenerator;
         _importService = importService;
         _fileStorageService = fileStorageService;
+        _geometryConverter = geometryConverter;
         _settings = settings.Value;
         _logger = logger;
     }
@@ -231,10 +236,17 @@ public class CommitService : ICommitService
                     userId);
 
                 if (staging.BuildingGeometryWkt != null)
-                    building.SetGeometry(staging.BuildingGeometryWkt, userId);
+                {
+                    var geometry = _geometryConverter.ParseWkt(staging.BuildingGeometryWkt);
+                    building.SetGeometry(geometry, userId);
+                }
 
                 if (staging.Latitude.HasValue && staging.Longitude.HasValue)
-                    building.SetCoordinates(staging.Latitude.Value, staging.Longitude.Value, userId);
+                {
+                    var fallbackPoint = _geometryConverter.CreatePoint(
+                        (double)staging.Longitude.Value, (double)staging.Latitude.Value);
+                    building.SetCoordinates(staging.Latitude.Value, staging.Longitude.Value, userId, fallbackPoint);
+                }
 
                 if (staging.DamageLevel.HasValue)
                     building.UpdateStatus(staging.Status, staging.DamageLevel, userId);
@@ -535,13 +547,18 @@ public class CommitService : ICommitService
                 }
 
                 var surveyType = staging.Type?.ToString() ?? "Field";
+                var prefix = staging.Type == SurveyType.Office ? "OFC" : "ALG";
+                var refCode = staging.ReferenceCode
+                    ?? await _surveyRefCodeGenerator.GenerateNextAsync(prefix, ct);
+
                 var survey = Survey.Create(
                     buildingId: productionBuildingId,
                     fieldCollectorId: fieldCollectorId,
                     surveyType: surveyType,
                     surveyDate: staging.SurveyDate,
                     propertyUnitId: productionPropertyUnitId,
-                    createdByUserId: userId);
+                    createdByUserId: userId,
+                    referenceCode: refCode);
 
                 await _unitOfWork.Surveys.AddAsync(survey, ct);
 

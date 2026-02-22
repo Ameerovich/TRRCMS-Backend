@@ -143,10 +143,5 @@ public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<Building
         builder.HasIndex(ba => ba.IsDeleted)
             .HasDatabaseName("IX_BuildingAssignments_IsDeleted")
             .HasFilter("\"IsDeleted\" = false");
-
-        // ==================== QUERY FILTERS ====================
-
-        // Global query filter for soft delete
-        builder.HasQueryFilter(ba => !ba.IsDeleted);
     }
 }

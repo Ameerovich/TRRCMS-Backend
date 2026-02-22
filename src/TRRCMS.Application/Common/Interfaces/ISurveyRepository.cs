@@ -48,12 +48,6 @@ public interface ISurveyRepository
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get next sequence number for reference code generation
-    /// Uses PostgreSQL sequence for thread-safe sequential numbering
-    /// </summary>
-    Task<int> GetNextReferenceSequenceAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Get surveys linked to the given claim IDs (via Survey.ClaimId).
     /// Returns one survey per claim (the first match).
     /// </summary>

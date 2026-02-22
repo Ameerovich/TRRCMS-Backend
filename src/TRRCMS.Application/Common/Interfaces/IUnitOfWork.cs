@@ -96,6 +96,16 @@ public interface IUnitOfWork : IDisposable
     /// </summary>
     IEvidenceRelationRepository EvidenceRelations { get; }
 
+    /// <summary>
+    /// Import package repository - manages .uhc import packages through their lifecycle
+    /// </summary>
+    IImportPackageRepository ImportPackages { get; }
+
+    /// <summary>
+    /// Conflict resolution repository - duplicate/conflict detection and resolution
+    /// </summary>
+    IConflictResolutionRepository ConflictResolutions { get; }
+
 
     // ==================== TRANSACTION OPERATIONS ====================
 

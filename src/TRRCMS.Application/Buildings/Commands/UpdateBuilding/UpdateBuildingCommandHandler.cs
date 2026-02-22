@@ -16,15 +16,18 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
     private readonly IBuildingRepository _buildingRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
+    private readonly IGeometryConverter _geometryConverter;
 
     public UpdateBuildingCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
-        IAuditService auditService)
+        IAuditService auditService,
+        IGeometryConverter geometryConverter)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _auditService = auditService;
+        _geometryConverter = geometryConverter;
     }
 
     public async Task<BuildingDto> Handle(UpdateBuildingCommand request, CancellationToken cancellationToken)
@@ -127,7 +130,9 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
                 newValues["Longitude"] = request.Longitude.Value;
                 changedFields.Add("Coordinates");
 
-                building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, currentUserId);
+                var fallbackPoint = _geometryConverter.CreatePoint(
+                    (double)request.Longitude.Value, (double)request.Latitude.Value);
+                building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, currentUserId, fallbackPoint);
             }
         }
 

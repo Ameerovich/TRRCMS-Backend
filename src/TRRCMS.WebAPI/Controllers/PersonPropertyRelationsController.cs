@@ -278,12 +278,11 @@ public class PersonPropertyRelationsController : ControllerBase
     /// <response code="403">Not authorized - missing required permission</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllSurveys")]
-    [ProducesResponseType(typeof(IEnumerable<PersonPropertyRelationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<PersonPropertyRelationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IEnumerable<PersonPropertyRelationDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<PersonPropertyRelationDto>>> GetAll([FromQuery] GetAllPersonPropertyRelationsQuery query)
     {
-        var query = new GetAllPersonPropertyRelationsQuery();
         var result = await _mediator.Send(query);
         return Ok(result);
     }

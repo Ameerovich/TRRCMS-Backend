@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Entities.Staging;
 
@@ -155,5 +157,18 @@ public class ApplicationDbContext : DbContext
 
         // Apply all entity configurations from this assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        // Global soft-delete filter for all BaseAuditableEntity subtypes
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(BaseAuditableEntity).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            var parameter = Expression.Parameter(entityType.ClrType, "e");
+            var property = Expression.Property(parameter, nameof(BaseAuditableEntity.IsDeleted));
+            var filter = Expression.Lambda(Expression.Not(property), parameter);
+
+            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+        }
     }
 }

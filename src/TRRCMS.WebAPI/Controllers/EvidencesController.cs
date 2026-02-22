@@ -244,12 +244,11 @@ public class EvidencesController : ControllerBase
     /// <response code="403">Missing required permission (Evidence_View)</response>
     [HttpGet]
     [Authorize(Policy = "CanViewEvidence")]
-    [ProducesResponseType(typeof(IEnumerable<EvidenceDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<EvidenceDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IEnumerable<EvidenceDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<EvidenceDto>>> GetAll([FromQuery] GetAllEvidencesQuery query)
     {
-        var query = new GetAllEvidencesQuery();
         var result = await _mediator.Send(query);
         return Ok(result);
     }

@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Claims.Commands.AssignClaim;
 using TRRCMS.Application.Claims.Commands.CreateClaim;
 using TRRCMS.Application.Claims.Commands.SubmitClaim;
@@ -83,55 +84,22 @@ public class ClaimsController : ControllerBase
     }
 
     /// <summary>
-    /// Get all claims with optional filtering
+    /// Get all claims with optional filtering and pagination
     /// </summary>
-    /// <param name="lifecycleStage">Filter by lifecycle stage</param>
-    /// <param name="status">Filter by status</param>
-    /// <param name="priority">Filter by priority</param>
-    /// <param name="assignedToUserId">Filter by assigned user</param>
-    /// <param name="primaryClaimantId">Filter by claimant</param>
-    /// <param name="propertyUnitId">Filter by property unit</param>
-    /// <param name="verificationStatus">Filter by verification status</param>
-    /// <param name="hasConflicts">Filter by conflicts</param>
-    /// <param name="isOverdue">Filter by overdue status</param>
-    /// <param name="awaitingDocuments">Filter by awaiting documents</param>
-    /// <returns>List of claims matching filter criteria</returns>
+    /// <param name="query">Filter and pagination parameters</param>
+    /// <returns>Paginated list of claims matching filter criteria</returns>
     /// <response code="200">Claims retrieved successfully</response>
     /// <response code="401">Not authenticated</response>
     /// <response code="403">Missing required permission (Claims_ViewAll)</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllClaims")]
-    [ProducesResponseType(typeof(IEnumerable<ClaimDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<ClaimDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<IEnumerable<ClaimDto>>> GetAllClaims(
-        [FromQuery] LifecycleStage? lifecycleStage = null,
-        [FromQuery] ClaimStatus? status = null,
-        [FromQuery] CasePriority? priority = null,
-        [FromQuery] Guid? assignedToUserId = null,
-        [FromQuery] Guid? primaryClaimantId = null,
-        [FromQuery] Guid? propertyUnitId = null,
-        [FromQuery] VerificationStatus? verificationStatus = null,
-        [FromQuery] bool? hasConflicts = null,
-        [FromQuery] bool? isOverdue = null,
-        [FromQuery] bool? awaitingDocuments = null)
+    public async Task<ActionResult<PagedResult<ClaimDto>>> GetAllClaims([FromQuery] GetAllClaimsQuery query)
     {
-        var query = new GetAllClaimsQuery
-        {
-            LifecycleStage = lifecycleStage,
-            Status = status,
-            Priority = priority,
-            AssignedToUserId = assignedToUserId,
-            PrimaryClaimantId = primaryClaimantId,
-            PropertyUnitId = propertyUnitId,
-            VerificationStatus = verificationStatus,
-            HasConflicts = hasConflicts,
-            IsOverdue = isOverdue,
-            AwaitingDocuments = awaitingDocuments
-        };
-
-        var claims = await _mediator.Send(query);
-        return Ok(claims);
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 
     /// <summary>

@@ -249,7 +249,8 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Create new survey (backward compatible - kept for existing code)
+    /// Create new survey (backward compatible - kept for existing code).
+    /// Reference code must be supplied by the caller (generated via ISurveyReferenceCodeGenerator).
     /// </summary>
     public static Survey Create(
         Guid buildingId,
@@ -257,8 +258,12 @@ public class Survey : BaseAuditableEntity
         string surveyType,
         DateTime surveyDate,
         Guid? propertyUnitId,
-        Guid createdByUserId)
+        Guid createdByUserId,
+        string referenceCode)
     {
+        if (string.IsNullOrWhiteSpace(referenceCode))
+            throw new ArgumentException("Reference code is required.", nameof(referenceCode));
+
         var isOffice = surveyType.Equals("Office", StringComparison.OrdinalIgnoreCase);
 
         var survey = new Survey
@@ -270,11 +275,9 @@ public class Survey : BaseAuditableEntity
             SurveyType = surveyType,
             SurveyDate = surveyDate,
             PropertyUnitId = propertyUnitId,
-            Status = SurveyStatus.Draft
+            Status = SurveyStatus.Draft,
+            ReferenceCode = referenceCode
         };
-
-        // Generate reference code (will be enhanced with actual business logic)
-        survey.ReferenceCode = GenerateReferenceCode(survey.Type);
 
         survey.MarkAsCreated(createdByUserId);
 
@@ -466,19 +469,4 @@ public class Survey : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
-    // ==================== HELPER METHODS ====================
-
-    /// <summary>
-    /// Generate unique reference code for interviewee
-    /// Format: ALG-YYYY-NNNNN for Field, OFC-YYYY-NNNNN for Office
-    /// Note: This is a placeholder. Actual implementation uses repository for sequential numbering.
-    /// </summary>
-    private static string GenerateReferenceCode(Enums.SurveyType surveyType)
-    {
-        var year = DateTime.UtcNow.Year;
-        var random = new Random();
-        var sequence = random.Next(10000, 99999); // Temporary - should be sequential from DB
-        var prefix = surveyType == Enums.SurveyType.Office ? "OFC" : "ALG";
-        return $"{prefix}-{year}-{sequence:D5}";
-    }
 }

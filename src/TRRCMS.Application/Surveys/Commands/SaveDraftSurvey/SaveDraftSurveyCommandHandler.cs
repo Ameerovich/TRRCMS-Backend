@@ -15,21 +15,18 @@ namespace TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 /// </summary>
 public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyCommand, SurveyDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public SaveDraftSurveyCommandHandler(
-        ISurveyRepository surveyRepository,
-        IPropertyUnitRepository propertyUnitRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -42,7 +39,7 @@ public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyComm
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Get survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken);
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken);
         if (survey == null)
         {
             throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
@@ -74,7 +71,7 @@ public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyComm
         // Validate property unit if provided
         if (request.PropertyUnitId.HasValue)
         {
-            var propertyUnit = await _propertyUnitRepository.GetByIdAsync(
+            var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(
                 request.PropertyUnitId.Value,
                 cancellationToken);
 
@@ -108,8 +105,8 @@ public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyComm
         }
 
         // Save changes
-        await _surveyRepository.UpdateAsync(survey, cancellationToken);
-        await _surveyRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Surveys.UpdateAsync(survey, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Track changes
         var newValues = System.Text.Json.JsonSerializer.Serialize(new

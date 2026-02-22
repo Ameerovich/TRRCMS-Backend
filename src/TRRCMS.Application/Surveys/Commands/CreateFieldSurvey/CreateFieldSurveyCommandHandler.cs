@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -16,25 +16,22 @@ namespace TRRCMS.Application.Surveys.Commands.CreateFieldSurvey;
 /// </summary>
 public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurveyCommand, SurveyDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IBuildingRepository _buildingRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISurveyReferenceCodeGenerator _refCodeGenerator;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public CreateFieldSurveyCommandHandler(
-        ISurveyRepository surveyRepository,
-        IBuildingRepository buildingRepository,
-        IPropertyUnitRepository propertyUnitRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
+        ISurveyReferenceCodeGenerator refCodeGenerator,
         IAuditService auditService,
         IMapper mapper)
     {
-        _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
-        _buildingRepository = buildingRepository ?? throw new ArgumentNullException(nameof(buildingRepository));
-        _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _refCodeGenerator = refCodeGenerator ?? throw new ArgumentNullException(nameof(refCodeGenerator));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
@@ -46,7 +43,7 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Validate building exists
-        var building = await _buildingRepository.GetByIdAsync(request.BuildingId, cancellationToken);
+        var building = await _unitOfWork.Buildings.GetByIdAsync(request.BuildingId, cancellationToken);
         if (building == null)
         {
             throw new NotFoundException($"Building with ID {request.BuildingId} not found");
@@ -55,7 +52,7 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         // Validate property unit if provided
         if (request.PropertyUnitId.HasValue)
         {
-            var propertyUnit = await _propertyUnitRepository.GetByIdAsync(
+            var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(
                 request.PropertyUnitId.Value,
                 cancellationToken);
 
@@ -72,8 +69,8 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
             }
         }
 
-        // Generate reference code
-        var referenceCode = await GenerateFieldReferenceCodeAsync(cancellationToken);
+        // Generate reference code via PostgreSQL sequence
+        var referenceCode = await _refCodeGenerator.GenerateNextAsync("ALG", cancellationToken);
 
         // Create survey entity using new factory method
         var survey = Survey.CreateFieldSurvey(
@@ -98,8 +95,8 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         );
 
         // Save to repository
-        await _surveyRepository.AddAsync(survey, cancellationToken);
-        await _surveyRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.Surveys.AddAsync(survey, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Audit logging
         await _auditService.LogActionAsync(
@@ -133,14 +130,4 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         return result;
     }
 
-    /// <summary>
-    /// Generate unique reference code for field survey
-    /// Format: ALG-YYYY-NNNNN
-    /// </summary>
-    private async Task<string> GenerateFieldReferenceCodeAsync(CancellationToken cancellationToken)
-    {
-        var year = DateTime.UtcNow.Year;
-        var sequence = await _surveyRepository.GetNextReferenceSequenceAsync(cancellationToken);
-        return $"ALG-{year}-{sequence:D5}";
-    }
 }

@@ -243,8 +243,5 @@ public class ImportPackageConfiguration : IEntityTypeConfiguration<ImportPackage
         // Filter by field collector
         builder.HasIndex(p => p.ExportedByUserId)
             .HasDatabaseName("IX_ImportPackages_ExportedByUserId");
-
-        // Soft-delete filter
-        builder.HasQueryFilter(p => !p.IsDeleted);
     }
 }

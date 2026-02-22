@@ -24,13 +24,15 @@ public class PropertyMergeService : IMergeService
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly ISurveyRepository _surveyRepository;
     private readonly IClaimRepository _claimRepository;
+    private readonly IGeometryConverter _geometryConverter;
 
     public PropertyMergeService(
         IBuildingRepository buildingRepository,
         IPropertyUnitRepository propertyUnitRepository,
         IPersonPropertyRelationRepository relationRepository,
         ISurveyRepository surveyRepository,
-        IClaimRepository claimRepository)
+        IClaimRepository claimRepository,
+        IGeometryConverter geometryConverter)
     {
         _buildingRepository = buildingRepository
             ?? throw new ArgumentNullException(nameof(buildingRepository));
@@ -42,6 +44,8 @@ public class PropertyMergeService : IMergeService
             ?? throw new ArgumentNullException(nameof(surveyRepository));
         _claimRepository = claimRepository
             ?? throw new ArgumentNullException(nameof(claimRepository));
+        _geometryConverter = geometryConverter
+            ?? throw new ArgumentNullException(nameof(geometryConverter));
     }
 
     /// <inheritdoc />
@@ -71,7 +75,7 @@ public class PropertyMergeService : IMergeService
                     $"Discarded building with ID {discardedEntityId} not found.");
 
             var mergeMapping = new Dictionary<string, string>();
-            MergeBuildingFields(master, discarded, mergeMapping);
+            MergeBuildingFields(master, discarded, mergeMapping, _geometryConverter);
 
             // 2. Re-parent property units from discarded → master building
             var discardedUnits = (await _propertyUnitRepository
@@ -149,7 +153,8 @@ public class PropertyMergeService : IMergeService
     private static void MergeBuildingFields(
         Domain.Entities.Building master,
         Domain.Entities.Building discarded,
-        Dictionary<string, string> mergeMapping)
+        Dictionary<string, string> mergeMapping,
+        IGeometryConverter geometryConverter)
     {
         // BuildingId (the 17-digit code) — always keep master
         mergeMapping["BuildingId"] = "master";
@@ -205,10 +210,11 @@ public class PropertyMergeService : IMergeService
             mergedNotes,
             master.Id);
 
-        // Geometry — prefer master if present, else take discarded's WKT
+        // Geometry — prefer master if present, else take discarded's geometry
         if (master.BuildingGeometry is null && discarded.BuildingGeometry is not null)
         {
-            master.SetGeometry(discarded.BuildingGeometry.AsText(), master.Id);
+            var geometry = geometryConverter.ParseWkt(discarded.BuildingGeometry.AsText());
+            master.SetGeometry(geometry, master.Id);
             mergeMapping["BuildingGeometry"] = "discarded";
         }
     }

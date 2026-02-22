@@ -357,10 +357,5 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         // Composite index on PropertyUnitId + IsDeleted (for conflict detection with soft delete filter)
         builder.HasIndex(c => new { c.PropertyUnitId, c.IsDeleted })
             .HasDatabaseName("IX_Claims_PropertyUnitId_IsDeleted");
-        
-        // ==================== QUERY FILTERS ====================
-        
-        // Soft delete query filter - automatically exclude deleted records
-        builder.HasQueryFilter(c => !c.IsDeleted);
     }
 }

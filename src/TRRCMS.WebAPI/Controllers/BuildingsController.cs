@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Buildings.Commands.CreateBuilding;
 using TRRCMS.Application.Buildings.Commands.DeleteBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuilding;
@@ -269,14 +270,13 @@ public class BuildingsController : ControllerBase
     /// <response code="403">Missing required permission - requires Buildings_View (4000)</response>
     [HttpGet]
     [Authorize(Policy = "CanViewAllBuildings")]
-    [ProducesResponseType(typeof(List<BuildingDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PagedResult<BuildingDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<List<BuildingDto>>> GetAllBuildings()
+    public async Task<ActionResult<PagedResult<BuildingDto>>> GetAllBuildings([FromQuery] GetAllBuildingsQuery query)
     {
-        var query = new GetAllBuildingsQuery();
-        var buildings = await _mediator.Send(query);
-        return Ok(buildings);
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 
     // ==================== SEARCH ====================

@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Households.Dtos;
 
 namespace TRRCMS.Application.Households.Queries.GetAllHouseholds;
@@ -8,7 +9,7 @@ namespace TRRCMS.Application.Households.Queries.GetAllHouseholds;
 /// <summary>
 /// Handler for GetAllHouseholdsQuery
 /// </summary>
-public class GetAllHouseholdsQueryHandler : IRequestHandler<GetAllHouseholdsQuery, List<HouseholdDto>>
+public class GetAllHouseholdsQueryHandler : IRequestHandler<GetAllHouseholdsQuery, PagedResult<HouseholdDto>>
 {
     private readonly IHouseholdRepository _householdRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
@@ -24,7 +25,7 @@ public class GetAllHouseholdsQueryHandler : IRequestHandler<GetAllHouseholdsQuer
         _mapper = mapper;
     }
 
-    public async Task<List<HouseholdDto>> Handle(GetAllHouseholdsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<HouseholdDto>> Handle(GetAllHouseholdsQuery request, CancellationToken cancellationToken)
     {
         var households = await _householdRepository.GetAllAsync(cancellationToken);
 
@@ -41,14 +42,14 @@ public class GetAllHouseholdsQueryHandler : IRequestHandler<GetAllHouseholdsQuer
             }
         }
 
-        // Map to DTOs
-        var result = households.Select(household =>
+        // Map to DTOs and paginate
+        var dtos = households.Select(household =>
         {
             var dto = _mapper.Map<HouseholdDto>(household);
             dto.PropertyUnitIdentifier = propertyUnitDict.GetValueOrDefault(household.PropertyUnitId);
             return dto;
         }).ToList();
 
-        return result;
+        return PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
     }
 }

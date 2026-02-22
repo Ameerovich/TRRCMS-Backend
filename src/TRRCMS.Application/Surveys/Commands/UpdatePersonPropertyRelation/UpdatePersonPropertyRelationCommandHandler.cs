@@ -10,27 +10,18 @@ namespace TRRCMS.Application.Surveys.Commands.UpdatePersonPropertyRelation;
 
 public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<UpdatePersonPropertyRelationCommand, PersonPropertyRelationDto>
 {
-    private readonly ISurveyRepository _surveyRepository;
-    private readonly IPersonPropertyRelationRepository _relationRepository;
-    private readonly IPropertyUnitRepository _propertyUnitRepository;
-    private readonly IPersonRepository _personRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
 
     public UpdatePersonPropertyRelationCommandHandler(
-        ISurveyRepository surveyRepository,
-        IPersonPropertyRelationRepository relationRepository,
-        IPropertyUnitRepository propertyUnitRepository,
-        IPersonRepository personRepository,
+        IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService)
     {
-        _surveyRepository = surveyRepository;
-        _relationRepository = relationRepository;
-        _propertyUnitRepository = propertyUnitRepository;
-        _personRepository = personRepository;
-        _currentUserService = currentUserService;
-        _auditService = auditService;
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
     }
 
     public async Task<PersonPropertyRelationDto> Handle(UpdatePersonPropertyRelationCommand request, CancellationToken cancellationToken)
@@ -39,7 +30,7 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         // Get and validate survey
-        var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
+        var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken)
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
@@ -49,11 +40,11 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             throw new ValidationException($"Cannot modify survey in {survey.Status} status");
 
         // Get and validate relation
-        var relation = await _relationRepository.GetByIdWithEvidencesAsync(request.RelationId, cancellationToken)
+        var relation = await _unitOfWork.PersonPropertyRelations.GetByIdWithEvidencesAsync(request.RelationId, cancellationToken)
             ?? throw new NotFoundException($"Relation with ID {request.RelationId} not found");
 
         // Verify relation belongs to survey's building
-        var propertyUnit = await _propertyUnitRepository.GetByIdAsync(relation.PropertyUnitId, cancellationToken)
+        var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(relation.PropertyUnitId, cancellationToken)
             ?? throw new NotFoundException($"Property unit not found");
 
         if (propertyUnit.BuildingId != survey.BuildingId)
@@ -75,7 +66,7 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         // Update PersonId if provided
         if (request.PersonId.HasValue && request.PersonId.Value != relation.PersonId)
         {
-            var person = await _personRepository.GetByIdAsync(request.PersonId.Value, cancellationToken)
+            var person = await _unitOfWork.Persons.GetByIdAsync(request.PersonId.Value, cancellationToken)
                 ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
             relation.UpdatePersonId(request.PersonId.Value, currentUserId);
         }
@@ -83,7 +74,7 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         // Update PropertyUnitId if provided
         if (request.PropertyUnitId.HasValue && request.PropertyUnitId.Value != relation.PropertyUnitId)
         {
-            var newUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken)
+            var newUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken)
                 ?? throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
 
             if (newUnit.BuildingId != survey.BuildingId)
@@ -119,8 +110,8 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             effectiveNotes,
             currentUserId);
 
-        await _relationRepository.UpdateAsync(relation, cancellationToken);
-        await _relationRepository.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.PersonPropertyRelations.UpdateAsync(relation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Build changed fields list for audit
         var changedFields = new List<string>();

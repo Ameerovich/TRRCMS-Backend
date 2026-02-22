@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Evidences.Dtos;
 
 namespace TRRCMS.Application.Evidences.Queries.GetAllEvidences;
@@ -8,7 +9,7 @@ namespace TRRCMS.Application.Evidences.Queries.GetAllEvidences;
 /// <summary>
 /// Handler for GetAllEvidencesQuery
 /// </summary>
-public class GetAllEvidencesQueryHandler : IRequestHandler<GetAllEvidencesQuery, IEnumerable<EvidenceDto>>
+public class GetAllEvidencesQueryHandler : IRequestHandler<GetAllEvidencesQuery, PagedResult<EvidenceDto>>
 {
     private readonly IEvidenceRepository _evidenceRepository;
     private readonly IMapper _mapper;
@@ -21,9 +22,10 @@ public class GetAllEvidencesQueryHandler : IRequestHandler<GetAllEvidencesQuery,
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<EvidenceDto>> Handle(GetAllEvidencesQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<EvidenceDto>> Handle(GetAllEvidencesQuery request, CancellationToken cancellationToken)
     {
         var evidences = await _evidenceRepository.GetAllAsync(cancellationToken);
-        return _mapper.Map<IEnumerable<EvidenceDto>>(evidences);
+        var dtos = _mapper.Map<List<EvidenceDto>>(evidences);
+        return PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
     }
 }

@@ -1,6 +1,10 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common.Models;
 
 namespace TRRCMS.Application.Buildings.Queries.GetAllBuildings;
 
-public record GetAllBuildingsQuery : IRequest<List<BuildingDto>>;
+/// <summary>
+/// Query to get all buildings with pagination
+/// </summary>
+public class GetAllBuildingsQuery : PagedQuery, IRequest<PagedResult<BuildingDto>> { }
