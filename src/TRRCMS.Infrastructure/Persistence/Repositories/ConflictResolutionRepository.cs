@@ -102,6 +102,23 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
                 cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<List<ConflictResolution>> GetResolvedMergesForPackageAsync(
+        Guid importPackageId,
+        string entityType,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ConflictResolutions
+            .Where(c => c.ImportPackageId == importPackageId
+                && c.EntityType == entityType
+                && c.ResolutionAction == ConflictResolutionAction.Merge
+                && c.MergedEntityId.HasValue
+                && c.DiscardedEntityId.HasValue
+                && !c.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
+
     // ==================== QUERY BY STATUS ====================
 
     public async Task<List<ConflictResolution>> GetByStatusAsync(

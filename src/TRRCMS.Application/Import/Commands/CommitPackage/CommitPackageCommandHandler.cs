@@ -188,18 +188,42 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         }
         catch (Exception ex)
         {
-            // Total failure — mark package as Failed
+            // Unwrap to get the actual database error (EF Core wraps Npgsql exceptions)
+            var rootCause = ex;
+            while (rootCause.InnerException != null)
+                rootCause = rootCause.InnerException;
+
+            var fullMessage = rootCause == ex
+                ? ex.Message
+                : $"{ex.Message} → {rootCause.GetType().Name}: {rootCause.Message}";
+
             _logger.LogError(ex,
-                "Commit failed with exception for package {PackageNumber}",
-                package.PackageNumber);
+                "Commit failed for package {PackageNumber}: {ErrorMessage}",
+                package.PackageNumber, fullMessage);
 
-            package.MarkAsFailed(
-                ex.Message,
-                System.Text.Json.JsonSerializer.Serialize(new { ex.Message, ex.StackTrace }),
-                userId);
+            try
+            {
+                package.MarkAsFailed(
+                    fullMessage,
+                    System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        Message = ex.Message,
+                        InnerException = rootCause.Message,
+                        InnerExceptionType = rootCause.GetType().FullName,
+                        ex.StackTrace
+                    }),
+                    userId);
 
-            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception saveEx)
+            {
+                _logger.LogError(saveEx,
+                    "Failed to save MarkAsFailed status for package {PackageNumber}. " +
+                    "Use reset-commit endpoint to recover.",
+                    package.PackageNumber);
+            }
 
             report = new CommitReportDto
             {
@@ -208,7 +232,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                 Status = ImportStatus.Failed.ToString(),
                 CommittedByUserId = userId,
                 CommittedAtUtc = DateTime.UtcNow,
-                Errors = { new CommitErrorDto { ErrorMessage = ex.Message, StackTrace = ex.StackTrace } }
+                Errors = { new CommitErrorDto { ErrorMessage = fullMessage, StackTrace = ex.ToString() } }
             };
         }
 

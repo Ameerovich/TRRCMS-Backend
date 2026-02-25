@@ -115,13 +115,24 @@ public class CommitService : ICommitService
 
         report.PackageNumber = package.PackageNumber;
 
+        // Pre-populate ID map from already-committed staging records (for re-commit scenarios).
+        // When a partial commit succeeded, some staging entities already have CommittedEntityId set.
+        // These won't be re-committed (GetApprovedForCommitAsync skips them), but child entities
+        // (e.g. Claims referencing a PropertyUnit) still need their FK resolved via _idMap.
+        await PrePopulateIdMapFromCommittedAsync(importPackageId, cancellationToken);
+
+        // Clear change tracker to ensure no stale dirty entities from prior operations
+        _unitOfWork.DetachAllEntities();
+
         // Execute the entire commit in a transaction
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // Commit in FK-dependency order
             await CommitBuildingsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitPropertyUnitsAsync(importPackageId, committedByUserId, report, cancellationToken);
+            await PopulateMergeRedirectsAsync("PropertyUnit", importPackageId, cancellationToken);
             await CommitPersonsAsync(importPackageId, committedByUserId, report, cancellationToken);
+            await PopulateMergeRedirectsAsync("Person", importPackageId, cancellationToken);
             await CommitHouseholdsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitPersonPropertyRelationsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitSurveysAsync(importPackageId, committedByUserId, report, cancellationToken);
@@ -180,6 +191,98 @@ public class CommitService : ICommitService
     }
 
     // ==================== ENTITY-SPECIFIC COMMIT METHODS ====================
+
+    /// <summary>
+    /// Populate _idMap with merge redirect mappings for resolved conflicts.
+    ///
+    /// When a conflict is resolved via Merge, the discarded entity's OriginalEntityId
+    /// must map to the same production ID as the master entity. This ensures that
+    /// other staging entities (e.g. StagingClaim referencing a merged StagingPropertyUnit)
+    /// can resolve their FK references correctly during commit.
+    ///
+    /// Cross-batch: discarded is staging, master is production → _idMap[discarded] = production.Id
+    /// Within-batch: discarded is staging, master is staging (already committed) → _idMap[discarded] = _idMap[master]
+    /// </summary>
+    /// <summary>
+    /// Pre-populate the ID map from staging records that were already committed
+    /// in a previous (partial) commit attempt. This ensures that child entities
+    /// (e.g. Claims referencing an already-committed PropertyUnit) can still
+    /// resolve their FK references via _idMap during re-commit.
+    /// </summary>
+    private async Task PrePopulateIdMapFromCommittedAsync(
+        Guid importPackageId, CancellationToken ct)
+    {
+        var committedBuildings = await _stagingBuildingRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var b in committedBuildings)
+            _idMap.TryAdd(b.OriginalEntityId, b.CommittedEntityId!.Value);
+
+        var committedUnits = await _stagingPropertyUnitRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var u in committedUnits)
+            _idMap.TryAdd(u.OriginalEntityId, u.CommittedEntityId!.Value);
+
+        var committedPersons = await _stagingPersonRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var p in committedPersons)
+            _idMap.TryAdd(p.OriginalEntityId, p.CommittedEntityId!.Value);
+
+        var committedHouseholds = await _stagingHouseholdRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var h in committedHouseholds)
+            _idMap.TryAdd(h.OriginalEntityId, h.CommittedEntityId!.Value);
+
+        var committedRelations = await _stagingRelationRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var r in committedRelations)
+            _idMap.TryAdd(r.OriginalEntityId, r.CommittedEntityId!.Value);
+
+        var committedSurveys = await _stagingSurveyRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var s in committedSurveys)
+            _idMap.TryAdd(s.OriginalEntityId, s.CommittedEntityId!.Value);
+
+        var committedClaims = await _stagingClaimRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var c in committedClaims)
+            _idMap.TryAdd(c.OriginalEntityId, c.CommittedEntityId!.Value);
+
+        var committedEvidence = await _stagingEvidenceRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var e in committedEvidence)
+            _idMap.TryAdd(e.OriginalEntityId, e.CommittedEntityId!.Value);
+
+        if (_idMap.Count > 0)
+            _logger.LogInformation(
+                "Pre-populated ID map with {Count} already-committed staging records for re-commit",
+                _idMap.Count);
+    }
+
+    private async Task PopulateMergeRedirectsAsync(
+        string entityType, Guid importPackageId, CancellationToken ct)
+    {
+        var mergedConflicts = await _unitOfWork.ConflictResolutions
+            .GetResolvedMergesForPackageAsync(importPackageId, entityType, ct);
+
+        foreach (var conflict in mergedConflicts)
+        {
+            var masterId = conflict.MergedEntityId!.Value;
+            var discardedId = conflict.DiscardedEntityId!.Value;
+
+            // Skip if discarded is already in the map
+            if (_idMap.ContainsKey(discardedId))
+                continue;
+
+            if (_idMap.TryGetValue(masterId, out var productionId))
+            {
+                // Within-batch: master was committed → redirect discarded to same production ID
+                _idMap[discardedId] = productionId;
+                _logger.LogDebug(
+                    "Merge redirect (within-batch): {Discarded} → {Production} (via master {Master})",
+                    discardedId, productionId, masterId);
+            }
+            else
+            {
+                // Cross-batch: masterId IS the production ID (not in _idMap because it wasn't staged)
+                _idMap[discardedId] = masterId;
+                _logger.LogDebug(
+                    "Merge redirect (cross-batch): {Discarded} → {Production}",
+                    discardedId, masterId);
+            }
+        }
+    }
 
     /// <summary>
     /// Commit buildings to production.
@@ -538,12 +641,21 @@ public class CommitService : ICommitService
                     productionPropertyUnitId = unitId;
                 }
 
-                // Resolve field collector ID — use the import user if original not found
+                // Resolve field collector ID — verify it exists in Users table,
+                // fall back to the importing user if the original collector is not found
+                // (tablet user IDs from .uhc packages may not exist in production)
                 var fieldCollectorId = userId;
                 if (staging.OriginalFieldCollectorId.HasValue)
                 {
-                    // OriginalFieldCollectorId is a User ID, not a staging entity — use directly
-                    fieldCollectorId = staging.OriginalFieldCollectorId.Value;
+                    var collector = await _unitOfWork.Users.GetByIdAsync(
+                        staging.OriginalFieldCollectorId.Value, ct);
+                    if (collector != null)
+                        fieldCollectorId = collector.Id;
+                    else
+                        _logger.LogWarning(
+                            "Field collector {CollectorId} not found in Users table for Survey {SurveyId}. " +
+                            "Using importing user {UserId} as fallback.",
+                            staging.OriginalFieldCollectorId.Value, staging.OriginalEntityId, userId);
                 }
 
                 var surveyType = staging.Type?.ToString() ?? "Field";

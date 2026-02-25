@@ -126,7 +126,8 @@ public class StagingRepository<T> : IStagingRepository<T> where T : BaseStagingE
     {
         return await _dbSet
             .Where(e => e.ImportPackageId == importPackageId
-                     && e.IsApprovedForCommit)
+                     && e.IsApprovedForCommit
+                     && e.CommittedEntityId == null) // Skip already-committed (safe re-commit)
             .OrderBy(e => e.StagedAtUtc)
             .ToListAsync(cancellationToken);
     }

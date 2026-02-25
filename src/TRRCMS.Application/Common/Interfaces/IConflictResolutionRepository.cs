@@ -81,6 +81,18 @@ public interface IConflictResolutionRepository
         Guid importPackageId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Get all resolved merge conflicts for a package, filtered by entity type.
+    /// Used during commit to populate ID map redirects for discarded entities
+    /// so that child staging entities (e.g. Claims referencing merged PropertyUnits)
+    /// resolve their FK references correctly.
+    /// </summary>
+    Task<List<ConflictResolution>> GetResolvedMergesForPackageAsync(
+        Guid importPackageId,
+        string entityType,
+        CancellationToken cancellationToken = default);
+
+
     // ==================== QUERY BY STATUS ====================
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Infrastructure.Persistence;
 
@@ -29,19 +30,27 @@ public class SurveyReferenceCodeGenerator : ISurveyReferenceCodeGenerator
     private async Task<long> GetNextSequenceValueAsync(CancellationToken cancellationToken)
     {
         var connection = _context.Database.GetDbConnection();
-        await connection.OpenAsync(cancellationToken);
+        var wasAlreadyOpen = connection.State == System.Data.ConnectionState.Open;
+
+        if (!wasAlreadyOpen)
+            await connection.OpenAsync(cancellationToken);
 
         try
         {
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT nextval('\"SurveyReferenceSequence\"')";
 
+            var currentTransaction = _context.Database.CurrentTransaction;
+            if (currentTransaction != null)
+                command.Transaction = currentTransaction.GetDbTransaction();
+
             var result = await command.ExecuteScalarAsync(cancellationToken);
             return Convert.ToInt64(result);
         }
         finally
         {
-            await connection.CloseAsync();
+            if (!wasAlreadyOpen)
+                await connection.CloseAsync();
         }
     }
 }

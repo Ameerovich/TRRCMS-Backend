@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Infrastructure.Persistence;
@@ -38,46 +39,66 @@ public class ClaimNumberGenerator : IClaimNumberGenerator
     }
 
     /// <summary>
-    /// Get current sequence value without incrementing
+    /// Get current sequence value without incrementing.
     /// </summary>
     public async Task<long> GetCurrentSequenceValueAsync(CancellationToken cancellationToken = default)
     {
         var connection = _context.Database.GetDbConnection();
-        await connection.OpenAsync(cancellationToken);
+        var wasAlreadyOpen = connection.State == System.Data.ConnectionState.Open;
+
+        if (!wasAlreadyOpen)
+            await connection.OpenAsync(cancellationToken);
 
         try
         {
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT last_value FROM \"ClaimNumberSequence\"";
 
+            var currentTransaction = _context.Database.CurrentTransaction;
+            if (currentTransaction != null)
+                command.Transaction = currentTransaction.GetDbTransaction();
+
             var result = await command.ExecuteScalarAsync(cancellationToken);
             return Convert.ToInt64(result);
         }
         finally
         {
-            await connection.CloseAsync();
+            if (!wasAlreadyOpen)
+                await connection.CloseAsync();
         }
     }
 
     /// <summary>
-    /// Get next value from sequence (increments automatically)
+    /// Get next value from sequence (increments automatically).
+    /// Handles both standalone calls and calls within an active transaction
+    /// (where the connection is already open).
     /// </summary>
     private async Task<long> GetNextSequenceValueAsync(CancellationToken cancellationToken)
     {
         var connection = _context.Database.GetDbConnection();
-        await connection.OpenAsync(cancellationToken);
+        var wasAlreadyOpen = connection.State == System.Data.ConnectionState.Open;
+
+        if (!wasAlreadyOpen)
+            await connection.OpenAsync(cancellationToken);
 
         try
         {
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT nextval('\"ClaimNumberSequence\"')";
 
+            // Enlist in the current EF Core transaction if one is active
+            var currentTransaction = _context.Database.CurrentTransaction;
+            if (currentTransaction != null)
+                command.Transaction = currentTransaction.GetDbTransaction();
+
             var result = await command.ExecuteScalarAsync(cancellationToken);
             return Convert.ToInt64(result);
         }
         finally
         {
-            await connection.CloseAsync();
+            // Only close the connection if we opened it
+            if (!wasAlreadyOpen)
+                await connection.CloseAsync();
         }
     }
 }

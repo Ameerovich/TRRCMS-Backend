@@ -176,6 +176,14 @@ public class UnitOfWork : IUnitOfWork
         });
     }
 
+    // ==================== CHANGE TRACKER ====================
+
+    /// <inheritdoc />
+    public void DetachAllEntities()
+    {
+        _context.ChangeTracker.Clear();
+    }
+
     // ==================== DISPOSAL ====================
 
     public void Dispose()

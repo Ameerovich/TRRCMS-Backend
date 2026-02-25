@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Hosting;
 using TRRCMS.Application.Common.Exceptions;
 
 namespace TRRCMS.WebAPI.Middleware;
@@ -144,7 +145,17 @@ public class GlobalExceptionHandlingMiddleware
                 {
                     Status = (int)HttpStatusCode.InternalServerError,
                     Title = "Internal Server Error",
-                    Message = "An unexpected error occurred. Please try again later."
+                    Message = context.RequestServices
+                        .GetService<IHostEnvironment>()?.IsDevelopment() == true
+                            ? $"{exception.GetType().Name}: {exception.Message}"
+                            : "An unexpected error occurred. Please try again later.",
+                    Errors = context.RequestServices
+                        .GetService<IHostEnvironment>()?.IsDevelopment() == true
+                            ? new Dictionary<string, string[]>
+                            {
+                                ["exception"] = new[] { exception.ToString() }
+                            }
+                            : null
                 })
         };
 

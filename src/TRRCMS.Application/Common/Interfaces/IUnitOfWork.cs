@@ -145,6 +145,13 @@ public interface IUnitOfWork : IDisposable
     Task ExecuteInTransactionAsync(
         Func<Task> operation,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Detach all tracked entities from the DbContext change tracker.
+    /// Useful before starting a transaction to ensure no stale dirty entities
+    /// get accidentally included in the transaction's SaveChanges.
+    /// </summary>
+    void DetachAllEntities();
 }
 
 /// <summary>
