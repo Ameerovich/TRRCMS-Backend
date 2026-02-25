@@ -13,14 +13,14 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories;
 public class ClaimRepository : IClaimRepository
 {
     private readonly ApplicationDbContext _context;
-    
+
     public ClaimRepository(ApplicationDbContext context)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
-    
+
     // ==================== BASIC CRUD OPERATIONS ====================
-    
+
     public async Task<Claim?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -31,7 +31,7 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.Referrals)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -40,25 +40,25 @@ public class ClaimRepository : IClaimRepository
             .OrderByDescending(c => c.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task AddAsync(Claim claim, CancellationToken cancellationToken = default)
     {
         await _context.Claims.AddAsync(claim, cancellationToken);
     }
-    
+
     public Task UpdateAsync(Claim claim, CancellationToken cancellationToken = default)
     {
         _context.Claims.Update(claim);
         return Task.CompletedTask;
     }
-    
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
-    
+
     // ==================== QUERY BY UNIQUE IDENTIFIERS ====================
-    
+
     public async Task<Claim?> GetByClaimNumberAsync(string claimNumber, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -69,9 +69,9 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.Referrals)
             .FirstOrDefaultAsync(c => c.ClaimNumber == claimNumber, cancellationToken);
     }
-    
+
     // ==================== QUERY BY RELATIONSHIPS ====================
-    
+
     public async Task<Claim?> GetByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -81,7 +81,15 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.Documents)
             .FirstOrDefaultAsync(c => c.PropertyUnitId == propertyUnitId, cancellationToken);
     }
-    
+
+    /// <inheritdoc />
+    public async Task<List<Claim>> GetAllByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .Where(c => c.PropertyUnitId == propertyUnitId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Claim>> GetByPrimaryClaimantIdAsync(Guid personId, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -91,7 +99,7 @@ public class ClaimRepository : IClaimRepository
             .OrderByDescending(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetByAssignedUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -102,9 +110,9 @@ public class ClaimRepository : IClaimRepository
             .ThenBy(c => c.TargetCompletionDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     // ==================== QUERY BY WORKFLOW STATES ====================
-    
+
     public async Task<IEnumerable<Claim>> GetByLifecycleStageAsync(LifecycleStage stage, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -115,7 +123,7 @@ public class ClaimRepository : IClaimRepository
             .ThenBy(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetByStatusAsync(ClaimStatus status, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -125,7 +133,7 @@ public class ClaimRepository : IClaimRepository
             .OrderByDescending(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetByPriorityAsync(CasePriority priority, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -135,7 +143,7 @@ public class ClaimRepository : IClaimRepository
             .OrderBy(c => c.TargetCompletionDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetByVerificationStatusAsync(VerificationStatus status, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -145,7 +153,7 @@ public class ClaimRepository : IClaimRepository
             .OrderBy(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetByCertificateStatusAsync(CertificateStatus status, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -155,9 +163,9 @@ public class ClaimRepository : IClaimRepository
             .OrderBy(c => c.DecisionDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     // ==================== SPECIALIZED QUERIES ====================
-    
+
     public async Task<IEnumerable<Claim>> GetConflictingClaimsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -168,20 +176,20 @@ public class ClaimRepository : IClaimRepository
             .ThenBy(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetOverdueClaimsAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         return await _context.Claims
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
-            .Where(c => c.TargetCompletionDate.HasValue 
+            .Where(c => c.TargetCompletionDate.HasValue
                 && c.TargetCompletionDate.Value < now
                 && !c.DecisionDate.HasValue)
             .OrderBy(c => c.TargetCompletionDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetClaimsAwaitingDocumentsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -192,7 +200,7 @@ public class ClaimRepository : IClaimRepository
             .OrderBy(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetClaimsPendingVerificationAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -202,23 +210,23 @@ public class ClaimRepository : IClaimRepository
             .OrderBy(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetClaimsForAdjudicationAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Claims
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
-            .Where(c => c.LifecycleStage == LifecycleStage.ConflictDetected 
+            .Where(c => c.LifecycleStage == LifecycleStage.ConflictDetected
                 || c.LifecycleStage == LifecycleStage.InAdjudication
                 || c.HasConflicts)
             .OrderByDescending(c => c.ConflictCount)
             .ThenBy(c => c.Priority)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetClaimsBySubmittedDateRangeAsync(
-        DateTime startDate, 
-        DateTime endDate, 
+        DateTime startDate,
+        DateTime endDate,
         CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -230,10 +238,10 @@ public class ClaimRepository : IClaimRepository
             .OrderBy(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     public async Task<IEnumerable<Claim>> GetClaimsByDecisionDateRangeAsync(
-        DateTime startDate, 
-        DateTime endDate, 
+        DateTime startDate,
+        DateTime endDate,
         CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -245,7 +253,7 @@ public class ClaimRepository : IClaimRepository
             .OrderBy(c => c.DecisionDate)
             .ToListAsync(cancellationToken);
     }
-    
+
     // ==================== FILTERED QUERY ====================
 
     public async Task<List<Claim>> GetFilteredAsync(
@@ -284,56 +292,56 @@ public class ClaimRepository : IClaimRepository
     {
         return await _context.Claims.AnyAsync(c => c.Id == id, cancellationToken);
     }
-    
+
     public async Task<bool> ExistsByClaimNumberAsync(string claimNumber, CancellationToken cancellationToken = default)
     {
         return await _context.Claims.AnyAsync(c => c.ClaimNumber == claimNumber, cancellationToken);
     }
-    
+
     public async Task<bool> HasClaimsAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
     {
         return await _context.Claims.AnyAsync(c => c.PropertyUnitId == propertyUnitId, cancellationToken);
     }
-    
+
     public async Task<bool> HasConflictingClaimsAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
     {
         var claimCount = await _context.Claims
             .Where(c => c.PropertyUnitId == propertyUnitId)
             .CountAsync(cancellationToken);
-        
+
         return claimCount > 1;
     }
-    
+
     // ==================== AGGREGATE QUERIES ====================
-    
+
     public async Task<int> GetConflictCountAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
             .Where(c => c.PropertyUnitId == propertyUnitId)
             .CountAsync(cancellationToken);
     }
-    
+
     public async Task<int> GetCountByLifecycleStageAsync(LifecycleStage stage, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
             .Where(c => c.LifecycleStage == stage)
             .CountAsync(cancellationToken);
     }
-    
+
     public async Task<int> GetCountByStatusAsync(ClaimStatus status, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
             .Where(c => c.Status == status)
             .CountAsync(cancellationToken);
     }
-    
+
     public async Task<int> GetCountByAssignedUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
             .Where(c => c.AssignedToUserId == userId)
             .CountAsync(cancellationToken);
     }
-    
+
     public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Claims.CountAsync(cancellationToken);

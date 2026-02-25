@@ -7,21 +7,24 @@ using TRRCMS.Domain.ValueObjects;
 namespace TRRCMS.Infrastructure.Services.Matching;
 
 /// <summary>
-/// Compares staging buildings and property units against production data
-/// to detect duplicate properties.
+/// Detects duplicate PropertyUnit records by composite key:
+///   BuildingCode (17-digit) + UnitIdentifier.
 ///
-/// Matching strategy (FR-D-6):
-///   1. BuildingId exact match (17-digit composite code) → High confidence
-///   2. Spatial proximity (lat/lng within 50m) + same BuildingType → Medium confidence
-///   3. Unit-level: UnitIdentifier exact match within a matched building pair
+/// Detection runs at the PropertyUnit level only — no building-level duplicates
+/// are raised because the same building legitimately appears across multiple
+/// surveys and claims.
+///
+/// Two detection phases:
+///   Phase 1 — Within-batch: two staging units in the same import share the
+///             same composite key (BuildingCode + UnitIdentifier).
+///   Phase 2 — Cross-batch:  a staging unit matches a production PropertyUnit
+///             by the same composite key.
 ///
 /// UC-007 (Resolve Duplicate Properties).
+/// FSD: FR-D-6 (Property Matching), FR-D-7 (Conflict Resolution).
 /// </summary>
 public class PropertyMatchingService
 {
-    private const int SpatialThresholdMeters = 50;
-    private const double MetersPerDegreeLat = 111_320.0; // approximate at equator
-
     private readonly IBuildingRepository _buildingRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly ILogger<PropertyMatchingService> _logger;
@@ -37,12 +40,12 @@ public class PropertyMatchingService
     }
 
     /// <summary>
-    /// Run property matching for all valid/warning staging buildings in a package.
+    /// Run property-unit duplicate detection for all valid/warning staging units.
     /// </summary>
-    /// <param name="stagingBuildings">Staging buildings to check (already filtered to Valid/Warning).</param>
-    /// <param name="stagingUnits">Staging property units for unit-level matching.</param>
+    /// <param name="stagingBuildings">Staging buildings (used to resolve BuildingCode for each unit).</param>
+    /// <param name="stagingUnits">Staging property units to check (already filtered to Valid/Warning).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of property match results above threshold.</returns>
+    /// <returns>List of PropertyUnit match results (composite key matches only).</returns>
     public async Task<List<PropertyMatchResult>> DetectDuplicatesAsync(
         List<StagingBuilding> stagingBuildings,
         List<StagingPropertyUnit> stagingUnits,
@@ -50,225 +53,170 @@ public class PropertyMatchingService
     {
         var results = new List<PropertyMatchResult>();
 
-        if (stagingBuildings.Count == 0)
+        if (stagingUnits.Count == 0)
             return results;
 
-        // ============================================================
-        // Phase 1: BuildingId exact matches (production)
-        // ============================================================
-        var matchedStagingIds = new HashSet<Guid>();
-
-        foreach (var staging in stagingBuildings.Where(b => !string.IsNullOrWhiteSpace(b.BuildingId)))
-        {
-            var productionMatch = await _buildingRepository
-                .GetByBuildingIdAsync(staging.BuildingId!, cancellationToken);
-
-            if (productionMatch != null)
-            {
-                var unitMatches = await FindUnitMatchesAsync(
-                    staging.OriginalEntityId, stagingUnits,
-                    productionMatch.Id, cancellationToken);
-
-                results.Add(new PropertyMatchResult
-                {
-                    StagingBuildingId = staging.Id,
-                    StagingOriginalEntityId = staging.OriginalEntityId,
-                    MatchedBuildingId = productionMatch.Id,
-                    StagingBuildingIdentifier = staging.BuildingId!,
-                    MatchedBuildingIdentifier = productionMatch.BuildingId,
-                    SimilarityScore = 100m,
-                    ConfidenceLevel = "High",
-                    BuildingIdMatched = true,
-                    DistanceMeters = ComputeHaversineDistance(
-                        staging.Latitude, staging.Longitude,
-                        productionMatch.Latitude, productionMatch.Longitude),
-                    BuildingTypeMatched = staging.BuildingType == productionMatch.BuildingType,
-                    WithinSpatialThreshold = true,
-                    UnitMatches = unitMatches
-                });
-
-                matchedStagingIds.Add(staging.Id);
-
-                _logger.LogDebug(
-                    "BuildingId exact match: staging {StagingId} ({BuildingId}) ↔ production {ProductionId}",
-                    staging.Id, staging.BuildingId, productionMatch.Id);
-            }
-        }
+        // Build lookup: OriginalEntityId → BuildingCode (17-digit)
+        // StagingPropertyUnit.OriginalBuildingId references StagingBuilding.OriginalEntityId
+        var buildingCodeByOriginalId = stagingBuildings
+            .Where(b => !string.IsNullOrWhiteSpace(b.BuildingId))
+            .ToDictionary(b => b.OriginalEntityId, b => b.BuildingId!);
 
         // ============================================================
-        // Phase 2: Spatial proximity matches (production)
+        // Phase 1: Within-batch duplicates
+        // Two staging units in the same import sharing the same composite key.
         // ============================================================
-        var unmatchedWithCoords = stagingBuildings
-            .Where(b => !matchedStagingIds.Contains(b.Id) &&
-                        b.Latitude.HasValue && b.Longitude.HasValue)
-            .ToList();
+        var withinBatchResults = DetectWithinBatchDuplicates(
+            stagingUnits, buildingCodeByOriginalId);
+        results.AddRange(withinBatchResults);
 
-        foreach (var staging in unmatchedWithCoords)
-        {
-            var nearbyBuildings = await _buildingRepository
-                .GetBuildingsWithinRadiusAsync(
-                    staging.Latitude!.Value,
-                    staging.Longitude!.Value,
-                    SpatialThresholdMeters,
-                    cancellationToken);
+        _logger.LogDebug(
+            "Within-batch property unit duplicates: {Count}", withinBatchResults.Count);
 
-            foreach (var nearby in nearbyBuildings)
-            {
-                var distance = ComputeHaversineDistance(
-                    staging.Latitude, staging.Longitude,
-                    nearby.Latitude, nearby.Longitude);
+        // ============================================================
+        // Phase 2: Cross-batch duplicates (staging vs production)
+        // A staging unit matches a production PropertyUnit by composite key.
+        // ============================================================
+        var crossBatchResults = await DetectCrossBatchDuplicatesAsync(
+            stagingUnits, buildingCodeByOriginalId, cancellationToken);
+        results.AddRange(crossBatchResults);
 
-                bool typeMatched = staging.BuildingType == nearby.BuildingType;
-
-                // Require at least BuildingType match for spatial candidates
-                // to reduce false positives in dense urban areas
-                if (!typeMatched)
-                    continue;
-
-                var score = ComputeSpatialScore(distance, typeMatched);
-
-                if (score >= 70m)
-                {
-                    var unitMatches = await FindUnitMatchesAsync(
-                        staging.OriginalEntityId, stagingUnits,
-                        nearby.Id, cancellationToken);
-
-                    results.Add(new PropertyMatchResult
-                    {
-                        StagingBuildingId = staging.Id,
-                        StagingOriginalEntityId = staging.OriginalEntityId,
-                        MatchedBuildingId = nearby.Id,
-                        StagingBuildingIdentifier = staging.BuildingId ?? BuildBuildingIdentifier(staging),
-                        MatchedBuildingIdentifier = nearby.BuildingId,
-                        SimilarityScore = score,
-                        ConfidenceLevel = "Medium",
-                        BuildingIdMatched = false,
-                        DistanceMeters = distance,
-                        BuildingTypeMatched = typeMatched,
-                        WithinSpatialThreshold = distance.HasValue && distance.Value <= SpatialThresholdMeters,
-                        UnitMatches = unitMatches
-                    });
-
-                    _logger.LogDebug(
-                        "Spatial match ({Score}, {Distance}m): staging {StagingId} ↔ production {ProductionId}",
-                        score, distance?.ToString("F1") ?? "N/A", staging.Id, nearby.Id);
-                }
-            }
-        }
-
-        // Deduplicate: same staging-production pair, keep highest score
-        results = results
-            .GroupBy(r => new { r.StagingBuildingId, r.MatchedBuildingId })
-            .Select(g => g.OrderByDescending(r => r.SimilarityScore).First())
-            .ToList();
+        _logger.LogDebug(
+            "Cross-batch property unit duplicates: {Count}", crossBatchResults.Count);
 
         _logger.LogInformation(
-            "Property matching complete: {Scanned} buildings scanned, {Matches} matches found",
-            stagingBuildings.Count, results.Count);
+            "Property unit matching complete: {Scanned} units scanned, " +
+            "{WithinBatch} within-batch + {CrossBatch} cross-batch = {Total} total matches",
+            stagingUnits.Count, withinBatchResults.Count,
+            crossBatchResults.Count, results.Count);
 
         return results;
     }
 
-    // ==================== UNIT-LEVEL MATCHING ====================
+    // ==================== WITHIN-BATCH DETECTION ====================
 
     /// <summary>
-    /// Find unit-level duplicates within a matched building pair.
-    /// Compares staging units (by OriginalBuildingId) against production units.
+    /// Detect within-batch duplicates: two staging units sharing the same
+    /// BuildingCode + UnitIdentifier in the same import package.
     /// </summary>
-    private async Task<List<UnitMatchDetail>> FindUnitMatchesAsync(
-        Guid stagingOriginalBuildingId,
-        List<StagingPropertyUnit> allStagingUnits,
-        Guid productionBuildingId,
-        CancellationToken cancellationToken)
+    private List<PropertyMatchResult> DetectWithinBatchDuplicates(
+        List<StagingPropertyUnit> stagingUnits,
+        Dictionary<Guid, string> buildingCodeByOriginalId)
     {
-        var unitMatches = new List<UnitMatchDetail>();
+        var results = new List<PropertyMatchResult>();
+        var processedPairs = new HashSet<string>();
 
-        var stagingUnitsForBuilding = allStagingUnits
-            .Where(u => u.OriginalBuildingId == stagingOriginalBuildingId)
-            .ToList();
-
-        if (stagingUnitsForBuilding.Count == 0)
-            return unitMatches;
-
-        var productionUnits = await _propertyUnitRepository
-            .GetByBuildingIdAsync(productionBuildingId, cancellationToken);
-
-        foreach (var stagingUnit in stagingUnitsForBuilding)
-        {
-            var matchedUnit = productionUnits
-                .FirstOrDefault(pu => string.Equals(
-                    pu.UnitIdentifier, stagingUnit.UnitIdentifier,
-                    StringComparison.OrdinalIgnoreCase));
-
-            if (matchedUnit != null)
+        // Group staging units by composite key
+        var unitsByCompositeKey = stagingUnits
+            .Where(u => buildingCodeByOriginalId.ContainsKey(u.OriginalBuildingId))
+            .Select(u => new
             {
-                unitMatches.Add(new UnitMatchDetail
+                Unit = u,
+                BuildingCode = buildingCodeByOriginalId[u.OriginalBuildingId],
+                CompositeKey = $"{buildingCodeByOriginalId[u.OriginalBuildingId]}|{u.UnitIdentifier}".ToUpperInvariant()
+            })
+            .GroupBy(x => x.CompositeKey)
+            .Where(g => g.Count() > 1);
+
+        foreach (var group in unitsByCompositeKey)
+        {
+            var items = group.ToList();
+            // Generate pairwise matches within the group
+            for (int i = 0; i < items.Count; i++)
+            {
+                for (int j = i + 1; j < items.Count; j++)
                 {
-                    StagingUnitId = stagingUnit.Id,
-                    MatchedUnitId = matchedUnit.Id,
-                    UnitIdentifier = stagingUnit.UnitIdentifier
-                });
+                    var pairKey = string.Join("|",
+                        new[] { items[i].Unit.OriginalEntityId, items[j].Unit.OriginalEntityId }
+                            .OrderBy(id => id).Select(id => id.ToString()));
+
+                    if (!processedPairs.Add(pairKey))
+                        continue;
+
+                    var compositeId = $"{items[i].BuildingCode}|{items[i].Unit.UnitIdentifier}";
+
+                    results.Add(new PropertyMatchResult
+                    {
+                        StagingUnitId = items[i].Unit.Id,
+                        StagingOriginalEntityId = items[i].Unit.OriginalEntityId,
+                        MatchedEntityId = items[j].Unit.OriginalEntityId,
+                        StagingUnitIdentifier = compositeId,
+                        MatchedUnitIdentifier = $"{items[j].BuildingCode}|{items[j].Unit.UnitIdentifier}",
+                        BuildingCode = items[i].BuildingCode,
+                        UnitIdentifier = items[i].Unit.UnitIdentifier,
+                        SimilarityScore = 100m,
+                        ConfidenceLevel = "High",
+                        IsWithinBatchMatch = true
+                    });
+
+                    _logger.LogDebug(
+                        "Within-batch unit duplicate: {StagingA} ↔ {StagingB} (key: {Key})",
+                        items[i].Unit.Id, items[j].Unit.Id, compositeId);
+                }
             }
         }
 
-        return unitMatches;
+        return results;
     }
 
-    // ==================== SCORING ====================
+    // ==================== CROSS-BATCH DETECTION ====================
 
     /// <summary>
-    /// Compute similarity score for spatial + attribute matching.
-    /// Base score from proximity (80 max) + type match bonus (20).
+    /// Detect cross-batch duplicates: a staging unit matching a production PropertyUnit
+    /// by BuildingCode (17-digit) + UnitIdentifier.
     /// </summary>
-    private static decimal ComputeSpatialScore(double? distanceMeters, bool typeMatched)
+    private async Task<List<PropertyMatchResult>> DetectCrossBatchDuplicatesAsync(
+        List<StagingPropertyUnit> stagingUnits,
+        Dictionary<Guid, string> buildingCodeByOriginalId,
+        CancellationToken cancellationToken)
     {
-        if (!distanceMeters.HasValue)
-            return 0m;
+        var results = new List<PropertyMatchResult>();
+        var processedPairs = new HashSet<string>();
 
-        // Proximity score: 80 at 0m, linearly decreasing to 0 at threshold
-        decimal proximityScore = distanceMeters.Value <= SpatialThresholdMeters
-            ? 80m * (1m - (decimal)distanceMeters.Value / SpatialThresholdMeters)
-            : 0m;
+        foreach (var stagingUnit in stagingUnits)
+        {
+            // Resolve the 17-digit building code for this staging unit
+            if (!buildingCodeByOriginalId.TryGetValue(
+                    stagingUnit.OriginalBuildingId, out var buildingCode))
+            {
+                // Staging building has no BuildingId (17-digit code) — skip
+                continue;
+            }
 
-        // Type match bonus
-        decimal typeBonus = typeMatched ? 20m : 0m;
+            // Look up production PropertyUnit by BuildingCode + UnitIdentifier
+            var productionMatch = await _propertyUnitRepository
+                .GetByBuildingCodeAndUnitIdentifierAsync(
+                    buildingCode, stagingUnit.UnitIdentifier, cancellationToken);
 
-        return Math.Round(proximityScore + typeBonus, 1);
-    }
+            if (productionMatch is null)
+                continue;
 
-    // ==================== DISTANCE CALCULATION ====================
+            // Deduplicate: same staging-production pair
+            var pairKey = $"{stagingUnit.OriginalEntityId}|{productionMatch.Id}";
+            if (!processedPairs.Add(pairKey))
+                continue;
 
-    /// <summary>
-    /// Compute approximate distance between two lat/lng points using Haversine formula.
-    /// Returns null if either point has no coordinates.
-    /// </summary>
-    internal static double? ComputeHaversineDistance(
-        decimal? lat1, decimal? lng1, decimal? lat2, decimal? lng2)
-    {
-        if (!lat1.HasValue || !lng1.HasValue || !lat2.HasValue || !lng2.HasValue)
-            return null;
+            var compositeId = $"{buildingCode}|{stagingUnit.UnitIdentifier}";
 
-        const double earthRadiusMeters = 6_371_000.0;
+            results.Add(new PropertyMatchResult
+            {
+                StagingUnitId = stagingUnit.Id,
+                StagingOriginalEntityId = stagingUnit.OriginalEntityId,
+                MatchedEntityId = productionMatch.Id,
+                StagingUnitIdentifier = compositeId,
+                MatchedUnitIdentifier = compositeId,
+                BuildingCode = buildingCode,
+                UnitIdentifier = stagingUnit.UnitIdentifier,
+                SimilarityScore = 100m,
+                ConfidenceLevel = "High",
+                IsWithinBatchMatch = false
+            });
 
-        double dLat = DegreesToRadians((double)(lat2.Value - lat1.Value));
-        double dLng = DegreesToRadians((double)(lng2.Value - lng1.Value));
+            _logger.LogDebug(
+                "Cross-batch unit duplicate: staging {StagingId} ↔ production {ProductionId} (key: {Key})",
+                stagingUnit.Id, productionMatch.Id, compositeId);
+        }
 
-        double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                   Math.Cos(DegreesToRadians((double)lat1.Value)) *
-                   Math.Cos(DegreesToRadians((double)lat2.Value)) *
-                   Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
-
-        double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
-        return earthRadiusMeters * c;
-    }
-
-    private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180.0;
-
-    private static string BuildBuildingIdentifier(StagingBuilding staging)
-    {
-        return $"{staging.GovernorateCode}-{staging.DistrictCode}-" +
-               $"{staging.SubDistrictCode}-{staging.CommunityCode}-" +
-               $"{staging.NeighborhoodCode}-{staging.BuildingNumber}";
+        return results;
     }
 }

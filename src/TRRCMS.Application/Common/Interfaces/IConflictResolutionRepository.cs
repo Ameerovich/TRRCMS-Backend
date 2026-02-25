@@ -166,6 +166,7 @@ public interface IConflictResolutionRepository
     Task<(List<ConflictResolution> Conflicts, int TotalCount)> SearchAsync(
         Guid? importPackageId = null,
         string? conflictType = null,
+        string? entityType = null,
         string? status = null,
         string? priority = null,
         Guid? assignedToUserId = null,

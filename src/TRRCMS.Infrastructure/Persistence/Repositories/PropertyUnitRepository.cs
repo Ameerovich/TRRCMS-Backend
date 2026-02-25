@@ -106,4 +106,18 @@ public class PropertyUnitRepository : IPropertyUnitRepository
         _context.PropertyUnits.Update(propertyUnit);
         return Task.CompletedTask;
     }
+
+    /// <inheritdoc />
+    public async Task<PropertyUnit?> GetByBuildingCodeAndUnitIdentifierAsync(
+        string buildingCode,
+        string unitIdentifier,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.PropertyUnits
+            .Include(pu => pu.Building)
+            .Where(pu => !pu.IsDeleted
+                && pu.Building.BuildingId == buildingCode
+                && pu.UnitIdentifier == unitIdentifier)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 }

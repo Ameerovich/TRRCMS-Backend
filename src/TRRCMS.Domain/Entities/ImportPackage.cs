@@ -579,6 +579,32 @@ public class ImportPackage : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Reset a stuck or failed package back to ReadyToCommit so it can be re-committed.
+    /// Only valid from Committing or Failed status (i.e. a commit that crashed or errored).
+    /// Clears error state but preserves all staging data and conflict resolutions.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if current status is not Committing or Failed.
+    /// </exception>
+    public void ResetToReadyToCommit(string reason, Guid modifiedByUserId)
+    {
+        if (Status != ImportStatus.Committing && Status != ImportStatus.Failed)
+        {
+            throw new InvalidOperationException(
+                $"Cannot reset package to ReadyToCommit. Current status is '{Status}'. " +
+                "Only packages in 'Committing' or 'Failed' status can be reset.");
+        }
+
+        Status = ImportStatus.ReadyToCommit;
+        ErrorMessage = null;
+        ErrorLog = null;
+        ProcessingNotes = string.IsNullOrWhiteSpace(ProcessingNotes)
+            ? $"[Reset]: {reason}"
+            : $"{ProcessingNotes}\n[Reset]: {reason}";
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Quarantine package
     /// </summary>
     public void Quarantine(string reason, Guid modifiedByUserId)

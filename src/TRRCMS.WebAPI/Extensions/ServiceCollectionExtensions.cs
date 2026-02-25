@@ -111,6 +111,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDuplicateDetectionService, DuplicateDetectionService>();
         services.AddScoped<ICommitService, CommitService>();
 
+        // ── Merge services (Property,Person) ─────────
+        services.AddScoped<IMergeService, TRRCMS.Infrastructure.Services.Merge.PersonMergeService>();
+        services.AddScoped<IMergeService, TRRCMS.Infrastructure.Services.Merge.PropertyMergeService>();
+
         // ── Sync ─────────────────────────────────────────────────────
         services.AddScoped<ISyncSessionRepository, SyncSessionRepository>();
         services.AddScoped<ISyncPackageStore, LocalSyncPackageStore>();

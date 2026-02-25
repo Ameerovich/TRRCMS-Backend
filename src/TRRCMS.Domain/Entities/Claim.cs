@@ -580,6 +580,15 @@ public class Claim : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Re-point this claim to a different property unit (used during PropertyUnit merge).
+    /// </summary>
+    public void UpdatePropertyUnit(Guid propertyUnitId, Guid modifiedByUserId)
+    {
+        PropertyUnitId = propertyUnitId;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Update claim classification (type and priority)
     /// UC-006: Update Existing Claim
     /// </summary>

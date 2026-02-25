@@ -213,6 +213,7 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
     public async Task<(List<ConflictResolution> Conflicts, int TotalCount)> SearchAsync(
         Guid? importPackageId = null,
         string? conflictType = null,
+        string? entityType = null,
         string? status = null,
         string? priority = null,
         Guid? assignedToUserId = null,
@@ -234,6 +235,9 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
 
         if (!string.IsNullOrWhiteSpace(conflictType))
             query = query.Where(c => c.ConflictType == conflictType);
+
+        if (!string.IsNullOrWhiteSpace(entityType))
+            query = query.Where(c => c.EntityType == entityType);
 
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(c => c.Status == status);

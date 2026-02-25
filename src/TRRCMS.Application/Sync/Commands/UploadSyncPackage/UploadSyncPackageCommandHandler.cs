@@ -88,7 +88,8 @@ public sealed class UploadSyncPackageCommandHandler
             await _uow.SaveChangesAsync(ct);
 
             return new UploadSyncPackageResultDto(
-                false, request.Manifest.PackageId, false, "Checksum mismatch.");
+                false, request.Manifest.PackageId, false,
+                $"Checksum mismatch. Expected: {expected}, Actual: {actual}, StreamLength: {request.PackageStream.Length}");
         }
 
         // Reset stream position for storage (WebAPI provides a seekable buffered stream).

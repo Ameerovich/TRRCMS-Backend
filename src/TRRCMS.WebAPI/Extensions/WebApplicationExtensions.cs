@@ -168,13 +168,24 @@ public static class WebApplicationExtensions
     private static async Task SyncAllUserPermissions(ApplicationDbContext context, ILogger logger)
     {
         var users = await context.Users.ToListAsync();
+        logger.LogInformation("Syncing permissions for {Count} users", users.Count);
 
         foreach (var user in users)
         {
-            logger.LogInformation("Syncing permissions for user: {Username} (Role: {Role})",
-                user.Username, user.Role);
+            try
+            {
+                logger.LogInformation("Syncing permissions for user: {Username} (ID: {UserId}, Role: {Role})",
+                    user.Username, user.Id, user.Role);
 
-            await SyncUserPermissions(context, user.Id, user.Role, logger);
+                await SyncUserPermissions(context, user.Id, user.Role, logger);
+            }
+            catch (Exception ex)
+            {
+                // Log per-user failures but continue with other users
+                logger.LogError(ex,
+                    "Failed to sync permissions for user {Username} (ID: {UserId}, Role: {Role})",
+                    user.Username, user.Id, user.Role);
+            }
         }
     }
 
@@ -184,58 +195,92 @@ public static class WebApplicationExtensions
         UserRole role,
         ILogger logger)
     {
-        var expectedPermissions = PermissionSeeder.GetDefaultPermissionsForRole(role);
+        var expectedPermissions = PermissionSeeder.GetDefaultPermissionsForRole(role).ToList();
 
-        var currentPermissions = await context.UserPermissions
+        // Use IgnoreQueryFilters to see ALL permissions including soft-deleted ones.
+        // The global soft-delete filter would hide IsDeleted=true records, but the
+        // unique index (UserId, Permission, IsActive) WHERE IsActive=true does NOT
+        // filter by IsDeleted — so we must see the full picture to avoid constraint violations.
+        var allPermissions = await context.UserPermissions
+            .IgnoreQueryFilters()
             .Where(up => up.UserId == userId)
-            .Select(up => up.Permission)
             .ToListAsync();
 
-        // Add missing permissions
+        var activePermissions = allPermissions
+            .Where(p => !p.IsDeleted && p.IsActive)
+            .Select(p => p.Permission)
+            .ToList();
+
+        bool changed = false;
+
+        // Add missing permissions — reactivate soft-deleted ones instead of inserting duplicates
         var missingPermissions = expectedPermissions
-            .Except(currentPermissions)
+            .Except(activePermissions)
             .ToList();
 
         if (missingPermissions.Any())
         {
-            logger.LogInformation("Adding {Count} missing permissions for user {UserId}",
-                missingPermissions.Count, userId);
+            logger.LogInformation("Adding {Count} missing permissions for user {UserId}: {Permissions}",
+                missingPermissions.Count, userId,
+                string.Join(", ", missingPermissions));
 
             foreach (var permission in missingPermissions)
             {
-                var userPermission = UserPermission.Create(
-                    userId: userId,
-                    permission: permission,
-                    grantedBy: Guid.Empty,
-                    grantReason: "Auto-synced from PermissionSeeder");
+                // Check if a soft-deleted or inactive record already exists
+                var existing = allPermissions
+                    .FirstOrDefault(p => p.Permission == permission);
 
-                context.UserPermissions.Add(userPermission);
+                if (existing != null)
+                {
+                    // Restore soft-deleted record if needed, then reactivate
+                    if (existing.IsDeleted)
+                        existing.Restore(Guid.Empty);
+                    if (!existing.IsActive)
+                        existing.Reactivate(Guid.Empty, "Auto-synced from PermissionSeeder");
+                    logger.LogInformation("Reactivated existing permission {Permission} for user {UserId}",
+                        permission, userId);
+                }
+                else
+                {
+                    var userPermission = UserPermission.Create(
+                        userId: userId,
+                        permission: permission,
+                        grantedBy: Guid.Empty,
+                        grantReason: "Auto-synced from PermissionSeeder");
+
+                    context.UserPermissions.Add(userPermission);
+                }
             }
+
+            changed = true;
         }
 
-        // Remove extra permissions
-        var extraPermissions = currentPermissions
+        // Remove extra permissions (soft-delete via Revoke, not hard delete)
+        var extraPermissions = activePermissions
             .Except(expectedPermissions)
             .ToList();
 
         if (extraPermissions.Any())
         {
-            logger.LogInformation("Removing {Count} extra permissions for user {UserId}",
-                extraPermissions.Count, userId);
+            logger.LogInformation("Removing {Count} extra permissions for user {UserId}: {Permissions}",
+                extraPermissions.Count, userId,
+                string.Join(", ", extraPermissions));
 
             foreach (var permission in extraPermissions)
             {
-                var userPermission = await context.UserPermissions
-                    .FirstOrDefaultAsync(up => up.UserId == userId && up.Permission == permission);
+                var userPermission = allPermissions
+                    .FirstOrDefault(p => p.Permission == permission && p.IsActive && !p.IsDeleted);
 
                 if (userPermission != null)
                 {
-                    context.UserPermissions.Remove(userPermission);
+                    userPermission.Revoke(Guid.Empty, "Auto-removed by PermissionSeeder sync");
                 }
             }
+
+            changed = true;
         }
 
-        if (missingPermissions.Any() || extraPermissions.Any())
+        if (changed)
         {
             await context.SaveChangesAsync();
             logger.LogInformation("Permission sync completed for user {UserId}", userId);

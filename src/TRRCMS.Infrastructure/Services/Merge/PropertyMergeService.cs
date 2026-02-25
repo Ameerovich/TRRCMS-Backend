@@ -1,60 +1,67 @@
 using System.Text.Json;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Conflicts.Dtos;
+using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Entities.Staging;
 
 namespace TRRCMS.Infrastructure.Services.Merge;
 
 /// <summary>
-/// Merges duplicate Building or PropertyUnit records as part of conflict resolution (UC-007 S06–S07).
-/// 
-/// Merge strategy:
-/// 1. Master entity keeps its own non-null fields; gaps filled from discarded.
-/// 2. PropertyUnits under discarded building → re-parented to master building.
-/// 3. PersonPropertyRelations referencing discarded units → re-pointed to master units.
-/// 4. Surveys referencing discarded building/unit → re-pointed to master.
-/// 5. Claims referencing discarded units → re-pointed to master.
-/// 6. Discarded entity is soft-deleted.
-/// 7. Merge mapping JSON is built for full audit trail.
+/// Merges duplicate PropertyUnit records as part of conflict resolution (UC-007 S06–S07).
 ///
+/// Handles both cross-batch (staging vs production) and within-batch (staging vs staging):
+///
+/// Cross-batch:
+///   - Updates the production PropertyUnit with merged field values.
+///   - Marks the staging PropertyUnit as Skipped and sets CommittedEntityId.
+///   - Re-points production FK references only if the production entity is discarded.
+///
+/// Within-batch:
+///   - Marks the discarded staging entity as Skipped.
+///   - The master staging entity proceeds to commit normally.
+///   - CommitService handles FK redirect via merge mapping.
+///
+/// FSD Reference: FR-D-7 (Conflict Resolution), FR-D-6 (Property Matching).
 /// </summary>
 public class PropertyMergeService : IMergeService
 {
-    private readonly IBuildingRepository _buildingRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
     private readonly IPersonPropertyRelationRepository _relationRepository;
-    private readonly ISurveyRepository _surveyRepository;
     private readonly IClaimRepository _claimRepository;
-    private readonly IGeometryConverter _geometryConverter;
+    private readonly ISurveyRepository _surveyRepository;
+    private readonly IHouseholdRepository _householdRepository;
+    private readonly IStagingRepository<StagingPropertyUnit> _stagingPropertyUnitRepo;
 
     public PropertyMergeService(
-        IBuildingRepository buildingRepository,
         IPropertyUnitRepository propertyUnitRepository,
         IPersonPropertyRelationRepository relationRepository,
-        ISurveyRepository surveyRepository,
         IClaimRepository claimRepository,
-        IGeometryConverter geometryConverter)
+        ISurveyRepository surveyRepository,
+        IHouseholdRepository householdRepository,
+        IStagingRepository<StagingPropertyUnit> stagingPropertyUnitRepo)
     {
-        _buildingRepository = buildingRepository
-            ?? throw new ArgumentNullException(nameof(buildingRepository));
         _propertyUnitRepository = propertyUnitRepository
             ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
         _relationRepository = relationRepository
             ?? throw new ArgumentNullException(nameof(relationRepository));
-        _surveyRepository = surveyRepository
-            ?? throw new ArgumentNullException(nameof(surveyRepository));
         _claimRepository = claimRepository
             ?? throw new ArgumentNullException(nameof(claimRepository));
-        _geometryConverter = geometryConverter
-            ?? throw new ArgumentNullException(nameof(geometryConverter));
+        _surveyRepository = surveyRepository
+            ?? throw new ArgumentNullException(nameof(surveyRepository));
+        _householdRepository = householdRepository
+            ?? throw new ArgumentNullException(nameof(householdRepository));
+        _stagingPropertyUnitRepo = stagingPropertyUnitRepo
+            ?? throw new ArgumentNullException(nameof(stagingPropertyUnitRepo));
     }
 
     /// <inheritdoc />
-    public string EntityType => "Building";
+    public string EntityType => "PropertyUnit";
 
     /// <inheritdoc />
     public async Task<MergeResultDto> MergeAsync(
         Guid masterEntityId,
         Guid discardedEntityId,
+        Guid? importPackageId,
         CancellationToken cancellationToken = default)
     {
         var result = new MergeResultDto
@@ -65,61 +72,96 @@ public class PropertyMergeService : IMergeService
 
         try
         {
-            // 1. Load both buildings
-            var master = await _buildingRepository.GetByIdAsync(masterEntityId, cancellationToken)
-                ?? throw new InvalidOperationException(
-                    $"Master building with ID {masterEntityId} not found.");
-
-            var discarded = await _buildingRepository.GetByIdAsync(discardedEntityId, cancellationToken)
-                ?? throw new InvalidOperationException(
-                    $"Discarded building with ID {discardedEntityId} not found.");
+            var (masterProd, masterStaging) = await ResolveEntityAsync(
+                masterEntityId, importPackageId, cancellationToken);
+            var (discardedProd, discardedStaging) = await ResolveEntityAsync(
+                discardedEntityId, importPackageId, cancellationToken);
 
             var mergeMapping = new Dictionary<string, string>();
-            MergeBuildingFields(master, discarded, mergeMapping, _geometryConverter);
+            var refsUpdated = 0;
 
-            // 2. Re-parent property units from discarded → master building
-            var discardedUnits = (await _propertyUnitRepository
-                .GetByBuildingIdAsync(discardedEntityId, cancellationToken)).ToList();
-            var unitsUpdated = 0;
-
-            foreach (var unit in discardedUnits)
+            // ============================================================
+            // Case 1: Both in production (standard merge — rare in import flow)
+            // ============================================================
+            if (masterProd != null && discardedProd != null)
             {
-                unit.ReParentToBuilding(masterEntityId, masterEntityId);
-                await _propertyUnitRepository.UpdateAsync(unit, cancellationToken);
-                unitsUpdated++;
+                MergePropertyUnitFields(masterProd, discardedProd, mergeMapping);
+                refsUpdated = await RePointProductionReferencesAsync(
+                    masterProd.Id, discardedProd.Id, cancellationToken);
+                discardedProd.MarkAsDeleted(masterProd.Id);
+                await _propertyUnitRepository.UpdateAsync(discardedProd, cancellationToken);
+                await _propertyUnitRepository.UpdateAsync(masterProd, cancellationToken);
+                await _propertyUnitRepository.SaveChangesAsync(cancellationToken);
 
-                // 2a. Re-point relations for each re-parented unit
-                await RePointRelationsForUnitAsync(unit.Id, cancellationToken);
+                mergeMapping["_merge_type"] = "production_production";
+                result.MasterEntityId = masterProd.Id;
+                result.DiscardedEntityId = discardedProd.Id;
+            }
+            // ============================================================
+            // Case 2: Cross-batch — master is production, discarded is staging
+            // ============================================================
+            else if (masterProd != null && discardedStaging != null)
+            {
+                FillProductionGapsFromStaging(masterProd, discardedStaging, mergeMapping);
+                await _propertyUnitRepository.UpdateAsync(masterProd, cancellationToken);
+                await _propertyUnitRepository.SaveChangesAsync(cancellationToken);
+
+                discardedStaging.MarkAsSkipped("Merged into existing production record");
+                discardedStaging.SetCommittedEntityId(masterProd.Id);
+                await _stagingPropertyUnitRepo.UpdateAsync(discardedStaging, cancellationToken);
+                await _stagingPropertyUnitRepo.SaveChangesAsync(cancellationToken);
+
+                mergeMapping["_merge_type"] = "cross_batch_master_production";
+                result.MasterEntityId = masterProd.Id;
+                result.DiscardedEntityId = discardedEntityId;
+            }
+            // ============================================================
+            // Case 3: Cross-batch — master is staging, discarded is production
+            // ============================================================
+            else if (masterStaging != null && discardedProd != null)
+            {
+                UpdateProductionFromStaging(discardedProd, masterStaging, mergeMapping);
+                await _propertyUnitRepository.UpdateAsync(discardedProd, cancellationToken);
+                await _propertyUnitRepository.SaveChangesAsync(cancellationToken);
+
+                masterStaging.MarkAsSkipped("Data applied to existing production record");
+                masterStaging.SetCommittedEntityId(discardedProd.Id);
+                await _stagingPropertyUnitRepo.UpdateAsync(masterStaging, cancellationToken);
+                await _stagingPropertyUnitRepo.SaveChangesAsync(cancellationToken);
+
+                mergeMapping["_merge_type"] = "cross_batch_master_staging";
+                result.MasterEntityId = discardedProd.Id;
+                result.DiscardedEntityId = masterEntityId;
+            }
+            // ============================================================
+            // Case 4: Within-batch — both are staging
+            // ============================================================
+            else if (masterStaging != null && discardedStaging != null)
+            {
+                discardedStaging.MarkAsSkipped("Within-batch duplicate — merged into master staging record");
+                await _stagingPropertyUnitRepo.UpdateAsync(discardedStaging, cancellationToken);
+                await _stagingPropertyUnitRepo.SaveChangesAsync(cancellationToken);
+
+                mergeMapping["_merge_type"] = "within_batch";
+                mergeMapping["master_staging_original_id"] = masterEntityId.ToString();
+                mergeMapping["discarded_staging_original_id"] = discardedEntityId.ToString();
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Could not locate master ({masterEntityId}) or discarded ({discardedEntityId}) " +
+                    $"entity in either production or staging tables.");
             }
 
-            // 3. Re-point surveys referencing discarded building
-            var discardedSurveys = (await _surveyRepository
-                .GetByBuildingAsync(discardedEntityId, cancellationToken)).ToList();
-            var surveysUpdated = 0;
-
-            foreach (var survey in discardedSurveys)
-            {
-                survey.UpdateBuildingId(masterEntityId, masterEntityId);
-                await _surveyRepository.UpdateAsync(survey, cancellationToken);
-                surveysUpdated++;
-            }
-
-            // 4. Soft-delete discarded building
-            discarded.MarkAsDeleted(masterEntityId);
-            await _buildingRepository.UpdateAsync(discarded, cancellationToken);
-
-            // 5. Save master with merged fields
-            await _buildingRepository.UpdateAsync(master, cancellationToken);
-            await _buildingRepository.SaveChangesAsync(cancellationToken);
-
-            // 6. Build result
             result.Success = true;
             result.MergeMappingJson = JsonSerializer.Serialize(mergeMapping);
-            result.ReferencesUpdated = unitsUpdated + surveysUpdated;
+            result.ReferencesUpdated = refsUpdated;
             result.ReferencesByType = new Dictionary<string, int>
             {
-                ["PropertyUnit"] = unitsUpdated,
-                ["Survey"] = surveysUpdated
+                ["PersonPropertyRelation"] = 0,
+                ["Claim"] = 0,
+                ["Survey"] = 0,
+                ["Household"] = 0
             };
         }
         catch (Exception ex)
@@ -131,91 +173,227 @@ public class PropertyMergeService : IMergeService
         return result;
     }
 
-    /// <summary>
-    /// Re-points PersonPropertyRelations that reference a given property unit.
-    /// This is a no-op for FK propagation since the unit ID itself stays the same
-    /// (the unit is re-parented, not merged). Included as an extension point
-    /// for PropertyUnit-level merges if two units collapse into one.
-    /// </summary>
-    private Task RePointRelationsForUnitAsync(
-        Guid unitId, CancellationToken cancellationToken)
+    // ==================== ENTITY RESOLUTION ====================
+
+    private async Task<(PropertyUnit? Production, StagingPropertyUnit? Staging)> ResolveEntityAsync(
+        Guid entityId, Guid? importPackageId, CancellationToken ct)
     {
-        // Unit-level merge: if needed, extend here to consolidate duplicate units
-        // under the same building. For building-level merge, unit IDs remain stable.
-        return Task.CompletedTask;
+        var production = await _propertyUnitRepository.GetByIdAsync(entityId, ct);
+        if (production != null)
+            return (production, null);
+
+        if (importPackageId.HasValue)
+        {
+            var staging = await _stagingPropertyUnitRepo
+                .GetByPackageAndOriginalIdAsync(importPackageId.Value, entityId, ct);
+            if (staging != null)
+                return (null, staging);
+        }
+
+        return (null, null);
     }
 
-    /// <summary>
-    /// Fills master's null/empty fields from discarded entity.
-    /// Prefer master's non-null values; fill gaps from discarded.
-    /// Uses Building.UpdateDetails for batched field updates.
-    /// </summary>
-    private static void MergeBuildingFields(
-        Domain.Entities.Building master,
-        Domain.Entities.Building discarded,
-        Dictionary<string, string> mergeMapping,
-        IGeometryConverter geometryConverter)
+    // ==================== PRODUCTION ↔ PRODUCTION MERGE ====================
+
+    private static void MergePropertyUnitFields(
+        PropertyUnit master, PropertyUnit discarded, Dictionary<string, string> mapping)
     {
-        // BuildingId (the 17-digit code) — always keep master
-        mergeMapping["BuildingId"] = "master";
+        mapping["UnitIdentifier"] = "master";
+        mapping["BuildingId"] = "master";
 
-        // Determine which fields to take from discarded
-        var mergedAddress = master.Address;
-        var mergedLandmark = master.Landmark;
-        var mergedFloors = master.NumberOfFloors;
-        var mergedYear = master.YearOfConstruction;
-        var mergedLocationDesc = master.LocationDescription;
-        var mergedNotes = master.Notes;
-
-        mergeMapping["Address"] = "master";
-        mergeMapping["Landmark"] = "master";
-        mergeMapping["NumberOfFloors"] = "master";
-        mergeMapping["YearOfConstruction"] = "master";
-        mergeMapping["BuildingGeometry"] = "master";
-
-        if (string.IsNullOrWhiteSpace(mergedAddress) &&
-            !string.IsNullOrWhiteSpace(discarded.Address))
+        if (master.Status == Domain.Enums.PropertyUnitStatus.Unknown &&
+            discarded.Status != Domain.Enums.PropertyUnitStatus.Unknown)
         {
-            mergedAddress = discarded.Address;
-            mergeMapping["Address"] = "discarded";
+            master.UpdateStatus(discarded.Status, master.DamageLevel, master.Id);
+            mapping["Status"] = "discarded";
+        }
+        else mapping["Status"] = "master";
+
+        if (!master.DamageLevel.HasValue && discarded.DamageLevel.HasValue)
+        {
+            master.UpdateStatus(master.Status, discarded.DamageLevel, master.Id);
+            mapping["DamageLevel"] = "discarded";
+        }
+        else mapping["DamageLevel"] = "master";
+
+        if (!master.FloorNumber.HasValue && discarded.FloorNumber.HasValue)
+        {
+            master.UpdateLocation(discarded.FloorNumber, master.PositionOnFloor, master.Id);
+            mapping["FloorNumber"] = "discarded";
+        }
+        else mapping["FloorNumber"] = "master";
+
+        if (!master.NumberOfRooms.HasValue && discarded.NumberOfRooms.HasValue)
+        {
+            master.UpdateRoomCount(discarded.NumberOfRooms.Value, master.Id);
+            mapping["NumberOfRooms"] = "discarded";
+        }
+        else mapping["NumberOfRooms"] = "master";
+
+        if (!master.AreaSquareMeters.HasValue && discarded.AreaSquareMeters.HasValue)
+        {
+            master.UpdateArea(discarded.AreaSquareMeters.Value, master.Id);
+            mapping["AreaSquareMeters"] = "discarded";
+        }
+        else mapping["AreaSquareMeters"] = "master";
+
+        if (string.IsNullOrWhiteSpace(master.Description) &&
+            !string.IsNullOrWhiteSpace(discarded.Description))
+        {
+            master.UpdateDescription(discarded.Description, master.Id);
+            mapping["Description"] = "discarded";
+        }
+        else mapping["Description"] = "master";
+    }
+
+    // ==================== CROSS-BATCH: PRODUCTION ← STAGING GAP FILL ====================
+
+    private static void FillProductionGapsFromStaging(
+        PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping)
+    {
+        mapping["UnitIdentifier"] = "production";
+
+        if (production.Status == Domain.Enums.PropertyUnitStatus.Unknown &&
+            staging.Status != Domain.Enums.PropertyUnitStatus.Unknown)
+        {
+            production.UpdateStatus(staging.Status, production.DamageLevel, production.Id);
+            mapping["Status"] = "staging";
+        }
+        else mapping["Status"] = "production";
+
+        if (!production.DamageLevel.HasValue && staging.DamageLevel.HasValue)
+        {
+            production.UpdateStatus(production.Status, staging.DamageLevel, production.Id);
+            mapping["DamageLevel"] = "staging";
+        }
+        else mapping["DamageLevel"] = "production";
+
+        if (!production.FloorNumber.HasValue && staging.FloorNumber.HasValue)
+        {
+            production.UpdateLocation(staging.FloorNumber, production.PositionOnFloor, production.Id);
+            mapping["FloorNumber"] = "staging";
+        }
+        else mapping["FloorNumber"] = "production";
+
+        if (!production.NumberOfRooms.HasValue && staging.NumberOfRooms.HasValue)
+        {
+            production.UpdateRoomCount(staging.NumberOfRooms.Value, production.Id);
+            mapping["NumberOfRooms"] = "staging";
+        }
+        else mapping["NumberOfRooms"] = "production";
+
+        if (!production.AreaSquareMeters.HasValue && staging.AreaSquareMeters.HasValue)
+        {
+            production.UpdateArea(staging.AreaSquareMeters.Value, production.Id);
+            mapping["AreaSquareMeters"] = "staging";
+        }
+        else mapping["AreaSquareMeters"] = "production";
+
+        if (string.IsNullOrWhiteSpace(production.Description) &&
+            !string.IsNullOrWhiteSpace(staging.Description))
+        {
+            production.UpdateDescription(staging.Description, production.Id);
+            mapping["Description"] = "staging";
+        }
+        else mapping["Description"] = "production";
+    }
+
+    // ==================== CROSS-BATCH: STAGING → PRODUCTION OVERWRITE ====================
+
+    private static void UpdateProductionFromStaging(
+        PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping)
+    {
+        // Staging data takes priority
+        if (staging.Status != Domain.Enums.PropertyUnitStatus.Unknown)
+        {
+            production.UpdateStatus(staging.Status, staging.DamageLevel ?? production.DamageLevel, production.Id);
+            mapping["Status"] = "staging";
+        }
+        else mapping["Status"] = "production";
+
+        if (staging.FloorNumber.HasValue)
+        {
+            production.UpdateLocation(staging.FloorNumber, staging.PositionOnFloor, production.Id);
+            mapping["FloorNumber"] = "staging";
+        }
+        else mapping["FloorNumber"] = "production";
+
+        if (staging.NumberOfRooms.HasValue)
+        {
+            production.UpdateRoomCount(staging.NumberOfRooms.Value, production.Id);
+            mapping["NumberOfRooms"] = "staging";
+        }
+        else mapping["NumberOfRooms"] = "production";
+
+        if (staging.AreaSquareMeters.HasValue)
+        {
+            production.UpdateArea(staging.AreaSquareMeters.Value, production.Id);
+            mapping["AreaSquareMeters"] = "staging";
+        }
+        else mapping["AreaSquareMeters"] = "production";
+
+        if (!string.IsNullOrWhiteSpace(staging.Description))
+        {
+            production.UpdateDescription(staging.Description, production.Id);
+            mapping["Description"] = "staging";
+        }
+        else mapping["Description"] = "production";
+
+        mapping["_data_source"] = "staging_priority";
+    }
+
+    // ==================== PRODUCTION FK RE-POINTING ====================
+
+    private async Task<int> RePointProductionReferencesAsync(
+        Guid masterUnitId, Guid discardedUnitId, CancellationToken ct)
+    {
+        var count = 0;
+
+        var relations = (await _relationRepository
+            .GetByPropertyUnitIdAsync(discardedUnitId, ct)).ToList();
+        foreach (var relation in relations)
+        {
+            var existing = await _relationRepository
+                .GetByPersonAndPropertyUnitAsync(relation.PersonId, masterUnitId, ct);
+            if (existing is null)
+            {
+                relation.UpdatePropertyUnitId(masterUnitId, masterUnitId);
+                await _relationRepository.UpdateAsync(relation, ct);
+                count++;
+            }
+            else
+            {
+                await _relationRepository.DeleteAsync(relation, ct);
+            }
         }
 
-        if (string.IsNullOrWhiteSpace(mergedLandmark) &&
-            !string.IsNullOrWhiteSpace(discarded.Landmark))
+        var claims = (await _claimRepository
+            .GetAllByPropertyUnitIdAsync(discardedUnitId, ct));
+        foreach (var claim in claims)
         {
-            mergedLandmark = discarded.Landmark;
-            mergeMapping["Landmark"] = "discarded";
+            claim.UpdatePropertyUnit(masterUnitId, masterUnitId);
+            await _claimRepository.UpdateAsync(claim, ct);
+            count++;
         }
 
-        if ((!mergedFloors.HasValue || mergedFloors == 0) &&
-            discarded.NumberOfFloors.HasValue && discarded.NumberOfFloors > 0)
+        var surveys = (await _surveyRepository
+            .GetByPropertyUnitAsync(discardedUnitId, ct));
+        foreach (var survey in surveys)
         {
-            mergedFloors = discarded.NumberOfFloors;
-            mergeMapping["NumberOfFloors"] = "discarded";
+            survey.LinkToPropertyUnit(masterUnitId, masterUnitId);
+            await _surveyRepository.UpdateAsync(survey, ct);
+            count++;
         }
 
-        if (!mergedYear.HasValue && discarded.YearOfConstruction.HasValue)
+        var households = (await _householdRepository
+            .GetByPropertyUnitIdAsync(discardedUnitId, ct)).ToList();
+        foreach (var household in households)
         {
-            mergedYear = discarded.YearOfConstruction;
-            mergeMapping["YearOfConstruction"] = "discarded";
+            household.UpdatePropertyUnit(masterUnitId, masterUnitId);
+            await _householdRepository.UpdateAsync(household, ct);
+            count++;
         }
 
-        // Apply merged fields via single domain method call
-        master.UpdateDetails(
-            mergedFloors,
-            mergedYear,
-            mergedAddress,
-            mergedLandmark,
-            mergedLocationDesc,
-            mergedNotes,
-            master.Id);
-
-        // Geometry — prefer master if present, else take discarded's geometry
-        if (master.BuildingGeometry is null && discarded.BuildingGeometry is not null)
-        {
-            var geometry = geometryConverter.ParseWkt(discarded.BuildingGeometry.AsText());
-            master.SetGeometry(geometry, master.Id);
-            mergeMapping["BuildingGeometry"] = "discarded";
-        }
+        return count;
     }
 }

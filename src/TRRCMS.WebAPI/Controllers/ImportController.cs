@@ -6,6 +6,7 @@ using TRRCMS.Application.Import.Commands.CancelPackage;
 using TRRCMS.Application.Import.Commands.CommitPackage;
 using TRRCMS.Application.Import.Commands.DetectDuplicates;
 using TRRCMS.Application.Import.Commands.QuarantinePackage;
+using TRRCMS.Application.Import.Commands.ResetCommit;
 using TRRCMS.Application.Import.Commands.StagePackage;
 using TRRCMS.Application.Import.Commands.UploadPackage;
 using TRRCMS.Application.Import.Dtos;
@@ -13,6 +14,7 @@ using TRRCMS.Application.Import.Queries.GetCommitReport;
 using TRRCMS.Application.Import.Queries.GetImportPackage;
 using TRRCMS.Application.Import.Queries.GetImportPackages;
 using TRRCMS.Application.Import.Queries.GetStagingSummary;
+using TRRCMS.Application.Import.Queries.GetStagedEntities;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.WebAPI.Controllers;
@@ -166,6 +168,29 @@ public class ImportController : ControllerBase
         return Ok(await _mediator.Send(new GetStagingSummaryQuery { ImportPackageId = id }));
     }
 
+    // ==================== STAGED ENTITIES ====================
+
+    /// <summary>
+    /// Get all staged entities for a package with their IDs, identifiers, and status.
+    /// Used by the conflict resolution UI to display staging vs production entity details.
+    /// </summary>
+    /// <param name="id">ImportPackage surrogate ID.</param>
+    /// <param name="entityType">Optional filter: Building, PropertyUnit, Person, Household, etc.</param>
+    /// <response code="200">Staged entities grouped by type.</response>
+    /// <response code="404">Package not found.</response>
+    [HttpGet("packages/{id:guid}/staged-entities")]
+    [ProducesResponseType(typeof(GetStagedEntitiesResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<GetStagedEntitiesResponse>> GetStagedEntities(
+        Guid id, [FromQuery] string? entityType = null)
+    {
+        return Ok(await _mediator.Send(new GetStagedEntitiesQuery
+        {
+            ImportPackageId = id,
+            EntityTypeFilter = entityType
+        }));
+    }
+
     // ==================== DUPLICATE DETECTION ====================
 
     /// <summary>
@@ -231,6 +256,29 @@ public class ImportController : ControllerBase
     public async Task<ActionResult<CommitReportDto>> GetCommitReport(Guid id)
     {
         return Ok(await _mediator.Send(new GetCommitReportQuery { ImportPackageId = id }));
+    }
+
+    // ==================== RESET STUCK COMMIT ====================
+
+    /// <summary>
+    /// Reset a package stuck in Committing or Failed status back to ReadyToCommit.
+    /// Use when a commit crashed mid-way and the package is stuck.
+    /// Preserves all staging data, conflict resolutions, and approvals.
+    /// </summary>
+    /// <param name="id">ImportPackage surrogate ID.</param>
+    /// <param name="command">Reset details with mandatory reason.</param>
+    /// <response code="200">Package reset to ReadyToCommit.</response>
+    /// <response code="404">Package not found.</response>
+    /// <response code="409">Package is not in Committing or Failed status.</response>
+    [HttpPost("packages/{id:guid}/reset-commit")]
+    [ProducesResponseType(typeof(ImportPackageDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ImportPackageDto>> ResetCommit(
+        Guid id, [FromBody] ResetCommitCommand command)
+    {
+        command.ImportPackageId = id;
+        return Ok(await _mediator.Send(command));
     }
 
     // ==================== CANCEL & QUARANTINE ====================

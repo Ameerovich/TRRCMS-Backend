@@ -214,7 +214,9 @@ public class DuplicateDetectionService : IDuplicateDetectionService
     }
 
     /// <summary>
-    /// Create ConflictResolution entities for property duplicate matches.
+    /// Create ConflictResolution entities for property unit duplicate matches.
+    /// Entity type is "PropertyUnit" — composite key: BuildingCode + UnitIdentifier.
+    /// No building-level conflicts are created.
     /// </summary>
     private async Task<List<ConflictResolution>> CreatePropertyConflictsAsync(
         List<PropertyMatchResult> matches,
@@ -227,35 +229,31 @@ public class DuplicateDetectionService : IDuplicateDetectionService
         foreach (var match in matches)
         {
             var existing = await _conflictRepository.GetByEntityPairAsync(
-                match.StagingOriginalEntityId, match.MatchedBuildingId, ct);
+                match.StagingOriginalEntityId, match.MatchedEntityId, ct);
 
             if (existing != null)
                 continue;
 
-            var description = match.BuildingIdMatched
-                ? $"BuildingId exact match ({match.StagingBuildingIdentifier})"
-                : $"Spatial proximity match ({match.DistanceMeters:F1}m, " +
-                  $"score {match.SimilarityScore}%)";
+            var conflictType = match.IsWithinBatchMatch
+                ? "PropertyDuplicate_WithinBatch"
+                : "PropertyDuplicate";
 
-            if (match.UnitMatches.Count > 0)
-            {
-                description += $" with {match.UnitMatches.Count} unit-level duplicate(s)";
-            }
+            var description =
+                $"PropertyUnit composite key exact match " +
+                $"(BuildingCode: {match.BuildingCode}, UnitIdentifier: {match.UnitIdentifier})";
 
             var conflict = ConflictResolution.Create(
-                conflictType: "PropertyDuplicate",
-                entityType: "Building",
+                conflictType: conflictType,
+                entityType: "PropertyUnit",
                 firstEntityId: match.StagingOriginalEntityId,
-                secondEntityId: match.MatchedBuildingId,
-                firstEntityIdentifier: match.StagingBuildingIdentifier,
-                secondEntityIdentifier: match.MatchedBuildingIdentifier,
+                secondEntityId: match.MatchedEntityId,
+                firstEntityIdentifier: match.StagingUnitIdentifier,
+                secondEntityIdentifier: match.MatchedUnitIdentifier,
                 similarityScore: match.SimilarityScore,
                 confidenceLevel: match.ConfidenceLevel,
                 conflictDescription: description,
                 matchingCriteriaJson: JsonSerializer.Serialize(match.ToMatchingCriteria()),
-                dataComparisonJson: match.UnitMatches.Count > 0
-                    ? JsonSerializer.Serialize(match.UnitMatches)
-                    : null,
+                dataComparisonJson: null, // Populated on-demand by GetConflictDetailsQuery
                 isAutoDetected: true,
                 importPackageId: importPackageId,
                 createdByUserId: detectedByUserId);

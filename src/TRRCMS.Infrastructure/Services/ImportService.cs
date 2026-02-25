@@ -95,7 +95,8 @@ public class ImportService : IImportService
         var connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = uhcFilePath,
-            Mode = SqliteOpenMode.ReadOnly
+            Mode = SqliteOpenMode.ReadOnly,
+            Pooling = false          // Release file handle immediately on dispose (Windows)
         }.ToString();
 
         using var connection = new SqliteConnection(connectionString);
@@ -300,17 +301,35 @@ public class ImportService : IImportService
         return Task.FromResult(archivePath);
     }
 
-    public Task DeletePackageFileAsync(
+    public async Task DeletePackageFileAsync(
         string filePath,
         CancellationToken cancellationToken = default)
     {
-        if (File.Exists(filePath))
-        {
-            File.Delete(filePath);
-            _logger.LogDebug("Deleted package file: {FilePath}", filePath);
-        }
+        if (!File.Exists(filePath))
+            return;
 
-        return Task.CompletedTask;
+        // Retry with back-off: SQLite connection pooling on Windows may hold
+        // the file handle briefly even after the connection is disposed.
+        const int maxAttempts = 3;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                File.Delete(filePath);
+                _logger.LogDebug("Deleted package file: {FilePath}", filePath);
+                return;
+            }
+            catch (IOException) when (attempt < maxAttempts)
+            {
+                _logger.LogDebug(
+                    "File still locked, retrying delete (attempt {Attempt}/{Max}): {FilePath}",
+                    attempt, maxAttempts, filePath);
+
+                // Clear any lingering SQLite pooled connections
+                SqliteConnection.ClearAllPools();
+                await Task.Delay(200 * attempt, cancellationToken);
+            }
+        }
     }
 
     // ==================== PRIVATE HELPERS ====================

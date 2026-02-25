@@ -19,6 +19,17 @@ public interface IPropertyUnitRepository
     Task<PropertyUnit?> GetByBuildingAndIdentifierAsync(Guid buildingId, string unitIdentifier, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Get property unit by building code (17-digit) and unit identifier.
+    /// Used for cross-batch duplicate detection (UC-007): composite key match
+    /// where the building is identified by its string code, not its Guid.
+    /// Joins PropertyUnit → Building to match on Building.BuildingId (string).
+    /// </summary>
+    Task<PropertyUnit?> GetByBuildingCodeAndUnitIdentifierAsync(
+        string buildingCode,
+        string unitIdentifier,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get all property units
     /// </summary>
     Task<List<PropertyUnit>> GetAllAsync(CancellationToken cancellationToken = default);
