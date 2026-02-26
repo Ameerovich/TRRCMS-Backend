@@ -31,6 +31,27 @@ public interface IImportService
     Task<string> ComputeChecksumAsync(Stream fileStream, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Compute a deterministic SHA-256 checksum of all data table contents in a .uhc
+    /// SQLite package, **excluding** the manifest table. This is the checksum that the
+    /// mobile app stores in the manifest for integrity verification.
+    ///
+    /// Algorithm (must match mobile implementation):
+    ///   1. Enumerate all user tables except 'manifest' and 'attachments', sorted alphabetically
+    ///   2. For each table, read all rows ordered by rowid
+    ///   3. For each row, serialize columns in alphabetical order as "col=value" pairs
+    ///      separated by tab characters, with NULL represented as "\0"
+    ///   4. Each row terminated by newline; each table preceded by a header line "TABLE:name\n"
+    ///   5. SHA-256 hash the entire UTF-8 byte sequence
+    ///
+    /// This avoids the circular dependency where the manifest's checksum field would
+    /// change the file hash if the whole file were hashed.
+    /// </summary>
+    /// <param name="uhcFilePath">File system path to the .uhc file.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>SHA-256 hash as lowercase hex string.</returns>
+    Task<string> ComputeContentChecksumAsync(string uhcFilePath, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Verify that the file's SHA-256 checksum matches the expected value from the manifest.
     /// </summary>
     /// <param name="fileStream">The .uhc file stream.</param>

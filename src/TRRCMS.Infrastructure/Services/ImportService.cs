@@ -48,6 +48,110 @@ public class ImportService : IImportService
         return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
 
+    /// <inheritdoc />
+    public async Task<string> ComputeContentChecksumAsync(
+        string uhcFilePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(uhcFilePath))
+            throw new FileNotFoundException("Package file not found", uhcFilePath);
+
+        var connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = uhcFilePath,
+            Mode = SqliteOpenMode.ReadOnly,
+            Pooling = false
+        }.ToString();
+
+        using var connection = new SqliteConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        // 1. Enumerate all user data tables, excluding manifest and SQLite internals
+        var excludedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "manifest", "attachments", "sqlite_sequence"
+        };
+
+        var tables = new List<string>();
+        using (var listCmd = connection.CreateCommand())
+        {
+            listCmd.CommandText =
+                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name";
+            using var reader = await listCmd.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var tableName = reader.GetString(0);
+                if (!tableName.StartsWith("sqlite_", StringComparison.OrdinalIgnoreCase)
+                    && !excludedTables.Contains(tableName))
+                {
+                    tables.Add(tableName);
+                }
+            }
+        }
+
+        // tables is already sorted alphabetically (ORDER BY name)
+
+        // 2. Build canonical representation and hash incrementally
+        using var sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var encoding = System.Text.Encoding.UTF8;
+
+        foreach (var table in tables)
+        {
+            // Table header
+            sha256.AppendData(encoding.GetBytes($"TABLE:{table}\n"));
+
+            // Get column names sorted alphabetically
+            var columns = new List<string>();
+            using (var pragmaCmd = connection.CreateCommand())
+            {
+                pragmaCmd.CommandText = $"PRAGMA table_info(\"{table}\")";
+                using var pragmaReader = await pragmaCmd.ExecuteReaderAsync(cancellationToken);
+                while (await pragmaReader.ReadAsync(cancellationToken))
+                {
+                    columns.Add(pragmaReader.GetString(1)); // column name is at index 1
+                }
+            }
+            columns.Sort(StringComparer.Ordinal);
+
+            // Read all rows ordered by rowid
+            using var rowCmd = connection.CreateCommand();
+            rowCmd.CommandText = $"SELECT * FROM \"{table}\" ORDER BY rowid";
+            using var rowReader = await rowCmd.ExecuteReaderAsync(cancellationToken);
+
+            // Build column index lookup (reader column order → sorted column order)
+            var colIndexMap = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (var i = 0; i < rowReader.FieldCount; i++)
+            {
+                colIndexMap[rowReader.GetName(i)] = i;
+            }
+
+            while (await rowReader.ReadAsync(cancellationToken))
+            {
+                var parts = new List<string>(columns.Count);
+                foreach (var col in columns)
+                {
+                    if (colIndexMap.TryGetValue(col, out var idx))
+                    {
+                        var value = rowReader.IsDBNull(idx) ? "\\0" : rowReader.GetValue(idx)?.ToString() ?? "\\0";
+                        parts.Add($"{col}={value}");
+                    }
+                }
+
+                var rowLine = string.Join("\t", parts) + "\n";
+                sha256.AppendData(encoding.GetBytes(rowLine));
+            }
+        }
+
+        var hashBytes = sha256.GetHashAndReset();
+        var checksum = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+        _logger.LogDebug(
+            "Content checksum computed over {TableCount} tables: {Checksum}",
+            tables.Count, checksum);
+
+        return checksum;
+    }
+
     public async Task<bool> VerifyChecksumAsync(
         Stream fileStream,
         string expectedChecksum,

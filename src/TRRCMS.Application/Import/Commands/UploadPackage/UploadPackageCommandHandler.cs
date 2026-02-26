@@ -108,29 +108,41 @@ public class UploadPackageCommandHandler : IRequestHandler<UploadPackageCommand,
             }
 
             // ============================================================
-            // STEP 4: Compute SHA-256 checksum
+            // STEP 4: Compute and verify content checksum
             // ============================================================
-            // NOTE: Manifest-embedded checksums are inherently unreliable because
-            // the checksum field's presence in the SQLite database changes the file hash.
-            // For now, we accept the manifest's checksum claim without verification.
-            // Future: Use HMAC or store checksum externally.
-            _logger.LogInformation("Computing file checksum...");
+            // The manifest's checksum covers all data tables EXCEPT the manifest
+            // itself (avoiding the circular dependency where the checksum field's
+            // presence in SQLite would change the file hash).
+            _logger.LogInformation("Computing content checksum (data tables only, excluding manifest)...");
 
-            using var fileStreamForChecksum = File.OpenRead(savedFilePath);
-            var computedChecksum = await _importService.ComputeChecksumAsync(
-                fileStreamForChecksum, cancellationToken);
+            var computedChecksum = await _importService.ComputeContentChecksumAsync(
+                savedFilePath, cancellationToken);
 
-            // Accept the manifest's checksum claim (design limitation)
-            var isChecksumValid = true;
-            _logger.LogDebug(
-                "Computed checksum: {Computed}, Manifest claims: {Expected}",
-                computedChecksum, manifest.Checksum);
+            var isChecksumValid = string.IsNullOrEmpty(manifest.Checksum)
+                || string.Equals(computedChecksum, manifest.Checksum, StringComparison.OrdinalIgnoreCase);
+
+            if (!isChecksumValid)
+            {
+                _logger.LogWarning(
+                    "Content checksum mismatch! Computed={Computed}, Manifest={Expected}. " +
+                    "Package may have been tampered with or corrupted during transfer.",
+                    computedChecksum, manifest.Checksum);
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Content checksum verified: {Checksum}", computedChecksum);
+            }
 
             // ============================================================
             // STEP 5: Verify digital signature
             // ============================================================
-            var isSignatureValid = await _importService.VerifyDigitalSignatureAsync(
-                fileStreamForChecksum, manifest.DigitalSignature, cancellationToken);
+            bool isSignatureValid;
+            using (var fileStreamForSignature = File.OpenRead(savedFilePath))
+            {
+                isSignatureValid = await _importService.VerifyDigitalSignatureAsync(
+                    fileStreamForSignature, manifest.DigitalSignature, cancellationToken);
+            }
 
             // ============================================================
             // STEP 6: Check vocabulary compatibility

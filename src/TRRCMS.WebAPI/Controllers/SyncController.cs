@@ -19,7 +19,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// The LAN sync is a 4-step round-trip designed for offline-first mobile surveys:
 /// <list type="number">
 ///   <item><b>Step 1 – Open Session</b>: POST /api/v1/sync/session — Initiate a sync session. Returns <c>SyncSessionId</c> for use in subsequent steps.</item>
-///   <item><b>Step 2 – Upload Package</b>: POST /api/v1/sync/upload — Upload a <c>.uhc</c> survey package (SQLite database with collected survey data, buildings, persons, claims). Verifies checksum integrity.</item>
+///   <item><b>Step 2 – Upload Package</b>: POST /api/v1/sync/upload — Upload a <c>.uhc</c> survey package (SQLite database with collected survey data, buildings, persons, claims). Verifies content checksum integrity, then feeds into the Import Pipeline.</item>
 ///   <item><b>Step 3 – Download Assignments</b>: GET /api/v1/sync/assignments — Retrieve new building assignments and complete vocabulary snapshots. Supports incremental sync via <c>modifiedSinceUtc</c>.</item>
 ///   <item><b>Step 4 – Acknowledge</b>: POST /api/v1/sync/assignments/ack — Confirm that assignments were successfully stored on the tablet. Updates session counters and assignment transfer status.</item>
 /// </list>
@@ -157,7 +157,9 @@ public class SyncController : ControllerBase
 
     /// <summary>
     /// Upload a <c>.uhc</c> survey package from the tablet (Sync Protocol Step 2).
-    /// Verifies SHA-256 checksum integrity and stores the package in quarantine for import processing.
+    /// Verifies SHA-256 content checksum integrity (data tables only, excluding manifest),
+    /// stores the package in quarantine, and feeds it into the Import Pipeline for
+    /// staging, validation, duplicate detection, and final commit.
     /// The operation is idempotent — uploading the same package twice returns <c>accepted=true, isDuplicate=true</c>.
     /// </summary>
     /// <remarks>
@@ -168,8 +170,8 @@ public class SyncController : ControllerBase
     /// - SHA-256 checksum matches (integrity verification)
     /// - Package ID hasn't been received before (idempotency)
     ///
-    /// On success, the package is stored to disk in the quarantine area and later ingested
-    /// by the Import Pipeline for staging, validation, duplicate detection, and final commit.
+    /// On success, the package is stored to disk in the quarantine area and automatically
+    /// fed into the Import Pipeline for staging, validation, duplicate detection, and final commit.
     ///
     /// **Request Format:**
     /// <c>multipart/form-data</c> with the following parts:
@@ -181,7 +183,7 @@ public class SyncController : ControllerBase
     ///   <item><c>CreatedUtc</c> — ISO-8601 UTC timestamp when the tablet created the package</item>
     ///   <item><c>SchemaVersion</c> — .uhc schema version (e.g., "1.0.0")</item>
     ///   <item><c>AppVersion</c> — tablet app version (e.g., "1.0.0")</item>
-    ///   <item><c>Sha256Checksum</c> — lowercase hex SHA-256 of the entire .uhc file</item>
+    ///   <item><c>Sha256Checksum</c> — lowercase hex SHA-256 content checksum (data tables only, excluding manifest)</item>
     ///   <item><c>VocabVersionsJson</c> — (optional) JSON mapping vocabulary names to versions</item>
     ///   <item><c>FormSchemaVersion</c> — (optional) survey form schema version</item>
     /// </list>
@@ -197,7 +199,7 @@ public class SyncController : ControllerBase
     ///   -F "CreatedUtc=2026-02-23T09:45:00Z" \
     ///   -F "SchemaVersion=1.0.0" \
     ///   -F "AppVersion=1.0.0" \
-    ///   -F "Sha256Checksum=34d9f42c1305d4c85ceaa4b4f2a2dc057e72ae061cdeaa1417052aab334003f1"
+    ///   -F "Sha256Checksum=34d9f42c1305d4c85ceaa4b4f2a2dc057e72ae061cdeaa1417052aab334003f1" # content checksum
     /// ```
     ///
     /// **Success Response (200 OK):**
@@ -230,10 +232,12 @@ public class SyncController : ControllerBase
     /// }
     /// ```
     ///
-    /// **Checksum Computation:**
-    /// 1. Tablet: SHA-256 of entire .uhc file on device
-    /// 2. Server: SHA-256 of received stream; must match the form field value exactly
-    /// 3. If mismatch, session is marked Failed and no further uploads accepted
+    /// **Checksum Computation (Content-Based, excludes manifest):**
+    /// 1. Tablet: SHA-256 of all data table contents in the .uhc SQLite (excluding manifest and attachments tables).
+    ///    Tables are sorted alphabetically; rows ordered by rowid; columns sorted alphabetically as "col=value" pairs.
+    /// 2. Server: Same algorithm via <c>IImportService.ComputeContentChecksumAsync</c>; must match the form field value.
+    /// 3. If mismatch, session is marked Failed and no further uploads accepted.
+    /// 4. This is the same checksum algorithm used by the Import Pipeline (<c>POST /api/v1/import/upload</c>).
     ///
     /// **Required Permission:** System_Sync (9010) - CanSyncData policy
     ///

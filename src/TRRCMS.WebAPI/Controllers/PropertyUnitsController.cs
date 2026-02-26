@@ -284,7 +284,7 @@ public class PropertyUnitsController : ControllerBase
     /// <response code="403">Not authorized - requires PropertyUnits_Update (6002) permission</response>
     /// <response code="404">Property unit not found</response>
     [HttpPut("{id}")]
-    [Authorize(Policy = "CanUpdatePropertyUnits")]
+    [Authorize(Policy = "CanCreatePropertyUnits")]
     [ProducesResponseType(typeof(PropertyUnitDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

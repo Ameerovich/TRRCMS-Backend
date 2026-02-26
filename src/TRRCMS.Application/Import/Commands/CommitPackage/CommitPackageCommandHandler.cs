@@ -188,23 +188,30 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         }
         catch (Exception ex)
         {
-            // Unwrap to get the actual database error (EF Core wraps Npgsql exceptions)
-            var rootCause = ex;
-            while (rootCause.InnerException != null)
-                rootCause = rootCause.InnerException;
-
-            var fullMessage = rootCause == ex
-                ? ex.Message
-                : $"{ex.Message} → {rootCause.GetType().Name}: {rootCause.Message}";
-
+            // Log the full error details server-side (inner exceptions, stack traces)
             _logger.LogError(ex,
                 "Commit failed for package {PackageNumber}: {ErrorMessage}",
-                package.PackageNumber, fullMessage);
+                package.PackageNumber, ex.Message);
 
             try
             {
+                // CRITICAL: Clear the change tracker before saving MarkAsFailed.
+                // After a failed commit, the tracker still has dirty entities (e.g., the Building
+                // that caused the unique constraint violation) in Added state. If we try to
+                // SaveChanges without clearing, EF re-attempts all pending changes → same error.
+                _unitOfWork.DetachAllEntities();
+
+                // Re-fetch the package fresh (it was detached above)
+                package = await _unitOfWork.ImportPackages.GetByIdAsync(request.ImportPackageId, cancellationToken)
+                ?? throw new NotFoundException($"ImportPackage with ID '{request.ImportPackageId}' was not found.");
+
+                // Store technical details in ErrorLog (internal, not exposed via API)
+                var rootCause = ex;
+                while (rootCause.InnerException != null)
+                    rootCause = rootCause.InnerException;
+
                 package.MarkAsFailed(
-                    fullMessage,
+                    "An error occurred during the commit process. Please check the server logs or contact support.",
                     System.Text.Json.JsonSerializer.Serialize(new
                     {
                         Message = ex.Message,
@@ -232,7 +239,11 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                 Status = ImportStatus.Failed.ToString(),
                 CommittedByUserId = userId,
                 CommittedAtUtc = DateTime.UtcNow,
-                Errors = { new CommitErrorDto { ErrorMessage = fullMessage, StackTrace = ex.ToString() } }
+                Errors = { new CommitErrorDto
+                {
+                    ErrorMessage = "An error occurred during the commit process. " +
+                                   "Check server logs for details."
+                }}
             };
         }
 

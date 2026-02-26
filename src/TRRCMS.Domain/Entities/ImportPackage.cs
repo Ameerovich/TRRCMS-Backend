@@ -589,11 +589,11 @@ public class ImportPackage : BaseAuditableEntity
     public void ResetToReadyToCommit(string reason, Guid modifiedByUserId)
     {
         if (Status != ImportStatus.Committing && Status != ImportStatus.Failed
-            && Status != ImportStatus.PartiallyCompleted)
+            && Status != ImportStatus.PartiallyCompleted && Status != ImportStatus.Completed)
         {
             throw new InvalidOperationException(
                 $"Cannot reset package to ReadyToCommit. Current status is '{Status}'. " +
-                "Only packages in 'Committing', 'Failed', or 'PartiallyCompleted' status can be reset.");
+                "Only packages in 'Committing', 'Failed', 'PartiallyCompleted', or 'Completed' status can be reset.");
         }
 
         Status = ImportStatus.ReadyToCommit;

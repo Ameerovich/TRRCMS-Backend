@@ -11,10 +11,16 @@
 //           Two families were found, each occupying one unit.
 //           One ownership claim backed by a deed document.
 //
+// Checksum algorithm:
+//   The manifest's "checksum" field contains a SHA-256 hash of all DATA TABLE
+//   contents, EXCLUDING the manifest and attachments tables. This avoids the
+//   circular dependency where the checksum field's value would change the hash.
+//   The same algorithm is used by both the Import Pipeline and the Sync Protocol.
+//
 // Usage:
 //   cd tools/GenerateTestUhc
 //   dotnet run
-//   → Produces "test-package.uhc" with UNIQUE PackageId + prints SHA-256 checksum
+//   → Produces "test-package.uhc" with UNIQUE PackageId + prints content checksum
 //   → Run multiple times to generate different packages for testing without duplicates
 // =============================================================================
 
@@ -56,6 +62,8 @@ if (File.Exists(outputPath))
 
 Console.WriteLine("=== TRRCMS Test .uhc Package Generator ===\n");
 
+string contentChecksum;
+
 // ── Create SQLite database (the .uhc file) ─────────────────────────────────────
 var connStr = new SqliteConnectionStringBuilder
 {
@@ -85,6 +93,7 @@ using (var conn = new SqliteConnection(connStr))
         ""evidence_type"": ""1.0.0""
     }";
 
+    // Insert manifest with placeholder checksum — will be updated after data tables are populated
     var manifest = new Dictionary<string, string>
     {
         ["package_id"]                = packageId.ToString(),
@@ -94,7 +103,7 @@ using (var conn = new SqliteConnection(connStr))
         ["app_version"]               = "1.0.0",
         ["exported_by_user_id"]       = collectorUserId.ToString(),
         ["exported_date_utc"]         = DateTime.UtcNow.ToString("o"),
-        ["checksum"]                  = new string('0', 64), // Fixed-length placeholder; will be updated with actual hash
+        ["checksum"]                  = "", // Placeholder — computed after data tables are populated
         ["digital_signature"]         = "",
         ["form_schema_version"]       = "1.0.0",
         ["survey_count"]              = "1",
@@ -133,9 +142,10 @@ using (var conn = new SqliteConnection(connStr))
             status                  INTEGER
         );");
 
+    // Survey linked to Building AND to Unit 1 (Ahmed's apartment — the interviewee)
     Execute(conn, @"
         INSERT INTO surveys VALUES (
-            @id, @bid, @date, NULL,
+            @id, @bid, @date, @uid,
             '36.2021,37.1343', 'أحمد محمد العلي', 'مالك',
             'مسح ميداني لمبنى سكني في حي الجميلية - حالة المبنى جيدة',
             @cid, 'SRV-2026-001', 1, 1, 3
@@ -143,6 +153,7 @@ using (var conn = new SqliteConnection(connStr))
         ("@id", surveyId1.ToString()),
         ("@bid", buildingId.ToString()),
         ("@date", DateTime.UtcNow.AddHours(-2).ToString("o")),
+        ("@uid", unitId1.ToString()),
         ("@cid", collectorUserId.ToString()));
 
     // ── 3. BUILDINGS TABLE ─────────────────────────────────────────────────────
@@ -420,7 +431,7 @@ using (var conn = new SqliteConnection(connStr))
             notes                       TEXT
         );");
 
-    // Ownership deed document for Ahmed's claim
+    // Ownership deed document — linked to Ahmed (person), his ownership relation, and his claim
     Execute(conn, @"
         INSERT INTO evidences VALUES (
             @id, 2,
@@ -440,83 +451,35 @@ using (var conn = new SqliteConnection(connStr))
         ("@rid", relationId1.ToString()),
         ("@cid", claimId1.ToString()));
 
-    conn.Close();
-}
+    // ── 10. COMPUTE CONTENT CHECKSUM ───────────────────────────────────────────
+    // Algorithm (must match server-side IImportService.ComputeContentChecksumAsync):
+    //   1. Enumerate all tables except 'manifest', 'attachments', sqlite_* — sorted alphabetically
+    //   2. For each table: emit "TABLE:tablename\n"
+    //   3. Read all rows ordered by rowid
+    //   4. For each row: columns sorted alphabetically as "col=value" tab-separated,
+    //      NULL → "\0", terminated by "\n"
+    //   5. SHA-256 hash the entire UTF-8 byte sequence → lowercase hex
 
-// Force SQLite to release all file locks (Windows keeps handles open via pooling).
-SqliteConnection.ClearAllPools();
-GC.Collect();
-GC.WaitForPendingFinalizers();
+    contentChecksum = ComputeContentChecksum(conn);
 
-// ── Compute final checksum AFTER all database operations are complete ───────────
-// Close all SQLite connections first to ensure the file is stable
-// (Note: we don't try to embed the checksum into the manifest because SQLite's
-// internal structure keeps changing. Instead, we compute the final hash and trust it.)
-
-SqliteConnection.ClearAllPools();
-GC.Collect();
-GC.WaitForPendingFinalizers();
-
-// Wait for file system to stabilize
-Thread.Sleep(300);
-
-// Validate and optimize the SQLite database structure (ensures consistency)
-using (var conn = new SqliteConnection(connStr))
-{
-    conn.Open();
-    using var cmd = conn.CreateCommand();
-    cmd.CommandText = "PRAGMA integrity_check; PRAGMA optimize;";
-    cmd.ExecuteNonQuery();
-    conn.Close();
-}
-
-SqliteConnection.ClearAllPools();
-GC.Collect();
-GC.WaitForPendingFinalizers();
-Thread.Sleep(300);
-
-// Now compute the final checksum - the file should be stable
-using var sha256 = SHA256.Create();
-var fileBytes = File.ReadAllBytes(outputPath);
-var hashBytes = sha256.ComputeHash(fileBytes);
-var finalChecksum = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-
-// Update manifest one final time with the computed checksum
-using (var conn = new SqliteConnection(connStr))
-{
-    conn.Open();
-    using var cmd = conn.CreateCommand();
-    cmd.CommandText = "PRAGMA synchronous = FULL;";
-    cmd.ExecuteNonQuery();
-
+    // Write the computed checksum into the manifest
     Execute(conn, "UPDATE manifest SET value = @v WHERE key = 'checksum'",
-        ("@v", finalChecksum));
+        ("@v", contentChecksum));
+
     conn.Close();
 }
 
-// Final cleanup
+// Force SQLite to release all file locks
 SqliteConnection.ClearAllPools();
 GC.Collect();
 GC.WaitForPendingFinalizers();
-Thread.Sleep(300);
-
-// Verify the checksum matches (if not, it's due to SQLite internals changing the file after update)
-fileBytes = File.ReadAllBytes(outputPath);
-var verifyHash = BitConverter.ToString(sha256.ComputeHash(fileBytes)).Replace("-", "").ToLowerInvariant();
-if (verifyHash != finalChecksum)
-{
-    Console.WriteLine($"⚠ Note: File changed after final manifest update (SQLite internals)");
-    Console.WriteLine($"  Stored in manifest: {finalChecksum}");
-    Console.WriteLine($"  Actual file hash:   {verifyHash}");
-    Console.WriteLine($"  Using manifest value for compatibility.");
-}
 
 // ── Print results ──────────────────────────────────────────────────────────────
 var fileSize = new FileInfo(outputPath).Length;
 
 Console.WriteLine($"  File:     {outputPath}");
 Console.WriteLine($"  Size:     {fileSize:N0} bytes ({fileSize / 1024.0:F1} KB)");
-Console.WriteLine($"  SHA-256:  {finalChecksum}");
+Console.WriteLine($"  Content Checksum (SHA-256): {contentChecksum}");
 Console.WriteLine($"  PackageId: {packageId}");
 Console.WriteLine();
 Console.WriteLine("=== Data Summary ===");
@@ -526,8 +489,20 @@ Console.WriteLine("  Persons:    4 (Ahmed+Fatima family, Omar+Mariam family)");
 Console.WriteLine("  Households: 2 (4-person owner family, 3-person displaced tenant family)");
 Console.WriteLine("  Relations:  2 (Owner + Tenant)");
 Console.WriteLine("  Claims:     1 (Ownership claim by Ahmed for Unit 1)");
-Console.WriteLine("  Evidence:   1 (Ownership deed document)");
-Console.WriteLine("  Survey:     1 (Field survey, Finalized)");
+Console.WriteLine("  Evidence:   1 (Ownership deed — linked to person, relation, and claim)");
+Console.WriteLine("  Survey:     1 (Field survey, Finalized — linked to building and Unit 1)");
+Console.WriteLine();
+Console.WriteLine("=== FK Linkages ===");
+Console.WriteLine("  Survey  → Building ✓, PropertyUnit ✓ (Unit 1)");
+Console.WriteLine("  Evidence → Person ✓ (Ahmed), Relation ✓ (ownership), Claim ✓ (ownership)");
+Console.WriteLine("  Claim   → PropertyUnit ✓ (Unit 1), PrimaryClaimant ✓ (Ahmed)");
+Console.WriteLine("  Household → PropertyUnit ✓, HeadPerson ✓");
+Console.WriteLine("  Relation → Person ✓, PropertyUnit ✓");
+Console.WriteLine();
+Console.WriteLine("=== Checksum ===");
+Console.WriteLine("  Algorithm: SHA-256 of data table contents only (excluding manifest table)");
+Console.WriteLine("  Tables sorted alphabetically, rows by rowid, columns by name");
+Console.WriteLine("  Same algorithm used by Import Pipeline and Sync Protocol");
 Console.WriteLine();
 Console.WriteLine("=== IMPORTANT ===");
 Console.WriteLine("  Each run generates a UNIQUE PackageId (no duplicates when re-running).");
@@ -535,10 +510,93 @@ Console.WriteLine("  The exported_by_user_id is set to Guid.Empty (replace in lo
 Console.WriteLine();
 Console.WriteLine("  To use this package in your upload test:");
 Console.WriteLine();
-Console.WriteLine($"  • Checksum:  {finalChecksum}");
-Console.WriteLine($"  • PackageId: {packageId}");
+Console.WriteLine($"  • Content Checksum:  {contentChecksum}");
+Console.WriteLine($"  • PackageId:         {packageId}");
 Console.WriteLine();
 Console.WriteLine("  Copy 'test-package.uhc' to your testing location and follow the test guide.");
+
+// ── Content Checksum Computation ──────────────────────────────────────────────
+// Must exactly match IImportService.ComputeContentChecksumAsync on the server.
+
+static string ComputeContentChecksum(SqliteConnection conn)
+{
+    var excludedTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "manifest", "attachments", "sqlite_sequence"
+    };
+
+    // 1. Enumerate data tables, sorted alphabetically
+    var tables = new List<string>();
+    using (var listCmd = conn.CreateCommand())
+    {
+        listCmd.CommandText =
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name";
+        using var reader = listCmd.ExecuteReader();
+        while (reader.Read())
+        {
+            var tableName = reader.GetString(0);
+            if (!tableName.StartsWith("sqlite_", StringComparison.OrdinalIgnoreCase)
+                && !excludedTables.Contains(tableName))
+            {
+                tables.Add(tableName);
+            }
+        }
+    }
+
+    // 2. Build canonical representation and hash incrementally
+    using var sha256 = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+    var encoding = Encoding.UTF8;
+
+    foreach (var table in tables)
+    {
+        // Table header
+        sha256.AppendData(encoding.GetBytes($"TABLE:{table}\n"));
+
+        // Get column names sorted alphabetically (ordinal)
+        var columns = new List<string>();
+        using (var pragmaCmd = conn.CreateCommand())
+        {
+            pragmaCmd.CommandText = $"PRAGMA table_info(\"{table}\")";
+            using var pragmaReader = pragmaCmd.ExecuteReader();
+            while (pragmaReader.Read())
+            {
+                columns.Add(pragmaReader.GetString(1)); // column name is at index 1
+            }
+        }
+        columns.Sort(StringComparer.Ordinal);
+
+        // Read all rows ordered by rowid
+        using var rowCmd = conn.CreateCommand();
+        rowCmd.CommandText = $"SELECT * FROM \"{table}\" ORDER BY rowid";
+        using var rowReader = rowCmd.ExecuteReader();
+
+        // Build column index lookup
+        var colIndexMap = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < rowReader.FieldCount; i++)
+        {
+            colIndexMap[rowReader.GetName(i)] = i;
+        }
+
+        while (rowReader.Read())
+        {
+            var parts = new List<string>(columns.Count);
+            foreach (var col in columns)
+            {
+                if (colIndexMap.TryGetValue(col, out var idx))
+                {
+                    var value = rowReader.IsDBNull(idx) ? "\\0" : rowReader.GetValue(idx)?.ToString() ?? "\\0";
+                    parts.Add($"{col}={value}");
+                }
+            }
+
+            var rowLine = string.Join("\t", parts) + "\n";
+            sha256.AppendData(encoding.GetBytes(rowLine));
+        }
+    }
+
+    var hashBytes = sha256.GetHashAndReset();
+    return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────────
 
@@ -549,7 +607,7 @@ Console.WriteLine("  Copy 'test-package.uhc' to your testing location and follow
 /// </summary>
 static Guid DeriveGuid(Guid baseGuid, string seed)
 {
-    using var hash = System.Security.Cryptography.SHA256.Create();
+    using var hash = SHA256.Create();
     var input = Encoding.UTF8.GetBytes(baseGuid.ToString() + ":" + seed);
     var hashBytes = hash.ComputeHash(input);
     return new Guid(hashBytes.Take(16).ToArray());

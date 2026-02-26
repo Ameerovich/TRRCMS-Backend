@@ -203,6 +203,7 @@ public class CommitService : ICommitService
     /// Cross-batch: discarded is staging, master is production → _idMap[discarded] = production.Id
     /// Within-batch: discarded is staging, master is staging (already committed) → _idMap[discarded] = _idMap[master]
     /// </summary>
+
     /// <summary>
     /// Pre-populate the ID map from staging records that were already committed
     /// in a previous (partial) commit attempt. This ensures that child entities
@@ -306,7 +307,33 @@ public class CommitService : ICommitService
             var staging = approved[i];
             try
             {
-                // Building.Create() composes the 17-digit BuildingId from geographic codes (FR-D-8)
+                // Compose the 17-digit BuildingId from geographic codes
+                var buildingIdCode = $"{staging.GovernorateCode}{staging.DistrictCode}" +
+                    $"{staging.SubDistrictCode}{staging.CommunityCode}" +
+                    $"{staging.NeighborhoodCode}{staging.BuildingNumber}";
+
+                // Check if a building with this BuildingId already exists in production
+                // (e.g., from a previous package covering the same building)
+                var existingBuilding = await _unitOfWork.Buildings
+                    .GetByBuildingIdAsync(buildingIdCode, ct);
+
+                if (existingBuilding != null)
+                {
+                    // Reuse the existing production building — just map the ID
+                    _idMap[staging.OriginalEntityId] = existingBuilding.Id;
+                    staging.SetCommittedEntityId(existingBuilding.Id);
+                    await _stagingBuildingRepo.UpdateAsync(staging, ct);
+
+                    report.Buildings.Committed++;
+                    report.Buildings.IdMappings[staging.OriginalEntityId] = existingBuilding.Id;
+
+                    _logger.LogInformation(
+                        "Building {OriginalId} reused existing production building {ProductionId} (BuildingId: {BuildingId})",
+                        staging.OriginalEntityId, existingBuilding.Id, buildingIdCode);
+                    continue;
+                }
+
+                // No existing building — create a new one
                 var building = Building.Create(
                     governorateCode: staging.GovernorateCode,
                     districtCode: staging.DistrictCode,
@@ -409,6 +436,28 @@ public class CommitService : ICommitService
                         "Building must be committed before its property units.");
                 }
 
+                // Check if a property unit with this (BuildingId, UnitIdentifier) already exists
+                // (e.g., from a previous package covering the same building and unit)
+                var existingUnit = await _unitOfWork.PropertyUnits
+                    .GetByBuildingAndIdentifierAsync(productionBuildingId, staging.UnitIdentifier, ct);
+
+                if (existingUnit != null)
+                {
+                    // Reuse the existing production unit — just map the ID
+                    _idMap[staging.OriginalEntityId] = existingUnit.Id;
+                    staging.SetCommittedEntityId(existingUnit.Id);
+                    await _stagingPropertyUnitRepo.UpdateAsync(staging, ct);
+
+                    report.PropertyUnits.Committed++;
+                    report.PropertyUnits.IdMappings[staging.OriginalEntityId] = existingUnit.Id;
+
+                    _logger.LogInformation(
+                        "PropertyUnit {OriginalId} reused existing production unit {ProductionId} (Building: {BuildingId}, Unit: {UnitId})",
+                        staging.OriginalEntityId, existingUnit.Id, productionBuildingId, staging.UnitIdentifier);
+                    continue;
+                }
+
+                // No existing unit — create a new one
                 var unit = PropertyUnit.Create(
                     buildingId: productionBuildingId,
                     unitIdentifier: staging.UnitIdentifier,
@@ -662,6 +711,29 @@ public class CommitService : ICommitService
                 var prefix = staging.Type == SurveyType.Office ? "OFC" : "ALG";
                 var refCode = staging.ReferenceCode
                     ?? await _surveyRefCodeGenerator.GenerateNextAsync(prefix, ct);
+
+                // Check if a survey with this ReferenceCode already exists in production
+                // (e.g., from a previous package covering the same survey)
+                if (refCode != null)
+                {
+                    var existingSurvey = await _unitOfWork.Surveys
+                        .GetByReferenceCodeAsync(refCode, ct);
+
+                    if (existingSurvey != null)
+                    {
+                        _idMap[staging.OriginalEntityId] = existingSurvey.Id;
+                        staging.SetCommittedEntityId(existingSurvey.Id);
+                        await _stagingSurveyRepo.UpdateAsync(staging, ct);
+
+                        report.Surveys.Committed++;
+                        report.Surveys.IdMappings[staging.OriginalEntityId] = existingSurvey.Id;
+
+                        _logger.LogInformation(
+                            "Survey {OriginalId} reused existing production survey {ProductionId} (ReferenceCode: {RefCode})",
+                            staging.OriginalEntityId, existingSurvey.Id, refCode);
+                        continue;
+                    }
+                }
 
                 var survey = Survey.Create(
                     buildingId: productionBuildingId,

@@ -106,5 +106,4 @@ public class CommitErrorDto
     public Guid? StagingEntityId { get; set; }
     public Guid? OriginalEntityId { get; set; }
     public string ErrorMessage { get; set; } = string.Empty;
-    public string? StackTrace { get; set; }
 }
