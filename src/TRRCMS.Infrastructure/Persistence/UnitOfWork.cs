@@ -39,6 +39,7 @@ public class UnitOfWork : IUnitOfWork
     private IEvidenceRelationRepository? _evidenceRelations;
     private IImportPackageRepository? _importPackages;
     private IConflictResolutionRepository? _conflictResolutions;
+    private ISecurityPolicyRepository? _securityPolicies;
 
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService)
@@ -100,6 +101,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IConflictResolutionRepository ConflictResolutions =>
         _conflictResolutions ??= new ConflictResolutionRepository(_context);
+
+    public ISecurityPolicyRepository SecurityPolicies =>
+    _securityPolicies ??= new SecurityPolicyRepository(_context);
 
 
     // ==================== TRANSACTION OPERATIONS ====================

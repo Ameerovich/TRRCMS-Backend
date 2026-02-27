@@ -76,9 +76,8 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<Vocabulary> Vocabularies => Set<Vocabulary>();
 
-    // TODO: Add other entities later as we implement them
+    // TODO: future phase — Enable when Certificate feature is needed
     // public DbSet<Certificate> Certificates => Set<Certificate>();
-    // etc.
 
     // ==================== IMPORT PIPELINE ====================
 
@@ -146,6 +145,12 @@ public class ApplicationDbContext : DbContext
     /// LAN Sync sessions (telemetry + auditability)
     /// </summary>
     public DbSet<SyncSession> SyncSessions => Set<SyncSession>();
+
+
+    /// <summary>
+    /// Security Policy 
+    /// </summary>
+    public DbSet<SecurityPolicy> SecurityPolicies => Set<SecurityPolicy>();
 
 
     // TODO: Add other entities later as we implement them

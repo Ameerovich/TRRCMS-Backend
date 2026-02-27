@@ -106,6 +106,12 @@ public interface IUnitOfWork : IDisposable
     /// </summary>
     IConflictResolutionRepository ConflictResolutions { get; }
 
+    /// <summary>
+    /// Security policy repository — versioned security configurations
+    /// UC-011: Security Settings
+    /// </summary>
+    ISecurityPolicyRepository SecurityPolicies { get; }
+
 
     // ==================== TRANSACTION OPERATIONS ====================
 

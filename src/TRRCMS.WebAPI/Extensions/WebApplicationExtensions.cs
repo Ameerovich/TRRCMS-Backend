@@ -97,7 +97,28 @@ public static class WebApplicationExtensions
             }
         }
 
-        // SCOPE 5: Warm vocabulary validation cache
+        // SCOPE 5: Seed default security policy (UC-011)
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+            if (!await dbContext.SecurityPolicies.AnyAsync())
+            {
+                // Use the system admin user ID (the first admin created during seeding)
+                var adminUser = await dbContext.Users
+                    .Where(u => u.Role == UserRole.Administrator && !u.IsDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (adminUser is not null)
+                {
+                    var defaultPolicy = SecurityPolicy.CreateDefault(adminUser.Id);
+                    await dbContext.SecurityPolicies.AddAsync(defaultPolicy);
+                    await dbContext.SaveChangesAsync();
+                }
+            }
+        }
+
+        // SCOPE 6: Warm vocabulary validation cache
         {
             var vocabValidation = app.Services.GetRequiredService<IVocabularyValidationService>();
             await vocabValidation.WarmupAsync();

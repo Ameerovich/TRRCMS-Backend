@@ -119,6 +119,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISyncSessionRepository, SyncSessionRepository>();
         services.AddScoped<ISyncPackageStore, LocalSyncPackageStore>();
 
+        // ── Security Settings ─────────────────────────────────────────────────────
+        services.AddScoped<ISecurityPolicyRepository, SecurityPolicyRepository>();
+
         return services;
     }
 
@@ -331,6 +334,11 @@ public static class ServiceCollectionExtensions
             // Sync
             options.AddPolicy("CanSyncData", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.System_Sync)));
+
+            // Security Settings
+
+            options.AddPolicy("CanManageSecuritySettings", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Security_Settings)));
         });
 
         return services;
