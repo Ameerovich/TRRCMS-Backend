@@ -249,6 +249,23 @@ public class BuildingAssignment : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Reset a failed assignment for retry. Transitions Failed → Pending
+    /// and clears the error message. Does NOT reset TransferRetryCount
+    /// (keeps the history of how many retries occurred).
+    /// UC-012: S12 — Retry failed transfer.
+    /// </summary>
+    public void ResetForRetry(Guid modifiedByUserId)
+    {
+        if (TransferStatus != TransferStatus.Failed)
+            throw new InvalidOperationException(
+                $"Cannot retry: assignment is '{TransferStatus}', expected 'Failed'.");
+
+        TransferStatus = TransferStatus.Pending;
+        TransferErrorMessage = null;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Mark transfer as in progress
     /// </summary>
     public void MarkTransferInProgress(Guid modifiedByUserId)

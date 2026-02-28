@@ -2,6 +2,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.BuildingAssignments.Commands.AssignBuildings;
+using TRRCMS.Application.BuildingAssignments.Commands.CheckTransferTimeout;
+using TRRCMS.Application.BuildingAssignments.Commands.InitiateTransfer;
+using TRRCMS.Application.BuildingAssignments.Commands.RetryTransfer;
 using TRRCMS.Application.BuildingAssignments.Commands.UnassignBuilding;
 using TRRCMS.Application.BuildingAssignments.Dtos;
 using TRRCMS.Application.BuildingAssignments.Queries.GetAssignmentById;
@@ -882,6 +885,112 @@ public class BuildingAssignmentsController : ControllerBase
             "User cancelling assignment {AssignmentId}. Reason: {Reason}",
             assignmentId, request.CancellationReason);
 
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    // ==================== S08: INITIATE TRANSFER ====================
+
+    /// <summary>
+    /// Initiate transfer of assigned buildings to a field collector's tablet (S08)
+    /// بدء نقل المباني المعيّنة إلى جهاز جامع البيانات اللوحي
+    /// </summary>
+    /// <remarks>
+    /// Validates tablet connectivity (checks for an active sync session within the last 24 hours)
+    /// and transitions each specified assignment from Pending to InProgress.
+    /// The tablet will download InProgress assignments during its next sync (Step 3).
+    ///
+    /// **Required Permission:** Buildings_Assign (4003) — CanAssignBuildings policy
+    ///
+    /// **UC-012: S08** — Initiate Building Transfer to Tablet
+    /// </remarks>
+    /// <param name="command">Transfer initiation details</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <response code="200">Transfer initiation result with counts and tablet connectivity status</response>
+    /// <response code="400">Validation error (empty IDs, invalid field collector)</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission</response>
+    /// <response code="404">Field collector not found</response>
+    [HttpPost("initiate-transfer")]
+    [Authorize(Policy = "CanAssignBuildings")]
+    [ProducesResponseType(typeof(InitiateTransferResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<InitiateTransferResult>> InitiateTransfer(
+        [FromBody] InitiateTransferCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    // ==================== S11: CHECK TRANSFER TIMEOUT ====================
+
+    /// <summary>
+    /// Check for timed-out transfers and mark them as failed (S11)
+    /// التحقق من مهل النقل المنتهية وتحديدها كفاشلة
+    /// </summary>
+    /// <remarks>
+    /// Finds all InProgress assignments that have exceeded the specified timeout
+    /// threshold and marks them as Failed. The Data Manager can then retry failed
+    /// transfers using the retry endpoint.
+    ///
+    /// **Required Permission:** Buildings_Assign (4003) — CanAssignBuildings policy
+    ///
+    /// **UC-012: S11** — Transfer Failure Handling
+    /// </remarks>
+    /// <param name="command">Timeout check parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <response code="200">Timeout check result with timed-out and still-in-progress counts</response>
+    /// <response code="400">Validation error (invalid timeout value)</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission</response>
+    [HttpPost("check-transfer-timeout")]
+    [Authorize(Policy = "CanAssignBuildings")]
+    [ProducesResponseType(typeof(TransferTimeoutCheckResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<TransferTimeoutCheckResult>> CheckTransferTimeout(
+        [FromBody] CheckTransferTimeoutCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    // ==================== S12: RETRY TRANSFER ====================
+
+    /// <summary>
+    /// Retry failed transfers by resetting assignments to Pending (S12)
+    /// إعادة محاولة عمليات النقل الفاشلة بإعادة تعيينها كقيد الانتظار
+    /// </summary>
+    /// <remarks>
+    /// Resets each Failed assignment back to Pending so it becomes eligible
+    /// for the next sync download. The TransferRetryCount is preserved for history.
+    ///
+    /// **Required Permission:** Buildings_Assign (4003) — CanAssignBuildings policy
+    ///
+    /// **UC-012: S12** — Retry Failed Transfer
+    /// </remarks>
+    /// <param name="command">Retry details with assignment IDs</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <response code="200">Retry result with counts</response>
+    /// <response code="400">Validation error (empty IDs, wrong status)</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission</response>
+    [HttpPost("retry-transfer")]
+    [Authorize(Policy = "CanAssignBuildings")]
+    [ProducesResponseType(typeof(RetryTransferResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<RetryTransferResult>> RetryTransfer(
+        [FromBody] RetryTransferCommand command,
+        CancellationToken cancellationToken = default)
+    {
         var result = await _mediator.Send(command, cancellationToken);
         return Ok(result);
     }

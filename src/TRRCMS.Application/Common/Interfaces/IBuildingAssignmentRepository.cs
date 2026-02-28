@@ -125,7 +125,8 @@ public interface IBuildingAssignmentRepository
 
     /// <summary>
     /// Get all active assignments for a field collector whose transfer status is
-    /// <see cref="TransferStatus.Pending"/> or <see cref="TransferStatus.Failed"/>.
+    /// <see cref="TransferStatus.Pending"/>, <see cref="TransferStatus.Failed"/>,
+    /// or <see cref="TransferStatus.InProgress"/>.
     /// Results are eagerly loaded with the parent <c>Building</c> and its
     /// <c>PropertyUnits</c> so that the sync handler can build the full payload
     /// without additional round-trips.
@@ -133,14 +134,23 @@ public interface IBuildingAssignmentRepository
     /// An optional <paramref name="modifiedSinceUtc"/> filter restricts results to
     /// assignments that were created or last modified after the given timestamp,
     /// enabling incremental sync (tablet sends its last-synced-at timestamp).
-    /// Pass <c>null</c> to retrieve all pending/failed assignments.
+    /// Pass <c>null</c> to retrieve all downloadable assignments.
     ///
     /// Used by: <c>GetSyncAssignmentsQueryHandler</c> — Sync Step 3.
-    /// UC-012: Assign Buildings to Field Collectors.
+    /// UC-012: Assign Buildings to Field Collectors (S08–S09).
     /// </summary>
     Task<List<BuildingAssignment>> GetPendingOrFailedByFieldCollectorAsync(
         Guid fieldCollectorId,
         DateTime? modifiedSinceUtc = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get all active assignments whose transfer status is
+    /// <see cref="TransferStatus.InProgress"/>.
+    /// Used by: <c>CheckTransferTimeoutCommandHandler</c> — UC-012 S11.
+    /// </summary>
+    Task<List<BuildingAssignment>> GetInProgressByFieldCollectorAsync(
+        Guid? fieldCollectorId = null,
         CancellationToken cancellationToken = default);
 
     // ==================== REVISIT QUERIES ====================

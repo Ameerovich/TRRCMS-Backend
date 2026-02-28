@@ -295,7 +295,8 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
                 ba.FieldCollectorId == fieldCollectorId &&
                 ba.IsActive &&
                 (ba.TransferStatus == TransferStatus.Pending ||
-                 ba.TransferStatus == TransferStatus.Failed));
+                 ba.TransferStatus == TransferStatus.Failed ||
+                 ba.TransferStatus == TransferStatus.InProgress));
 
         // Optional incremental sync: only return assignments touched since
         // the tablet's last sync timestamp (tablet sends its last-synced-at value).
@@ -314,6 +315,24 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
                 ba.Priority == "Urgent" ? 0 :
                 ba.Priority == "High"   ? 1 : 2)
             .ThenBy(ba => ba.AssignedDate)    // Oldest first within the same priority level
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<List<BuildingAssignment>> GetInProgressByFieldCollectorAsync(
+        Guid? fieldCollectorId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.BuildingAssignments
+            .Where(ba => ba.IsActive && ba.TransferStatus == TransferStatus.InProgress);
+
+        if (fieldCollectorId.HasValue)
+        {
+            query = query.Where(ba => ba.FieldCollectorId == fieldCollectorId.Value);
+        }
+
+        return await query
+            .OrderBy(ba => ba.LastTransferAttemptDate)
             .ToListAsync(cancellationToken);
     }
 

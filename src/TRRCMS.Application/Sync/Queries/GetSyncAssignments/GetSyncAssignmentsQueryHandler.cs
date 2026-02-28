@@ -32,17 +32,20 @@ public sealed class GetSyncAssignmentsQueryHandler
     private readonly IBuildingAssignmentRepository _assignmentRepo;
     private readonly IVocabularyRepository _vocabularyRepo;
     private readonly ICurrentUserService _currentUser;
+    private readonly IAuditService _auditService;
 
     public GetSyncAssignmentsQueryHandler(
         IUnitOfWork uow,
         IBuildingAssignmentRepository assignmentRepo,
         IVocabularyRepository vocabularyRepo,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IAuditService auditService)
     {
         _uow = uow;
         _assignmentRepo = assignmentRepo;
         _vocabularyRepo = vocabularyRepo;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<SyncAssignmentPayloadDto> Handle(
@@ -110,6 +113,25 @@ public sealed class GetSyncAssignmentsQueryHandler
 
         await _uow.SyncSessions.UpdateAsync(session, ct);
         await _uow.SaveChangesAsync(ct);
+
+        // ── 8b. Audit log: record the download event (UC-012 S09) ─────────────────
+        if (assignments.Count > 0)
+        {
+            await _auditService.LogActionAsync(
+                actionType: AuditActionType.Synchronize,
+                actionDescription: $"Sync Step 3: {assignments.Count} assignment(s) downloaded by field collector for session {session.Id}.",
+                entityType: "SyncSession",
+                entityId: session.Id,
+                entityIdentifier: session.DeviceId,
+                newValues: JsonSerializer.Serialize(new
+                {
+                    FieldCollectorId = session.FieldCollectorId,
+                    AssignmentsDownloaded = assignments.Count,
+                    SessionId = session.Id
+                }),
+                changedFields: "AssignmentsDownloaded",
+                cancellationToken: ct);
+        }
 
         // ── 9. Assemble and return the payload ─────────────────────────────────────
         return new SyncAssignmentPayloadDto

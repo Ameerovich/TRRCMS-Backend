@@ -158,6 +158,24 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
                 cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<bool> HasKeepSeparateDecisionAsync(
+        Guid firstEntityId,
+        Guid secondEntityId,
+        CancellationToken cancellationToken = default)
+    {
+        // Check if a resolved KeepBoth (keep-separate) conflict exists for this pair.
+        // Order-independent check covers both (A,B) and (B,A).
+        return await _context.ConflictResolutions
+            .AnyAsync(c =>
+                ((c.FirstEntityId == firstEntityId && c.SecondEntityId == secondEntityId) ||
+                 (c.FirstEntityId == secondEntityId && c.SecondEntityId == firstEntityId))
+                && c.Status == "Resolved"
+                && c.ResolutionAction == ConflictResolutionAction.KeepBoth
+                && !c.IsDeleted,
+                cancellationToken);
+    }
+
     public async Task<List<ConflictResolution>> GetByEntityIdAsync(
         Guid entityId,
         CancellationToken cancellationToken = default)

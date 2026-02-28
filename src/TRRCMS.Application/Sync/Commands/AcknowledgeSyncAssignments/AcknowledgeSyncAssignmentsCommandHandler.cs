@@ -1,6 +1,7 @@
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Sync.DTOs;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Sync.Commands.AcknowledgeSyncAssignments;
 
@@ -34,15 +35,18 @@ public sealed class AcknowledgeSyncAssignmentsCommandHandler
     private readonly IUnitOfWork _uow;
     private readonly IBuildingAssignmentRepository _assignmentRepo;
     private readonly ICurrentUserService _currentUser;
+    private readonly IAuditService _auditService;
 
     public AcknowledgeSyncAssignmentsCommandHandler(
         IUnitOfWork uow,
         IBuildingAssignmentRepository assignmentRepo,
-        ICurrentUserService currentUser)
+        ICurrentUserService currentUser,
+        IAuditService auditService)
     {
         _uow = uow;
         _assignmentRepo = assignmentRepo;
         _currentUser = currentUser;
+        _auditService = auditService;
     }
 
     public async Task<SyncAckResultDto> Handle(
@@ -101,6 +105,26 @@ public sealed class AcknowledgeSyncAssignmentsCommandHandler
 
         // ── 5. Persist all changes atomically ─────────────────────────────────────
         await _uow.SaveChangesAsync(ct);
+
+        // ── 5b. Audit log: record the acknowledgement event (UC-012 S10) ─────────
+        if (acknowledgedCount > 0)
+        {
+            await _auditService.LogActionAsync(
+                actionType: AuditActionType.StatusChange,
+                actionDescription: $"Sync Step 4: {acknowledgedCount} assignment(s) acknowledged as Transferred by field collector.",
+                entityType: "BuildingAssignment",
+                entityId: request.AssignmentIds.FirstOrDefault(),
+                entityIdentifier: $"Batch: {acknowledgedCount} assignments",
+                newValues: System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    AcknowledgedCount = acknowledgedCount,
+                    FailedCount = failedIds.Count,
+                    SessionId = request.SyncSessionId,
+                    NewStatus = "Transferred"
+                }),
+                changedFields: "TransferStatus",
+                cancellationToken: ct);
+        }
 
         // ── 6. Build and return the result ─────────────────────────────────────────
         var message = failedIds.Count == 0

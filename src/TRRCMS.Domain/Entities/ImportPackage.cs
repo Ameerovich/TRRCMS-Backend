@@ -274,6 +274,16 @@ public class ImportPackage : BaseAuditableEntity
     /// </summary>
     public DateTime? ArchivedDate { get; private set; }
 
+    // ==================== FILE STORAGE ====================
+
+    /// <summary>
+    /// File system path where the uploaded .uhc file is stored during processing.
+    /// Set by UploadPackageCommandHandler after saving via IImportService.SavePackageFileAsync().
+    /// Used by StagePackageCommandHandler to locate the file for SQLite unpacking.
+    /// Cleared after archival to avoid stale references.
+    /// </summary>
+    public string? UploadedFilePath { get; private set; }
+
     // ==================== PROCESSING METADATA ====================
 
     /// <summary>
@@ -386,6 +396,21 @@ public class ImportPackage : BaseAuditableEntity
         ImportedDate = DateTime.UtcNow;
         ImportedByUserId = importedByUserId;
         ImportMethod = importMethod;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Store the file system path where the uploaded .uhc file was saved.
+    /// Called by UploadPackageCommandHandler after IImportService.SavePackageFileAsync().
+    /// </summary>
+    /// <param name="filePath">Absolute path to the saved .uhc file.</param>
+    /// <param name="modifiedByUserId">User performing the upload.</param>
+    public void SetUploadedFilePath(string filePath, Guid modifiedByUserId)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            throw new ArgumentException("File path cannot be empty.", nameof(filePath));
+
+        UploadedFilePath = filePath;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -635,6 +660,7 @@ public class ImportPackage : BaseAuditableEntity
         ArchivePath = archivePath;
         IsArchived = true;
         ArchivedDate = DateTime.UtcNow;
+        UploadedFilePath = null; // Clear stale reference; use ArchivePath from now on
         MarkAsModified(modifiedByUserId);
     }
 
@@ -651,10 +677,6 @@ public class ImportPackage : BaseAuditableEntity
 
     // ==================== HELPER METHODS ====================
 
-    /// <summary>
-    /// Generate package number
-    /// Format: PKG-YYYY-NNNN
-    /// </summary>
     private static string GeneratePackageNumber()
     {
         var year = DateTime.UtcNow.Year;

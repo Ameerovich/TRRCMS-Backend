@@ -45,6 +45,22 @@ public class StagingSummaryDto
 
     public int AttachmentFilesExtracted { get; set; }
     public long AttachmentBytesExtracted { get; set; }
+
+    // ==================== DUPLICATE DETECTION SUMMARY ====================
+    // Populated when auto-duplicate detection runs during staging (UC-003 S14).
+    // Null/zero if detection was not triggered (e.g. validation errors present).
+
+    /// <summary>Number of person duplicate conflicts detected.</summary>
+    public int PersonDuplicatesFound { get; set; }
+
+    /// <summary>Number of property duplicate conflicts detected.</summary>
+    public int PropertyDuplicatesFound { get; set; }
+
+    /// <summary>Total conflicts requiring review before commit.</summary>
+    public int TotalConflictsFound { get; set; }
+
+    /// <summary>True if duplicate detection ran during this staging operation.</summary>
+    public bool DuplicateDetectionRan { get; set; }
 }
 
 /// <summary>

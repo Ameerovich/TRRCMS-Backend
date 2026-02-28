@@ -176,6 +176,20 @@ public class DuplicateDetectionService : IDuplicateDetectionService
                 continue;
             }
 
+            // UC-007/008: Check if a previous KeepSeparate decision exists for this pair.
+            // If the operator already confirmed these are distinct records, do not re-flag.
+            var wasKeptSeparate = await _conflictRepository.HasKeepSeparateDecisionAsync(
+                match.StagingOriginalEntityId, match.MatchedEntityId, ct);
+
+            if (wasKeptSeparate)
+            {
+                _logger.LogDebug(
+                    "Suppressing person duplicate: {StagingId} ↔ {MatchedId} " +
+                    "(previously resolved as KeepSeparate)",
+                    match.StagingOriginalEntityId, match.MatchedEntityId);
+                continue;
+            }
+
             var conflictType = match.IsWithinBatchMatch
                 ? "PersonDuplicate_WithinBatch"
                 : "PersonDuplicate";
@@ -233,6 +247,19 @@ public class DuplicateDetectionService : IDuplicateDetectionService
 
             if (existing != null)
                 continue;
+
+            // UC-007: Check if a previous KeepSeparate decision exists for this pair.
+            var wasKeptSeparate = await _conflictRepository.HasKeepSeparateDecisionAsync(
+                match.StagingOriginalEntityId, match.MatchedEntityId, ct);
+
+            if (wasKeptSeparate)
+            {
+                _logger.LogDebug(
+                    "Suppressing property duplicate: {StagingId} ↔ {MatchedId} " +
+                    "(previously resolved as KeepSeparate)",
+                    match.StagingOriginalEntityId, match.MatchedEntityId);
+                continue;
+            }
 
             var conflictType = match.IsWithinBatchMatch
                 ? "PropertyDuplicate_WithinBatch"

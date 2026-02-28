@@ -205,6 +205,12 @@ public class ImportPackageConfiguration : IEntityTypeConfiguration<ImportPackage
 
         builder.Property(p => p.ArchivedDate);
 
+        // ==================== FILE STORAGE ====================
+
+        builder.Property(p => p.UploadedFilePath)
+            .HasMaxLength(1000)
+            .HasComment("File system path to uploaded .uhc file during processing");
+
         // ==================== PROCESSING METADATA ====================
 
         builder.Property(p => p.ProcessingNotes)

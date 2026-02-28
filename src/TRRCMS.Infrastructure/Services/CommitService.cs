@@ -175,12 +175,33 @@ public class CommitService : ICommitService
         var package = await _importPackageRepository.GetByIdAsync(importPackageId, cancellationToken)
             ?? throw new InvalidOperationException($"Package {importPackageId} not found.");
 
-        // Build source path from package storage location
-        var sourceFilePath = Path.Combine(_settings.PackageStoragePath, package.FileName);
+        // Resolve source path: prefer UploadedFilePath (set during upload), fallback to convention
+        string? sourceFilePath = null;
 
-        if (!File.Exists(sourceFilePath))
+        if (!string.IsNullOrWhiteSpace(package.UploadedFilePath) && File.Exists(package.UploadedFilePath))
         {
-            _logger.LogWarning("Source .uhc file not found at {Path}, skipping archive.", sourceFilePath);
+            sourceFilePath = package.UploadedFilePath;
+        }
+        else
+        {
+            // Fallback: search in package storage directory
+            var storagePath = Path.GetFullPath(_settings.PackageStoragePath);
+            if (Directory.Exists(storagePath))
+            {
+                sourceFilePath = Directory.GetFiles(storagePath, $"*{package.PackageId:N}*")
+                    .FirstOrDefault();
+
+                sourceFilePath ??= Directory.GetFiles(storagePath, $"*{Path.GetFileNameWithoutExtension(package.FileName)}*")
+                    .FirstOrDefault();
+            }
+        }
+
+        if (sourceFilePath == null || !File.Exists(sourceFilePath))
+        {
+            _logger.LogWarning(
+                "Source .uhc file not found for package {PackageId}. " +
+                "UploadedFilePath='{UploadedFilePath}', skipping archive.",
+                package.PackageId, package.UploadedFilePath);
             return string.Empty;
         }
 
@@ -510,8 +531,8 @@ public class CommitService : ICommitService
                     motherNameArabic: staging.MotherNameArabic,
                     nationalId: staging.NationalId,
                     dateOfBirth: staging.YearOfBirth.HasValue ? new DateTime(staging.YearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc) : null,
-                    gender: null, // TODO: Add to staging entity
-                    nationality: null, // TODO: Add to staging entity
+                    gender: ParseGenderFromStaging(staging.Gender),
+                    nationality: ParseNationalityFromStaging(staging.Nationality),
                     email: staging.Email,
                     mobileNumber: staging.MobileNumber,
                     phoneNumber: staging.PhoneNumber,
@@ -929,5 +950,79 @@ public class CommitService : ICommitService
                 });
             }
         }
+    }
+
+    // ==================== STAGING VALUE PARSING HELPERS ====================
+
+    /// <summary>
+    /// Parse Gender enum from staging string value.
+    /// The .uhc package stores gender as a string (integer code, enum name, or Arabic label).
+    /// Maps to <see cref="Gender"/> enum values: Male=1, Female=2.
+    /// </summary>
+    private static Gender? ParseGenderFromStaging(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var trimmed = value.Trim();
+
+        // Try integer code (from vocabulary)
+        if (int.TryParse(trimmed, out var intVal) && Enum.IsDefined(typeof(Gender), intVal))
+            return (Gender)intVal;
+
+        // Try enum name (English)
+        if (Enum.TryParse<Gender>(trimmed, ignoreCase: true, out var enumVal))
+            return enumVal;
+
+        // Try Arabic labels
+        return trimmed switch
+        {
+            "ذكر" => Gender.Male,
+            "أنثى" => Gender.Female,
+            "male" or "m" or "M" => Gender.Male,
+            "female" or "f" or "F" => Gender.Female,
+            _ => null
+        };
+    }
+
+    /// <summary>
+    /// Parse Nationality enum from staging string value.
+    /// The .uhc package stores nationality as a string (integer code, enum name, or Arabic label).
+    /// Maps to <see cref="Nationality"/> enum values defined in Domain.Enums.
+    /// </summary>
+    private static Nationality? ParseNationalityFromStaging(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var trimmed = value.Trim();
+
+        // Try integer code (from vocabulary)
+        if (int.TryParse(trimmed, out var intVal) && Enum.IsDefined(typeof(Nationality), intVal))
+            return (Nationality)intVal;
+
+        // Try enum name (English)
+        if (Enum.TryParse<Nationality>(trimmed, ignoreCase: true, out var enumVal))
+            return enumVal;
+
+        // Try Arabic labels
+        return trimmed switch
+        {
+            "سوري" => Nationality.Syrian,
+            "فلسطيني" => Nationality.Palestinian,
+            "عراقي" => Nationality.Iraqi,
+            "لبناني" => Nationality.Lebanese,
+            "أردني" => Nationality.Jordanian,
+            "مصري" => Nationality.Egyptian,
+            "تركي" => Nationality.Turkish,
+            "سعودي" => Nationality.Saudi,
+            "يمني" => Nationality.Yemeni,
+            "سوداني" => Nationality.Sudanese,
+            "إيراني" => Nationality.Iranian,
+            "عديم الجنسية" => Nationality.Stateless,
+            "لاجئ" => Nationality.Refugee,
+            "أخرى" => Nationality.Other,
+            _ => null
+        };
     }
 }

@@ -102,3 +102,9 @@ Thumbs.db
 *.db
 *.db-shm
 *.db-wal
+
+# Claude Code auto memory and documentation
+.claude/
+
+# Markdown files (force add when needed with: git add -f <file.md>)
+*.md

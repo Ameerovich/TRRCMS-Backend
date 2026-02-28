@@ -26,6 +26,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
     private readonly IUnitOfWork _unitOfWork;
     private readonly IStagingService _stagingService;
     private readonly IValidationPipeline _validationPipeline;
+    private readonly IDuplicateDetectionService _duplicateDetectionService;
     private readonly IStagingRepository<StagingBuilding> _buildingRepo;
     private readonly IStagingRepository<StagingPropertyUnit> _unitRepo;
     private readonly IStagingRepository<StagingPerson> _personRepo;
@@ -41,6 +42,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         IUnitOfWork unitOfWork,
         IStagingService stagingService,
         IValidationPipeline validationPipeline,
+        IDuplicateDetectionService duplicateDetectionService,
         IStagingRepository<StagingBuilding> buildingRepo,
         IStagingRepository<StagingPropertyUnit> unitRepo,
         IStagingRepository<StagingPerson> personRepo,
@@ -55,6 +57,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _stagingService = stagingService;
         _validationPipeline = validationPipeline;
+        _duplicateDetectionService = duplicateDetectionService;
         _buildingRepo = buildingRepo;
         _unitRepo = unitRepo;
         _personRepo = personRepo;
@@ -184,11 +187,55 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // ============================================================
+            // STEP 6a: Auto-run duplicate detection if validation passed
+            // UC-003 S14 — detect anomalies and potential duplicates
+            // Only runs when validation has no blocking errors (status == Staging)
+            // ============================================================
+            DuplicateDetectionResult? dupeResult = null;
+            if (package.Status == ImportStatus.Staging && validationSummary.InvalidCount == 0)
+            {
+                _logger.LogInformation("Auto-running duplicate detection for package {PackageId}...",
+                    package.PackageId);
+
+                try
+                {
+                    dupeResult = await _duplicateDetectionService.DetectAsync(
+                        package.Id, userId, cancellationToken);
+
+                    // Update package with conflict results — transitions to
+                    // ReviewingConflicts (if conflicts found) or ReadyToCommit (if clean)
+                    package.SetConflictResults(
+                        dupeResult.PersonDuplicatesFound,
+                        dupeResult.PropertyDuplicatesFound,
+                        dupeResult.TotalConflictsCreated,
+                        userId);
+
+                    await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation(
+                        "Duplicate detection complete: {PersonDupes} person, {PropertyDupes} property, " +
+                        "Package status → {Status}",
+                        dupeResult.PersonDuplicatesFound, dupeResult.PropertyDuplicatesFound,
+                        package.Status);
+                }
+                catch (Exception dupeEx)
+                {
+                    // Duplicate detection failure is non-blocking — staging data is valid.
+                    // The desktop team can re-trigger via POST /detect-duplicates.
+                    _logger.LogWarning(dupeEx,
+                        "Auto-duplicate detection failed for package {PackageId}. " +
+                        "Staging data is valid — detection can be re-triggered manually.",
+                        package.PackageId);
+                }
+            }
+
+            // ============================================================
             // STEP 7: Build response DTO
             // ============================================================
             var summary = await BuildSummaryDtoAsync(
                 package.Id, package.PackageNumber, package.Status.ToString(),
-                stagingResult, validationSummary, cancellationToken);
+                stagingResult, validationSummary, dupeResult, cancellationToken);
 
             return summary;
         }
@@ -213,20 +260,23 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
 
     /// <summary>
     /// Resolve the file system path to the .uhc file for this package.
-    /// Looks for the file in the package storage directory.
+    /// Priority: UploadedFilePath (set during upload) → ArchivePath → fallback search.
     /// </summary>
     private static string ResolveUhcFilePath(Domain.Entities.ImportPackage package)
     {
-        // The UploadPackageCommandHandler saves files as {guid}_{filename}.uhc
-        // and the path is stored indirectly via the ArchivePath or can be found
-        // by convention. For now, if ArchivePath is set, use that. Otherwise,
-        // the file is in the package storage path (configured in ImportPipelineSettings).
+        // 1. Primary: Use the path stored during upload
+        if (!string.IsNullOrWhiteSpace(package.UploadedFilePath) && File.Exists(package.UploadedFilePath))
+        {
+            return package.UploadedFilePath;
+        }
+
+        // 2. Fallback: Use archive path (if already archived and re-staging)
         if (!string.IsNullOrWhiteSpace(package.ArchivePath) && File.Exists(package.ArchivePath))
         {
             return package.ArchivePath;
         }
 
-        // Fallback: look in wwwroot/packages for any file matching the PackageId
+        // 3. Last resort: search in the default package storage directory
         var storagePath = Path.Combine("wwwroot", "packages");
         if (Directory.Exists(storagePath))
         {
@@ -235,8 +285,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             if (matchingFile != null)
                 return matchingFile;
 
-            // Also try matching by filename
-            var byName = Directory.GetFiles(storagePath, $"*{package.FileName}*")
+            var byName = Directory.GetFiles(storagePath, $"*{Path.GetFileNameWithoutExtension(package.FileName)}*")
                 .FirstOrDefault();
             if (byName != null)
                 return byName;
@@ -244,7 +293,9 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
 
         throw new FileNotFoundException(
             $"Cannot find .uhc file for package {package.PackageId}. " +
-            $"Expected in '{storagePath}' or ArchivePath='{package.ArchivePath}'");
+            $"UploadedFilePath='{package.UploadedFilePath}', " +
+            $"ArchivePath='{package.ArchivePath}', " +
+            $"StoragePath='{storagePath}'");
     }
 
     /// <summary>
@@ -256,6 +307,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         string status,
         StagingResult stagingResult,
         ValidationSummary validationSummary,
+        DuplicateDetectionResult? dupeResult,
         CancellationToken cancellationToken)
     {
         var dto = new StagingSummaryDto
@@ -281,6 +333,15 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
                 DurationMs = r.Duration.TotalMilliseconds
             }).ToList()
         };
+
+        // Populate duplicate detection results (if detection ran)
+        if (dupeResult != null)
+        {
+            dto.DuplicateDetectionRan = true;
+            dto.PersonDuplicatesFound = dupeResult.PersonDuplicatesFound;
+            dto.PropertyDuplicatesFound = dupeResult.PropertyDuplicatesFound;
+            dto.TotalConflictsFound = dupeResult.TotalConflictsCreated;
+        }
 
         // Per-entity-type counts
         dto.Buildings = await BuildEntitySummaryAsync(_buildingRepo, "Building", importPackageId, cancellationToken);

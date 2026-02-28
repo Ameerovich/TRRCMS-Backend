@@ -123,6 +123,21 @@ public interface IConflictResolutionRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Check if a previous KeepSeparate (KeepBoth) resolution exists for the given entity pair.
+    /// Per UC rules: keep-separate decisions prevent the same pair from being
+    /// re-surfaced as a duplicate unless detection rules or keys change.
+    /// Used by DuplicateDetectionService to suppress re-flagging of already-reviewed pairs.
+    /// </summary>
+    /// <param name="firstEntityId">First entity in the pair (order-independent).</param>
+    /// <param name="secondEntityId">Second entity in the pair (order-independent).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>True if a resolved KeepBoth conflict exists for this pair.</returns>
+    Task<bool> HasKeepSeparateDecisionAsync(
+        Guid firstEntityId,
+        Guid secondEntityId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get all conflicts involving a specific entity (as either first or second).
     /// Used to show all conflicts for a given person/building/property in the review UI.
     /// </summary>

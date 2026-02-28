@@ -177,6 +177,9 @@ public class UploadPackageCommandHandler : IRequestHandler<UploadPackageCommand,
             // Record who imported and how
             package.MarkAsImported(userId, request.ImportMethod, userId);
 
+            // Store the file path so StagePackageCommandHandler can locate the .uhc file
+            package.SetUploadedFilePath(savedFilePath, userId);
+
             // Set security validation results
             package.SetSecurityValidation(
                 isChecksumValid, isSignatureValid, manifest.DigitalSignature, userId);
