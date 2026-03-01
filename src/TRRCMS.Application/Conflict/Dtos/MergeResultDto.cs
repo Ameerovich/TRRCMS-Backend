@@ -40,7 +40,18 @@ public class MergeResultDto
     public Dictionary<string, int> ReferencesByType { get; set; } = new();
 
     /// <summary>
+    /// Fields where both entities had different non-null values.
+    /// The master value was kept; the discarded value is recorded for audit.
+    /// </summary>
+    public Dictionary<string, FieldConflictInfo> ConflictingFields { get; set; } = new();
+
+    /// <summary>
     /// Error message if merge failed.
     /// </summary>
     public string? ErrorMessage { get; set; }
 }
+
+/// <summary>
+/// Records a field-level conflict where both entities had different non-null values.
+/// </summary>
+public record FieldConflictInfo(string? MasterValue, string? DiscardedValue, string KeptFrom);

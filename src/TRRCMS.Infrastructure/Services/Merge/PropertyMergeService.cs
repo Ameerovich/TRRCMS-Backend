@@ -78,15 +78,23 @@ public class PropertyMergeService : IMergeService
                 discardedEntityId, importPackageId, cancellationToken);
 
             var mergeMapping = new Dictionary<string, string>();
+            var conflicts = new Dictionary<string, FieldConflictInfo>();
             var refsUpdated = 0;
+            var refsByType = new Dictionary<string, int>
+            {
+                ["PersonPropertyRelation"] = 0,
+                ["Claim"] = 0,
+                ["Survey"] = 0,
+                ["Household"] = 0
+            };
 
             // ============================================================
             // Case 1: Both in production (standard merge — rare in import flow)
             // ============================================================
             if (masterProd != null && discardedProd != null)
             {
-                MergePropertyUnitFields(masterProd, discardedProd, mergeMapping);
-                refsUpdated = await RePointProductionReferencesAsync(
+                MergePropertyUnitFields(masterProd, discardedProd, mergeMapping, conflicts);
+                (refsUpdated, refsByType) = await RePointProductionReferencesAsync(
                     masterProd.Id, discardedProd.Id, cancellationToken);
                 discardedProd.MarkAsDeleted(masterProd.Id);
                 await _propertyUnitRepository.UpdateAsync(discardedProd, cancellationToken);
@@ -102,7 +110,7 @@ public class PropertyMergeService : IMergeService
             // ============================================================
             else if (masterProd != null && discardedStaging != null)
             {
-                FillProductionGapsFromStaging(masterProd, discardedStaging, mergeMapping);
+                FillProductionGapsFromStaging(masterProd, discardedStaging, mergeMapping, conflicts);
                 await _propertyUnitRepository.UpdateAsync(masterProd, cancellationToken);
                 await _propertyUnitRepository.SaveChangesAsync(cancellationToken);
 
@@ -120,7 +128,7 @@ public class PropertyMergeService : IMergeService
             // ============================================================
             else if (masterStaging != null && discardedProd != null)
             {
-                UpdateProductionFromStaging(discardedProd, masterStaging, mergeMapping);
+                UpdateProductionFromStaging(discardedProd, masterStaging, mergeMapping, conflicts);
                 await _propertyUnitRepository.UpdateAsync(discardedProd, cancellationToken);
                 await _propertyUnitRepository.SaveChangesAsync(cancellationToken);
 
@@ -155,14 +163,9 @@ public class PropertyMergeService : IMergeService
 
             result.Success = true;
             result.MergeMappingJson = JsonSerializer.Serialize(mergeMapping);
+            result.ConflictingFields = conflicts;
             result.ReferencesUpdated = refsUpdated;
-            result.ReferencesByType = new Dictionary<string, int>
-            {
-                ["PersonPropertyRelation"] = 0,
-                ["Claim"] = 0,
-                ["Survey"] = 0,
-                ["Household"] = 0
-            };
+            result.ReferencesByType = refsByType;
         }
         catch (Exception ex)
         {
@@ -196,60 +199,119 @@ public class PropertyMergeService : IMergeService
     // ==================== PRODUCTION ↔ PRODUCTION MERGE ====================
 
     private static void MergePropertyUnitFields(
-        PropertyUnit master, PropertyUnit discarded, Dictionary<string, string> mapping)
+        PropertyUnit master, PropertyUnit discarded, Dictionary<string, string> mapping,
+        Dictionary<string, FieldConflictInfo> conflicts)
     {
         mapping["UnitIdentifier"] = "master";
         mapping["BuildingId"] = "master";
 
+        // Status
         if (master.Status == Domain.Enums.PropertyUnitStatus.Unknown &&
             discarded.Status != Domain.Enums.PropertyUnitStatus.Unknown)
         {
             master.UpdateStatus(discarded.Status, master.DamageLevel, master.Id);
             mapping["Status"] = "discarded";
         }
-        else mapping["Status"] = "master";
+        else
+        {
+            mapping["Status"] = "master";
+            if (master.Status != Domain.Enums.PropertyUnitStatus.Unknown &&
+                discarded.Status != Domain.Enums.PropertyUnitStatus.Unknown &&
+                master.Status != discarded.Status)
+            {
+                conflicts["Status"] = new FieldConflictInfo(
+                    master.Status.ToString(), discarded.Status.ToString(), "master");
+            }
+        }
 
+        // DamageLevel
         if (!master.DamageLevel.HasValue && discarded.DamageLevel.HasValue)
         {
             master.UpdateStatus(master.Status, discarded.DamageLevel, master.Id);
             mapping["DamageLevel"] = "discarded";
         }
-        else mapping["DamageLevel"] = "master";
+        else
+        {
+            mapping["DamageLevel"] = "master";
+            if (master.DamageLevel.HasValue && discarded.DamageLevel.HasValue &&
+                master.DamageLevel != discarded.DamageLevel)
+            {
+                conflicts["DamageLevel"] = new FieldConflictInfo(
+                    master.DamageLevel.ToString(), discarded.DamageLevel.ToString(), "master");
+            }
+        }
 
+        // FloorNumber
         if (!master.FloorNumber.HasValue && discarded.FloorNumber.HasValue)
         {
             master.UpdateLocation(discarded.FloorNumber, master.PositionOnFloor, master.Id);
             mapping["FloorNumber"] = "discarded";
         }
-        else mapping["FloorNumber"] = "master";
+        else
+        {
+            mapping["FloorNumber"] = "master";
+            if (master.FloorNumber.HasValue && discarded.FloorNumber.HasValue &&
+                master.FloorNumber != discarded.FloorNumber)
+            {
+                conflicts["FloorNumber"] = new FieldConflictInfo(
+                    master.FloorNumber.ToString(), discarded.FloorNumber.ToString(), "master");
+            }
+        }
 
+        // NumberOfRooms
         if (!master.NumberOfRooms.HasValue && discarded.NumberOfRooms.HasValue)
         {
             master.UpdateRoomCount(discarded.NumberOfRooms.Value, master.Id);
             mapping["NumberOfRooms"] = "discarded";
         }
-        else mapping["NumberOfRooms"] = "master";
+        else
+        {
+            mapping["NumberOfRooms"] = "master";
+            if (master.NumberOfRooms.HasValue && discarded.NumberOfRooms.HasValue &&
+                master.NumberOfRooms != discarded.NumberOfRooms)
+            {
+                conflicts["NumberOfRooms"] = new FieldConflictInfo(
+                    master.NumberOfRooms.ToString(), discarded.NumberOfRooms.ToString(), "master");
+            }
+        }
 
+        // AreaSquareMeters
         if (!master.AreaSquareMeters.HasValue && discarded.AreaSquareMeters.HasValue)
         {
             master.UpdateArea(discarded.AreaSquareMeters.Value, master.Id);
             mapping["AreaSquareMeters"] = "discarded";
         }
-        else mapping["AreaSquareMeters"] = "master";
+        else
+        {
+            mapping["AreaSquareMeters"] = "master";
+            if (master.AreaSquareMeters.HasValue && discarded.AreaSquareMeters.HasValue &&
+                master.AreaSquareMeters != discarded.AreaSquareMeters)
+            {
+                conflicts["AreaSquareMeters"] = new FieldConflictInfo(
+                    master.AreaSquareMeters.ToString(), discarded.AreaSquareMeters.ToString(), "master");
+            }
+        }
 
+        // Description
         if (string.IsNullOrWhiteSpace(master.Description) &&
             !string.IsNullOrWhiteSpace(discarded.Description))
         {
             master.UpdateDescription(discarded.Description, master.Id);
             mapping["Description"] = "discarded";
         }
-        else mapping["Description"] = "master";
+        else
+        {
+            mapping["Description"] = "master";
+            RecordConflictIfDifferent(conflicts, "Description",
+                master.Description, discarded.Description, "master");
+        }
     }
 
     // ==================== CROSS-BATCH: PRODUCTION ← STAGING GAP FILL ====================
 
     private static void FillProductionGapsFromStaging(
-        PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping)
+        PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping,
+        Dictionary<string, FieldConflictInfo> conflicts)
     {
         mapping["UnitIdentifier"] = "production";
 
@@ -259,14 +321,33 @@ public class PropertyMergeService : IMergeService
             production.UpdateStatus(staging.Status, production.DamageLevel, production.Id);
             mapping["Status"] = "staging";
         }
-        else mapping["Status"] = "production";
+        else
+        {
+            mapping["Status"] = "production";
+            if (production.Status != Domain.Enums.PropertyUnitStatus.Unknown &&
+                staging.Status != Domain.Enums.PropertyUnitStatus.Unknown &&
+                production.Status != staging.Status)
+            {
+                conflicts["Status"] = new FieldConflictInfo(
+                    production.Status.ToString(), staging.Status.ToString(), "production");
+            }
+        }
 
         if (!production.DamageLevel.HasValue && staging.DamageLevel.HasValue)
         {
             production.UpdateStatus(production.Status, staging.DamageLevel, production.Id);
             mapping["DamageLevel"] = "staging";
         }
-        else mapping["DamageLevel"] = "production";
+        else
+        {
+            mapping["DamageLevel"] = "production";
+            if (production.DamageLevel.HasValue && staging.DamageLevel.HasValue &&
+                production.DamageLevel != staging.DamageLevel)
+            {
+                conflicts["DamageLevel"] = new FieldConflictInfo(
+                    production.DamageLevel.ToString(), staging.DamageLevel.ToString(), "production");
+            }
+        }
 
         if (!production.FloorNumber.HasValue && staging.FloorNumber.HasValue)
         {
@@ -295,17 +376,29 @@ public class PropertyMergeService : IMergeService
             production.UpdateDescription(staging.Description, production.Id);
             mapping["Description"] = "staging";
         }
-        else mapping["Description"] = "production";
+        else
+        {
+            mapping["Description"] = "production";
+            RecordConflictIfDifferent(conflicts, "Description",
+                production.Description, staging.Description, "production");
+        }
     }
 
     // ==================== CROSS-BATCH: STAGING → PRODUCTION OVERWRITE ====================
 
     private static void UpdateProductionFromStaging(
-        PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping)
+        PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping,
+        Dictionary<string, FieldConflictInfo> conflicts)
     {
         // Staging data takes priority
         if (staging.Status != Domain.Enums.PropertyUnitStatus.Unknown)
         {
+            if (production.Status != Domain.Enums.PropertyUnitStatus.Unknown &&
+                production.Status != staging.Status)
+            {
+                conflicts["Status"] = new FieldConflictInfo(
+                    production.Status.ToString(), staging.Status.ToString(), "staging");
+            }
             production.UpdateStatus(staging.Status, staging.DamageLevel ?? production.DamageLevel, production.Id);
             mapping["Status"] = "staging";
         }
@@ -313,6 +406,11 @@ public class PropertyMergeService : IMergeService
 
         if (staging.FloorNumber.HasValue)
         {
+            if (production.FloorNumber.HasValue && production.FloorNumber != staging.FloorNumber)
+            {
+                conflicts["FloorNumber"] = new FieldConflictInfo(
+                    production.FloorNumber.ToString(), staging.FloorNumber.ToString(), "staging");
+            }
             production.UpdateLocation(staging.FloorNumber, staging.PositionOnFloor, production.Id);
             mapping["FloorNumber"] = "staging";
         }
@@ -320,6 +418,11 @@ public class PropertyMergeService : IMergeService
 
         if (staging.NumberOfRooms.HasValue)
         {
+            if (production.NumberOfRooms.HasValue && production.NumberOfRooms != staging.NumberOfRooms)
+            {
+                conflicts["NumberOfRooms"] = new FieldConflictInfo(
+                    production.NumberOfRooms.ToString(), staging.NumberOfRooms.ToString(), "staging");
+            }
             production.UpdateRoomCount(staging.NumberOfRooms.Value, production.Id);
             mapping["NumberOfRooms"] = "staging";
         }
@@ -327,6 +430,11 @@ public class PropertyMergeService : IMergeService
 
         if (staging.AreaSquareMeters.HasValue)
         {
+            if (production.AreaSquareMeters.HasValue && production.AreaSquareMeters != staging.AreaSquareMeters)
+            {
+                conflicts["AreaSquareMeters"] = new FieldConflictInfo(
+                    production.AreaSquareMeters.ToString(), staging.AreaSquareMeters.ToString(), "staging");
+            }
             production.UpdateArea(staging.AreaSquareMeters.Value, production.Id);
             mapping["AreaSquareMeters"] = "staging";
         }
@@ -334,6 +442,8 @@ public class PropertyMergeService : IMergeService
 
         if (!string.IsNullOrWhiteSpace(staging.Description))
         {
+            RecordConflictIfDifferent(conflicts, "Description",
+                production.Description, staging.Description, "staging");
             production.UpdateDescription(staging.Description, production.Id);
             mapping["Description"] = "staging";
         }
@@ -344,10 +454,13 @@ public class PropertyMergeService : IMergeService
 
     // ==================== PRODUCTION FK RE-POINTING ====================
 
-    private async Task<int> RePointProductionReferencesAsync(
+    private async Task<(int Total, Dictionary<string, int> ByType)> RePointProductionReferencesAsync(
         Guid masterUnitId, Guid discardedUnitId, CancellationToken ct)
     {
-        var count = 0;
+        var relCount = 0;
+        var claimCount = 0;
+        var surveyCount = 0;
+        var householdCount = 0;
 
         var relations = (await _relationRepository
             .GetByPropertyUnitIdAsync(discardedUnitId, ct)).ToList();
@@ -359,7 +472,7 @@ public class PropertyMergeService : IMergeService
             {
                 relation.UpdatePropertyUnitId(masterUnitId, masterUnitId);
                 await _relationRepository.UpdateAsync(relation, ct);
-                count++;
+                relCount++;
             }
             else
             {
@@ -373,7 +486,7 @@ public class PropertyMergeService : IMergeService
         {
             claim.UpdatePropertyUnit(masterUnitId, masterUnitId);
             await _claimRepository.UpdateAsync(claim, ct);
-            count++;
+            claimCount++;
         }
 
         var surveys = (await _surveyRepository
@@ -382,7 +495,7 @@ public class PropertyMergeService : IMergeService
         {
             survey.LinkToPropertyUnit(masterUnitId, masterUnitId);
             await _surveyRepository.UpdateAsync(survey, ct);
-            count++;
+            surveyCount++;
         }
 
         var households = (await _householdRepository
@@ -391,9 +504,35 @@ public class PropertyMergeService : IMergeService
         {
             household.UpdatePropertyUnit(masterUnitId, masterUnitId);
             await _householdRepository.UpdateAsync(household, ct);
-            count++;
+            householdCount++;
         }
 
-        return count;
+        var total = relCount + claimCount + surveyCount + householdCount;
+        var byType = new Dictionary<string, int>
+        {
+            ["PersonPropertyRelation"] = relCount,
+            ["Claim"] = claimCount,
+            ["Survey"] = surveyCount,
+            ["Household"] = householdCount
+        };
+
+        return (total, byType);
+    }
+
+    // ==================== FIELD CONFLICT DETECTION ====================
+
+    /// <summary>
+    /// Records a field conflict when both string values are non-null/non-empty and differ.
+    /// </summary>
+    private static void RecordConflictIfDifferent(
+        Dictionary<string, FieldConflictInfo> conflicts,
+        string fieldName, string? masterValue, string? discardedValue, string keptFrom)
+    {
+        if (!string.IsNullOrWhiteSpace(masterValue) &&
+            !string.IsNullOrWhiteSpace(discardedValue) &&
+            !string.Equals(masterValue, discardedValue, StringComparison.OrdinalIgnoreCase))
+        {
+            conflicts[fieldName] = new FieldConflictInfo(masterValue, discardedValue, keptFrom);
+        }
     }
 }

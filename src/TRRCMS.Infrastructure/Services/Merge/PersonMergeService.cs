@@ -76,16 +76,20 @@ public class PersonMergeService : IMergeService
                 discardedEntityId, importPackageId, cancellationToken);
 
             var mergeMapping = new Dictionary<string, string>();
+            var conflicts = new Dictionary<string, FieldConflictInfo>();
             var refsUpdated = 0;
+            var relCount = 0;
+            var claimCount = 0;
 
             // ============================================================
             // Case 1: Both in production (standard merge — rare in import flow)
             // ============================================================
             if (masterProd != null && discardedProd != null)
             {
-                MergePersonFields(masterProd, discardedProd, mergeMapping);
-                refsUpdated = await RePointProductionReferencesAsync(
+                MergePersonFields(masterProd, discardedProd, mergeMapping, conflicts);
+                (relCount, claimCount) = await RePointProductionReferencesAsync(
                     masterProd.Id, discardedProd.Id, cancellationToken);
+                refsUpdated = relCount + claimCount;
                 discardedProd.MarkAsDeleted(masterProd.Id);
                 await _personRepository.UpdateAsync(discardedProd, cancellationToken);
                 await _personRepository.UpdateAsync(masterProd, cancellationToken);
@@ -100,7 +104,7 @@ public class PersonMergeService : IMergeService
             // ============================================================
             else if (masterProd != null && discardedStaging != null)
             {
-                FillProductionGapsFromStaging(masterProd, discardedStaging, mergeMapping);
+                FillProductionGapsFromStaging(masterProd, discardedStaging, mergeMapping, conflicts);
                 await _personRepository.UpdateAsync(masterProd, cancellationToken);
                 await _personRepository.SaveChangesAsync(cancellationToken);
 
@@ -119,7 +123,7 @@ public class PersonMergeService : IMergeService
             // ============================================================
             else if (masterStaging != null && discardedProd != null)
             {
-                UpdateProductionFromStaging(discardedProd, masterStaging, mergeMapping);
+                UpdateProductionFromStaging(discardedProd, masterStaging, mergeMapping, conflicts);
                 await _personRepository.UpdateAsync(discardedProd, cancellationToken);
                 await _personRepository.SaveChangesAsync(cancellationToken);
 
@@ -156,11 +160,12 @@ public class PersonMergeService : IMergeService
 
             result.Success = true;
             result.MergeMappingJson = JsonSerializer.Serialize(mergeMapping);
+            result.ConflictingFields = conflicts;
             result.ReferencesUpdated = refsUpdated;
             result.ReferencesByType = new Dictionary<string, int>
             {
-                ["PersonPropertyRelation"] = refsUpdated,
-                ["Claim"] = 0
+                ["PersonPropertyRelation"] = relCount,
+                ["Claim"] = claimCount
             };
         }
         catch (Exception ex)
@@ -201,8 +206,10 @@ public class PersonMergeService : IMergeService
     // ==================== PRODUCTION ↔ PRODUCTION MERGE ====================
 
     private static void MergePersonFields(
-        Person master, Person discarded, Dictionary<string, string> mapping)
+        Person master, Person discarded, Dictionary<string, string> mapping,
+        Dictionary<string, FieldConflictInfo> conflicts)
     {
+        // NationalId
         if (string.IsNullOrWhiteSpace(master.NationalId) &&
             !string.IsNullOrWhiteSpace(discarded.NationalId))
         {
@@ -210,8 +217,14 @@ public class PersonMergeService : IMergeService
                 master.Gender, master.Nationality, master.Id);
             mapping["NationalId"] = "discarded";
         }
-        else mapping["NationalId"] = "master";
+        else
+        {
+            mapping["NationalId"] = "master";
+            RecordConflictIfDifferent(conflicts, "NationalId",
+                master.NationalId, discarded.NationalId, "master");
+        }
 
+        // MobileNumber
         if (string.IsNullOrWhiteSpace(master.MobileNumber) &&
             !string.IsNullOrWhiteSpace(discarded.MobileNumber))
         {
@@ -219,8 +232,14 @@ public class PersonMergeService : IMergeService
                 master.PhoneNumber, master.Id);
             mapping["MobileNumber"] = "discarded";
         }
-        else mapping["MobileNumber"] = "master";
+        else
+        {
+            mapping["MobileNumber"] = "master";
+            RecordConflictIfDifferent(conflicts, "MobileNumber",
+                master.MobileNumber, discarded.MobileNumber, "master");
+        }
 
+        // PhoneNumber
         if (string.IsNullOrWhiteSpace(master.PhoneNumber) &&
             !string.IsNullOrWhiteSpace(discarded.PhoneNumber))
         {
@@ -228,8 +247,14 @@ public class PersonMergeService : IMergeService
                 discarded.PhoneNumber, master.Id);
             mapping["PhoneNumber"] = "discarded";
         }
-        else mapping["PhoneNumber"] = "master";
+        else
+        {
+            mapping["PhoneNumber"] = "master";
+            RecordConflictIfDifferent(conflicts, "PhoneNumber",
+                master.PhoneNumber, discarded.PhoneNumber, "master");
+        }
 
+        // Email
         if (string.IsNullOrWhiteSpace(master.Email) &&
             !string.IsNullOrWhiteSpace(discarded.Email))
         {
@@ -237,25 +262,46 @@ public class PersonMergeService : IMergeService
                 master.PhoneNumber, master.Id);
             mapping["Email"] = "discarded";
         }
-        else mapping["Email"] = "master";
+        else
+        {
+            mapping["Email"] = "master";
+            RecordConflictIfDifferent(conflicts, "Email",
+                master.Email, discarded.Email, "master");
+        }
 
+        // DateOfBirth
         if (!master.DateOfBirth.HasValue && discarded.DateOfBirth.HasValue)
         {
             master.UpdateIdentification(master.NationalId, discarded.DateOfBirth,
                 master.Gender, master.Nationality, master.Id);
             mapping["DateOfBirth"] = "discarded";
         }
-        else mapping["DateOfBirth"] = "master";
+        else
+        {
+            mapping["DateOfBirth"] = "master";
+            RecordConflictIfDifferent(conflicts, "DateOfBirth",
+                master.DateOfBirth?.ToString("yyyy-MM-dd"),
+                discarded.DateOfBirth?.ToString("yyyy-MM-dd"), "master");
+        }
 
+        // Names — always kept from master
         mapping["FirstNameArabic"] = "master";
         mapping["FatherNameArabic"] = "master";
         mapping["FamilyNameArabic"] = "master";
+
+        RecordConflictIfDifferent(conflicts, "FirstNameArabic",
+            master.FirstNameArabic, discarded.FirstNameArabic, "master");
+        RecordConflictIfDifferent(conflicts, "FatherNameArabic",
+            master.FatherNameArabic, discarded.FatherNameArabic, "master");
+        RecordConflictIfDifferent(conflicts, "FamilyNameArabic",
+            master.FamilyNameArabic, discarded.FamilyNameArabic, "master");
     }
 
     // ==================== CROSS-BATCH: PRODUCTION ← STAGING GAP FILL ====================
 
     private static void FillProductionGapsFromStaging(
-        Person production, StagingPerson staging, Dictionary<string, string> mapping)
+        Person production, StagingPerson staging, Dictionary<string, string> mapping,
+        Dictionary<string, FieldConflictInfo> conflicts)
     {
         if (string.IsNullOrWhiteSpace(production.NationalId) &&
             !string.IsNullOrWhiteSpace(staging.NationalId))
@@ -264,7 +310,12 @@ public class PersonMergeService : IMergeService
                 production.Gender, production.Nationality, production.Id);
             mapping["NationalId"] = "staging";
         }
-        else mapping["NationalId"] = "production";
+        else
+        {
+            mapping["NationalId"] = "production";
+            RecordConflictIfDifferent(conflicts, "NationalId",
+                production.NationalId, staging.NationalId, "production");
+        }
 
         if (string.IsNullOrWhiteSpace(production.MobileNumber) &&
             !string.IsNullOrWhiteSpace(staging.MobileNumber))
@@ -273,7 +324,12 @@ public class PersonMergeService : IMergeService
                 production.PhoneNumber, production.Id);
             mapping["MobileNumber"] = "staging";
         }
-        else mapping["MobileNumber"] = "production";
+        else
+        {
+            mapping["MobileNumber"] = "production";
+            RecordConflictIfDifferent(conflicts, "MobileNumber",
+                production.MobileNumber, staging.MobileNumber, "production");
+        }
 
         if (string.IsNullOrWhiteSpace(production.PhoneNumber) &&
             !string.IsNullOrWhiteSpace(staging.PhoneNumber))
@@ -282,7 +338,12 @@ public class PersonMergeService : IMergeService
                 staging.PhoneNumber, production.Id);
             mapping["PhoneNumber"] = "staging";
         }
-        else mapping["PhoneNumber"] = "production";
+        else
+        {
+            mapping["PhoneNumber"] = "production";
+            RecordConflictIfDifferent(conflicts, "PhoneNumber",
+                production.PhoneNumber, staging.PhoneNumber, "production");
+        }
 
         if (string.IsNullOrWhiteSpace(production.Email) &&
             !string.IsNullOrWhiteSpace(staging.Email))
@@ -291,7 +352,12 @@ public class PersonMergeService : IMergeService
                 production.PhoneNumber, production.Id);
             mapping["Email"] = "staging";
         }
-        else mapping["Email"] = "production";
+        else
+        {
+            mapping["Email"] = "production";
+            RecordConflictIfDifferent(conflicts, "Email",
+                production.Email, staging.Email, "production");
+        }
 
         mapping["Names"] = "production";
     }
@@ -299,8 +365,13 @@ public class PersonMergeService : IMergeService
     // ==================== CROSS-BATCH: STAGING → PRODUCTION OVERWRITE ====================
 
     private static void UpdateProductionFromStaging(
-        Person production, StagingPerson staging, Dictionary<string, string> mapping)
+        Person production, StagingPerson staging, Dictionary<string, string> mapping,
+        Dictionary<string, FieldConflictInfo> conflicts)
     {
+        // Record old values before staging overwrites
+        var oldNames = $"{production.FirstNameArabic} {production.FatherNameArabic} {production.FamilyNameArabic}";
+        var newNames = $"{staging.FirstNameArabic} {staging.FatherNameArabic} {staging.FamilyNameArabic}";
+
         // Staging data takes priority — update production with staging values
         // Names from staging take priority
         production.UpdateBasicInfo(
@@ -325,15 +396,35 @@ public class PersonMergeService : IMergeService
         mapping["_data_source"] = "staging_priority";
         mapping["NationalId"] = !string.IsNullOrWhiteSpace(staging.NationalId) ? "staging" : "production";
         mapping["MobileNumber"] = !string.IsNullOrWhiteSpace(staging.MobileNumber) ? "staging" : "production";
+        mapping["PhoneNumber"] = !string.IsNullOrWhiteSpace(staging.PhoneNumber) ? "staging" : "production";
+        mapping["Email"] = !string.IsNullOrWhiteSpace(staging.Email) ? "staging" : "production";
         mapping["Names"] = "staging";
+
+        // Record conflicts where staging overwrites existing production data
+        RecordConflictIfDifferent(conflicts, "NationalId",
+            production.NationalId, staging.NationalId, "staging");
+        RecordConflictIfDifferent(conflicts, "MobileNumber",
+            production.MobileNumber, staging.MobileNumber, "staging");
+        RecordConflictIfDifferent(conflicts, "PhoneNumber",
+            production.PhoneNumber, staging.PhoneNumber, "staging");
+        RecordConflictIfDifferent(conflicts, "Email",
+            production.Email, staging.Email, "staging");
+
+        if (!string.IsNullOrWhiteSpace(oldNames.Trim()) &&
+            !string.IsNullOrWhiteSpace(newNames.Trim()) &&
+            !string.Equals(oldNames.Trim(), newNames.Trim(), StringComparison.Ordinal))
+        {
+            conflicts["Names"] = new FieldConflictInfo(oldNames.Trim(), newNames.Trim(), "staging");
+        }
     }
 
     // ==================== PRODUCTION FK RE-POINTING ====================
 
-    private async Task<int> RePointProductionReferencesAsync(
+    private async Task<(int RelationCount, int ClaimCount)> RePointProductionReferencesAsync(
         Guid masterPersonId, Guid discardedPersonId, CancellationToken ct)
     {
-        var count = 0;
+        var relCount = 0;
+        var claimCount = 0;
 
         var relations = (await _relationRepository
             .GetByPersonIdAsync(discardedPersonId, ct)).ToList();
@@ -345,7 +436,7 @@ public class PersonMergeService : IMergeService
             {
                 relation.UpdatePersonId(masterPersonId, masterPersonId);
                 await _relationRepository.UpdateAsync(relation, ct);
-                count++;
+                relCount++;
             }
             else
             {
@@ -359,9 +450,26 @@ public class PersonMergeService : IMergeService
         {
             claim.UpdatePrimaryClaimant(masterPersonId, masterPersonId);
             await _claimRepository.UpdateAsync(claim, ct);
-            count++;
+            claimCount++;
         }
 
-        return count;
+        return (relCount, claimCount);
+    }
+
+    // ==================== FIELD CONFLICT DETECTION ====================
+
+    /// <summary>
+    /// Records a field conflict when both values are non-null/non-empty and differ.
+    /// </summary>
+    private static void RecordConflictIfDifferent(
+        Dictionary<string, FieldConflictInfo> conflicts,
+        string fieldName, string? masterValue, string? discardedValue, string keptFrom)
+    {
+        if (!string.IsNullOrWhiteSpace(masterValue) &&
+            !string.IsNullOrWhiteSpace(discardedValue) &&
+            !string.Equals(masterValue, discardedValue, StringComparison.OrdinalIgnoreCase))
+        {
+            conflicts[fieldName] = new FieldConflictInfo(masterValue, discardedValue, keptFrom);
+        }
     }
 }

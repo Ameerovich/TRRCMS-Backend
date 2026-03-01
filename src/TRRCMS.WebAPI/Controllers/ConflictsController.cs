@@ -9,6 +9,8 @@ using TRRCMS.Application.Conflicts.Dtos;
 using TRRCMS.Application.Conflicts.Queries.GetConflictDetails;
 using TRRCMS.Application.Conflicts.Queries.GetConflictQueue;
 using TRRCMS.Application.Conflicts.Queries.GetConflictSummary;
+using TRRCMS.Application.Conflicts.Queries.GetConflictDocumentComparison;
+using TRRCMS.Application.Conflicts.Queries.GetEscalatedConflicts;
 using TRRCMS.Application.Conflicts.Queries.GetPersonDuplicates;
 using TRRCMS.Application.Conflicts.Queries.GetPropertyDuplicates;
 
@@ -95,7 +97,7 @@ public class ConflictsController : ControllerBase
 
     /// <summary>
     /// List the property duplicate review queue with filtering and pagination.
-    /// UC-007 S01–S02: Returns building/unit records flagged as potential duplicates
+    /// UC-007 S01ï¿½S02: Returns building/unit records flagged as potential duplicates
     /// based on building_id or composite key (building_id + unit_code) matches.
     /// </summary>
     /// <response code="200">Paginated property duplicate queue.</response>
@@ -136,7 +138,7 @@ public class ConflictsController : ControllerBase
 
     /// <summary>
     /// List the person duplicate review queue with filtering and pagination.
-    /// UC-008 S01–S02: Returns person records sharing the same national_id value,
+    /// UC-008 S01ï¿½S02: Returns person records sharing the same national_id value,
     /// including within-batch duplicates.
     /// </summary>
     /// <response code="200">Paginated person duplicate queue.</response>
@@ -172,13 +174,50 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
+    // ESCALATED â€” SENIOR REVIEW QUEUE (UC-007 S05a, UC-008 S05a)
+    // ====================================================================
+
+    /// <summary>
+    /// List the senior review queue â€” only escalated conflicts still pending resolution.
+    /// UC-007 S05a / UC-008 S05a: Complex cases escalated to supervisor for investigation.
+    /// Default sort: EscalatedDate descending (most recent escalations first).
+    /// </summary>
+    /// <response code="200">Paginated escalated conflict queue.</response>
+    [HttpGet("escalated")]
+    [ProducesResponseType(typeof(GetConflictQueueResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<GetConflictQueueResponse>> GetEscalatedConflicts(
+        [FromQuery] string? conflictType = null,
+        [FromQuery] string? priority = null,
+        [FromQuery] Guid? importPackageId = null,
+        [FromQuery] bool? isOverdue = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool sortDescending = true)
+    {
+        var query = new GetEscalatedConflictsQuery
+        {
+            ConflictType = conflictType,
+            Priority = priority,
+            ImportPackageId = importPackageId,
+            IsOverdue = isOverdue,
+            Page = page,
+            PageSize = pageSize,
+            SortBy = sortBy,
+            SortDescending = sortDescending
+        };
+
+        return Ok(await _mediator.Send(query));
+    }
+
+    // ====================================================================
     // CONFLICT DETAILS (side-by-side review)
     // ====================================================================
 
     /// <summary>
     /// Get full conflict details for side-by-side review.
-    /// UC-007 S03–S04: Property detail comparison with codes, location, geometry.
-    /// UC-008 S03–S04: Person detail comparison with names, IDs, documents.
+    /// UC-007 S03ï¿½S04: Property detail comparison with codes, location, geometry.
+    /// UC-008 S03ï¿½S04: Person detail comparison with names, IDs, documents.
     /// </summary>
     /// <param name="id">ConflictResolution surrogate ID.</param>
     /// <response code="200">Conflict details returned.</response>
@@ -216,13 +255,39 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
+    // DOCUMENT COMPARISON (UC-008 S04)
+    // ====================================================================
+
+    /// <summary>
+    /// Get side-by-side document/evidence comparison for a conflict pair.
+    /// UC-008 S04: Loads all evidence files and document records for both entities
+    /// to enable the document viewer in the duplicate review screen.
+    /// Also supports UC-007 for property unit document comparison.
+    /// </summary>
+    /// <param name="id">ConflictResolution surrogate ID.</param>
+    /// <response code="200">Document comparison data returned.</response>
+    /// <response code="404">Conflict not found.</response>
+    [HttpGet("{id:guid}/document-comparison")]
+    [ProducesResponseType(typeof(DocumentComparisonDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DocumentComparisonDto>> GetConflictDocumentComparison(Guid id)
+    {
+        var result = await _mediator.Send(new GetConflictDocumentComparisonQuery(id));
+
+        if (result is null)
+            return NotFound($"Conflict with ID '{id}' was not found.");
+
+        return Ok(result);
+    }
+
+    // ====================================================================
     // MERGE (UC-007 S05a/S06, UC-008 S05a/S06)
     // ====================================================================
 
     /// <summary>
     /// Execute merge with selected master record.
-    /// UC-007 S06: Apply Property Merge Rules — consolidate property records.
-    /// UC-008 S06: Apply Person Merge Rules — consolidate person records.
+    /// UC-007 S06: Apply Property Merge Rules ï¿½ consolidate property records.
+    /// UC-008 S06: Apply Person Merge Rules ï¿½ consolidate person records.
     ///
     /// Invokes PersonMergeService or PropertyMergeService based on entity type.
     /// Propagates FK changes across related entities and builds audit trail.
@@ -250,7 +315,7 @@ public class ConflictsController : ControllerBase
     // ====================================================================
 
     /// <summary>
-    /// Mark as reviewed, not duplicate — keep records separate.
+    /// Mark as reviewed, not duplicate ï¿½ keep records separate.
     /// UC-007 S05(b)/S06: Records are distinct properties, not duplicates.
     /// UC-008 S05(b)/S06: Records are different individuals, not duplicates.
     ///
@@ -275,7 +340,7 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // GENERAL RESOLUTION (existing — kept for backward compatibility)
+    // GENERAL RESOLUTION (existing ï¿½ kept for backward compatibility)
     // ====================================================================
 
     /// <summary>
