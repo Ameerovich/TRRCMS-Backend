@@ -261,6 +261,47 @@ public class SurveyRepository : ISurveyRepository
             .OrderBy(s => s.SurveyDate)
             .ToListAsync(cancellationToken);
     }
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    public async Task<Dictionary<SurveyStatus, int>> GetStatusCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Surveys
+            .Where(s => !s.IsDeleted)
+            .GroupBy(s => s.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count, cancellationToken);
+    }
+
+    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Surveys
+            .Where(s => !s.IsDeleted)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<int> GetCompletedCountSinceAsync(
+        DateTime sinceUtc, CancellationToken cancellationToken = default)
+    {
+        return await _context.Surveys
+            .Where(s => !s.IsDeleted
+                && s.Status >= SurveyStatus.Completed
+                && s.SurveyDate >= sinceUtc)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<Dictionary<SurveyType, int>> GetTypeCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Surveys
+            .Where(s => !s.IsDeleted)
+            .GroupBy(s => s.Type)
+            .Select(g => new { Type = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Type, x => x.Count, cancellationToken);
+    }
+
+    // ==================== FIELD SURVEY FILTERED QUERIES ====================
+
     /// <summary>
     /// Get field surveys with filtering and pagination
     /// </summary>

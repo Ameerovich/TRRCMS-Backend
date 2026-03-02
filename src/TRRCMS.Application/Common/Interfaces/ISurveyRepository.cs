@@ -120,6 +120,33 @@ public interface ISurveyRepository
         int pageSize,
         CancellationToken cancellationToken = default);
 
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    /// <summary>
+    /// Get count of surveys grouped by status.
+    /// Used for dashboard summary tiles.
+    /// </summary>
+    Task<Dictionary<SurveyStatus, int>> GetStatusCountsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get total count of all surveys (excluding soft-deleted).
+    /// </summary>
+    Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of surveys completed (status = Completed or later) since a given date.
+    /// Used for "completed last 7/30 days" dashboard counters.
+    /// </summary>
+    Task<int> GetCompletedCountSinceAsync(DateTime sinceUtc, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of surveys grouped by type (Field vs Office).
+    /// Used for dashboard summary tiles.
+    /// </summary>
+    Task<Dictionary<SurveyType, int>> GetTypeCountsAsync(CancellationToken cancellationToken = default);
+
+    // ==================== FIELD SURVEY FILTERED QUERIES ====================
+
     /// <summary>
     /// Get total count of field surveys matching criteria
     /// Used for pagination

@@ -433,4 +433,40 @@ public class BuildingRepository : IBuildingRepository
             .Take(count)
             .ToListAsync(cancellationToken);
     }
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    public async Task<Dictionary<BuildingStatus, int>> GetStatusCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Buildings
+            .Where(b => !b.IsDeleted)
+            .GroupBy(b => b.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count, cancellationToken);
+    }
+
+    public async Task<Dictionary<DamageLevel, int>> GetDamageLevelCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Buildings
+            .Where(b => !b.IsDeleted && b.DamageLevel.HasValue)
+            .GroupBy(b => b.DamageLevel!.Value)
+            .Select(g => new { Level = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Level, x => x.Count, cancellationToken);
+    }
+
+    public async Task<(int TotalBuildings, int TotalPropertyUnits)> GetBuildingAndUnitCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var totalBuildings = await _context.Buildings
+            .Where(b => !b.IsDeleted)
+            .CountAsync(cancellationToken);
+
+        var totalPropertyUnits = await _context.Buildings
+            .Where(b => !b.IsDeleted)
+            .SumAsync(b => b.NumberOfPropertyUnits, cancellationToken);
+
+        return (totalBuildings, totalPropertyUnits);
+    }
 }

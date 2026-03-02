@@ -1,0 +1,142 @@
+using MediatR;
+using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Dashboard.Dtos;
+using TRRCMS.Domain.Enums;
+
+namespace TRRCMS.Application.Dashboard.Queries.GetDashboardSummary;
+
+/// <summary>
+/// Handler for <see cref="GetDashboardSummaryQuery"/>.
+/// Aggregates statistics from Claims, Surveys, ImportPackages, and Buildings
+/// to populate the desktop dashboard.
+///
+/// FR-D-12: Dashboard Statistics.
+/// </summary>
+public sealed class GetDashboardSummaryQueryHandler
+    : IRequestHandler<GetDashboardSummaryQuery, DashboardSummaryDto>
+{
+    private readonly IUnitOfWork _uow;
+
+    public GetDashboardSummaryQueryHandler(IUnitOfWork uow)
+    {
+        _uow = uow ?? throw new ArgumentNullException(nameof(uow));
+    }
+
+    public async Task<DashboardSummaryDto> Handle(
+        GetDashboardSummaryQuery request,
+        CancellationToken cancellationToken)
+    {
+        return new DashboardSummaryDto
+        {
+            Claims = await BuildClaimStatisticsAsync(cancellationToken),
+            Surveys = await BuildSurveyStatisticsAsync(cancellationToken),
+            Imports = await BuildImportStatisticsAsync(cancellationToken),
+            Buildings = await BuildBuildingStatisticsAsync(cancellationToken),
+            GeneratedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    // ── Claims ───────────────────────────────────────────────────────────────
+
+    private async Task<ClaimStatisticsDto> BuildClaimStatisticsAsync(CancellationToken ct)
+    {
+        var statusCounts = await _uow.Claims.GetStatusCountsAsync(ct);
+        var lifecycleCounts = await _uow.Claims.GetLifecycleStageCountsAsync(ct);
+
+        var overdue = await _uow.Claims.GetOverdueClaimsAsync(ct);
+        var withConflicts = await _uow.Claims.GetConflictingClaimsAsync(ct);
+        var awaitingDocs = await _uow.Claims.GetClaimsAwaitingDocumentsAsync(ct);
+        var pendingVerification = await _uow.Claims.GetClaimsPendingVerificationAsync(ct);
+
+        return new ClaimStatisticsDto
+        {
+            TotalClaims = await _uow.Claims.GetTotalCountAsync(ct),
+            ByStatus = statusCounts.ToDictionary(
+                kvp => kvp.Key.ToString(), kvp => kvp.Value),
+            ByLifecycleStage = lifecycleCounts.ToDictionary(
+                kvp => kvp.Key.ToString(), kvp => kvp.Value),
+            OverdueCount = overdue.Count(),
+            WithConflictsCount = withConflicts.Count(),
+            AwaitingDocumentsCount = awaitingDocs.Count(),
+            PendingVerificationCount = pendingVerification.Count()
+        };
+    }
+
+    // ── Surveys ──────────────────────────────────────────────────────────────
+
+    private async Task<SurveyStatisticsDto> BuildSurveyStatisticsAsync(CancellationToken ct)
+    {
+        var statusCounts = await _uow.Surveys.GetStatusCountsAsync(ct);
+        var typeCounts = await _uow.Surveys.GetTypeCountsAsync(ct);
+        var now = DateTime.UtcNow;
+
+        return new SurveyStatisticsDto
+        {
+            TotalSurveys = await _uow.Surveys.GetTotalCountAsync(ct),
+            ByStatus = statusCounts.ToDictionary(
+                kvp => kvp.Key.ToString(), kvp => kvp.Value),
+            FieldSurveyCount = typeCounts.GetValueOrDefault(SurveyType.Field, 0),
+            OfficeSurveyCount = typeCounts.GetValueOrDefault(SurveyType.Office, 0),
+            CompletedLast7Days = await _uow.Surveys.GetCompletedCountSinceAsync(
+                now.AddDays(-7), ct),
+            CompletedLast30Days = await _uow.Surveys.GetCompletedCountSinceAsync(
+                now.AddDays(-30), ct)
+        };
+    }
+
+    // ── Imports ──────────────────────────────────────────────────────────────
+
+    private async Task<ImportStatisticsDto> BuildImportStatisticsAsync(CancellationToken ct)
+    {
+        var statusCounts = await _uow.ImportPackages.GetStatusCountsAsync(ct);
+        var unresolvedConflicts = await _uow.ImportPackages.GetWithUnresolvedConflictsAsync(ct);
+
+        // Active = in-flight pipeline statuses
+        var activeStatuses = new[]
+        {
+            ImportStatus.Pending, ImportStatus.Validating, ImportStatus.Staging,
+            ImportStatus.ReviewingConflicts, ImportStatus.ReadyToCommit, ImportStatus.Committing
+        };
+        var activeCount = activeStatuses
+            .Sum(s => statusCounts.GetValueOrDefault(s, 0));
+
+        // Content totals from completed packages
+        var contentTotals = await _uow.ImportPackages.GetCompletedContentTotalsAsync(ct);
+
+        return new ImportStatisticsDto
+        {
+            TotalPackages = await _uow.ImportPackages.GetTotalCountAsync(ct),
+            ByStatus = statusCounts.ToDictionary(
+                kvp => kvp.Key.ToString(), kvp => kvp.Value),
+            ActiveCount = activeCount,
+            WithUnresolvedConflicts = unresolvedConflicts.Count,
+            TotalSurveysImported = contentTotals.Surveys,
+            TotalBuildingsImported = contentTotals.Buildings,
+            TotalPersonsImported = contentTotals.Persons
+        };
+    }
+
+    // ── Buildings ────────────────────────────────────────────────────────────
+
+    private async Task<BuildingStatisticsDto> BuildBuildingStatisticsAsync(CancellationToken ct)
+    {
+        var (totalBuildings, totalPropertyUnits) =
+            await _uow.Buildings.GetBuildingAndUnitCountsAsync(ct);
+
+        var byStatus = await _uow.Buildings.GetStatusCountsAsync(ct);
+        var byDamageLevel = await _uow.Buildings.GetDamageLevelCountsAsync(ct);
+
+        return new BuildingStatisticsDto
+        {
+            TotalBuildings = totalBuildings,
+            TotalPropertyUnits = totalPropertyUnits,
+            ByStatus = byStatus.ToDictionary(
+                kvp => kvp.Key.ToString(), kvp => kvp.Value),
+            ByDamageLevel = byDamageLevel.ToDictionary(
+                kvp => kvp.Key.ToString(), kvp => kvp.Value),
+            AverageUnitsPerBuilding = totalBuildings > 0
+                ? Math.Round((double)totalPropertyUnits / totalBuildings, 2)
+                : 0
+        };
+    }
+}

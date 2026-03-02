@@ -346,4 +346,24 @@ public class ClaimRepository : IClaimRepository
     {
         return await _context.Claims.CountAsync(cancellationToken);
     }
+
+    // ==================== GROUPED COUNTS (Dashboard) ====================
+
+    public async Task<Dictionary<ClaimStatus, int>> GetStatusCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .GroupBy(c => c.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count, cancellationToken);
+    }
+
+    public async Task<Dictionary<LifecycleStage, int>> GetLifecycleStageCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .GroupBy(c => c.LifecycleStage)
+            .Select(g => new { Stage = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Stage, x => x.Count, cancellationToken);
+    }
 }

@@ -53,7 +53,7 @@ public interface IClaimRepository
     /// <summary>
     /// Get all claims for a property unit (used by PropertyUnit merge to re-point all claims).
     /// Unlike <see cref="GetByPropertyUnitIdAsync"/> which returns a single match,
-    /// this returns all claims — a property unit may have multiple claims.
+    /// this returns all claims ï¿½ a property unit may have multiple claims.
     /// </summary>
     Task<List<Claim>> GetAllByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
 
@@ -200,4 +200,18 @@ public interface IClaimRepository
     /// Get total claims count
     /// </summary>
     Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
+
+    // ==================== GROUPED COUNTS (Dashboard) ====================
+
+    /// <summary>
+    /// Get count of claims grouped by status.
+    /// Used for dashboard summary tiles.
+    /// </summary>
+    Task<Dictionary<ClaimStatus, int>> GetStatusCountsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of claims grouped by lifecycle stage.
+    /// Used for dashboard summary tiles.
+    /// </summary>
+    Task<Dictionary<LifecycleStage, int>> GetLifecycleStageCountsAsync(CancellationToken cancellationToken = default);
 }

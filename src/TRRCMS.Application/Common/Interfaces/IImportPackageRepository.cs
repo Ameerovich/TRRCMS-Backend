@@ -150,6 +150,12 @@ public interface IImportPackageRepository
     /// </summary>
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Get sum of content counts from completed packages (SurveyCount, BuildingCount, PersonCount).
+    /// Used for dashboard summary tiles.
+    /// </summary>
+    Task<(int Surveys, int Buildings, int Persons)> GetCompletedContentTotalsAsync(CancellationToken cancellationToken = default);
+
     // ==================== QUERYABLE ACCESS ====================
 
     /// <summary>

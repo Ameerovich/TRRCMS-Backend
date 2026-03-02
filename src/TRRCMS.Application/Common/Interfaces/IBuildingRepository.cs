@@ -140,4 +140,24 @@ public interface IBuildingRepository
         decimal longitude,
         int count = 10,
         CancellationToken cancellationToken = default);
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    /// <summary>
+    /// Get count of buildings grouped by status.
+    /// Used for dashboard summary tiles.
+    /// </summary>
+    Task<Dictionary<BuildingStatus, int>> GetStatusCountsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of buildings grouped by damage level (excluding null).
+    /// Used for dashboard summary tiles.
+    /// </summary>
+    Task<Dictionary<DamageLevel, int>> GetDamageLevelCountsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get total building count and total property unit count in one call.
+    /// Returns (TotalBuildings, TotalPropertyUnits).
+    /// </summary>
+    Task<(int TotalBuildings, int TotalPropertyUnits)> GetBuildingAndUnitCountsAsync(CancellationToken cancellationToken = default);
 }

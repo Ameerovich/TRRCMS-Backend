@@ -246,6 +246,23 @@ public class ImportPackageRepository : IImportPackageRepository
             .AnyAsync(p => p.Id == id && !p.IsDeleted, cancellationToken);
     }
 
+    public async Task<(int Surveys, int Buildings, int Persons)> GetCompletedContentTotalsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var totals = await _context.ImportPackages
+            .Where(p => !p.IsDeleted && p.Status == ImportStatus.Completed)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Surveys = g.Sum(p => p.SurveyCount),
+                Buildings = g.Sum(p => p.BuildingCount),
+                Persons = g.Sum(p => p.PersonCount)
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return (totals?.Surveys ?? 0, totals?.Buildings ?? 0, totals?.Persons ?? 0);
+    }
+
     // ==================== QUERYABLE ACCESS ====================
 
     public IQueryable<ImportPackage> GetQueryable()
