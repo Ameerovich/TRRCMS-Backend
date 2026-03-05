@@ -167,14 +167,14 @@ public class BuildingDto
     public string? Landmark { get; set; }
 
     /// <summary>
-    /// Location description (وصف الموقع)
-    /// </summary>
-    public string? LocationDescription { get; set; }
-
-    /// <summary>
     /// General notes (الوصف العام)
     /// </summary>
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// Optional building document ID (photo or PDF from field survey)
+    /// </summary>
+    public Guid? BuildingDocumentId { get; set; }
 
     // ==================== AUDIT ====================
 

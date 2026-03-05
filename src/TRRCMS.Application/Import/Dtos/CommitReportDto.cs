@@ -44,6 +44,7 @@ public class CommitReportDto
     // ==================== PER-ENTITY-TYPE BREAKDOWN ====================
 
     public CommitEntityTypeSummary Buildings { get; set; } = new();
+    public CommitEntityTypeSummary BuildingDocuments { get; set; } = new();
     public CommitEntityTypeSummary PropertyUnits { get; set; } = new();
     public CommitEntityTypeSummary Persons { get; set; } = new();
     public CommitEntityTypeSummary Households { get; set; } = new();

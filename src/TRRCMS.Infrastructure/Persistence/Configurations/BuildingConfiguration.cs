@@ -92,11 +92,16 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         builder.Property(b => b.Landmark)
             .HasMaxLength(500);
 
-        builder.Property(b => b.LocationDescription)
-            .HasMaxLength(1000);
-
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);
+
+        // ==================== BUILDING DOCUMENT ====================
+        builder.Property(b => b.BuildingDocumentId);
+
+        builder.HasOne(b => b.BuildingDocument)
+            .WithMany()
+            .HasForeignKey(b => b.BuildingDocumentId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // ==================== SPATIAL DATA (PostGIS) ====================
         // Geometry column using PostGIS native type

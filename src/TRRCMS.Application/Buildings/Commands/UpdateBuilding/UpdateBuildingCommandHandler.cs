@@ -136,30 +136,15 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             }
         }
 
-        // Update location description and notes
-        bool descriptionChanged = false;
-        var newLocationDescription = request.LocationDescription ?? building.LocationDescription;
+        // Update notes
         var newNotes = request.Notes ?? building.Notes;
-
-        if (newLocationDescription != building.LocationDescription)
-        {
-            oldValues["LocationDescription"] = building.LocationDescription;
-            newValues["LocationDescription"] = newLocationDescription;
-            changedFields.Add("LocationDescription");
-            descriptionChanged = true;
-        }
 
         if (newNotes != building.Notes)
         {
             oldValues["Notes"] = building.Notes;
             newValues["Notes"] = newNotes;
             changedFields.Add("Notes");
-            descriptionChanged = true;
-        }
-
-        if (descriptionChanged)
-        {
-            building.UpdateLocationInfo(newLocationDescription, newNotes, currentUserId);
+            building.UpdateDetails(null, null, null, null, newNotes, currentUserId);
         }
 
         // Save changes
@@ -225,8 +210,8 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             // Additional Information
             Address = building.Address,
             Landmark = building.Landmark,
-            LocationDescription = building.LocationDescription,
             Notes = building.Notes,
+            BuildingDocumentId = building.BuildingDocumentId,
 
             // Audit
             CreatedAtUtc = building.CreatedAtUtc,

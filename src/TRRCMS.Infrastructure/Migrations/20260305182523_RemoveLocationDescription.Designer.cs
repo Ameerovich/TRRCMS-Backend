@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260305182523_RemoveLocationDescription")]
+    partial class RemoveLocationDescription
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -210,9 +213,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid?>("BuildingDocumentId")
-                        .HasColumnType("uuid");
-
                     b.Property<Geometry>("BuildingGeometry")
                         .HasColumnType("geometry(Geometry, 4326)");
 
@@ -345,8 +345,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BuildingDocumentId");
 
                     b.HasIndex("BuildingGeometry")
                         .HasDatabaseName("IX_Buildings_BuildingGeometry");
@@ -517,92 +515,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasDatabaseName("IX_BuildingAssignments_TransferStatus_Active");
 
                     b.ToTable("BuildingAssignments", (string)null);
-                });
-
-            modelBuilder.Entity("TRRCMS.Domain.Entities.BuildingDocument", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("DeletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("DeletedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasComment("Optional description of the document");
-
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("integer")
-                        .HasComment("Document type — Photo=0, PDF=1");
-
-                    b.Property<string>("FileHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasComment("SHA-256 hash of the file for deduplication");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasComment("File path in storage system");
-
-                    b.Property<long>("FileSizeBytes")
-                        .HasColumnType("bigint")
-                        .HasComment("File size in bytes");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTime?>("LastModifiedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("LastModifiedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("MimeType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasComment("MIME type (e.g., image/jpeg, application/pdf)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasComment("Additional notes");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasComment("Original filename as uploaded");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FileHash")
-                        .HasDatabaseName("IX_BuildingDocuments_FileHash");
-
-                    b.HasIndex("IsDeleted")
-                        .HasDatabaseName("IX_BuildingDocuments_IsDeleted");
-
-                    b.ToTable("BuildingDocuments", (string)null);
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Certificate", b =>
@@ -3357,10 +3269,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<Guid?>("OriginalBuildingDocumentId")
-                        .HasColumnType("uuid")
-                        .HasComment("Original BuildingDocument UUID from .uhc — resolved via _idMap during commit");
-
                     b.Property<Guid>("OriginalEntityId")
                         .HasColumnType("uuid");
 
@@ -3420,109 +3328,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasDatabaseName("IX_StagingBuildings_ImportPackageId_ValidationStatus");
 
                     b.ToTable("StagingBuildings", (string)null);
-                });
-
-            modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingBuildingDocument", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CommittedEntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("FileHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasComment("SHA-256 hash for deduplication during commit (FR-D-9)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasComment("File path within .uhc container or staging storage");
-
-                    b.Property<long>("FileSizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("ImportPackageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsApprovedForCommit")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("MimeType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("OriginalBuildingId")
-                        .HasColumnType("uuid")
-                        .HasComment("Original Building UUID from .uhc — not a FK to production Buildings");
-
-                    b.Property<Guid>("OriginalEntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
-
-                    b.Property<DateTime>("StagedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ValidationErrors")
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)")
-                        .HasComment("JSON array of blocking validation error messages");
-
-                    b.Property<int>("ValidationStatus")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<string>("ValidationWarnings")
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)")
-                        .HasComment("JSON array of non-blocking validation warning messages");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FileHash")
-                        .HasDatabaseName("IX_StagingBuildingDocuments_FileHash");
-
-                    b.HasIndex("ImportPackageId")
-                        .HasDatabaseName("IX_StagingBuildingDocuments_ImportPackageId");
-
-                    b.HasIndex("ImportPackageId", "OriginalBuildingId")
-                        .HasDatabaseName("IX_StagingBuildingDocuments_ImportPackageId_OriginalBuildingId");
-
-                    b.HasIndex("ImportPackageId", "OriginalEntityId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_StagingBuildingDocuments_ImportPackageId_OriginalEntityId");
-
-                    b.HasIndex("ImportPackageId", "ValidationStatus")
-                        .HasDatabaseName("IX_StagingBuildingDocuments_ImportPackageId_ValidationStatus");
-
-                    b.ToTable("StagingBuildingDocuments", (string)null);
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingClaim", b =>
@@ -5315,16 +5120,6 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Navigation("ParentAuditLog");
                 });
 
-            modelBuilder.Entity("TRRCMS.Domain.Entities.Building", b =>
-                {
-                    b.HasOne("TRRCMS.Domain.Entities.BuildingDocument", "BuildingDocument")
-                        .WithMany()
-                        .HasForeignKey("BuildingDocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("BuildingDocument");
-                });
-
             modelBuilder.Entity("TRRCMS.Domain.Entities.BuildingAssignment", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.Building", "Building")
@@ -5772,15 +5567,6 @@ namespace TRRCMS.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingBuilding", b =>
-                {
-                    b.HasOne("TRRCMS.Domain.Entities.ImportPackage", null)
-                        .WithMany()
-                        .HasForeignKey("ImportPackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingBuildingDocument", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.ImportPackage", null)
                         .WithMany()

@@ -157,11 +157,13 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
         builder.Property(b => b.Landmark)
             .HasMaxLength(500);
 
-        builder.Property(b => b.LocationDescription)
-            .HasMaxLength(1000);
-
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);
+
+        // ==================== BUILDING DOCUMENT ====================
+
+        builder.Property(b => b.OriginalBuildingDocumentId)
+            .HasComment("Original BuildingDocument UUID from .uhc — resolved via _idMap during commit");
 
         // ==================== CONCURRENCY ====================
 

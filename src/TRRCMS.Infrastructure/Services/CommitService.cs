@@ -13,14 +13,15 @@ namespace TRRCMS.Infrastructure.Services;
 /// Implements <see cref="ICommitService"/> — commits approved staging data to production.
 ///
 /// Commit order matters due to FK dependencies:
-///   1. Buildings       (no FK dependencies)
-///   2. PropertyUnits   (FK → Buildings)
-///   3. Persons         (no FK dependencies)
-///   4. Households      (FK → PropertyUnits, optional FK → Persons)
-///   5. PersonPropertyRelations (FK → Persons, FK → PropertyUnits)
-///   6. Surveys         (FK → Buildings, FK → PropertyUnits)
-///   7. Claims          (FK → PropertyUnits, optional FK → Persons)
-///   8. Evidence        (FK → Persons, FK → PersonPropertyRelations, FK → Claims)
+///   1. BuildingDocuments (no FK dependencies)
+///   2. Buildings       (optional FK → BuildingDocuments)
+///   3. PropertyUnits   (FK → Buildings)
+///   4. Persons         (no FK dependencies)
+///   5. Households      (FK → PropertyUnits, optional FK → Persons)
+///   6. PersonPropertyRelations (FK → Persons, FK → PropertyUnits)
+///   7. Surveys         (FK → Buildings, FK → PropertyUnits)
+///   8. Claims          (FK → PropertyUnits, optional FK → Persons)
+///   9. Evidence        (FK → Persons, FK → PersonPropertyRelations, FK → Claims)
 ///
 /// Each step uses a mapping dictionary (OriginalEntityId → ProductionId) to resolve
 /// cross-references from the .uhc package to production FKs.
@@ -38,6 +39,7 @@ public class CommitService : ICommitService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IStagingRepository<StagingBuilding> _stagingBuildingRepo;
+    private readonly IStagingRepository<StagingBuildingDocument> _stagingBuildingDocRepo;
     private readonly IStagingRepository<StagingPropertyUnit> _stagingPropertyUnitRepo;
     private readonly IStagingRepository<StagingPerson> _stagingPersonRepo;
     private readonly IStagingRepository<StagingHousehold> _stagingHouseholdRepo;
@@ -60,6 +62,7 @@ public class CommitService : ICommitService
     public CommitService(
         IUnitOfWork unitOfWork,
         IStagingRepository<StagingBuilding> stagingBuildingRepo,
+        IStagingRepository<StagingBuildingDocument> stagingBuildingDocRepo,
         IStagingRepository<StagingPropertyUnit> stagingPropertyUnitRepo,
         IStagingRepository<StagingPerson> stagingPersonRepo,
         IStagingRepository<StagingHousehold> stagingHouseholdRepo,
@@ -78,6 +81,7 @@ public class CommitService : ICommitService
     {
         _unitOfWork = unitOfWork;
         _stagingBuildingRepo = stagingBuildingRepo;
+        _stagingBuildingDocRepo = stagingBuildingDocRepo;
         _stagingPropertyUnitRepo = stagingPropertyUnitRepo;
         _stagingPersonRepo = stagingPersonRepo;
         _stagingHouseholdRepo = stagingHouseholdRepo;
@@ -128,6 +132,7 @@ public class CommitService : ICommitService
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // Commit in FK-dependency order
+            await CommitBuildingDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitBuildingsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitPropertyUnitsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await PopulateMergeRedirectsAsync("PropertyUnit", importPackageId, cancellationToken);
@@ -142,19 +147,22 @@ public class CommitService : ICommitService
 
         // Update aggregate counts
         report.TotalRecordsCommitted =
-            report.Buildings.Committed + report.PropertyUnits.Committed +
+            report.BuildingDocuments.Committed + report.Buildings.Committed +
+            report.PropertyUnits.Committed +
             report.Persons.Committed + report.Households.Committed +
             report.PersonPropertyRelations.Committed + report.Evidences.Committed +
             report.Claims.Committed + report.Surveys.Committed;
 
         report.TotalRecordsFailed =
-            report.Buildings.Failed + report.PropertyUnits.Failed +
+            report.BuildingDocuments.Failed + report.Buildings.Failed +
+            report.PropertyUnits.Failed +
             report.Persons.Failed + report.Households.Failed +
             report.PersonPropertyRelations.Failed + report.Evidences.Failed +
             report.Claims.Failed + report.Surveys.Failed;
 
         report.TotalRecordsApproved =
-            report.Buildings.Approved + report.PropertyUnits.Approved +
+            report.BuildingDocuments.Approved + report.Buildings.Approved +
+            report.PropertyUnits.Approved +
             report.Persons.Approved + report.Households.Approved +
             report.PersonPropertyRelations.Approved + report.Evidences.Approved +
             report.Claims.Approved + report.Surveys.Approved;
@@ -234,6 +242,10 @@ public class CommitService : ICommitService
     private async Task PrePopulateIdMapFromCommittedAsync(
         Guid importPackageId, CancellationToken ct)
     {
+        var committedBuildingDocs = await _stagingBuildingDocRepo.GetCommittedAsync(importPackageId, ct);
+        foreach (var d in committedBuildingDocs)
+            _idMap.TryAdd(d.OriginalEntityId, d.CommittedEntityId!.Value);
+
         var committedBuildings = await _stagingBuildingRepo.GetCommittedAsync(importPackageId, ct);
         foreach (var b in committedBuildings)
             _idMap.TryAdd(b.OriginalEntityId, b.CommittedEntityId!.Value);
@@ -307,6 +319,82 @@ public class CommitService : ICommitService
     }
 
     /// <summary>
+    /// Commit building documents (photos/PDFs) to production.
+    /// No FK dependencies — committed before buildings so Building.BuildingDocumentId can be resolved.
+    /// Supports attachment deduplication by SHA-256 hash (FR-D-9).
+    /// </summary>
+    private async Task CommitBuildingDocumentsAsync(
+        Guid importPackageId, Guid userId, CommitReportDto report, CancellationToken ct)
+    {
+        var approved = await _stagingBuildingDocRepo.GetApprovedForCommitAsync(importPackageId, ct);
+        report.BuildingDocuments.EntityType = "BuildingDocument";
+        report.BuildingDocuments.Approved = approved.Count;
+
+        if (approved.Count == 0) return;
+
+        for (var i = 0; i < approved.Count; i++)
+        {
+            var staging = approved[i];
+            try
+            {
+                // FR-D-9: Attachment deduplication by SHA-256 hash
+                var filePath = staging.FilePath;
+                if (!string.IsNullOrEmpty(staging.FileHash))
+                {
+                    var existingDoc = await _unitOfWork.BuildingDocuments
+                        .GetByFileHashAsync(staging.FileHash, ct);
+
+                    if (existingDoc != null)
+                    {
+                        filePath = existingDoc.FilePath;
+                        report.DuplicateAttachmentsFound++;
+                        report.DeduplicationBytesSaved += staging.FileSizeBytes;
+
+                        _logger.LogInformation(
+                            "Deduplicated building document file {Hash} — reusing {ExistingPath}",
+                            staging.FileHash, filePath);
+                    }
+                }
+
+                var document = BuildingDocument.Create(
+                    documentType: staging.DocumentType,
+                    description: staging.Description,
+                    originalFileName: staging.OriginalFileName,
+                    filePath: filePath,
+                    fileSizeBytes: staging.FileSizeBytes,
+                    mimeType: staging.MimeType,
+                    fileHash: staging.FileHash,
+                    createdByUserId: userId);
+
+                await _unitOfWork.BuildingDocuments.AddAsync(document, ct);
+
+                _idMap[staging.OriginalEntityId] = document.Id;
+                staging.SetCommittedEntityId(document.Id);
+                await _stagingBuildingDocRepo.UpdateAsync(staging, ct);
+
+                report.BuildingDocuments.Committed++;
+                report.BuildingDocuments.IdMappings[staging.OriginalEntityId] = document.Id;
+
+                _logger.LogDebug(
+                    "Committed BuildingDocument {OriginalId} → {ProductionId}",
+                    staging.OriginalEntityId, document.Id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to commit BuildingDocument {OriginalId}", staging.OriginalEntityId);
+                report.BuildingDocuments.Failed++;
+                report.Errors.Add(new CommitErrorDto
+                {
+                    EntityType = "BuildingDocument",
+                    StagingEntityId = staging.Id,
+                    OriginalEntityId = staging.OriginalEntityId,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+    }
+
+    /// <summary>
     /// Commit buildings to production.
     /// Building Record ID (BuildingId) is a 17-digit geographic hierarchy code
     /// composed automatically by Building.Create() from the administrative codes
@@ -340,7 +428,31 @@ public class CommitService : ICommitService
 
                 if (existingBuilding != null)
                 {
-                    // Reuse the existing production building — just map the ID
+                    // Update existing building with field survey data
+                    // (preserves BuildingId, admin codes, geometry, and coordinates)
+                    existingBuilding.UpdateFromFieldSurvey(
+                        buildingType: staging.BuildingType,
+                        status: staging.Status,
+                        damageLevel: staging.DamageLevel,
+                        numberOfPropertyUnits: staging.NumberOfPropertyUnits,
+                        numberOfApartments: staging.NumberOfApartments,
+                        numberOfShops: staging.NumberOfShops,
+                        numberOfFloors: staging.NumberOfFloors,
+                        yearOfConstruction: staging.YearOfConstruction,
+                        address: staging.Address,
+                        landmark: staging.Landmark,
+                        notes: staging.Notes,
+                        modifiedByUserId: userId);
+
+                    // Resolve optional BuildingDocument FK from committed documents
+                    if (staging.OriginalBuildingDocumentId.HasValue &&
+                        _idMap.TryGetValue(staging.OriginalBuildingDocumentId.Value, out var prodDocId))
+                    {
+                        existingBuilding.SetBuildingDocument(prodDocId, userId);
+                    }
+
+                    await _unitOfWork.Buildings.UpdateAsync(existingBuilding, ct);
+
                     _idMap[staging.OriginalEntityId] = existingBuilding.Id;
                     staging.SetCommittedEntityId(existingBuilding.Id);
                     await _stagingBuildingRepo.UpdateAsync(staging, ct);
@@ -349,7 +461,7 @@ public class CommitService : ICommitService
                     report.Buildings.IdMappings[staging.OriginalEntityId] = existingBuilding.Id;
 
                     _logger.LogInformation(
-                        "Building {OriginalId} reused existing production building {ProductionId} (BuildingId: {BuildingId})",
+                        "Building {OriginalId} updated existing production building {ProductionId} (BuildingId: {BuildingId})",
                         staging.OriginalEntityId, existingBuilding.Id, buildingIdCode);
                     continue;
                 }
@@ -382,7 +494,6 @@ public class CommitService : ICommitService
                     staging.YearOfConstruction,
                     staging.Address,
                     staging.Landmark,
-                    staging.LocationDescription,
                     staging.Notes,
                     userId);
 
@@ -401,6 +512,13 @@ public class CommitService : ICommitService
 
                 if (staging.DamageLevel.HasValue)
                     building.UpdateStatus(staging.Status, staging.DamageLevel, userId);
+
+                // Resolve optional BuildingDocument FK from committed documents
+                if (staging.OriginalBuildingDocumentId.HasValue &&
+                    _idMap.TryGetValue(staging.OriginalBuildingDocumentId.Value, out var newProdDocId))
+                {
+                    building.SetBuildingDocument(newProdDocId, userId);
+                }
 
                 await _unitOfWork.Buildings.AddAsync(building, ct);
 

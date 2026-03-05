@@ -8,7 +8,7 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// FSD: FR-D-4 (Staging & Validation).
 ///
 /// The .uhc file is a renamed SQLite database containing data tables:
-///   surveys, buildings, property_units, persons, households,
+///   surveys, buildings, building_documents, property_units, persons, households,
 ///   person_property_relations, evidences, claims
 ///
 /// Each table maps to a corresponding Staging* entity via factory methods.
@@ -56,6 +56,7 @@ public class StagingResult
     public Guid ImportPackageId { get; set; }
     public int SurveyCount { get; set; }
     public int BuildingCount { get; set; }
+    public int BuildingDocumentCount { get; set; }
     public int PropertyUnitCount { get; set; }
     public int PersonCount { get; set; }
     public int HouseholdCount { get; set; }
@@ -67,6 +68,6 @@ public class StagingResult
 
     /// <summary>Total records across all entity types.</summary>
     public int TotalRecordCount =>
-        SurveyCount + BuildingCount + PropertyUnitCount + PersonCount +
+        SurveyCount + BuildingCount + BuildingDocumentCount + PropertyUnitCount + PersonCount +
         HouseholdCount + PersonPropertyRelationCount + EvidenceCount + ClaimCount;
 }

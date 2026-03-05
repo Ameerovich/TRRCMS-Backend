@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Buildings.Commands.CreateBuilding;
 using TRRCMS.Application.Buildings.Commands.DeleteBuilding;
+using TRRCMS.Application.Buildings.Commands.RegisterBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuildingGeometry;
 using TRRCMS.Application.Buildings.Dtos;
@@ -183,6 +184,42 @@ public class BuildingsController : ControllerBase
         }
     }
 
+    // ==================== REGISTER (QGIS) ====================
+
+    /// <summary>
+    /// Register a new building from QGIS plugin (minimal data)
+    /// </summary>
+    /// <remarks>
+    /// Creates a building shell with administrative codes + polygon geometry only.
+    /// Used by QGIS plugin. Full building details are provided later via field survey import (.uhc).
+    ///
+    /// **Defaults:** BuildingType=Residential, Status=Unknown, all unit counts=0.
+    /// Centroid latitude/longitude are auto-computed from the polygon geometry.
+    ///
+    /// تسجيل مبنى جديد من QGIS (بيانات أساسية فقط)
+    ///
+    /// **Required Permission**: Buildings_Create (4001) - CanCreateBuildings policy
+    /// </remarks>
+    /// <param name="command">Building registration data (admin codes + WKT polygon)</param>
+    /// <returns>Created building details</returns>
+    /// <response code="201">Building registered successfully</response>
+    /// <response code="400">Invalid data (validation errors)</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission</response>
+    /// <response code="409">Building with this code already exists</response>
+    [HttpPost("register")]
+    [Authorize(Policy = "CanCreateBuildings")]
+    [ProducesResponseType(typeof(BuildingDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<BuildingDto>> RegisterBuilding([FromBody] RegisterBuildingCommand command)
+    {
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetBuilding), new { id = result.Id }, result);
+    }
+
     // ==================== GET BY ID ====================
 
     /// <summary>
@@ -221,7 +258,6 @@ public class BuildingsController : ControllerBase
     ///   "latitude": 36.2021,
     ///   "longitude": 37.1343,
     ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
-    ///   "locationDescription": "بجانب المسجد الكبير",
     ///   "createdAtUtc": "2026-01-31T10:00:00Z"
     /// }
     /// ```

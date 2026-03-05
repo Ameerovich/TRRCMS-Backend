@@ -115,11 +115,11 @@ public sealed record SyncBuildingDto
     /// <summary>Nearby landmark to help locate the building in the field.</summary>
     public string? Landmark { get; init; }
 
-    /// <summary>Free-text description of the building location (وصف الموقع).</summary>
-    public string? LocationDescription { get; init; }
-
     /// <summary>Additional notes about the building.</summary>
     public string? Notes { get; init; }
+
+    /// <summary>Optional building document ID (photo or PDF from field survey).</summary>
+    public Guid? BuildingDocumentId { get; init; }
 
     // ==================== PROPERTY UNITS ====================
 

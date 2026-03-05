@@ -20,6 +20,7 @@ namespace TRRCMS.Infrastructure.Services;
 public class StagingService : IStagingService
 {
     private readonly IStagingRepository<StagingBuilding> _buildingRepo;
+    private readonly IStagingRepository<StagingBuildingDocument> _buildingDocRepo;
     private readonly IStagingRepository<StagingPropertyUnit> _unitRepo;
     private readonly IStagingRepository<StagingPerson> _personRepo;
     private readonly IStagingRepository<StagingHousehold> _householdRepo;
@@ -33,6 +34,7 @@ public class StagingService : IStagingService
 
     public StagingService(
         IStagingRepository<StagingBuilding> buildingRepo,
+        IStagingRepository<StagingBuildingDocument> buildingDocRepo,
         IStagingRepository<StagingPropertyUnit> unitRepo,
         IStagingRepository<StagingPerson> personRepo,
         IStagingRepository<StagingHousehold> householdRepo,
@@ -45,6 +47,7 @@ public class StagingService : IStagingService
         ILogger<StagingService> logger)
     {
         _buildingRepo = buildingRepo;
+        _buildingDocRepo = buildingDocRepo;
         _unitRepo = unitRepo;
         _personRepo = personRepo;
         _householdRepo = householdRepo;
@@ -77,8 +80,9 @@ public class StagingService : IStagingService
         await connection.OpenAsync(cancellationToken);
 
         // Stage each entity type in dependency order
-        // (buildings first, then units, then persons, etc.)
+        // (buildings first, then building documents, then units, then persons, etc.)
         result.BuildingCount = await StageBuildingsAsync(connection, importPackageId, cancellationToken);
+        result.BuildingDocumentCount = await StageBuildingDocumentsAsync(connection, importPackageId, cancellationToken);
         result.PropertyUnitCount = await StagePropertyUnitsAsync(connection, importPackageId, cancellationToken);
         result.PersonCount = await StagePersonsAsync(connection, importPackageId, cancellationToken);
         result.HouseholdCount = await StageHouseholdsAsync(connection, importPackageId, cancellationToken);
@@ -112,6 +116,7 @@ public class StagingService : IStagingService
         await _householdRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
         await _personRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
         await _unitRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
+        await _buildingDocRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
         await _buildingRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
 
         _logger.LogInformation("Staging cleanup complete for package {PackageId}", importPackageId);
@@ -148,7 +153,6 @@ public class StagingService : IStagingService
                 latitude: GetNullableDecimal(reader, "latitude"),
                 longitude: GetNullableDecimal(reader, "longitude"),
                 buildingGeometryWkt: GetNullableString(reader, "building_geometry_wkt"),
-                locationDescription: GetNullableString(reader, "location_description"),
                 notes: GetNullableString(reader, "notes"),
                 buildingId: GetNullableString(reader, "building_id"),
                 governorateName: GetNullableString(reader, "governorate_name"),
@@ -158,7 +162,8 @@ public class StagingService : IStagingService
                 neighborhoodName: GetNullableString(reader, "neighborhood_name"),
                 damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level", "damage_level"),
                 numberOfFloors: GetNullableInt(reader, "number_of_floors"),
-                yearOfConstruction: GetNullableInt(reader, "year_of_construction"));
+                yearOfConstruction: GetNullableInt(reader, "year_of_construction"),
+                originalBuildingDocumentId: GetNullableGuid(reader, "building_document_id"));
 
             entities.Add(entity);
         }
@@ -170,6 +175,63 @@ public class StagingService : IStagingService
         }
 
         _logger.LogDebug("Staged {Count} buildings", entities.Count);
+        return entities.Count;
+    }
+
+    private async Task<int> StageBuildingDocumentsAsync(
+        SqliteConnection connection, Guid packageId, CancellationToken ct)
+    {
+        if (!await TableExistsAsync(connection, "building_documents", ct)) return 0;
+
+        var entities = new List<StagingBuildingDocument>();
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT * FROM building_documents";
+        using var reader = await cmd.ExecuteReaderAsync(ct);
+
+        while (await reader.ReadAsync(ct))
+        {
+            var originalId = GetGuid(reader, "id");
+            var originalFileName = GetString(reader, "original_file_name");
+            var fileSizeBytes = GetLong(reader, "file_size_bytes", 0);
+
+            // Try to extract the attachment blob if available
+            string filePath = GetString(reader, "file_path", "");
+            var fileHash = GetNullableString(reader, "file_hash");
+
+            // Check if attachment blob is embedded in the SQLite (keyed by building_document_id)
+            if (await HasBuildingDocumentBlobAsync(connection, originalId, ct))
+            {
+                var savedPath = await ExtractBuildingDocumentAsync(
+                    connection, originalId, originalFileName, packageId, ct);
+                if (savedPath != null)
+                {
+                    filePath = savedPath;
+                }
+            }
+
+            var entity = StagingBuildingDocument.Create(
+                importPackageId: packageId,
+                originalEntityId: originalId,
+                originalBuildingId: GetGuid(reader, "building_id"),
+                documentType: GetEnum<BuildingDocumentType>(reader, "document_type", "building_document_type"),
+                originalFileName: originalFileName,
+                filePath: filePath,
+                fileSizeBytes: fileSizeBytes,
+                mimeType: _fileStorageService.GetMimeType(originalFileName),
+                description: GetNullableString(reader, "description"),
+                fileHash: fileHash,
+                notes: GetNullableString(reader, "notes"));
+
+            entities.Add(entity);
+        }
+
+        if (entities.Count > 0)
+        {
+            await _buildingDocRepo.AddRangeAsync(entities, ct);
+            await _buildingDocRepo.SaveChangesAsync(ct);
+        }
+
+        _logger.LogDebug("Staged {Count} building documents", entities.Count);
         return entities.Count;
     }
 
@@ -533,6 +595,51 @@ public class StagingService : IStagingService
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to extract attachment for evidence {EvidenceId}", evidenceId);
+            return null;
+        }
+    }
+
+    // ==================== BUILDING DOCUMENT BLOB EXTRACTION ====================
+
+    private static async Task<bool> HasBuildingDocumentBlobAsync(
+        SqliteConnection connection, Guid buildingDocumentId, CancellationToken ct)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText =
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='attachments'";
+        var tableExists = Convert.ToInt32(await cmd.ExecuteScalarAsync(ct));
+        if (tableExists == 0) return false;
+
+        using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = "SELECT COUNT(*) FROM attachments WHERE building_document_id = @id";
+        checkCmd.Parameters.AddWithValue("@id", buildingDocumentId.ToString());
+        var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync(ct));
+        return count > 0;
+    }
+
+    private async Task<string?> ExtractBuildingDocumentAsync(
+        SqliteConnection connection, Guid buildingDocumentId, string fileName,
+        Guid packageId, CancellationToken ct)
+    {
+        try
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT data FROM attachments WHERE building_document_id = @id LIMIT 1";
+            cmd.Parameters.AddWithValue("@id", buildingDocumentId.ToString());
+
+            var blob = await cmd.ExecuteScalarAsync(ct) as byte[];
+            if (blob == null || blob.Length == 0) return null;
+
+            using var stream = new MemoryStream(blob);
+            var savedPath = await _fileStorageService.SaveFileAsync(
+                stream, fileName, "building-documents", packageId, ct);
+
+            return savedPath;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to extract attachment for building document {BuildingDocumentId}",
+                buildingDocumentId);
             return null;
         }
     }

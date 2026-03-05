@@ -79,11 +79,6 @@ public class UpdateBuildingCommandValidator : AbstractValidator<UpdateBuildingCo
             .WithMessage("Both latitude and longitude must be provided together");
 
         // Description validations
-        RuleFor(x => x.LocationDescription)
-            .MaximumLength(1000)
-            .When(x => !string.IsNullOrWhiteSpace(x.LocationDescription))
-            .WithMessage("Location description cannot exceed 1000 characters");
-
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))

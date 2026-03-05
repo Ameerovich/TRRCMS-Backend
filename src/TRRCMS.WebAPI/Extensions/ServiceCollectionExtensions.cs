@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
 
         // ── Core repositories ────────────────────────────────────────
         services.AddScoped<IBuildingRepository, BuildingRepository>();
+        services.AddScoped<IBuildingDocumentRepository, BuildingDocumentRepository>();
         services.AddScoped<IPropertyUnitRepository, PropertyUnitRepository>();
         services.AddScoped<IPersonRepository, PersonRepository>();
         services.AddScoped<IHouseholdRepository, HouseholdRepository>();

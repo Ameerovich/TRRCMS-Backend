@@ -117,11 +117,6 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     // ==================== DESCRIPTIONS ====================
 
     /// <summary>
-    /// Location description (وصف الموقع)
-    /// </summary>
-    public string? LocationDescription { get; set; }
-
-    /// <summary>
     /// General notes (الوصف العام)
     /// </summary>
     public string? Notes { get; set; }

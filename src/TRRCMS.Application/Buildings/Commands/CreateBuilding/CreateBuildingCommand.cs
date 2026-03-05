@@ -103,12 +103,6 @@ public record CreateBuildingCommand : IRequest<BuildingDto>
     // ==================== DESCRIPTIONS ====================
 
     /// <summary>
-    /// Location description (وصف الموقع) - optional
-    /// </summary>
-    /// <example>بجانب المسجد الكبير</example>
-    public string? LocationDescription { get; init; }
-
-    /// <summary>
     /// General notes (الوصف العام) - optional
     /// </summary>
     /// <example>بناء سكني مؤلف من 5 طوابق</example>

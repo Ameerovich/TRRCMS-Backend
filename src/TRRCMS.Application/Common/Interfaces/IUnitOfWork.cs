@@ -26,6 +26,11 @@ public interface IUnitOfWork : IDisposable
     IBuildingRepository Buildings { get; }
 
     /// <summary>
+    /// Building document repository - photos/PDFs describing buildings (from field survey)
+    /// </summary>
+    IBuildingDocumentRepository BuildingDocuments { get; }
+
+    /// <summary>
     /// Property unit repository - apartments, shops, offices within buildings
     /// </summary>
     IPropertyUnitRepository PropertyUnits { get; }
@@ -107,7 +112,7 @@ public interface IUnitOfWork : IDisposable
     IConflictResolutionRepository ConflictResolutions { get; }
 
     /// <summary>
-    /// Security policy repository — versioned security configurations
+    /// Security policy repository ï¿½ versioned security configurations
     /// UC-011: Security Settings
     /// </summary>
     ISecurityPolicyRepository SecurityPolicies { get; }

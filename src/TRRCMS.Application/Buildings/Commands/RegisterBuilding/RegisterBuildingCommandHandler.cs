@@ -1,22 +1,25 @@
-﻿using MediatR;
+using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
-namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
+namespace TRRCMS.Application.Buildings.Commands.RegisterBuilding;
 
 /// <summary>
-/// Handler for CreateBuildingCommand
-/// Creates a new building and returns full BuildingDto
+/// Handler for RegisterBuildingCommand (QGIS plugin).
+/// Creates a building with minimal data: admin codes + polygon geometry.
+/// Defaults: BuildingType=Residential, Status=Unknown, all counts=0.
+/// Full details are provided later via field survey import (.uhc).
 /// </summary>
-public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingCommand, BuildingDto>
+public class RegisterBuildingCommandHandler : IRequestHandler<RegisterBuildingCommand, BuildingDto>
 {
     private readonly IBuildingRepository _buildingRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IGeometryConverter _geometryConverter;
 
-    public CreateBuildingCommandHandler(
+    public RegisterBuildingCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
         IGeometryConverter geometryConverter)
@@ -26,25 +29,21 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
         _geometryConverter = geometryConverter;
     }
 
-    public async Task<BuildingDto> Handle(CreateBuildingCommand request, CancellationToken cancellationToken)
+    public async Task<BuildingDto> Handle(RegisterBuildingCommand request, CancellationToken cancellationToken)
     {
-        // Get current user ID
         var userId = _currentUserService.UserId
-            ?? throw new UnauthorizedAccessException("User is not authenticated");
+            ?? throw new UnauthorizedAccessException("User is not authenticated.");
 
-        // Generate Building ID for duplicate check (stored without dashes)
+        // Compose the 17-digit BuildingId
         var buildingIdCode = $"{request.GovernorateCode}{request.DistrictCode}{request.SubDistrictCode}" +
                              $"{request.CommunityCode}{request.NeighborhoodCode}{request.BuildingNumber}";
 
-        // Check if building ID already exists
-        var existingBuilding = await _buildingRepository.GetByBuildingIdAsync(buildingIdCode, cancellationToken);
-        if (existingBuilding != null)
-        {
-            throw new ConflictException($"Building with code {buildingIdCode} already exists.");
-        }
+        // Check for existing building with same code
+        var existing = await _buildingRepository.GetByBuildingIdAsync(buildingIdCode, cancellationToken);
+        if (existing != null)
+            throw new ConflictException($"Building with code '{buildingIdCode}' already exists.");
 
-        // Create building entity
-        // Note: Location names will be empty for now - can be populated from lookup tables later
+        // Create building with minimal QGIS data + defaults
         var building = Building.Create(
             governorateCode: request.GovernorateCode,
             districtCode: request.DistrictCode,
@@ -52,40 +51,20 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             communityCode: request.CommunityCode,
             neighborhoodCode: request.NeighborhoodCode,
             buildingNumber: request.BuildingNumber,
-            governorateName: string.Empty, // Can be populated from lookup
+            governorateName: string.Empty,
             districtName: string.Empty,
             subDistrictName: string.Empty,
             communityName: string.Empty,
             neighborhoodName: string.Empty,
-            buildingType: request.BuildingType,
-            status: request.BuildingStatus,
-            createdByUserId: userId
-        );
+            buildingType: BuildingType.Residential,
+            status: BuildingStatus.Unknown,
+            createdByUserId: userId);
 
-        // Set unit counts
-        building.UpdateUnitCounts(
-            propertyUnits: request.NumberOfPropertyUnits,
-            apartments: request.NumberOfApartments,
-            shops: request.NumberOfShops,
-            modifiedByUserId: userId
-        );
+        // Set polygon geometry from QGIS (auto-computes centroid lat/lng)
+        var geometry = _geometryConverter.ParseWkt(request.BuildingGeometryWkt);
+        building.SetGeometry(geometry, userId);
 
-        // Set coordinates if provided
-        if (request.Latitude.HasValue && request.Longitude.HasValue)
-        {
-            var fallbackPoint = _geometryConverter.CreatePoint(
-                (double)request.Longitude.Value, (double)request.Latitude.Value);
-            building.SetCoordinates(request.Latitude.Value, request.Longitude.Value, userId, fallbackPoint);
-        }
-
-        // Set geometry if provided
-        if (!string.IsNullOrWhiteSpace(request.BuildingGeometryWkt))
-        {
-            var geometry = _geometryConverter.ParseWkt(request.BuildingGeometryWkt);
-            building.SetGeometry(geometry, userId);
-        }
-
-        // Set notes
+        // Set notes if provided
         if (!string.IsNullOrWhiteSpace(request.Notes))
         {
             building.UpdateDetails(
@@ -94,15 +73,12 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
                 address: null,
                 landmark: null,
                 notes: request.Notes,
-                modifiedByUserId: userId
-            );
+                modifiedByUserId: userId);
         }
 
-        // Save to database
         await _buildingRepository.AddAsync(building, cancellationToken);
         await _buildingRepository.SaveChangesAsync(cancellationToken);
 
-        // Return full DTO
         return MapToDto(building);
     }
 
@@ -113,7 +89,7 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             Id = building.Id,
             BuildingId = building.BuildingId,
 
-            // Administrative Codes
+            // Administrative codes
             GovernorateCode = building.GovernorateCode,
             DistrictCode = building.DistrictCode,
             SubDistrictCode = building.SubDistrictCode,
@@ -121,14 +97,14 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             NeighborhoodCode = building.NeighborhoodCode,
             BuildingNumber = building.BuildingNumber,
 
-            // Location Names
+            // Location names
             GovernorateName = building.GovernorateName,
             DistrictName = building.DistrictName,
             SubDistrictName = building.SubDistrictName,
             CommunityName = building.CommunityName,
             NeighborhoodName = building.NeighborhoodName,
 
-            // Attributes
+            // Building attributes
             BuildingType = (int)building.BuildingType,
             Status = (int)building.Status,
             DamageLevel = building.DamageLevel.HasValue ? (int?)building.DamageLevel : null,
@@ -138,12 +114,12 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             NumberOfFloors = building.NumberOfFloors,
             YearOfConstruction = building.YearOfConstruction,
 
-            // Location
+            // Spatial
             Latitude = building.Latitude,
             Longitude = building.Longitude,
             BuildingGeometryWkt = building.BuildingGeometryWkt,
 
-            // Additional Information
+            // Additional
             Address = building.Address,
             Landmark = building.Landmark,
             Notes = building.Notes,

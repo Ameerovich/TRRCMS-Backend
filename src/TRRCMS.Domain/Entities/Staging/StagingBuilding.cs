@@ -117,11 +117,14 @@ public class StagingBuilding : BaseStagingEntity
     /// <summary>Landmark or notable features near the building.</summary>
     public string? Landmark { get; private set; }
 
-    /// <summary>Location description (وصف الموقع).</summary>
-    public string? LocationDescription { get; private set; }
-
     /// <summary>Additional notes (الوصف العام).</summary>
     public string? Notes { get; private set; }
+
+    /// <summary>
+    /// Original BuildingDocument UUID from .uhc — not a FK to production.
+    /// Used during commit to resolve Building.BuildingDocumentId via _idMap.
+    /// </summary>
+    public Guid? OriginalBuildingDocumentId { get; private set; }
 
     // ==================== CONSTRUCTORS ====================
 
@@ -160,7 +163,6 @@ public class StagingBuilding : BaseStagingEntity
         decimal? latitude = null,
         decimal? longitude = null,
         string? buildingGeometryWkt = null,
-        string? locationDescription = null,
         string? notes = null,
         // --- optional: auto-generated / lookup / future expansion ---
         string? buildingId = null,
@@ -173,7 +175,8 @@ public class StagingBuilding : BaseStagingEntity
         int? numberOfFloors = null,
         int? yearOfConstruction = null,
         string? address = null,
-        string? landmark = null)
+        string? landmark = null,
+        Guid? originalBuildingDocumentId = null)
     {
         var entity = new StagingBuilding
         {
@@ -191,7 +194,6 @@ public class StagingBuilding : BaseStagingEntity
             Latitude = latitude,
             Longitude = longitude,
             BuildingGeometryWkt = buildingGeometryWkt,
-            LocationDescription = locationDescription,
             Notes = notes,
             BuildingId = buildingId,
             GovernorateName = governorateName,
@@ -203,7 +205,8 @@ public class StagingBuilding : BaseStagingEntity
             NumberOfFloors = numberOfFloors,
             YearOfConstruction = yearOfConstruction,
             Address = address,
-            Landmark = landmark
+            Landmark = landmark,
+            OriginalBuildingDocumentId = originalBuildingDocumentId
         };
 
         entity.InitializeStagingMetadata(importPackageId, originalEntityId);

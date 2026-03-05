@@ -15,6 +15,7 @@ public class ApplicationDbContext : DbContext
 
     // DbSets for entities
     public DbSet<Building> Buildings => Set<Building>();
+    public DbSet<BuildingDocument> BuildingDocuments => Set<BuildingDocument>();
     public DbSet<PropertyUnit> PropertyUnits { get; set; }
     public DbSet<PersonPropertyRelation> PersonPropertyRelations => Set<PersonPropertyRelation>();
     public DbSet<Household> Households => Set<Household>();
@@ -100,6 +101,11 @@ public class ApplicationDbContext : DbContext
     /// Isolated from production until validation and commit.
     /// </summary>
     public DbSet<StagingBuilding> StagingBuildings => Set<StagingBuilding>();
+
+    /// <summary>
+    /// Staging area for BuildingDocument records from .uhc packages.
+    /// </summary>
+    public DbSet<StagingBuildingDocument> StagingBuildingDocuments => Set<StagingBuildingDocument>();
 
     /// <summary>
     /// Staging area for PropertyUnit records from .uhc packages.

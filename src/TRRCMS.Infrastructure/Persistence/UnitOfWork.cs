@@ -23,6 +23,7 @@ public class UnitOfWork : IUnitOfWork
 
     // Lazy-initialized repositories
     private IBuildingRepository? _buildings;
+    private IBuildingDocumentRepository? _buildingDocuments;
     private IPropertyUnitRepository? _propertyUnits;
     private IPersonRepository? _persons;
     private IHouseholdRepository? _households;
@@ -54,6 +55,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IBuildingRepository Buildings =>
         _buildings ??= new BuildingRepository(_context);
+
+    public IBuildingDocumentRepository BuildingDocuments =>
+        _buildingDocuments ??= new BuildingDocumentRepository(_context);
 
     public IPropertyUnitRepository PropertyUnits =>
         _propertyUnits ??= new PropertyUnitRepository(_context);

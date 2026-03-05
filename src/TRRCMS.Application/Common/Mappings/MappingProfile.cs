@@ -22,8 +22,11 @@ public class MappingProfile : Profile
         CreateMap<Building, BuildingDto>()
            .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => (int)src.BuildingType))
            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
-           .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? (int?)src.DamageLevel : null))
-           .ForMember(dest => dest.LocationDescription, opt => opt.MapFrom(src => src.LocationDescription));
+           .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? (int?)src.DamageLevel : null));
+
+        // BuildingDocument mappings
+        CreateMap<BuildingDocument, BuildingDocumentDto>()
+            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => (int)src.DocumentType));
 
         // PropertyUnit mapping
 

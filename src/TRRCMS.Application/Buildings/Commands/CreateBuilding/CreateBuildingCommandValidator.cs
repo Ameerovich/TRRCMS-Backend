@@ -114,11 +114,6 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
 
         // ==================== DESCRIPTIONS ====================
 
-        RuleFor(x => x.LocationDescription)
-            .MaximumLength(1000)
-            .When(x => !string.IsNullOrEmpty(x.LocationDescription))
-            .WithMessage("Location description cannot exceed 1000 characters");
-
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrEmpty(x.Notes))

@@ -159,14 +159,22 @@ public class Building : BaseAuditableEntity
     public string? Landmark { get; private set; }
 
     /// <summary>
-    /// Location description (وصف الموقع)
-    /// </summary>
-    public string? LocationDescription { get; private set; }
-
-    /// <summary>
     /// Additional notes / General description (الوصف العام)
     /// </summary>
     public string? Notes { get; private set; }
+
+    // ==================== BUILDING DOCUMENT ====================
+
+    /// <summary>
+    /// Optional reference to a building document (photo or PDF).
+    /// Populated by field survey via .uhc import pipeline.
+    /// </summary>
+    public Guid? BuildingDocumentId { get; private set; }
+
+    /// <summary>
+    /// Navigation property to the building document.
+    /// </summary>
+    public virtual BuildingDocument? BuildingDocument { get; private set; }
 
     // ==================== NAVIGATION PROPERTIES ====================
 
@@ -318,16 +326,6 @@ public class Building : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Update location description and notes
-    /// </summary>
-    public void UpdateLocationInfo(string? locationDescription, string? notes, Guid modifiedByUserId)
-    {
-        LocationDescription = locationDescription;
-        Notes = notes;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
     /// Update building details
     /// </summary>
     public void UpdateDetails(
@@ -335,7 +333,6 @@ public class Building : BaseAuditableEntity
         int? yearOfConstruction,
         string? address,
         string? landmark,
-        string? locationDescription,
         string? notes,
         Guid modifiedByUserId)
     {
@@ -343,8 +340,50 @@ public class Building : BaseAuditableEntity
         YearOfConstruction = yearOfConstruction;
         Address = address;
         Landmark = landmark;
-        LocationDescription = locationDescription;
         Notes = notes;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update building with field survey data from .uhc import.
+    /// Updates all building attributes EXCEPT BuildingId, admin codes, geometry, and coordinates.
+    /// Used by CommitService when an existing building is found during import commit.
+    /// </summary>
+    public void UpdateFromFieldSurvey(
+        BuildingType buildingType,
+        BuildingStatus status,
+        DamageLevel? damageLevel,
+        int numberOfPropertyUnits,
+        int numberOfApartments,
+        int numberOfShops,
+        int? numberOfFloors,
+        int? yearOfConstruction,
+        string? address,
+        string? landmark,
+        string? notes,
+        Guid modifiedByUserId)
+    {
+        BuildingType = buildingType;
+        Status = status;
+        DamageLevel = damageLevel;
+        NumberOfPropertyUnits = numberOfPropertyUnits;
+        NumberOfApartments = numberOfApartments;
+        NumberOfShops = numberOfShops;
+        NumberOfFloors = numberOfFloors;
+        YearOfConstruction = yearOfConstruction;
+        Address = address;
+        Landmark = landmark;
+        Notes = notes;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Set building document reference (photo or PDF from field survey).
+    /// Called by CommitService after committing the BuildingDocument entity.
+    /// </summary>
+    public void SetBuildingDocument(Guid buildingDocumentId, Guid modifiedByUserId)
+    {
+        BuildingDocumentId = buildingDocumentId;
         MarkAsModified(modifiedByUserId);
     }
 
