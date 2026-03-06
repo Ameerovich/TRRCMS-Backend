@@ -49,11 +49,11 @@ public class CreatedClaimSummaryDto
     public int CasePriority { get; set; } = 2;
 
     /// <summary>
-    /// Claim status.
-    /// Default: Draft (1).
+    /// Case status.
+    /// Default: Open (1).
     /// Maps to UI: حالة الحالة
     /// </summary>
-    public int ClaimStatus { get; set; } = 1;
+    public int CaseStatus { get; set; } = 1;
 
     /// <summary>
     /// The UTC date when the related survey was created.

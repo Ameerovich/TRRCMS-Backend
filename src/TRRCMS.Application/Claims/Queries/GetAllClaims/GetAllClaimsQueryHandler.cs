@@ -69,10 +69,10 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
                 cancellationToken
             );
         }
-        else if (request.Status.HasValue)
+        else if (request.CaseStatus.HasValue)
         {
-            claims = await _claimRepository.GetByStatusAsync(
-                request.Status.Value,
+            claims = await _claimRepository.GetByCaseStatusAsync(
+                request.CaseStatus.Value,
                 cancellationToken
             );
         }

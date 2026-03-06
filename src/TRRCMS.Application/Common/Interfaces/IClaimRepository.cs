@@ -75,9 +75,9 @@ public interface IClaimRepository
     Task<IEnumerable<Claim>> GetByLifecycleStageAsync(LifecycleStage stage, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get all claims by status
+    /// Get all claims by case status
     /// </summary>
-    Task<IEnumerable<Claim>> GetByStatusAsync(ClaimStatus status, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Claim>> GetByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get all claims by priority
@@ -145,7 +145,7 @@ public interface IClaimRepository
     /// All filters are AND-combined; null filters are ignored.
     /// </summary>
     Task<List<Claim>> GetFilteredAsync(
-        ClaimStatus? status,
+        CaseStatus? caseStatus,
         ClaimSource? source,
         Guid? createdByUserId,
         Guid? claimId,
@@ -187,9 +187,9 @@ public interface IClaimRepository
     Task<int> GetCountByLifecycleStageAsync(LifecycleStage stage, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get count of claims by status
+    /// Get count of claims by case status
     /// </summary>
-    Task<int> GetCountByStatusAsync(ClaimStatus status, CancellationToken cancellationToken = default);
+    Task<int> GetCountByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get count of claims assigned to user
@@ -204,10 +204,10 @@ public interface IClaimRepository
     // ==================== GROUPED COUNTS (Dashboard) ====================
 
     /// <summary>
-    /// Get count of claims grouped by status.
+    /// Get count of claims grouped by case status.
     /// Used for dashboard summary tiles.
     /// </summary>
-    Task<Dictionary<ClaimStatus, int>> GetStatusCountsAsync(CancellationToken cancellationToken = default);
+    Task<Dictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get count of claims grouped by lifecycle stage.

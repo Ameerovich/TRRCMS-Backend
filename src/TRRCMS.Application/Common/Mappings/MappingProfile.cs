@@ -145,7 +145,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.ClaimSource, opt => opt.MapFrom(src => (int)src.ClaimSource))
             .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => (int)src.Priority))
             .ForMember(dest => dest.LifecycleStage, opt => opt.MapFrom(src => (int)src.LifecycleStage))
-            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.CaseStatus, opt => opt.MapFrom(src => (int)src.CaseStatus))
             .ForMember(dest => dest.TenureContractType, opt => opt.MapFrom(src => src.TenureContractType.HasValue ? (int?)src.TenureContractType : null))
             .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => (int)src.VerificationStatus))
             .ForMember(dest => dest.CertificateStatus, opt => opt.MapFrom(src => (int)src.CertificateStatus))

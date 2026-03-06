@@ -340,8 +340,8 @@ public class ClaimLifecycleValidator : IStagingValidator
             if (c.LifecycleStage.HasValue && c.LifecycleStage != LifecycleStage.DraftPendingSubmission)
                 warns.Add($"Imported claim has LifecycleStage={c.LifecycleStage}; expected DraftPendingSubmission (will be set to Submitted on commit)");
 
-            if (c.Status.HasValue && c.Status != ClaimStatus.Draft)
-                warns.Add($"Imported claim has Status={c.Status}; expected Draft (will be set to Submitted on commit)");
+            if (c.CaseStatus.HasValue && c.CaseStatus != CaseStatus.Open)
+                warns.Add($"Imported claim has CaseStatus={c.CaseStatus}; CaseStatus will be determined by RelationType on commit");
 
             // ClaimSource should be Field for tablet imports
             if (c.ClaimSource != ClaimSource.FieldCollection)

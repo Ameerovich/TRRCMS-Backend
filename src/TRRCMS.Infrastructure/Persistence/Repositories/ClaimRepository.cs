@@ -124,12 +124,12 @@ public class ClaimRepository : IClaimRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Claim>> GetByStatusAsync(ClaimStatus status, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Claim>> GetByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
-            .Where(c => c.Status == status)
+            .Where(c => c.CaseStatus == caseStatus)
             .OrderByDescending(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
@@ -257,7 +257,7 @@ public class ClaimRepository : IClaimRepository
     // ==================== FILTERED QUERY ====================
 
     public async Task<List<Claim>> GetFilteredAsync(
-        ClaimStatus? status,
+        CaseStatus? caseStatus,
         ClaimSource? source,
         Guid? createdByUserId,
         Guid? claimId,
@@ -270,8 +270,8 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PrimaryClaimant)
             .AsQueryable();
 
-        if (status.HasValue)
-            query = query.Where(c => c.Status == status.Value);
+        if (caseStatus.HasValue)
+            query = query.Where(c => c.CaseStatus == caseStatus.Value);
         if (source.HasValue)
             query = query.Where(c => c.ClaimSource == source.Value);
         if (createdByUserId.HasValue)
@@ -328,10 +328,10 @@ public class ClaimRepository : IClaimRepository
             .CountAsync(cancellationToken);
     }
 
-    public async Task<int> GetCountByStatusAsync(ClaimStatus status, CancellationToken cancellationToken = default)
+    public async Task<int> GetCountByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
-            .Where(c => c.Status == status)
+            .Where(c => c.CaseStatus == caseStatus)
             .CountAsync(cancellationToken);
     }
 
@@ -349,13 +349,13 @@ public class ClaimRepository : IClaimRepository
 
     // ==================== GROUPED COUNTS (Dashboard) ====================
 
-    public async Task<Dictionary<ClaimStatus, int>> GetStatusCountsAsync(
+    public async Task<Dictionary<CaseStatus, int>> GetCaseStatusCountsAsync(
         CancellationToken cancellationToken = default)
     {
         return await _context.Claims
-            .GroupBy(c => c.Status)
-            .Select(g => new { Status = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Status, x => x.Count, cancellationToken);
+            .GroupBy(c => c.CaseStatus)
+            .Select(g => new { CaseStatus = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CaseStatus, x => x.Count, cancellationToken);
     }
 
     public async Task<Dictionary<LifecycleStage, int>> GetLifecycleStageCountsAsync(

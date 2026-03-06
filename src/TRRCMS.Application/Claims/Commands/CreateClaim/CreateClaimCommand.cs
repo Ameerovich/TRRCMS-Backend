@@ -85,6 +85,11 @@ public class CreateClaimCommand : IRequest<ClaimDto>
     public DateTime? TargetCompletionDate { get; set; }
     
     /// <summary>
+    /// Case status (Open=1, Closed=2). Default: Open.
+    /// </summary>
+    public int CaseStatus { get; set; } = 1;
+
+    /// <summary>
     /// Processing notes
     /// </summary>
     public string? ProcessingNotes { get; set; }

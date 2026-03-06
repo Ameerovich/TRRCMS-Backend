@@ -51,8 +51,8 @@ public class StagingClaim : BaseStagingEntity
     /// <summary>Current lifecycle stage. Optional — auto-set to DraftPendingSubmission during commit.</summary>
     public LifecycleStage? LifecycleStage { get; private set; }
 
-    /// <summary>Claim status. Optional — auto-set to Draft during commit.</summary>
-    public ClaimStatus? Status { get; private set; }
+    /// <summary>Case status. Optional — auto-set to Open during commit.</summary>
+    public CaseStatus? CaseStatus { get; private set; }
 
     // ==================== TENURE DETAILS ====================
 
@@ -145,7 +145,7 @@ public class StagingClaim : BaseStagingEntity
         // --- optional: auto-generated / commit-time ---
         string? claimNumber = null,
         LifecycleStage? lifecycleStage = null,
-        ClaimStatus? status = null,
+        CaseStatus? caseStatus = null,
         VerificationStatus? verificationStatus = null,
         int evidenceCount = 0,
         bool allRequiredDocumentsSubmitted = false,
@@ -161,7 +161,7 @@ public class StagingClaim : BaseStagingEntity
             ClaimSource = claimSource,
             Priority = priority,
             LifecycleStage = lifecycleStage,
-            Status = status,
+            CaseStatus = caseStatus,
             TenureContractType = tenureContractType,
             OwnershipShare = ownershipShare,
             TenureStartDate = tenureStartDate,

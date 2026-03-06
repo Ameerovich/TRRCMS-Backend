@@ -83,8 +83,8 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.LifecycleStage)
             .HasComment("Optional — auto-set to DraftPendingSubmission during commit");
 
-        builder.Property(c => c.Status)
-            .HasComment("Optional — auto-set to Draft during commit");
+        builder.Property(c => c.CaseStatus)
+            .HasComment("Optional — auto-set to Open during commit");
 
         // ==================== TENURE DETAILS ====================
 

@@ -22,7 +22,7 @@ public sealed class ClaimStatisticsDto
     public int TotalClaims { get; set; }
 
     /// <summary>
-    /// Count per ClaimStatus enum name (e.g. "Draft": 5, "Approved": 12).
+    /// Count per CaseStatus enum name (e.g. "Open": 5, "Closed": 12).
     /// </summary>
     public Dictionary<string, int> ByStatus { get; set; } = new();
 

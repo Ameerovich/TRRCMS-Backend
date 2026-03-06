@@ -16,9 +16,9 @@ public class GetAllClaimsQuery : PagedQuery, IRequest<PagedResult<ClaimDto>>
     public LifecycleStage? LifecycleStage { get; set; }
 
     /// <summary>
-    /// Filter by status (optional)
+    /// Filter by case status (optional): Open=1, Closed=2
     /// </summary>
-    public ClaimStatus? Status { get; set; }
+    public CaseStatus? CaseStatus { get; set; }
 
     /// <summary>
     /// Filter by priority (optional)

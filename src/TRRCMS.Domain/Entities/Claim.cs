@@ -53,9 +53,11 @@ public class Claim : BaseAuditableEntity
     public LifecycleStage LifecycleStage { get; private set; }
 
     /// <summary>
-    /// Legacy claim status (kept for backward compatibility)
+    /// Case status — Open (non-owner claim) or Closed (ownership/heir claim).
+    /// Determined by RelationType of the generating PersonPropertyRelation.
+    /// Independent of LifecycleStage.
     /// </summary>
-    public ClaimStatus Status { get; private set; }
+    public CaseStatus CaseStatus { get; private set; }
 
     /// <summary>
     /// Date when claim was submitted
@@ -278,7 +280,7 @@ public class Claim : BaseAuditableEntity
     {
         ClaimNumber = string.Empty;
         ClaimType = string.Empty;
-        Status = ClaimStatus.Draft;
+        CaseStatus = CaseStatus.Open;
         LifecycleStage = LifecycleStage.DraftPendingSubmission;
         ClaimSource = ClaimSource.FieldCollection;
         Priority = CasePriority.Normal;
@@ -311,7 +313,7 @@ public class Claim : BaseAuditableEntity
             PrimaryClaimantId = primaryClaimantId,
             ClaimType = claimType,
             ClaimSource = claimSource,
-            Status = ClaimStatus.Draft,
+            CaseStatus = CaseStatus.Open,
             LifecycleStage = LifecycleStage.DraftPendingSubmission,
             Priority = CasePriority.Normal,
             VerificationStatus = VerificationStatus.Pending,
@@ -334,7 +336,6 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public void Submit(Guid submittedByUserId, Guid modifiedByUserId)
     {
-        Status = ClaimStatus.Finalized;
         LifecycleStage = LifecycleStage.Submitted;
         SubmittedDate = DateTime.UtcNow;
         SubmittedByUserId = submittedByUserId;
@@ -347,23 +348,6 @@ public class Claim : BaseAuditableEntity
     public void MoveToStage(LifecycleStage newStage, Guid modifiedByUserId)
     {
         LifecycleStage = newStage;
-
-        // Update legacy status based on lifecycle stage
-        Status = newStage switch
-        {
-            LifecycleStage.DraftPendingSubmission => ClaimStatus.Draft,
-            LifecycleStage.Submitted => ClaimStatus.Finalized,
-            LifecycleStage.InitialScreening => ClaimStatus.UnderReview,
-            LifecycleStage.UnderReview => ClaimStatus.UnderReview,
-            LifecycleStage.AwaitingDocuments => ClaimStatus.PendingEvidence,
-            LifecycleStage.ConflictDetected => ClaimStatus.Disputed,
-            LifecycleStage.InAdjudication => ClaimStatus.Disputed,
-            LifecycleStage.Approved => ClaimStatus.Approved,
-            LifecycleStage.Rejected => ClaimStatus.Rejected,
-            LifecycleStage.Archived => ClaimStatus.Archived,
-            _ => Status
-        };
-
         MarkAsModified(modifiedByUserId);
     }
 
@@ -428,7 +412,6 @@ public class Claim : BaseAuditableEntity
         ConflictCount = conflictCount;
         ConflictResolutionStatus = "Pending";
         LifecycleStage = LifecycleStage.ConflictDetected;
-        Status = ClaimStatus.Disputed;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -458,7 +441,6 @@ public class Claim : BaseAuditableEntity
         MissingDocuments = missingDocumentsJson;
         AllRequiredDocumentsSubmitted = false;
         LifecycleStage = LifecycleStage.AwaitingDocuments;
-        Status = ClaimStatus.PendingEvidence;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -496,7 +478,6 @@ public class Claim : BaseAuditableEntity
         Guid decisionByUserId,
         Guid modifiedByUserId)
     {
-        Status = ClaimStatus.Approved;
         LifecycleStage = LifecycleStage.Approved;
         FinalDecision = "Approved";
         DecisionReason = decisionReason;
@@ -516,7 +497,6 @@ public class Claim : BaseAuditableEntity
         Guid decisionByUserId,
         Guid modifiedByUserId)
     {
-        Status = ClaimStatus.Rejected;
         LifecycleStage = LifecycleStage.Rejected;
         FinalDecision = "Rejected";
         DecisionReason = decisionReason;
@@ -596,6 +576,24 @@ public class Claim : BaseAuditableEntity
     {
         ClaimType = claimType;
         Priority = priority;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Close the case — ownership/heir claim registered.
+    /// </summary>
+    public void CloseCase(Guid modifiedByUserId)
+    {
+        CaseStatus = CaseStatus.Closed;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Reopen the case — revert to Open status.
+    /// </summary>
+    public void ReopenCase(Guid modifiedByUserId)
+    {
+        CaseStatus = CaseStatus.Open;
         MarkAsModified(modifiedByUserId);
     }
 

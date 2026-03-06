@@ -34,8 +34,8 @@ public class GetClaimSummariesQueryHandler
         }
 
         // 2. Cast int filters to enum types for the repository
-        ClaimStatus? statusFilter = request.ClaimStatus.HasValue
-            ? (ClaimStatus)request.ClaimStatus.Value
+        CaseStatus? statusFilter = request.CaseStatus.HasValue
+            ? (CaseStatus)request.CaseStatus.Value
             : null;
 
         ClaimSource? sourceFilter = request.ClaimSource.HasValue
@@ -105,7 +105,7 @@ public class GetClaimSummariesQueryHandler
                 FullNameArabic = person?.GetFullNameArabic() ?? string.Empty,
                 ClaimSource = (int)claim.ClaimSource,
                 CasePriority = (int)claim.Priority,
-                ClaimStatus = (int)claim.Status,
+                CaseStatus = (int)claim.CaseStatus,
                 SurveyDate = linkedSurvey?.SurveyDate ?? default,
                 TypeOfWorks = MapPropertyUnitTypeToTypeOfWorks(propertyUnit?.UnitType),
                 HasEvidence = sourceRelation?.HasEvidence ?? false,

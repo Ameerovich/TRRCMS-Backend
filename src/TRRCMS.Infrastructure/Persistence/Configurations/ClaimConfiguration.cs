@@ -59,10 +59,10 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .HasConversion<int>()
             .HasComment("Current lifecycle stage: 1=DraftPendingSubmission, 2=Submitted, 3=InitialScreening, 4=UnderReview, 5=AwaitingDocuments, 6=ConflictDetected, 7=InAdjudication, 8=Approved, 9=Rejected, 10=CertificateIssued, 11=Archived (مرحلة دورة الحياة)");
         
-        builder.Property(c => c.Status)
+        builder.Property(c => c.CaseStatus)
             .IsRequired()
             .HasConversion<int>()
-            .HasComment("Legacy status: 1=Draft, 2=Finalized, 3=UnderReview, 4=Approved, 5=Rejected, 6=PendingEvidence, 7=Disputed, 99=Archived (الحالة)");
+            .HasComment("Case status: 1=Open (حالة مفتوحة), 2=Closed (حالة مغلقة)");
         
         builder.Property(c => c.SubmittedDate)
             .HasColumnType("timestamp with time zone")
@@ -300,9 +300,9 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.HasIndex(c => c.LifecycleStage)
             .HasDatabaseName("IX_Claims_LifecycleStage");
         
-        // Index on Status (for dashboard and filtering)
-        builder.HasIndex(c => c.Status)
-            .HasDatabaseName("IX_Claims_Status");
+        // Index on CaseStatus (for dashboard and filtering)
+        builder.HasIndex(c => c.CaseStatus)
+            .HasDatabaseName("IX_Claims_CaseStatus");
         
         // Index on Priority (for prioritization)
         builder.HasIndex(c => c.Priority)

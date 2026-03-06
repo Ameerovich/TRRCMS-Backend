@@ -11,10 +11,10 @@ namespace TRRCMS.Application.Claims.Queries.GetClaimSummaries;
 public class GetClaimSummariesQuery : IRequest<List<CreatedClaimSummaryDto>>
 {
     /// <summary>
-    /// Filter by claim status (integer code).
-    /// Maps to ClaimStatus enum: Draft=1, Finalized=2, UnderReview=3, etc.
+    /// Filter by case status (integer code).
+    /// Maps to CaseStatus enum: Open=1, Closed=2.
     /// </summary>
-    public int? ClaimStatus { get; set; }
+    public int? CaseStatus { get; set; }
 
     /// <summary>
     /// Filter by claim source (integer code).

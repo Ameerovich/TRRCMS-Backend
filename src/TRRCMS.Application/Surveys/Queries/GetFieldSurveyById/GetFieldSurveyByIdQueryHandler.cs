@@ -181,7 +181,7 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
             {
                 result.ClaimId = claim.Id;
                 result.ClaimNumber = claim.ClaimNumber;
-                result.ClaimStatus = (int)claim.Status;
+                result.CaseStatus = (int)claim.CaseStatus;
             }
         }
 

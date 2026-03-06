@@ -46,7 +46,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
             claim.ClaimType,
             claim.Priority,
             claim.TenureContractType,
-            claim.Status,
+            claim.CaseStatus,
             claim.ProcessingNotes,
             claim.PublicRemarks
         };
@@ -95,27 +95,15 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
                 changedFields.Add("TenureContractDetails");
         }
 
-        // Update status if provided (use with caution until state machine)
-        if (request.Status.HasValue)
+        // Update CaseStatus if provided (Open/Closed — no restrictions)
+        if (request.CaseStatus.HasValue)
         {
-            // Map status to lifecycle stage
-            var statusEnum = (ClaimStatus)request.Status.Value;
-            var lifecycleStage = statusEnum switch
-            {
-                ClaimStatus.Draft => LifecycleStage.DraftPendingSubmission,
-                ClaimStatus.Finalized => LifecycleStage.Submitted,
-                ClaimStatus.UnderReview => LifecycleStage.UnderReview,
-                ClaimStatus.PendingEvidence => LifecycleStage.AwaitingDocuments,
-                ClaimStatus.Disputed => LifecycleStage.ConflictDetected,
-                ClaimStatus.Approved => LifecycleStage.Approved,
-                ClaimStatus.Rejected => LifecycleStage.Rejected,
-                ClaimStatus.Archived => LifecycleStage.Archived,
-                _ => claim.LifecycleStage
-            };
-
-            claim.MoveToStage(lifecycleStage, currentUserId);
-            changedFields.Add("Status");
-            changedFields.Add("LifecycleStage");
+            var caseStatus = (CaseStatus)request.CaseStatus.Value;
+            if (caseStatus == CaseStatus.Closed)
+                claim.CloseCase(currentUserId);
+            else
+                claim.ReopenCase(currentUserId);
+            changedFields.Add("CaseStatus");
         }
 
         // Update processing notes if provided
@@ -143,7 +131,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
             claim.ClaimType,
             claim.Priority,
             claim.TenureContractType,
-            claim.Status,
+            claim.CaseStatus,
             claim.ProcessingNotes,
             claim.PublicRemarks
         };

@@ -107,7 +107,7 @@ public class ClaimsController : ControllerBase
     /// Returns lightweight DTOs suitable for the claims overview / case list UI.
     /// All enum filters accept integer codes matching the Vocabulary API.
     /// </summary>
-    /// <param name="claimStatus">Filter by claim status (int). Draft=1, Finalized=2, etc.</param>
+    /// <param name="caseStatus">Filter by case status (int). Open=1, Closed=2.</param>
     /// <param name="claimSource">Filter by claim source (int). FieldCollection=1, OfficeSubmission=2, etc.</param>
     /// <param name="createdByUserId">Filter by the user who created the claim</param>
     /// <param name="surveyVisitId">Filter by linked survey visit ID</param>
@@ -122,7 +122,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<List<CreatedClaimSummaryDto>>> GetClaimSummaries(
-        [FromQuery] int? claimStatus = null,
+        [FromQuery] int? caseStatus = null,
         [FromQuery] int? claimSource = null,
         [FromQuery] Guid? createdByUserId = null,
         [FromQuery] Guid? surveyVisitId = null,
@@ -130,7 +130,7 @@ public class ClaimsController : ControllerBase
     {
         var query = new GetClaimSummariesQuery
         {
-            ClaimStatus = claimStatus,
+            CaseStatus = caseStatus,
             ClaimSource = claimSource,
             CreatedByUserId = createdByUserId,
             SurveyVisitId = surveyVisitId,

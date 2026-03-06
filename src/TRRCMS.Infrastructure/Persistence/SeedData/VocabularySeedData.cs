@@ -45,7 +45,7 @@ public static class VocabularySeedData
         Def<VerificationStatus>("verification_status", "حالة التحقق", "Verification Status", "Legal"),
 
         // Claims
-        Def<ClaimStatus>("claim_status", "حالة المطالبة", "Claim Status", "Claims"),
+        Def<CaseStatus>("case_status", "حالة الحالة", "Case Status", "Claims"),
         Def<ClaimSource>("claim_source", "مصدر المطالبة", "Claim Source", "Claims"),
         Def<CasePriority>("case_priority", "أولوية الحالة", "Case Priority", "Claims"),
         Def<LifecycleStage>("lifecycle_stage", "مرحلة دورة الحياة", "Lifecycle Stage", "Claims"),

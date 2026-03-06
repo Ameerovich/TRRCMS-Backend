@@ -50,7 +50,7 @@ public class FieldSurveyDetailDto
 
     public Guid? ClaimId { get; set; }
     public string? ClaimNumber { get; set; }
-    public int? ClaimStatus { get; set; }
+    public int? CaseStatus { get; set; }
 
     // ==================== RELATED DATA ====================
 

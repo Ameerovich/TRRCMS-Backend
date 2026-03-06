@@ -916,6 +916,12 @@ public class CommitService : ICommitService
 
         if (approved.Count == 0) return;
 
+        // Pre-load staging relations for CaseStatus resolution by RelationType
+        var stagingRelations = await _stagingRelationRepo.GetApprovedForCommitAsync(importPackageId, ct);
+        var relationByPersonAndUnit = stagingRelations
+            .GroupBy(r => (r.OriginalPersonId, r.OriginalPropertyUnitId))
+            .ToDictionary(g => g.Key, g => g.First());
+
         for (var i = 0; i < approved.Count; i++)
         {
             var staging = approved[i];
@@ -945,6 +951,19 @@ public class CommitService : ICommitService
 
                 // FR-D-2: Claims from tablet → set lifecycle to Submitted
                 claim.Submit(userId, userId);
+
+                // Set CaseStatus based on the generating PersonPropertyRelation's RelationType
+                if (staging.OriginalPrimaryClaimantId.HasValue &&
+                    relationByPersonAndUnit.TryGetValue(
+                        (staging.OriginalPrimaryClaimantId.Value, staging.OriginalPropertyUnitId),
+                        out var stagingRelation))
+                {
+                    if (stagingRelation.RelationType == RelationType.Owner ||
+                        stagingRelation.RelationType == RelationType.Heir)
+                    {
+                        claim.CloseCase(userId);
+                    }
+                }
 
                 await _unitOfWork.Claims.AddAsync(claim, ct);
 

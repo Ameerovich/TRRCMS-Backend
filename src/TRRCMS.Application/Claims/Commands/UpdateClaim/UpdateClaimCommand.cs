@@ -22,8 +22,8 @@ public class UpdateClaimCommand : IRequest<ClaimDto>
     public int? TenureContractType { get; set; }
     public string? TenureContractDetails { get; set; }
 
-    // Status (optional - careful with state machine)
-    public int? Status { get; set; }
+    // Case status (Open=1, Closed=2)
+    public int? CaseStatus { get; set; }
 
     // Additional Information
     public string? ProcessingNotes { get; set; }

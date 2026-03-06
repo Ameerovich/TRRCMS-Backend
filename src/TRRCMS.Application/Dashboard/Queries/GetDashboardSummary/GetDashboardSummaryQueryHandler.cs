@@ -40,7 +40,7 @@ public sealed class GetDashboardSummaryQueryHandler
 
     private async Task<ClaimStatisticsDto> BuildClaimStatisticsAsync(CancellationToken ct)
     {
-        var statusCounts = await _uow.Claims.GetStatusCountsAsync(ct);
+        var statusCounts = await _uow.Claims.GetCaseStatusCountsAsync(ct);
         var lifecycleCounts = await _uow.Claims.GetLifecycleStageCountsAsync(ct);
 
         var overdue = await _uow.Claims.GetOverdueClaimsAsync(ct);

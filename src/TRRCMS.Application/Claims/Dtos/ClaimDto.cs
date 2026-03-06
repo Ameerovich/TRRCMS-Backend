@@ -22,7 +22,7 @@ public class ClaimDto
     // ==================== LIFECYCLE MANAGEMENT ====================
     
     public int LifecycleStage { get; set; }
-    public int Status { get; set; }
+    public int CaseStatus { get; set; }
     public DateTime? SubmittedDate { get; set; }
     public Guid? SubmittedByUserId { get; set; }
     public DateTime? DecisionDate { get; set; }

@@ -147,6 +147,11 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         createdByUserId: currentUserId);
 
                     claim.MoveToStage(lifecycleStage, currentUserId);
+
+                    // Set CaseStatus based on RelationType: Owner/Heir → Closed, others → Open
+                    if (relation.RelationType == RelationType.Owner || relation.RelationType == RelationType.Heir)
+                        claim.CloseCase(currentUserId);
+
                     await _unitOfWork.Claims.AddAsync(claim, cancellationToken);
 
                     // Link first claim to survey for backward compatibility
@@ -164,7 +169,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         FullNameArabic = person.GetFullNameArabic(),
                         ClaimSource = (int)ClaimSource.OfficeSubmission,
                         CasePriority = (int)CasePriority.Normal,
-                        ClaimStatus = (int)ClaimStatus.Draft,
+                        CaseStatus = (int)claim.CaseStatus,
                         SurveyDate = survey.CreatedAtUtc,
                         TypeOfWorks = typeOfWorks,
                         HasEvidence = relationHasEvidence,
