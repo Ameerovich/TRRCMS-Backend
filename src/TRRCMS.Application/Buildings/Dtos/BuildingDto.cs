@@ -171,11 +171,6 @@ public class BuildingDto
     /// </summary>
     public string? Notes { get; set; }
 
-    /// <summary>
-    /// Optional building document ID (photo or PDF from field survey)
-    /// </summary>
-    public Guid? BuildingDocumentId { get; set; }
-
     // ==================== AUDIT ====================
 
     /// <summary>

@@ -211,7 +211,6 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             Address = building.Address,
             Landmark = building.Landmark,
             Notes = building.Notes,
-            BuildingDocumentId = building.BuildingDocumentId,
 
             // Audit
             CreatedAtUtc = building.CreatedAtUtc,

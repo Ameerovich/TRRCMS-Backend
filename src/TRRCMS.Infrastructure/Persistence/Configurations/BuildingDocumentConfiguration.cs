@@ -15,12 +15,20 @@ public class BuildingDocumentConfiguration : IEntityTypeConfiguration<BuildingDo
         builder.ToTable("BuildingDocuments");
         builder.HasKey(d => d.Id);
 
-        // ==================== DOCUMENT METADATA ====================
+        // ==================== RELATIONSHIP ====================
 
-        builder.Property(d => d.DocumentType)
-            .IsRequired()
-            .HasConversion<int>()
-            .HasComment("Document type — Photo=0, PDF=1");
+        builder.Property(d => d.BuildingId)
+            .IsRequired();
+
+        builder.HasOne<Building>()
+            .WithMany(b => b.BuildingDocuments)
+            .HasForeignKey(d => d.BuildingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(d => d.BuildingId)
+            .HasDatabaseName("IX_BuildingDocuments_BuildingId");
+
+        // ==================== DOCUMENT METADATA ====================
 
         builder.Property(d => d.Description)
             .IsRequired(false)

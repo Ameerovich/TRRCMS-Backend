@@ -123,7 +123,6 @@ public class RegisterBuildingCommandHandler : IRequestHandler<RegisterBuildingCo
             Address = building.Address,
             Landmark = building.Landmark,
             Notes = building.Notes,
-            BuildingDocumentId = building.BuildingDocumentId,
 
             // Audit
             CreatedAtUtc = building.CreatedAtUtc,

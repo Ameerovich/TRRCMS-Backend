@@ -30,6 +30,13 @@ public class BuildingDocumentRepository : IBuildingDocumentRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<List<BuildingDocument>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default)
+    {
+        return await _context.BuildingDocuments
+            .Where(d => d.BuildingId == buildingId)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(BuildingDocument document, CancellationToken cancellationToken = default)
     {
         await _context.BuildingDocuments.AddAsync(document, cancellationToken);

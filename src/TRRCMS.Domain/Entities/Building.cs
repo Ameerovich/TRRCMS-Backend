@@ -163,21 +163,9 @@ public class Building : BaseAuditableEntity
     /// </summary>
     public string? Notes { get; private set; }
 
-    // ==================== BUILDING DOCUMENT ====================
-
-    /// <summary>
-    /// Optional reference to a building document (photo or PDF).
-    /// Populated by field survey via .uhc import pipeline.
-    /// </summary>
-    public Guid? BuildingDocumentId { get; private set; }
-
-    /// <summary>
-    /// Navigation property to the building document.
-    /// </summary>
-    public virtual BuildingDocument? BuildingDocument { get; private set; }
-
     // ==================== NAVIGATION PROPERTIES ====================
 
+    public virtual ICollection<BuildingDocument> BuildingDocuments { get; private set; }
     public virtual ICollection<PropertyUnit> PropertyUnits { get; private set; }
     public virtual ICollection<BuildingAssignment> BuildingAssignments { get; private set; }
     public virtual ICollection<Survey> Surveys { get; private set; }
@@ -201,6 +189,7 @@ public class Building : BaseAuditableEntity
         SubDistrictName = string.Empty;
         CommunityName = string.Empty;
         NeighborhoodName = string.Empty;
+        BuildingDocuments = new List<BuildingDocument>();
         PropertyUnits = new List<PropertyUnit>();
         BuildingAssignments = new List<BuildingAssignment>();
         Surveys = new List<Survey>();
@@ -374,16 +363,6 @@ public class Building : BaseAuditableEntity
         Address = address;
         Landmark = landmark;
         Notes = notes;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Set building document reference (photo or PDF from field survey).
-    /// Called by CommitService after committing the BuildingDocument entity.
-    /// </summary>
-    public void SetBuildingDocument(Guid buildingDocumentId, Guid modifiedByUserId)
-    {
-        BuildingDocumentId = buildingDocumentId;
         MarkAsModified(modifiedByUserId);
     }
 

@@ -1,5 +1,4 @@
 using TRRCMS.Domain.Common;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
@@ -7,13 +6,14 @@ namespace TRRCMS.Domain.Entities;
 /// Building document entity — a photo or PDF that describes a building (وثيقة البناء).
 /// Similar to Evidence but specialized for buildings.
 /// Populated only by field survey via .uhc import pipeline.
+/// File type is determined by MimeType (e.g., image/jpeg, application/pdf).
 /// </summary>
 public class BuildingDocument : BaseAuditableEntity
 {
     /// <summary>
-    /// Document type — Photo or PDF
+    /// The building this document belongs to (required FK).
     /// </summary>
-    public BuildingDocumentType DocumentType { get; private set; }
+    public Guid BuildingId { get; private set; }
 
     /// <summary>
     /// Optional description of the document
@@ -70,7 +70,7 @@ public class BuildingDocument : BaseAuditableEntity
     /// Create a new building document (Factory Method — DDD pattern)
     /// </summary>
     public static BuildingDocument Create(
-        BuildingDocumentType documentType,
+        Guid buildingId,
         string? description,
         string originalFileName,
         string filePath,
@@ -81,7 +81,7 @@ public class BuildingDocument : BaseAuditableEntity
     {
         var document = new BuildingDocument
         {
-            DocumentType = documentType,
+            BuildingId = buildingId,
             Description = description,
             OriginalFileName = originalFileName,
             FilePath = filePath,

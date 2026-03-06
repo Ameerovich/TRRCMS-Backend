@@ -58,9 +58,6 @@ public class StagingBuildingDocumentConfiguration : IEntityTypeConfiguration<Sta
 
         // ==================== DOCUMENT METADATA ====================
 
-        builder.Property(d => d.DocumentType)
-            .IsRequired();
-
         builder.Property(d => d.Description)
             .HasMaxLength(500);
 

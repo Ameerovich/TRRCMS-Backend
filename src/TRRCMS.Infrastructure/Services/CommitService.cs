@@ -132,8 +132,8 @@ public class CommitService : ICommitService
         await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             // Commit in FK-dependency order
-            await CommitBuildingDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitBuildingsAsync(importPackageId, committedByUserId, report, cancellationToken);
+            await CommitBuildingDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitPropertyUnitsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await PopulateMergeRedirectsAsync("PropertyUnit", importPackageId, cancellationToken);
             await CommitPersonsAsync(importPackageId, committedByUserId, report, cancellationToken);
@@ -320,7 +320,7 @@ public class CommitService : ICommitService
 
     /// <summary>
     /// Commit building documents (photos/PDFs) to production.
-    /// No FK dependencies — committed before buildings so Building.BuildingDocumentId can be resolved.
+    /// FK to Buildings — committed after buildings so BuildingDocument.BuildingId can be resolved.
     /// Supports attachment deduplication by SHA-256 hash (FR-D-9).
     /// </summary>
     private async Task CommitBuildingDocumentsAsync(
@@ -356,8 +356,18 @@ public class CommitService : ICommitService
                     }
                 }
 
+                // Resolve parent building via _idMap
+                if (!_idMap.TryGetValue(staging.OriginalBuildingId, out var prodBuildingId))
+                {
+                    _logger.LogWarning(
+                        "BuildingDocument {OriginalId} references unknown building {OriginalBuildingId} — skipping",
+                        staging.OriginalEntityId, staging.OriginalBuildingId);
+                    report.BuildingDocuments.Failed++;
+                    continue;
+                }
+
                 var document = BuildingDocument.Create(
-                    documentType: staging.DocumentType,
+                    buildingId: prodBuildingId,
                     description: staging.Description,
                     originalFileName: staging.OriginalFileName,
                     filePath: filePath,
@@ -444,13 +454,6 @@ public class CommitService : ICommitService
                         notes: staging.Notes,
                         modifiedByUserId: userId);
 
-                    // Resolve optional BuildingDocument FK from committed documents
-                    if (staging.OriginalBuildingDocumentId.HasValue &&
-                        _idMap.TryGetValue(staging.OriginalBuildingDocumentId.Value, out var prodDocId))
-                    {
-                        existingBuilding.SetBuildingDocument(prodDocId, userId);
-                    }
-
                     await _unitOfWork.Buildings.UpdateAsync(existingBuilding, ct);
 
                     _idMap[staging.OriginalEntityId] = existingBuilding.Id;
@@ -512,13 +515,6 @@ public class CommitService : ICommitService
 
                 if (staging.DamageLevel.HasValue)
                     building.UpdateStatus(staging.Status, staging.DamageLevel, userId);
-
-                // Resolve optional BuildingDocument FK from committed documents
-                if (staging.OriginalBuildingDocumentId.HasValue &&
-                    _idMap.TryGetValue(staging.OriginalBuildingDocumentId.Value, out var newProdDocId))
-                {
-                    building.SetBuildingDocument(newProdDocId, userId);
-                }
 
                 await _unitOfWork.Buildings.AddAsync(building, ct);
 

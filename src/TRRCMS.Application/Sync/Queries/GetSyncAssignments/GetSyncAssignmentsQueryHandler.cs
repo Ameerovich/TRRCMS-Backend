@@ -197,7 +197,6 @@ public sealed class GetSyncAssignmentsQueryHandler
             Address              = building.Address,
             Landmark             = building.Landmark,
             Notes                = building.Notes,
-            BuildingDocumentId   = building.BuildingDocumentId,
 
             // Property units
             PropertyUnits = propertyUnits

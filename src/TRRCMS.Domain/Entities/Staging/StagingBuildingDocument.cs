@@ -1,5 +1,4 @@
 using TRRCMS.Domain.Common;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities.Staging;
 
@@ -21,9 +20,6 @@ public class StagingBuildingDocument : BaseStagingEntity
     public Guid OriginalBuildingId { get; private set; }
 
     // ==================== DOCUMENT METADATA ====================
-
-    /// <summary>Type of document (Photo or PDF).</summary>
-    public BuildingDocumentType DocumentType { get; private set; }
 
     /// <summary>Optional description of the document.</summary>
     public string? Description { get; private set; }
@@ -68,7 +64,6 @@ public class StagingBuildingDocument : BaseStagingEntity
         Guid importPackageId,
         Guid originalEntityId,
         Guid originalBuildingId,
-        BuildingDocumentType documentType,
         string originalFileName,
         string filePath,
         long fileSizeBytes,
@@ -80,7 +75,6 @@ public class StagingBuildingDocument : BaseStagingEntity
         var entity = new StagingBuildingDocument
         {
             OriginalBuildingId = originalBuildingId,
-            DocumentType = documentType,
             Description = description,
             OriginalFileName = originalFileName,
             FilePath = filePath,

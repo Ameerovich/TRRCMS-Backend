@@ -13,7 +13,7 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260305220257_AddBuildingDocument")]
+    [Migration("20260306165203_AddBuildingDocument")]
     partial class AddBuildingDocument
     {
         /// <inheritdoc />
@@ -213,9 +213,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid?>("BuildingDocumentId")
-                        .HasColumnType("uuid");
-
                     b.Property<Geometry>("BuildingGeometry")
                         .HasColumnType("geometry(Geometry, 4326)");
 
@@ -348,8 +345,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BuildingDocumentId");
 
                     b.HasIndex("BuildingGeometry")
                         .HasDatabaseName("IX_Buildings_BuildingGeometry");
@@ -528,6 +523,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("BuildingId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -544,10 +542,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasComment("Optional description of the document");
-
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("integer")
-                        .HasComment("Document type — Photo=0, PDF=1");
 
                     b.Property<string>("FileHash")
                         .HasMaxLength(128)
@@ -598,6 +592,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("bytea");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BuildingId")
+                        .HasDatabaseName("IX_BuildingDocuments_BuildingId");
 
                     b.HasIndex("FileHash")
                         .HasDatabaseName("IX_BuildingDocuments_FileHash");
@@ -3360,10 +3357,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<Guid?>("OriginalBuildingDocumentId")
-                        .HasColumnType("uuid")
-                        .HasComment("Original BuildingDocument UUID from .uhc — resolved via _idMap during commit");
-
                     b.Property<Guid>("OriginalEntityId")
                         .HasColumnType("uuid");
 
@@ -3437,9 +3430,6 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("integer");
 
                     b.Property<string>("FileHash")
                         .HasMaxLength(128)
@@ -5318,16 +5308,6 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Navigation("ParentAuditLog");
                 });
 
-            modelBuilder.Entity("TRRCMS.Domain.Entities.Building", b =>
-                {
-                    b.HasOne("TRRCMS.Domain.Entities.BuildingDocument", "BuildingDocument")
-                        .WithMany()
-                        .HasForeignKey("BuildingDocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("BuildingDocument");
-                });
-
             modelBuilder.Entity("TRRCMS.Domain.Entities.BuildingAssignment", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.Building", "Building")
@@ -5344,6 +5324,15 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Navigation("Building");
 
                     b.Navigation("OriginalAssignment");
+                });
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.BuildingDocument", b =>
+                {
+                    b.HasOne("TRRCMS.Domain.Entities.Building", null)
+                        .WithMany("BuildingDocuments")
+                        .HasForeignKey("BuildingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Certificate", b =>
@@ -5937,6 +5926,8 @@ namespace TRRCMS.Infrastructure.Migrations
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Building", b =>
                 {
+                    b.Navigation("BuildingDocuments");
+
                     b.Navigation("PropertyUnits");
                 });
 

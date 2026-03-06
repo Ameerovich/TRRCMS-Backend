@@ -95,14 +95,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);
 
-        // ==================== BUILDING DOCUMENT ====================
-        builder.Property(b => b.BuildingDocumentId);
-
-        builder.HasOne(b => b.BuildingDocument)
-            .WithMany()
-            .HasForeignKey(b => b.BuildingDocumentId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         // ==================== SPATIAL DATA (PostGIS) ====================
         // Geometry column using PostGIS native type
         // SRID 4326 = WGS84 (GPS coordinate system)

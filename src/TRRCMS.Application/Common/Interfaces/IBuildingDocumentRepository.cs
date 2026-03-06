@@ -21,6 +21,11 @@ public interface IBuildingDocumentRepository
     Task<BuildingDocument?> GetByFileHashAsync(string fileHash, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Get all building documents linked to a specific building.
+    /// </summary>
+    Task<List<BuildingDocument>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Add a new building document.
     /// </summary>
     Task AddAsync(BuildingDocument document, CancellationToken cancellationToken = default);

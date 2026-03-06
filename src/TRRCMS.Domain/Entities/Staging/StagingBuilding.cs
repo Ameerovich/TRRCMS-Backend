@@ -120,12 +120,6 @@ public class StagingBuilding : BaseStagingEntity
     /// <summary>Additional notes (الوصف العام).</summary>
     public string? Notes { get; private set; }
 
-    /// <summary>
-    /// Original BuildingDocument UUID from .uhc — not a FK to production.
-    /// Used during commit to resolve Building.BuildingDocumentId via _idMap.
-    /// </summary>
-    public Guid? OriginalBuildingDocumentId { get; private set; }
-
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>EF Core constructor.</summary>
@@ -175,8 +169,7 @@ public class StagingBuilding : BaseStagingEntity
         int? numberOfFloors = null,
         int? yearOfConstruction = null,
         string? address = null,
-        string? landmark = null,
-        Guid? originalBuildingDocumentId = null)
+        string? landmark = null)
     {
         var entity = new StagingBuilding
         {
@@ -205,8 +198,7 @@ public class StagingBuilding : BaseStagingEntity
             NumberOfFloors = numberOfFloors,
             YearOfConstruction = yearOfConstruction,
             Address = address,
-            Landmark = landmark,
-            OriginalBuildingDocumentId = originalBuildingDocumentId
+            Landmark = landmark
         };
 
         entity.InitializeStagingMetadata(importPackageId, originalEntityId);

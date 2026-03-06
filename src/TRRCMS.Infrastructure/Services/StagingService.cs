@@ -162,8 +162,7 @@ public class StagingService : IStagingService
                 neighborhoodName: GetNullableString(reader, "neighborhood_name"),
                 damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level", "damage_level"),
                 numberOfFloors: GetNullableInt(reader, "number_of_floors"),
-                yearOfConstruction: GetNullableInt(reader, "year_of_construction"),
-                originalBuildingDocumentId: GetNullableGuid(reader, "building_document_id"));
+                yearOfConstruction: GetNullableInt(reader, "year_of_construction"));
 
             entities.Add(entity);
         }
@@ -213,7 +212,6 @@ public class StagingService : IStagingService
                 importPackageId: packageId,
                 originalEntityId: originalId,
                 originalBuildingId: GetGuid(reader, "building_id"),
-                documentType: GetEnum<BuildingDocumentType>(reader, "document_type", "building_document_type"),
                 originalFileName: originalFileName,
                 filePath: filePath,
                 fileSizeBytes: fileSizeBytes,

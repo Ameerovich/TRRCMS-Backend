@@ -11,25 +11,12 @@ namespace TRRCMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "OriginalBuildingDocumentId",
-                table: "StagingBuildings",
-                type: "uuid",
-                nullable: true,
-                comment: "Original BuildingDocument UUID from .uhc — resolved via _idMap during commit");
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "BuildingDocumentId",
-                table: "Buildings",
-                type: "uuid",
-                nullable: true);
-
             migrationBuilder.CreateTable(
                 name: "BuildingDocuments",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    DocumentType = table.Column<int>(type: "integer", nullable: false, comment: "Document type — Photo=0, PDF=1"),
+                    BuildingId = table.Column<Guid>(type: "uuid", nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true, comment: "Optional description of the document"),
                     OriginalFileName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false, comment: "Original filename as uploaded"),
                     FilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false, comment: "File path in storage system"),
@@ -49,6 +36,12 @@ namespace TRRCMS.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BuildingDocuments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BuildingDocuments_Buildings_BuildingId",
+                        column: x => x.BuildingId,
+                        principalTable: "Buildings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -57,7 +50,6 @@ namespace TRRCMS.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     OriginalBuildingId = table.Column<Guid>(type: "uuid", nullable: false, comment: "Original Building UUID from .uhc — not a FK to production Buildings"),
-                    DocumentType = table.Column<int>(type: "integer", nullable: false),
                     Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
                     OriginalFileName = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     FilePath = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false, comment: "File path within .uhc container or staging storage"),
@@ -87,9 +79,9 @@ namespace TRRCMS.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Buildings_BuildingDocumentId",
-                table: "Buildings",
-                column: "BuildingDocumentId");
+                name: "IX_BuildingDocuments_BuildingId",
+                table: "BuildingDocuments",
+                column: "BuildingId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BuildingDocuments_FileHash",
@@ -126,40 +118,16 @@ namespace TRRCMS.Infrastructure.Migrations
                 name: "IX_StagingBuildingDocuments_ImportPackageId_ValidationStatus",
                 table: "StagingBuildingDocuments",
                 columns: new[] { "ImportPackageId", "ValidationStatus" });
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Buildings_BuildingDocuments_BuildingDocumentId",
-                table: "Buildings",
-                column: "BuildingDocumentId",
-                principalTable: "BuildingDocuments",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Buildings_BuildingDocuments_BuildingDocumentId",
-                table: "Buildings");
-
             migrationBuilder.DropTable(
                 name: "BuildingDocuments");
 
             migrationBuilder.DropTable(
                 name: "StagingBuildingDocuments");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Buildings_BuildingDocumentId",
-                table: "Buildings");
-
-            migrationBuilder.DropColumn(
-                name: "OriginalBuildingDocumentId",
-                table: "StagingBuildings");
-
-            migrationBuilder.DropColumn(
-                name: "BuildingDocumentId",
-                table: "Buildings");
         }
     }
 }

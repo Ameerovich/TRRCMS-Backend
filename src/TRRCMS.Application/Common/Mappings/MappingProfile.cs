@@ -25,8 +25,7 @@ public class MappingProfile : Profile
            .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? (int?)src.DamageLevel : null));
 
         // BuildingDocument mappings
-        CreateMap<BuildingDocument, BuildingDocumentDto>()
-            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => (int)src.DocumentType));
+        CreateMap<BuildingDocument, BuildingDocumentDto>();
 
         // PropertyUnit mapping
 

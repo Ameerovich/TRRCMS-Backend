@@ -9,8 +9,8 @@ public class BuildingDocumentDto
     /// <summary>Database ID (GUID)</summary>
     public Guid Id { get; set; }
 
-    /// <summary>Document type (0 = Photo, 1 = PDF)</summary>
-    public int DocumentType { get; set; }
+    /// <summary>The building this document belongs to</summary>
+    public Guid BuildingId { get; set; }
 
     /// <summary>Optional description</summary>
     public string? Description { get; set; }
