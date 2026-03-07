@@ -66,6 +66,9 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         builder.Property(s => s.OriginalClaimId)
             .HasComment("Original Claim UUID from .uhc");
 
+        builder.Property(s => s.OriginalContactPersonId)
+            .HasComment("Original Contact Person UUID from .uhc — not a FK to production Persons");
+
         // ==================== SURVEY IDENTIFICATION ====================
 
         builder.Property(s => s.ReferenceCode)
@@ -152,5 +155,9 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         // Reference code for duplicate detection
         builder.HasIndex(s => s.ReferenceCode)
             .HasDatabaseName("IX_StagingSurveys_ReferenceCode");
+
+        // For contact person resolution during commit
+        builder.HasIndex(s => new { s.ImportPackageId, s.OriginalContactPersonId })
+            .HasDatabaseName("IX_StagingSurveys_ImportPackageId_OriginalContactPersonId");
     }
 }

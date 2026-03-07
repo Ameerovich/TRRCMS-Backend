@@ -652,6 +652,9 @@ public class CommitService : ICommitService
                     phoneNumber: staging.PhoneNumber,
                     createdByUserId: userId);
 
+                if (staging.IsContactPerson)
+                    person.SetAsContactPerson(true, userId);
+
                 await _unitOfWork.Persons.AddAsync(person, ct);
 
                 _idMap[staging.OriginalEntityId] = person.Id;
@@ -878,6 +881,17 @@ public class CommitService : ICommitService
                     propertyUnitId: productionPropertyUnitId,
                     createdByUserId: userId,
                     referenceCode: refCode);
+
+                // Resolve contact person from staging
+                if (staging.OriginalContactPersonId.HasValue &&
+                    _idMap.TryGetValue(staging.OriginalContactPersonId.Value, out var productionContactPersonId))
+                {
+                    var contactPerson = await _unitOfWork.Persons.GetByIdAsync(productionContactPersonId, ct);
+                    if (contactPerson != null)
+                    {
+                        survey.SetContactPerson(contactPerson.Id, contactPerson.GetContactPersonFullName(), userId);
+                    }
+                }
 
                 await _unitOfWork.Surveys.AddAsync(survey, ct);
 

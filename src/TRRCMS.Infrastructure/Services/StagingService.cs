@@ -303,7 +303,8 @@ public class StagingService : IStagingService
                 gender: GetNullableString(reader, "gender"),
                 nationality: GetNullableString(reader, "nationality"),
                 originalHouseholdId: GetNullableGuid(reader, "household_id"),
-                relationshipToHead: GetNullableString(reader, "relationship_to_head"));
+                relationshipToHead: GetNullableString(reader, "relationship_to_head"),
+                isContactPerson: GetBool(reader, "is_contact_person", false));
 
             entities.Add(entity);
         }
@@ -465,6 +466,7 @@ public class StagingService : IStagingService
                 intervieweeRelationship: GetNullableString(reader, "interviewee_relationship"),
                 notes: GetNullableString(reader, "notes"),
                 originalFieldCollectorId: GetNullableGuid(reader, "field_collector_id"),
+                originalContactPersonId: GetNullableGuid(reader, "contact_person_id"),
                 referenceCode: GetNullableString(reader, "reference_code"),
                 type: GetNullableEnum<SurveyType>(reader, "type", "survey_type"),
                 source: GetNullableEnum<SurveySource>(reader, "source", "survey_source"),

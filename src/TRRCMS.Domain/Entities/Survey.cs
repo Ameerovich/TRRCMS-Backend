@@ -155,6 +155,18 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public DateTime? ClaimCreatedDate { get; private set; }
 
+    // ==================== CONTACT PERSON ====================
+
+    /// <summary>
+    /// Foreign key to Person who is the contact person for this survey
+    /// </summary>
+    public Guid? ContactPersonId { get; private set; }
+
+    /// <summary>
+    /// Denormalized contact person full name: "firstname fathername familyname (mothername)"
+    /// </summary>
+    public string? ContactPersonFullName { get; private set; }
+
     // ==================== NAVIGATION PROPERTIES ====================
 
     /// <summary>
@@ -176,6 +188,11 @@ public class Survey : BaseAuditableEntity
     /// Claim created from this survey
     /// </summary>
     public virtual Claim? Claim { get; private set; }
+
+    /// <summary>
+    /// Contact person for this survey
+    /// </summary>
+    public virtual Person? ContactPerson { get; private set; }
 
     // ==================== CONSTRUCTORS ====================
 
@@ -466,6 +483,26 @@ public class Survey : BaseAuditableEntity
     {
         EnsureCanModify();
         PropertyUnitId = propertyUnitId;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Set the contact person for this survey
+    /// </summary>
+    public void SetContactPerson(Guid personId, string fullName, Guid modifiedByUserId)
+    {
+        ContactPersonId = personId;
+        ContactPersonFullName = fullName;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Clear the contact person from this survey
+    /// </summary>
+    public void ClearContactPerson(Guid modifiedByUserId)
+    {
+        ContactPersonId = null;
+        ContactPersonFullName = null;
         MarkAsModified(modifiedByUserId);
     }
 

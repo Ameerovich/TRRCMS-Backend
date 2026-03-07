@@ -69,6 +69,18 @@ public class SurveyDto
     /// </summary>
     public int? DurationMinutes { get; set; }
 
+    // ==================== CONTACT PERSON ====================
+
+    /// <summary>
+    /// Contact person ID (FK to Person)
+    /// </summary>
+    public Guid? ContactPersonId { get; set; }
+
+    /// <summary>
+    /// Contact person full name: "firstname fathername familyname (mothername)"
+    /// </summary>
+    public string? ContactPersonFullName { get; set; }
+
     // ==================== EXPORT TRACKING ====================
 
     /// <summary>

@@ -62,6 +62,9 @@ public class MappingProfile : Profile
                     .ForMember(dest => dest.MobileNumber, opt => opt.MapFrom(src => src.MobileNumber))
                     .ForMember(dest => dest.PhoneNumber, opt => opt.MapFrom(src => src.PhoneNumber))
 
+                    // Contact person
+                    .ForMember(dest => dest.IsContactPerson, opt => opt.MapFrom(src => src.IsContactPerson))
+
                     // Household context
                     .ForMember(dest => dest.HouseholdId, opt => opt.MapFrom(src => src.HouseholdId))
                     .ForMember(dest => dest.RelationshipToHead, opt => opt.MapFrom(src => src.RelationshipToHead.HasValue ? (int?)src.RelationshipToHead : null))
@@ -214,7 +217,9 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.UnitIdentifier, opt => opt.MapFrom(src =>
                 src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
             .ForMember(dest => dest.FieldCollectorName, opt => opt.Ignore())
-            .ForMember(dest => dest.CreatedByName, opt => opt.Ignore());
+            .ForMember(dest => dest.CreatedByName, opt => opt.Ignore())
+            .ForMember(dest => dest.ContactPersonId, opt => opt.MapFrom(src => src.ContactPersonId))
+            .ForMember(dest => dest.ContactPersonFullName, opt => opt.MapFrom(src => src.ContactPersonFullName));
 
         // Office Survey Detail mappings
         CreateMap<Survey, OfficeSurveyDetailDto>()
@@ -227,6 +232,8 @@ public class MappingProfile : Profile
                 src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
             .ForMember(dest => dest.FieldCollectorName, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedByName, opt => opt.Ignore())
+            .ForMember(dest => dest.ContactPersonId, opt => opt.MapFrom(src => src.ContactPersonId))
+            .ForMember(dest => dest.ContactPersonFullName, opt => opt.MapFrom(src => src.ContactPersonFullName))
             // Office-specific fields
             .ForMember(dest => dest.OfficeLocation, opt => opt.MapFrom(src => src.OfficeLocation))
             .ForMember(dest => dest.RegistrationNumber, opt => opt.MapFrom(src => src.RegistrationNumber))

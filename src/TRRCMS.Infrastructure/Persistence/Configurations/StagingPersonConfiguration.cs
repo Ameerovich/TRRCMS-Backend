@@ -107,6 +107,12 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
         builder.Property(p => p.RelationshipToHead)
             .HasMaxLength(50);
 
+        // ==================== CONTACT PERSON ====================
+
+        builder.Property(p => p.IsContactPerson)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         // ==================== CONCURRENCY ====================
 
         builder.Property(p => p.RowVersion)

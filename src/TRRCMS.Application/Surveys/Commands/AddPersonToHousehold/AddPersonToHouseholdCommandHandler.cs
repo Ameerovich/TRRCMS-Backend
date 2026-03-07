@@ -75,6 +75,13 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
             person.AssignToHousehold(request.HouseholdId, (RelationshipToHead)request.RelationshipToHead.Value, currentUserId);
         }
 
+        // Set as contact person and link to survey
+        if (request.IsContactPerson)
+        {
+            person.SetAsContactPerson(true, currentUserId);
+            survey.SetContactPerson(person.Id, person.GetContactPersonFullName(), currentUserId);
+        }
+
         // Save to repository
         await _unitOfWork.Persons.AddAsync(person, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -314,6 +314,17 @@ public class Person : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Get contact person full name: "firstname fathername familyname (mothername)"
+    /// </summary>
+    public string GetContactPersonFullName()
+    {
+        var name = GetFullNameArabic();
+        if (!string.IsNullOrWhiteSpace(MotherNameArabic))
+            name += $" ({MotherNameArabic})";
+        return name;
+    }
+
+    /// <summary>
     /// Calculate age based on date of birth
     /// </summary>
     public int? CalculateAge()

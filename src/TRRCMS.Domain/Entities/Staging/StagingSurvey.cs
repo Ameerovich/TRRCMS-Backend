@@ -32,6 +32,9 @@ public class StagingSurvey : BaseStagingEntity
     /// <summary>Original Claim UUID from .uhc (optional — survey may precede claim creation).</summary>
     public Guid? OriginalClaimId { get; private set; }
 
+    /// <summary>Original Contact Person UUID from .uhc — not a FK to production Persons.</summary>
+    public Guid? OriginalContactPersonId { get; private set; }
+
     // ==================== SURVEY IDENTIFICATION ====================
 
     /// <summary>Survey reference code — optional in staging, auto-generated during commit.</summary>
@@ -117,6 +120,7 @@ public class StagingSurvey : BaseStagingEntity
         // --- optional: auto-generated / commit-time ---
         Guid? originalFieldCollectorId = null,
         Guid? originalClaimId = null,
+        Guid? originalContactPersonId = null,
         string? referenceCode = null,
         SurveyType? type = null,
         SurveySource? source = null,
@@ -129,6 +133,7 @@ public class StagingSurvey : BaseStagingEntity
             OriginalPropertyUnitId = originalPropertyUnitId,
             OriginalFieldCollectorId = originalFieldCollectorId,
             OriginalClaimId = originalClaimId,
+            OriginalContactPersonId = originalContactPersonId,
             ReferenceCode = referenceCode,
             Type = type,
             Source = source,

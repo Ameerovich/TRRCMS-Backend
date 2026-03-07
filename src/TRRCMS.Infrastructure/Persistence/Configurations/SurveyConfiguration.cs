@@ -138,6 +138,23 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
 
         builder.Property(s => s.ImportedDate);
 
+        // ==================== CONTACT PERSON ====================
+
+        builder.Property(s => s.ContactPersonId)
+            .HasComment("FK to Person who is the contact person for this survey");
+
+        builder.Property(s => s.ContactPersonFullName)
+            .HasMaxLength(500)
+            .HasComment("Denormalized contact person full name: firstname fathername familyname (mothername)");
+
+        builder.HasOne(s => s.ContactPerson)
+            .WithMany()
+            .HasForeignKey(s => s.ContactPersonId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasIndex(s => s.ContactPersonId)
+            .HasDatabaseName("IX_Surveys_ContactPersonId");
+
         // ==================== CLAIM LINKING ====================
 
         builder.Property(s => s.ClaimId);

@@ -73,6 +73,9 @@ public class StagingPerson : BaseStagingEntity
     /// <summary>Relationship to the head of household.</summary>
     public string? RelationshipToHead { get; private set; }
 
+    /// <summary>Whether this person is the contact person for the survey.</summary>
+    public bool IsContactPerson { get; private set; }
+
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>EF Core constructor.</summary>
@@ -106,7 +109,8 @@ public class StagingPerson : BaseStagingEntity
         string? gender = null,
         string? nationality = null,
         Guid? originalHouseholdId = null,
-        string? relationshipToHead = null)
+        string? relationshipToHead = null,
+        bool isContactPerson = false)
     {
         var entity = new StagingPerson
         {
@@ -123,7 +127,8 @@ public class StagingPerson : BaseStagingEntity
             Gender = gender,
             Nationality = nationality,
             OriginalHouseholdId = originalHouseholdId,
-            RelationshipToHead = relationshipToHead
+            RelationshipToHead = relationshipToHead,
+            IsContactPerson = isContactPerson
         };
 
         entity.InitializeStagingMetadata(importPackageId, originalEntityId);

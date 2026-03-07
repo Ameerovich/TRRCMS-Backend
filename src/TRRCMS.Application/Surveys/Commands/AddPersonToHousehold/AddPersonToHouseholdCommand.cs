@@ -84,4 +84,11 @@ public class AddPersonToHouseholdCommand : IRequest<PersonDto>
     /// Relationship to head of household (optional)
     /// </summary>
     public int? RelationshipToHead { get; set; }
+
+    // ==================== CONTACT PERSON ====================
+
+    /// <summary>
+    /// Whether this person is the contact person for the survey (default false)
+    /// </summary>
+    public bool IsContactPerson { get; set; }
 }

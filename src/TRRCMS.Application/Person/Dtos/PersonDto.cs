@@ -72,6 +72,13 @@ public class PersonDto
     /// </summary>
     public string? PhoneNumber { get; set; }
 
+    // ==================== CONTACT PERSON ====================
+
+    /// <summary>
+    /// Whether this person is the contact person for a survey
+    /// </summary>
+    public bool IsContactPerson { get; set; }
+
     // ==================== HOUSEHOLD CONTEXT ====================
 
     /// <summary>
