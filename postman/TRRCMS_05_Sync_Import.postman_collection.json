@@ -1,0 +1,1466 @@
+{
+	"info": {
+		"_postman_id": "trrcms-sync-import-v1",
+		"name": "TRRCMS — 05. Sync, Import & Conflict Resolution",
+		"description": "# TRRCMS — Sync, Import & Conflict Resolution\n\n**Three workflows in one collection:**\n\n1. **Sync Protocol (UC-003/UC-012)** — 4-step LAN sync (session → upload → download → ack)\n2. **Import Pipeline (UC-003)** — 5-stage import (upload → stage → detect → approve → commit)\n3. **Conflict Resolution (UC-007/UC-008)** — duplicate review, merge, keep-separate, escalate\n\n**Audience:** Mobile Team, Data Manager, Backend\n\n**Requires:** `accessToken` from 01_Auth collection\n\n**Environment:** `TRRCMS_Development.postman_environment.json`\n\n## .uhc Package Schema v1.1\n\n| Change | Details |\n|--------|--------|\n| New table: `building_documents` | Building photos/scans |\n| New column: `persons.is_contact_person` | INTEGER (0/1) |\n| New column: `surveys.contact_person_id` | UUID FK to persons |\n| New manifest key: `building_document_count` | Record count |\n| Removed: `buildings.location_description` | No longer staged |\n\n## Enum Reference\n\n### TransferStatus (حالة النقل)\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Pending | قيد الانتظار |\n| 2 | InProgress | جاري النقل |\n| 3 | Transferred | تم النقل |\n| 4 | Failed | فشل النقل |\n| 5 | Cancelled | ملغي |\n| 6 | PartialTransfer | نقل جزئي |\n| 7 | Synchronized | متزامن |\n\n### Priority (الأولوية)\n| Value | Name | Arabic |\n|-------|------|--------|\n| Normal | عادي |\n| High | عالي |\n| Urgent | عاجل |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "7. Sync Protocol (UC-003/UC-012)",
+			"item": [
+				{
+					"name": "Step 1 - Create Sync Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Session created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('syncSessionId', jsonData.id);",
+									"    console.log('✅ Sync session created:', jsonData.id);",
+									"    console.log('   Status:', jsonData.sessionStatus);",
+									"    console.log('   Device:', jsonData.deviceId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fieldCollectorId\": \"{{currentUserId}}\",\n  \"deviceId\": \"TABLET-FIELD-001\",\n  \"serverIpAddress\": \"192.168.1.100\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/sync/session",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"session"
+							]
+						},
+						"description": "**Sync Step 1** - Open a sync session.\n\nReturns `syncSessionId` required for Steps 2-4.\n\n**Required Permission:** CanSyncData (System_Sync 9010)\n**Roles:** FieldCollector, FieldSupervisor, Administrator\n\n**Session Status:**\n- 1 = InProgress\n- 2 = Completed\n- 3 = PartiallyCompleted\n- 4 = Failed\n\n**FSD:** FR-D-1"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 - Upload .uhc Package",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Package accepted', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().accepted).to.be.true;",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('📦 Package:', jsonData.packageId);",
+									"console.log('   Accepted:', jsonData.accepted);",
+									"console.log('   Duplicate:', jsonData.isDuplicate);",
+									"console.log('   Message:', jsonData.message);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "",
+									"description": ".uhc package file (renamed SQLite3 database)"
+								},
+								{
+									"key": "SyncSessionId",
+									"value": "{{syncSessionId}}",
+									"type": "text"
+								},
+								{
+									"key": "PackageId",
+									"value": "aaaa0001-0001-0001-0001-000000000001",
+									"type": "text",
+									"description": "UUID from .uhc manifest table"
+								},
+								{
+									"key": "DeviceId",
+									"value": "TABLET-FIELD-001",
+									"type": "text"
+								},
+								{
+									"key": "CreatedUtc",
+									"value": "2026-03-01T09:45:00Z",
+									"type": "text"
+								},
+								{
+									"key": "SchemaVersion",
+									"value": "1.0.0",
+									"type": "text"
+								},
+								{
+									"key": "AppVersion",
+									"value": "1.0.0",
+									"type": "text"
+								},
+								{
+									"key": "Sha256Checksum",
+									"value": "34d9f42c1305d4c85ceaa4b4f2a2dc057e72ae061cdeaa1417052aab334003f1",
+									"type": "text",
+									"description": "SHA-256 of data table contents (excluding manifest and attachments)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/sync/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"upload"
+							]
+						},
+						"description": "**Sync Step 2** - Upload a .uhc survey package.\n\n**Max Size:** 500 MB | **Content-Type:** multipart/form-data\n\n**Idempotent:** Same package uploaded twice returns `accepted=true, isDuplicate=true`.\n\n**Checksum:** SHA-256 of all data table contents sorted by table/row/column. Excludes manifest and attachments tables.\n\n**Response:**\n- `accepted=true, isDuplicate=false` - New package stored\n- `accepted=true, isDuplicate=true` - Already received (idempotent)\n- `accepted=false` - Checksum mismatch, session marked Failed\n\n**FSD:** FR-D-2, FR-D-3"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 - Download Assignments & Vocabularies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Assignments downloaded', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('📥 Payload assembled at:', jsonData.payloadAssembledAtUtc);",
+									"console.log('   Assignments:', jsonData.assignmentCount);",
+									"console.log('   Vocabularies:', jsonData.vocabularies ? jsonData.vocabularies.length : 0);",
+									"",
+									"if (jsonData.assignments && jsonData.assignments.length > 0) {",
+									"    jsonData.assignments.slice(0, 3).forEach(function(a, i) {",
+									"        console.log('   ' + (i+1) + '. Building:', a.buildingCode, '| Status:', a.transferStatus);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/sync/assignments?sessionId={{syncSessionId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"assignments"
+							],
+							"query": [
+								{
+									"key": "sessionId",
+									"value": "{{syncSessionId}}"
+								},
+								{
+									"key": "modifiedSinceUtc",
+									"value": "",
+									"disabled": true,
+									"description": "Optional: ISO-8601 UTC. Omit for full download. Pass previous payloadAssembledAtUtc for incremental sync."
+								}
+							]
+						},
+						"description": "**Sync Step 3** - Download building assignments and full vocabulary snapshot.\n\n**Returns:**\n- `assignments` - Pending/Failed assignments for this collector\n- `vocabularies` - All controlled vocabularies (bilingual Arabic/English)\n- `payloadAssembledAtUtc` - Use as `modifiedSinceUtc` on next sync\n\n**Incremental Sync:** Pass `modifiedSinceUtc` from previous response to get only new/changed assignments.\n\n**Vocabulary Format:**\n```json\n{\n  \"name\": \"building_type\",\n  \"version\": \"1.0.0\",\n  \"values\": [\n    { \"code\": 1, \"labelArabic\": \"\\u0633\\u0643\\u0646\\u064a\", \"labelEnglish\": \"Residential\" }\n  ]\n}\n```\n\n**FSD:** FR-D-4 (Vocabulary Distribution), FR-D-5 (Download Assignments)"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4 - Acknowledge Assignments",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Acknowledgement processed', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('✅ Acknowledged:', jsonData.acknowledgedCount);",
+									"console.log('   Failed:', jsonData.failedCount);",
+									"if (jsonData.failedAssignmentIds && jsonData.failedAssignmentIds.length > 0) {",
+									"    console.log('   Failed IDs:', jsonData.failedAssignmentIds);",
+									"}",
+									"console.log('   Message:', jsonData.message);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"syncSessionId\": \"{{syncSessionId}}\",\n  \"assignmentIds\": [\n    \"assignment-guid-001\",\n    \"assignment-guid-002\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/sync/assignments/ack",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"assignments",
+								"ack"
+							]
+						},
+						"description": "**Sync Step 4** - Confirm tablet stored the downloaded assignments.\n\n**Idempotent:** Already-transferred assignments are silently skipped.\n\n**Effect per assignment:** Pending/Failed -> Transferred\n\n**Session closes:** Completed (all ok) or PartiallyCompleted (some packages failed).\n\n**assignmentIds:** The `assignmentId` values received in Step 3 response.\n\n**FSD:** FR-D-6 (Transfer Acknowledgement)"
+					},
+					"response": []
+				}
+			],
+			"description": "## Sync Protocol (UC-003/UC-012)\n\n**Required Permission:** CanSyncData (System_Sync 9010)\n**Roles:** FieldCollector, FieldSupervisor, Administrator\n\n**4-Step LAN Sync Protocol (offline-first tablets):**\n```\nStep 1: POST /sync/session          -> Open session, get syncSessionId\nStep 2: POST /sync/upload           -> Upload .uhc survey package\nStep 3: GET  /sync/assignments      -> Download assignments + vocabularies\nStep 4: POST /sync/assignments/ack  -> Acknowledge receipt\n```\n\n**Package Format:** .uhc files (renamed SQLite3 databases) containing: surveys, buildings, building_documents, property_units, persons, households, person_property_relations, claims, evidences, attachments.\n\n**New in v1.1:**\n- `building_documents` table for building photos/documents\n- `is_contact_person` column on persons table\n- `contact_person_id` column on surveys table\n- `building_document_count` in manifest record counts\n\n**Session Status Flow:**\nInProgress (1) -> Completed (2)\n               -> PartiallyCompleted (3) [some packages failed]\n               -> Failed (4) [checksum mismatch]\n\n**Assignment Transfer Status:**\nPending (1) -> InProgress (2) -> Transferred (3)\n           -> Failed (4) -> retry on next sync"
+		},
+		{
+			"name": "8. Import Pipeline (UC-003)",
+			"item": [
+				{
+					"name": "Step 1 - Upload .uhc Package",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Package uploaded', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.package && jsonData.package.id) {",
+									"    pm.environment.set('importPackageId', jsonData.package.id);",
+									"    console.log('\\u2705 Package uploaded:', jsonData.package.id);",
+									"    console.log('   Status:', jsonData.package.status);",
+									"    console.log('   Duplicate:', jsonData.isDuplicatePackage);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "",
+									"description": ".uhc package file (max 500 MB)"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/import/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"upload"
+							]
+						},
+						"description": "**Import Step 1** - Upload a .uhc package for import.\n\nPerforms integrity checks (checksum, signature, vocabulary compatibility).\n\n**Max Size:** 500 MB | **Content-Type:** multipart/form-data\n\n**Idempotent:** Same package uploaded twice returns `isDuplicatePackage=true`.\n\n**FSD:** FR-D-2, FR-D-3"
+					},
+					"response": []
+				},
+				{
+					"name": "List Import Packages",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Packages listed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    var data = pm.response.json();",
+									"    pm.expect(data.items).to.be.an('array');",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\ud83d\\udce6 Total packages:', data.totalCount);",
+									"console.log('   This page:', data.items.length);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/import/packages?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "",
+									"disabled": true,
+									"description": "Filter by status (Pending, Staging, Validating, StagingComplete, DuplicateDetection, WaitingForApproval, ReadyToCommit, Committing, Completed, Failed, Cancelled, Quarantined)"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								},
+								{
+									"key": "sortBy",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "sortDescending",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						},
+						"description": "**Get Packages** - List all import packages with optional filtering, sorting, and pagination.\n\nReturns paginated list of packages and their statuses."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Package Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Package found', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Package:', data.fileName);",
+									"console.log('  Status:', data.status);",
+									"  console.log('  Entities: Buildings=' + (data.buildingCount || 0) + ', BuildingDocs=' + (data.buildingDocumentCount || 0) + ', Persons=' + (data.personCount || 0) + ', Surveys=' + (data.surveyCount || 0));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}"
+							]
+						},
+						"description": "**Get Package** - Retrieve a specific import package by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 - Stage Package",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Staging completed', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u2705 Staging complete');",
+									"console.log('  Valid rows:', data.validRowCount);",
+									"console.log('  Errors:', data.validationErrors.length);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/stage",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"stage"
+							]
+						},
+						"description": "**Import Step 2** - Trigger staging (unpack .uhc → staging tables) and row-level validation."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Validation Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Report retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Validation Report:');",
+									"console.log('  Valid:', data.validRowCount);",
+									"console.log('  Errors:', data.validationErrors.length);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/validation-report",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"validation-report"
+							]
+						},
+						"description": "**Get Validation Report** - Read-only current validation report for a package."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Staged Entities",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Entities retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Staged Entities:');",
+									"Object.keys(data).forEach(function(key) {",
+									"    console.log('  ' + key + ':', data[key].length);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/staged-entities?entityType=",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"staged-entities"
+							],
+							"query": [
+								{
+									"key": "entityType",
+									"value": "",
+									"disabled": true,
+									"description": "Optional filter: Building, BuildingDocument, PropertyUnit, Person, Household, PersonPropertyRelation, Survey, Claim, Evidence"
+								}
+							]
+						},
+						"description": "**Get Staged Entities** - All staged entities for a package with their IDs and status. Used by conflict resolution UI.\n\n**Entity Types:** Building, BuildingDocument, PropertyUnit, Person, Household, PersonPropertyRelation, Survey, Claim, Evidence"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 - Detect Duplicates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Detection completed', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u2705 Duplicate detection complete');",
+									"console.log('  Conflicts detected:', data.conflictCount || 0);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/detect-duplicates",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"detect-duplicates"
+							]
+						},
+						"description": "**Import Step 3** - Trigger duplicate detection (person + property matching) for a staged package."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4 - Approve for Commit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Approval processed', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u2705 Package approved');",
+									"console.log('  Ready to commit:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"approveAllRecords\": true,\n  \"justification\": \"All conflicts resolved, ready for commit\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/approve",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"approve"
+							]
+						},
+						"description": "**Import Step 4** - Approve staging records for commit. Requires all conflicts resolved."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 5 - Commit Package",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Commit initiated', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u2705 Commit completed');",
+									"console.log('  Entities committed:', data.recordsCommitted);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"commitAllApproved\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/commit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"commit"
+							]
+						},
+						"description": "**Import Step 5** - Commit approved staging records to production tables. Generates Record IDs (FR-D-8) and deduplicates attachments (FR-D-9)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Commit Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Report retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Commit Report:');",
+									"console.log('  Records committed:', data.recordsCommitted);",
+									"console.log('  Failures:', data.failedRecords);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/commit-report",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"commit-report"
+							]
+						},
+						"description": "**Get Commit Report** - Report for a completed/failed import package."
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Stuck Commit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Reset successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Package reset to:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Commit crashed, resetting to ReadyToCommit\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/reset-commit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"reset-commit"
+							]
+						},
+						"description": "**Reset Stuck Commit** - Reset a package stuck in Committing/Failed back to ReadyToCommit. Preserves staging data & approvals."
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Package",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Cancelled', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Package cancelled, status:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Package cancelled by user\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/cancel",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"cancel"
+							]
+						},
+						"description": "**Cancel Package** - Cancel an active import package."
+					},
+					"response": []
+				},
+				{
+					"name": "Quarantine Package",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Quarantined', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Package quarantined, status:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Suspicious content detected\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/import/packages/{{importPackageId}}/quarantine",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"import",
+								"packages",
+								"{{importPackageId}}",
+								"quarantine"
+							]
+						},
+						"description": "**Quarantine Package** - Quarantine a suspicious import package (UC-003 S12b)."
+					},
+					"response": []
+				}
+			],
+			"description": "## Import Pipeline (UC-003)\n\n**Required Permission:** CanImportData (System_Import permission)\n**Roles:** DataManager, OfficeClerk, FieldSupervisor, Administrator\n\n**5-Stage Import Workflow:**\n```\nStep 1: POST /import/upload              -> Upload .uhc package\nStep 2: POST /import/packages/{id}/stage -> Extract & validate\nStep 3: POST /import/packages/{id}/detect-duplicates -> Find conflicts\nStep 4: POST /import/packages/{id}/approve          -> Approve for commit\nStep 5: POST /import/packages/{id}/commit           -> Atomic commit to production\n```\n\n**Package Status Flow:**\nPending -> Staging -> Validating -> StagingComplete -> DuplicateDetection -> WaitingForApproval -> ReadyToCommit -> Committing -> Completed\n\n**Package Contents:** .uhc files (SQLite3 databases) containing buildings, building_documents, property_units, persons, households, person_property_relations, surveys, claims, evidences, attachments.\n\n**Schema v1.1 Changes:**\n- Added `building_documents` table (building photos/scans)\n- Added `is_contact_person` (INTEGER) to persons table\n- Added `contact_person_id` (UUID FK) to surveys table\n- Added `building_document_count` to manifest\n- Removed `location_description` from buildings table\n\n**FSD:** FR-D-2, FR-D-3, FR-D-8, FR-D-9"
+		},
+		{
+			"name": "9. Conflict Resolution (UC-007/UC-008)",
+			"item": [
+				{
+					"name": "Conflict Summary",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Summary retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\ud83d\\udccb Conflict Summary:');",
+									"console.log('  Total:', data.totalConflicts);",
+									"console.log('  Pending:', data.pendingCount);",
+									"console.log('  Escalated:', data.escalatedCount);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"summary"
+							]
+						},
+						"description": "**Conflict Summary** - Aggregate conflict counts for the dashboard."
+					},
+					"response": []
+				},
+				{
+					"name": "Conflict Queue",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Queue retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\ud83d\\udcca Conflicts in queue:', data.items.length);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts"
+							],
+							"query": [
+								{
+									"key": "conflictType",
+									"value": "",
+									"disabled": true,
+									"description": "Filter: person, property, claim"
+								},
+								{
+									"key": "status",
+									"value": "",
+									"disabled": true,
+									"description": "Filter by status"
+								},
+								{
+									"key": "priority",
+									"value": "",
+									"disabled": true,
+									"description": "Filter by priority"
+								},
+								{
+									"key": "importPackageId",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "isEscalated",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								},
+								{
+									"key": "sortBy",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "sortDescending",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						},
+						"description": "**Conflict Resolution Queue** - List all conflicts with filtering, sorting, and pagination."
+					},
+					"response": []
+				},
+				{
+					"name": "Property Duplicates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Properties retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\ud83c\\udfd1 Property duplicates:', data.totalCount);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/property-duplicates?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"property-duplicates"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "priority",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "importPackageId",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "isEscalated",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						},
+						"description": "**UC-007** - List property duplicate review queue (buildings/units flagged as potential duplicates)."
+					},
+					"response": []
+				},
+				{
+					"name": "Person Duplicates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Persons retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\ud83d\\udc65 Person duplicates:', data.totalCount);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/person-duplicates?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"person-duplicates"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "priority",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "importPackageId",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "isEscalated",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						},
+						"description": "**UC-008** - List person duplicate review queue (persons sharing national_id)."
+					},
+					"response": []
+				},
+				{
+					"name": "Escalated Conflicts",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Escalated retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u26a0\\ufe0f Escalated conflicts:', data.totalCount);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/escalated?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"escalated"
+							],
+							"query": [
+								{
+									"key": "conflictType",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "priority",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "importPackageId",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						},
+						"description": "**Senior Review Queue** - Escalated conflicts pending supervisor investigation (UC-007 S05a / UC-008 S05a)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Conflict Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Conflict found', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"if (data.id) {",
+									"    pm.environment.set('conflictId', data.id);",
+									"    console.log('\\u2705 Conflict loaded:', data.conflictType);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/{{conflictId}}/details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"{{conflictId}}",
+								"details"
+							]
+						},
+						"description": "**Conflict Details** - Full conflict details for side-by-side review.\n\nUC-007 S03-S04: Property detail comparison with codes, location, geometry.\nUC-008 S03-S04: Person detail comparison with names, IDs, documents."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Conflict By ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Conflict found', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Conflict type:', data.conflictType);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/{{conflictId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"{{conflictId}}"
+							]
+						},
+						"description": "**Get Conflict** - Alternative endpoint to get conflict details (without /details suffix)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Document Comparison",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Documents retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Documents compared:', data.leftEntity && data.rightEntity);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/{{conflictId}}/document-comparison",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"{{conflictId}}",
+								"document-comparison"
+							]
+						},
+						"description": "**Document Comparison** - Side-by-side evidence/document comparison for conflict pair.\n\nUC-008 S04: Loads all evidence files and documents for both entities for review."
+					},
+					"response": []
+				},
+				{
+					"name": "Merge Conflict",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Merge successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u2705 Merged. Status:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"masterEntityId\": \"master-entity-id\",\n  \"justification\": \"Records are duplicates, keeping master entity\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/{{conflictId}}/merge",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"{{conflictId}}",
+								"merge"
+							]
+						},
+						"description": "**Merge Conflict** - Execute merge with selected master record.\n\nUC-007 S06: Apply Property Merge Rules - consolidate property records.\nUC-008 S06: Apply Person Merge Rules - consolidate person records.\n\nPropagates FK changes and builds audit trail."
+					},
+					"response": []
+				},
+				{
+					"name": "Keep Separate",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Keep separate successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u2705 Marked as separate. Status:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"justification\": \"Records are distinct entities, not duplicates\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/{{conflictId}}/keep-separate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"{{conflictId}}",
+								"keep-separate"
+							]
+						},
+						"description": "**Keep Separate** - Mark as reviewed, not duplicate. Keeps records separate.\n\nUC-007 S05(b)/S06: Records are distinct properties.\nUC-008 S05(b)/S06: Records are different individuals.\n\nPrevents re-surfacing unless detection rules change."
+					},
+					"response": []
+				},
+				{
+					"name": "Resolve Conflict",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Conflict resolved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u2705 Resolved. Status:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"action\": \"merge\",\n  \"reason\": \"Reason for resolution\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/{{conflictId}}/resolve",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"{{conflictId}}",
+								"resolve"
+							]
+						},
+						"description": "**Resolve Conflict** - General-purpose resolution endpoint (any action: merge, keep-both, keep-first, keep-second).\n\nFor UC-007/UC-008, prefer /merge or /keep-separate endpoints."
+					},
+					"response": []
+				},
+				{
+					"name": "Escalate Conflict",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Escalated', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\u26a0\\ufe0f Escalated to senior review. Status:', data.status);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Reason for escalation (e.g., conflicting documents, partial IDs)\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/conflicts/{{conflictId}}/escalate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"conflicts",
+								"{{conflictId}}",
+								"escalate"
+							]
+						},
+						"description": "**Escalate Conflict** - Escalate to senior/supervisor review.\n\nUC-007 S05a: Complex property case requiring investigation.\nUC-008 S05a: Complex person case (partial IDs, conflicting docs).\n\nSets IsEscalated=true and Priority=High. Adds to senior review queue."
+					},
+					"response": []
+				}
+			],
+			"description": "## Conflict Resolution (UC-007/UC-008)\n\n**Required Permission:** CanImportData (System_Import permission)\n**Roles:** DataManager, OfficeClerk, FieldSupervisor, Administrator\n\n### UC-007: Property Duplicate Resolution\n**Workflow:** Review queue (S01-S02) → Side-by-side comparison (S03-S04) → Merge/Keep-Separate (S05-S06) → Optional Escalation (S05a)\n\nProperty records flagged as potential duplicates based on:\n- Same building_id (within unit)\n- Composite key (building_id + unit_code) matches\n\n### UC-008: Person Duplicate Resolution\n**Workflow:** Review queue (S01-S02) → Side-by-side comparison (S03-S04) → Document comparison (S04) → Merge/Keep-Separate (S05-S06) → Optional Escalation (S05a)\n\nPerson records sharing the same national_id value (including within-batch duplicates).\n\n### Resolution Actions\n- **Merge:** Master-detail selection, consolidates entities, propagates FK changes\n- **Keep Separate:** No merge, prevents re-surfacing\n- **Escalate:** Complex cases to supervisor investigation\n\n**FSD:** FR-D-5, FR-D-6, FR-D-7"
+		}
+	]
+}

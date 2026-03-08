@@ -1354,7 +1354,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"familyNameArabic\": \"\u0627\u0644\u062d\u0633\u0646\",\n  \"firstNameArabic\": \"\u0623\u062d\u0645\u062f\",\n  \"fatherNameArabic\": \"\u0645\u062d\u0645\u062f\",\n  \"motherNameArabic\": \"\u0641\u0627\u0637\u0645\u0629\",\n  \"nationalId\": \"01234567890\",\n  \"yearOfBirth\": 1975,\n  \"relationshipToHead\": \"Head\",\n  \"mobileNumber\": \"+963 991 234 567\"\n}"
+									"raw": "{\n  \"familyNameArabic\": \"\u0627\u0644\u062d\u0633\u0646\",\n  \"firstNameArabic\": \"\u0623\u062d\u0645\u062f\",\n  \"fatherNameArabic\": \"\u0645\u062d\u0645\u062f\",\n  \"motherNameArabic\": \"\u0641\u0627\u0637\u0645\u0629\",\n  \"nationalId\": \"01234567890\",\n  \"yearOfBirth\": 1975,\n  \"relationshipToHead\": \"Head\",\n  \"mobileNumber\": \"+963 991 234 567\",\n  \"isContactPerson\": true\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
@@ -1369,7 +1369,7 @@
 										"persons"
 									]
 								},
-								"description": "**UC-001 Stage 3** - Add person to household as head.\n\n**Required:** familyNameArabic, firstNameArabic, fatherNameArabic\n\n**RelationshipToHead:** Head, Spouse, Child, Parent, Sibling, Other"
+								"description": "**UC-001 Stage 3** - Add person to household as head.\n\n**Required:** familyNameArabic, firstNameArabic, fatherNameArabic\n\n**RelationshipToHead:** Head, Spouse, Child, Parent, Sibling, Other\n\n**isContactPerson:** Set to `true` to designate this person as the survey contact person. Only one person per survey should be marked as contact."
 							},
 							"response": []
 						},
@@ -2419,7 +2419,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"familyNameArabic\": \"\u0627\u0644\u0633\u064a\u062f\",\n  \"firstNameArabic\": \"\u0645\u062d\u0645\u062f\",\n  \"fatherNameArabic\": \"\u0623\u062d\u0645\u062f\",\n  \"nationalId\": \"09876543210\",\n  \"yearOfBirth\": 1970,\n  \"relationshipToHead\": \"Head\",\n  \"email\": \"owner@example.com\",\n  \"mobileNumber\": \"+963912345678\"\n}"
+									"raw": "{\n  \"familyNameArabic\": \"\u0627\u0644\u0633\u064a\u062f\",\n  \"firstNameArabic\": \"\u0645\u062d\u0645\u062f\",\n  \"fatherNameArabic\": \"\u0623\u062d\u0645\u062f\",\n  \"nationalId\": \"09876543210\",\n  \"yearOfBirth\": 1970,\n  \"relationshipToHead\": \"Head\",\n  \"email\": \"owner@example.com\",\n  \"mobileNumber\": \"+963912345678\",\n  \"isContactPerson\": true\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
@@ -4014,7 +4014,7 @@
 					"response": []
 				}
 			],
-			"description": "## Sync Protocol (UC-003/UC-012)\n\n**Required Permission:** CanSyncData (System_Sync 9010)\n**Roles:** FieldCollector, FieldSupervisor, Administrator\n\n**4-Step LAN Sync Protocol (offline-first tablets):**\n```\nStep 1: POST /sync/session          -> Open session, get syncSessionId\nStep 2: POST /sync/upload           -> Upload .uhc survey package\nStep 3: GET  /sync/assignments      -> Download assignments + vocabularies\nStep 4: POST /sync/assignments/ack  -> Acknowledge receipt\n```\n\n**Package Format:** .uhc files (renamed SQLite3 databases) containing: surveys, buildings, property_units, persons, households, relations, claims, evidences.\n\n**Session Status Flow:**\nInProgress (1) -> Completed (2)\n               -> PartiallyCompleted (3) [some packages failed]\n               -> Failed (4) [checksum mismatch]\n\n**Assignment Transfer Status:**\nPending (1) -> InProgress (2) -> Transferred (3)\n           -> Failed (4) -> retry on next sync"
+			"description": "## Sync Protocol (UC-003/UC-012)\n\n**Required Permission:** CanSyncData (System_Sync 9010)\n**Roles:** FieldCollector, FieldSupervisor, Administrator\n\n**4-Step LAN Sync Protocol (offline-first tablets):**\n```\nStep 1: POST /sync/session          -> Open session, get syncSessionId\nStep 2: POST /sync/upload           -> Upload .uhc survey package\nStep 3: GET  /sync/assignments      -> Download assignments + vocabularies\nStep 4: POST /sync/assignments/ack  -> Acknowledge receipt\n```\n\n**Package Format:** .uhc files (renamed SQLite3 databases) containing: surveys, buildings, building_documents, property_units, persons, households, person_property_relations, claims, evidences, attachments.\n\n**New in v1.1:**\n- `building_documents` table for building photos/documents\n- `is_contact_person` column on persons table\n- `contact_person_id` column on surveys table\n- `building_document_count` in manifest record counts\n\n**Session Status Flow:**\nInProgress (1) -> Completed (2)\n               -> PartiallyCompleted (3) [some packages failed]\n               -> Failed (4) [checksum mismatch]\n\n**Assignment Transfer Status:**\nPending (1) -> InProgress (2) -> Transferred (3)\n           -> Failed (4) -> retry on next sync"
 		},
 		{
 			"name": "8. Import Pipeline (UC-003)",
@@ -4148,7 +4148,7 @@
 									"var data = pm.response.json();",
 									"console.log('Package:', data.fileName);",
 									"console.log('  Status:', data.status);",
-									"  console.log('  Entities: Buildings=' + (data.buildingCount || 0) + ', Persons=' + (data.personCount || 0) + ', Surveys=' + (data.surveyCount || 0));"
+									"  console.log('  Entities: Buildings=' + (data.buildingCount || 0) + ', BuildingDocs=' + (data.buildingDocumentCount || 0) + ', Persons=' + (data.personCount || 0) + ', Surveys=' + (data.surveyCount || 0));"
 								],
 								"type": "text/javascript"
 							}
@@ -4289,11 +4289,11 @@
 									"key": "entityType",
 									"value": "",
 									"disabled": true,
-									"description": "Optional filter: Building, PropertyUnit, Person, Household, etc."
+									"description": "Optional filter: Building, BuildingDocument, PropertyUnit, Person, Household, PersonPropertyRelation, Survey, Claim, Evidence"
 								}
 							]
 						},
-						"description": "**Get Staged Entities** - All staged entities for a package with their IDs and status. Used by conflict resolution UI."
+						"description": "**Get Staged Entities** - All staged entities for a package with their IDs and status. Used by conflict resolution UI.\n\n**Entity Types:** Building, BuildingDocument, PropertyUnit, Person, Household, PersonPropertyRelation, Survey, Claim, Evidence"
 					},
 					"response": []
 				},
@@ -4607,7 +4607,7 @@
 					"response": []
 				}
 			],
-			"description": "## Import Pipeline (UC-003)\n\n**Required Permission:** CanImportData (System_Import permission)\n**Roles:** DataManager, OfficeClerk, FieldSupervisor, Administrator\n\n**5-Stage Import Workflow:**\n```\nStep 1: POST /import/upload              -> Upload .uhc package\nStep 2: POST /import/packages/{id}/stage -> Extract & validate\nStep 3: POST /import/packages/{id}/detect-duplicates -> Find conflicts\nStep 4: POST /import/packages/{id}/approve          -> Approve for commit\nStep 5: POST /import/packages/{id}/commit           -> Atomic commit to production\n```\n\n**Package Status Flow:**\nPending -> Staging -> Validating -> StagingComplete -> DuplicateDetection -> WaitingForApproval -> ReadyToCommit -> Committing -> Completed\n\n**Package Contents:** .uhc files (SQLite3 databases) containing buildings, property_units, persons, households, relations, claims, evidences, documents, vocabularies.\n\n**FSD:** FR-D-2, FR-D-3, FR-D-8, FR-D-9"
+			"description": "## Import Pipeline (UC-003)\n\n**Required Permission:** CanImportData (System_Import permission)\n**Roles:** DataManager, OfficeClerk, FieldSupervisor, Administrator\n\n**5-Stage Import Workflow:**\n```\nStep 1: POST /import/upload              -> Upload .uhc package\nStep 2: POST /import/packages/{id}/stage -> Extract & validate\nStep 3: POST /import/packages/{id}/detect-duplicates -> Find conflicts\nStep 4: POST /import/packages/{id}/approve          -> Approve for commit\nStep 5: POST /import/packages/{id}/commit           -> Atomic commit to production\n```\n\n**Package Status Flow:**\nPending -> Staging -> Validating -> StagingComplete -> DuplicateDetection -> WaitingForApproval -> ReadyToCommit -> Committing -> Completed\n\n**Package Contents:** .uhc files (SQLite3 databases) containing buildings, building_documents, property_units, persons, households, person_property_relations, surveys, claims, evidences, attachments.\n\n**Schema v1.1 Changes:**\n- Added `building_documents` table (building photos/scans)\n- Added `is_contact_person` (INTEGER) to persons table\n- Added `contact_person_id` (UUID FK) to surveys table\n- Added `building_document_count` to manifest\n- Removed `location_description` from buildings table\n\n**FSD:** FR-D-2, FR-D-3, FR-D-8, FR-D-9"
 		},
 		{
 			"name": "9. Conflict Resolution (UC-007/UC-008)",

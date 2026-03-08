@@ -1,0 +1,1337 @@
+{
+	"info": {
+		"_postman_id": "trrcms-buildings-v1",
+		"name": "TRRCMS — 02. Buildings & Assignments",
+		"description": "# TRRCMS — Buildings & Assignments\n\nBuilding CRUD, polygon/radius search, property units, and building assignment workflow (UC-012).\n\n**Audience:** Admin, Data Manager, Desktop Team\n\n**Requires:** `accessToken` from 01_Auth collection\n\n**Environment:** `TRRCMS_Development.postman_environment.json`\n\n## Enum Reference\n\n### PropertyUnitType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Apartment | شقة سكنية |\n| 2 | Shop | محل تجاري |\n| 3 | Office | مكتب |\n| 4 | Warehouse | مستودع |\n| 5 | Other | أخرى |\n\n### PropertyUnitStatus\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Occupied | مشغول |\n| 2 | Vacant | شاغر |\n| 3 | Damaged | متضرر |\n| 4 | UnderRenovation | قيد الترميم |\n| 5 | Uninhabitable | غير صالح للسكن |\n| 6 | Locked | مغلق |\n| 99 | Unknown | غير معروف |\n\n### TransferStatus (حالة النقل)\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Pending | قيد الانتظار |\n| 2 | InProgress | جاري النقل |\n| 3 | Transferred | تم النقل |\n| 4 | Failed | فشل النقل |\n| 5 | Cancelled | ملغي |\n| 6 | PartialTransfer | نقل جزئي |\n| 7 | Synchronized | متزامن |\n\n### Priority (الأولوية)\n| Value | Name | Arabic |\n|-------|------|--------|\n| Normal | عادي |\n| High | عالي |\n| Urgent | عاجل |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "1. Building Management",
+			"item": [
+				{
+					"name": "Get Buildings (Paginated)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"if (jsonData.items && jsonData.items.length > 0) {",
+									"    var building = jsonData.items[0];",
+									"    pm.environment.set('buildingId', building.id);",
+									"    pm.environment.set('buildingCode', building.buildingCode);",
+									"    console.log('✅ First building saved:');",
+									"    console.log('   ID:', building.id);",
+									"    console.log('   Code:', building.buildingCode);",
+									"    console.log('   Total buildings:', jsonData.totalCount);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Buildings?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								},
+								{
+									"key": "governorateCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "districtCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "subDistrictCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "communityCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "neighborhoodCode",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "buildingType",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "searchTerm",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get paginated list of buildings with optional filters.\n\n**Filters:**\n- Administrative codes (governorate, district, etc.)\n- buildingType: 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n- searchTerm: Search in building code or address"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Building by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🏢 Building:', jsonData.buildingCode);",
+									"console.log('   Type:', jsonData.buildingType);",
+									"console.log('   Floors:', jsonData.numberOfFloors);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Get building details by GUID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Building by Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('buildingId', jsonData.id);",
+									"    console.log('✅ Building found, ID saved:', jsonData.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/code/{{buildingCode}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"code",
+								"{{buildingCode}}"
+							]
+						},
+						"description": "Get building by 17-digit code.\n\n**Code Format:** GG-DD-SS-CCC-NNN-BBBBB\n- GG: Governorate (2 digits)\n- DD: District (2 digits)\n- SS: SubDistrict (2 digits)\n- CCC: Community (3 digits)\n- NNN: Neighborhood (3 digits)\n- BBBBB: Building (5 digits)"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Buildings (Partial Match)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🔍 Search Results:');",
+									"console.log('   Total:', jsonData.totalCount);",
+									"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
+									"",
+									"if (jsonData.buildings && jsonData.buildings.length > 0) {",
+									"    pm.environment.set('buildingId', jsonData.buildings[0].id);",
+									"    console.log('✅ First building ID saved:', jsonData.buildings[0].id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"buildingId\": \"01-01\",\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"sortBy\": \"buildingId\",\n  \"sortDescending\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"search"
+							]
+						},
+						"description": "Search buildings with partial match on building code.\n\n**BuildingId Partial Match:**\n- Supports both formatted (01-01-01) and unformatted (010101) input\n- Searches anywhere in the building code\n\n**Examples:**\n- `\"01-01\"` → Finds buildings starting with governorate 01, district 01\n- `\"01010101\"` → Finds buildings in specific sub-district\n- `\"00001\"` → Finds buildings with \"00001\" anywhere in code\n\n**Filters:**\n- governorateCode, districtCode, subDistrictCode, communityCode, neighborhoodCode\n- buildingType: 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n- status: Building status\n\n**Pagination:**\n- page: Page number (default: 1)\n- pageSize: Items per page (default: 20, max: 100)\n\n**Sorting:**\n- sortBy: \"buildingId\", \"createdDate\", \"status\", \"buildingType\"\n- sortDescending: true/false"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Building",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Building created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('buildingId', jsonData.id);",
+									"    pm.environment.set('buildingCode', jsonData.buildingCode);",
+									"    console.log('✅ Building created:');",
+									"    console.log('   ID:', jsonData.id);",
+									"    console.log('   Code:', jsonData.buildingCode);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"buildingCode\": \"11010101001001\",\n  \"buildingType\": 1,\n  \"numberOfFloors\": 4,\n  \"numberOfUnits\": 8,\n  \"buildingCondition\": 1,\n  \"constructionYear\": 1995,\n  \"addressArabic\": \"شارع النصر، حي الجميلية، حلب\",\n  \"gpsLatitude\": 36.2021,\n  \"gpsLongitude\": 37.1343,\n  \"notes\": \"مبنى سكني - 4 طوابق\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings"
+							]
+						},
+						"description": "Create a new building.\n\n**Required:** buildingCode, buildingType\n\n**BuildingType:**\n- 1 = Residential (سكني)\n- 2 = Commercial (تجاري)\n- 3 = MixedUse (مختلط)\n- 4 = Industrial (صناعي)\n\n**BuildingCondition:**\n- 1 = Good (جيد)\n- 2 = Fair (متوسط)\n- 3 = Poor (سيء)\n- 4 = Damaged (متضرر)\n- 5 = Destroyed (مدمر)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Building",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Building updated', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log('✅ Building updated successfully');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{buildingId}}\",\n  \"numberOfFloors\": 5,\n  \"numberOfUnits\": 10,\n  \"buildingCondition\": 2,\n  \"notes\": \"تم تحديث البيانات - إضافة طابق جديد\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Update building details. Only provided fields are updated."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Building (Soft Delete)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Building deleted', function () {",
+									"    pm.response.to.have.status(204);",
+									"});",
+									"",
+									"console.log('✅ Building soft deleted successfully');",
+									"console.log('ℹ️ Building is marked as deleted but data retained for audit');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Building demolished - no longer exists | تم هدم المبنى\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Soft delete a building (Admin only).\n\n**What happens:**\n- Sets `IsDeleted = true`\n- Records `DeletedAtUtc` timestamp\n- Records `DeletedBy` user ID\n- Building no longer appears in queries\n- Data retained for audit and potential recovery\n\n**Required Permission:** Buildings_Delete (4003) - CanDeleteBuildings policy\n\n**Request Body (optional):**\n```json\n{\n  \"reason\": \"Reason for deletion\"\n}\n```\n\n**Note:** This is a soft delete. Data can be recovered if needed."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Property Units by Building",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('📋 Found', jsonData.length, 'property unit(s)');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/PropertyUnits/building/{{buildingId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"PropertyUnits",
+								"building",
+								"{{buildingId}}"
+							]
+						},
+						"description": "Get all property units in a building."
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - Coordinates",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🗺️ Polygon Search Results:');",
+									"console.log('   Buildings found:', jsonData.totalCount);",
+									"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
+									"console.log('   Area:', Math.round(jsonData.polygonAreaSquareMeters || 0), 'm²');",
+									"",
+									"if (jsonData.buildings && jsonData.buildings.length > 0) {",
+									"    pm.environment.set('polygonBuildingId', jsonData.buildings[0].id);",
+									"    jsonData.buildings.forEach(function(b, i) {",
+									"        console.log('   ' + (i+1) + '. ' + b.buildingIdFormatted + ' - ' + b.buildingType);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1340, 36.2020],\n    [37.1400, 36.2020],\n    [37.1400, 36.2060],\n    [37.1340, 36.2060]\n  ],\n  \"page\": 1,\n  \"pageSize\": 100,\n  \"includeFullDetails\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Search buildings within a polygon using coordinates array.\nالبحث عن المباني داخل مضلع جغرافي\n\n**Format:** [[lng, lat], [lng, lat], ...]\n**Auto-closes:** Polygon closes automatically if first != last\n\n**Test Areas:**\n- الجميلية: Lat 36.2020-36.2060, Lng 37.1340-37.1400\n- العزيزية: Lat 36.1960-36.2010, Lng 37.1340-37.1400\n- الشهباء: Lat 36.2080-36.2140, Lng 37.1340-37.1400"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - WKT Format",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var jsonData = pm.response.json();",
+									"console.log('🗺️ WKT Search - Found:', jsonData.totalCount, 'buildings');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"polygonWkt\": \"POLYGON((37.1340 36.2020, 37.1400 36.2020, 37.1400 36.2060, 37.1340 36.2060, 37.1340 36.2020))\",\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Search using WKT format.\n\n**WKT Format:** POLYGON((lng lat, lng lat, ...))\n**SRID:** 4326 (WGS84)\n**Note:** First and last coordinate must be identical"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - Large Area",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🗺️ Large Area - Total:', jsonData.totalCount);",
+									"",
+									"var neighborhoods = {};",
+									"jsonData.buildings.forEach(function(b) {",
+									"    var name = b.neighborhoodName || 'Unknown';",
+									"    neighborhoods[name] = (neighborhoods[name] || 0) + 1;",
+									"});",
+									"console.log('   By Neighborhood:', JSON.stringify(neighborhoods));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1330, 36.1950],\n    [37.1410, 36.1950],\n    [37.1410, 36.2150],\n    [37.1330, 36.2150]\n  ],\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Search large area covering multiple neighborhoods.\n\n**Expected:** Buildings from:\n- الجميلية الشرقية\n- العزيزية\n- الشهباء"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - Filter by Type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('🏠 Filtered by Type - Found:', jsonData.totalCount);",
+									"",
+									"pm.test('All match filter type', function() {",
+									"    jsonData.buildings.forEach(function(b) {",
+									"        pm.expect(b.buildingType).to.equal('Residential');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1330, 36.1950],\n    [37.1410, 36.2150]\n  ],\n  \"buildingType\": 1,\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Filter by building type.\n\n**BuildingType:**\n- 1 = Residential (سكني)\n- 2 = Commercial (تجاري)\n- 3 = MixedUse (مختلط)\n- 4 = Industrial (صناعي)"
+					},
+					"response": []
+				},
+				{
+					"name": "Polygon Search - With Full Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Full details included', function() {",
+									"    if (jsonData.buildings && jsonData.buildings.length > 0) {",
+									"        pm.expect(jsonData.buildings[0].fullDetails).to.not.be.null;",
+									"        pm.expect(jsonData.buildings[0].buildingGeometryWkt).to.not.be.null;",
+									"    }",
+									"});",
+									"",
+									"console.log('📋 Full details for', jsonData.totalCount, 'buildings');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"coordinates\": [\n    [37.1340, 36.2020],\n    [37.1400, 36.2060]\n  ],\n  \"page\": 1,\n  \"pageSize\": 10,\n  \"includeFullDetails\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Buildings/polygon",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Buildings",
+								"polygon"
+							]
+						},
+						"description": "Include full building details.\n\n**includeFullDetails: true**\n- Includes complete BuildingDto in `fullDetails`\n- Includes `buildingGeometryWkt` (PostGIS Point WKT)"
+					},
+					"response": []
+				}
+			],
+			"description": "Building management endpoints.\n\n**Used by:** Desktop Team, Admin, GIS Team\n\n**Endpoints:**\n- GET /Buildings - Get all buildings (paginated)\n- GET /Buildings/{id} - Get by GUID\n- GET /Buildings/code/{code} - Get by building code\n- POST /Buildings/search - Search with partial match\n- POST /Buildings - Create building\n- PUT /Buildings/{id} - Update building\n- DELETE /Buildings/{id} - Soft delete\n- POST /Buildings/polygon - **NEW** Search in polygon (PostGIS)\n\n**Polygon Search Input Options:**\n- Coordinates: [[lng, lat], [lng, lat], ...]\n- WKT: POLYGON((lng lat, lng lat, ...))\n\n**BuildingType:**\n1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n\n**BuildingStatus:**\n1=Existing/Intact, 2=UnderConstruction, 3=Damaged, 4=Destroyed\n\n**Permissions:**\n- Buildings_View (4000)\n- Buildings_Create (4001)\n- Buildings_Update (4002)\n- Buildings_Delete (4003)"
+		},
+		{
+			"name": "6. Building Assignments (UC-012)",
+			"item": [
+				{
+					"name": "6.1 Search Buildings",
+					"item": [
+						{
+							"name": "Search Buildings (GET - Query Params)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('🏢 Buildings for Assignment:');",
+											"console.log('   Total:', jsonData.totalCount);",
+											"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
+											"",
+											"if (jsonData.items && jsonData.items.length > 0) {",
+											"    pm.environment.set('assignmentBuildingId', jsonData.items[0].id);",
+											"    console.log('✅ First building saved for assignment');",
+											"    jsonData.items.slice(0,3).forEach(function(b, i) {",
+											"        console.log('   ' + (i+1) + '. ' + b.buildingCode + ' - ' + (b.hasActiveAssignment ? 'Assigned' : 'Available'));",
+											"    });",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/buildings?page=1&pageSize=20&hasActiveAssignment=false",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"buildings"
+									],
+									"query": [
+										{
+											"key": "governorateCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "districtCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "subDistrictCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "communityCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "neighborhoodCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "buildingCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "address",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "buildingType",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "buildingStatus",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "hasActiveAssignment",
+											"value": "false"
+										},
+										{
+											"key": "latitude",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "longitude",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "radiusMeters",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "polygonWkt",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "pageSize",
+											"value": "20"
+										}
+									]
+								},
+								"description": "Search buildings available for assignment.\nالبحث عن المباني المتاحة للتعيين\n\n**UC-012: S01-S03** - Search and select buildings\n\n**Required Permission:** Buildings_View (4000)\n\n**Filters:**\n- Administrative hierarchy (governorate→neighborhood)\n- buildingCode, address (partial match)\n- buildingType, buildingStatus\n- hasActiveAssignment: null=all, true=assigned, false=unassigned\n\n**Spatial Options:**\n- Radius: latitude, longitude, radiusMeters\n- Polygon: polygonWkt (WKT format)"
+							},
+							"response": []
+						},
+						{
+							"name": "Search Buildings (Radius)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('📍 Radius Search - Found:', jsonData.totalCount, 'buildings within 1km');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/buildings?latitude=36.2021&longitude=37.1343&radiusMeters=1000&hasActiveAssignment=false",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"buildings"
+									],
+									"query": [
+										{
+											"key": "latitude",
+											"value": "36.2021"
+										},
+										{
+											"key": "longitude",
+											"value": "37.1343"
+										},
+										{
+											"key": "radiusMeters",
+											"value": "1000"
+										},
+										{
+											"key": "hasActiveAssignment",
+											"value": "false"
+										}
+									]
+								},
+								"description": "Search buildings within radius.\nالبحث بنصف القطر\n\n**Parameters:**\n- latitude, longitude: Center point\n- radiusMeters: Search radius in meters\n\n**Note:** Uses meters-to-degrees conversion for PostGIS SRID 4326"
+							},
+							"response": []
+						},
+						{
+							"name": "Search Buildings (Polygon - POST)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('🗺️ Polygon Search Results:');",
+											"console.log('   Buildings:', jsonData.totalCount);",
+											"console.log('   Polygon Area:', Math.round(jsonData.polygonAreaSquareMeters || 0), 'm²');",
+											"",
+											"if (jsonData.items && jsonData.items.length > 0) {",
+											"    var available = jsonData.items.filter(b => !b.hasActiveAssignment).length;",
+											"    console.log('   Available:', available, '| Assigned:', jsonData.items.length - available);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"coordinates\": [\n    [37.1340, 36.2020],\n    [37.1400, 36.2020],\n    [37.1400, 36.2060],\n    [37.1340, 36.2060]\n  ],\n  \"hasActiveAssignment\": false,\n  \"page\": 1,\n  \"pageSize\": 100\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/buildings/search",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"buildings",
+										"search"
+									]
+								},
+								"description": "Search buildings in polygon using coordinates array.\nالبحث داخل مضلع جغرافي\n\n**UC-012: Polygon Search**\n\n**Polygon Input Options:**\n1. coordinates: [[lng, lat], ...] - Auto-closes if needed\n2. polygonWkt: \"POLYGON((lng lat, ...))\"\n\n**Response includes:**\n- polygonWkt: Parsed WKT string\n- polygonAreaSquareMeters: Approximate area"
+							},
+							"response": []
+						},
+						{
+							"name": "Search Buildings (Polygon WKT)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"var jsonData = pm.response.json();",
+											"console.log('🗺️ WKT Polygon - Found:', jsonData.totalCount, 'buildings');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/buildings?polygonWkt=POLYGON((37.1340 36.2020, 37.1400 36.2020, 37.1400 36.2060, 37.1340 36.2060, 37.1340 36.2020))&hasActiveAssignment=false",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"buildings"
+									],
+									"query": [
+										{
+											"key": "polygonWkt",
+											"value": "POLYGON((37.1340 36.2020, 37.1400 36.2020, 37.1400 36.2060, 37.1340 36.2060, 37.1340 36.2020))"
+										},
+										{
+											"key": "hasActiveAssignment",
+											"value": "false"
+										}
+									]
+								},
+								"description": "Search using WKT format via GET.\n\n**WKT Format:** POLYGON((lng lat, lng lat, ...))\n**SRID:** 4326 (WGS84)\n**Note:** First and last coordinate must be identical"
+							},
+							"response": []
+						}
+					],
+					"description": "Search buildings for assignment using various filters."
+				},
+				{
+					"name": "6.2 Property Units (Revisit)",
+					"item": [
+						{
+							"name": "Get Property Units for Revisit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('🏠 Property Units:', jsonData.length);",
+											"",
+											"if (jsonData.length > 0) {",
+											"    pm.environment.set('propertyUnitId1', jsonData[0].id);",
+											"    if (jsonData.length > 1) pm.environment.set('propertyUnitId2', jsonData[1].id);",
+											"    jsonData.forEach(function(u, i) {",
+											"        console.log('   ' + (i+1) + '. ' + u.unitCode + ' - ' + (u.hasCompletedSurvey ? 'Surveyed' : 'Not surveyed'));",
+											"    });",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/buildings/{{assignmentBuildingId}}/property-units?onlyWithCompletedSurveys=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"buildings",
+										"{{assignmentBuildingId}}",
+										"property-units"
+									],
+									"query": [
+										{
+											"key": "onlyWithCompletedSurveys",
+											"value": "true"
+										}
+									]
+								},
+								"description": "Get property units for revisit selection.\nعرض الوحدات العقارية لاختيار إعادة الزيارة\n\n**UC-012: S04-S05** - Review property units\n\n**Use when:** Creating revisit assignment to select specific units\n\n**Response includes:**\n- unitCode, unitType, floorNumber\n- hasCompletedSurvey, lastSurveyDate\n- personCount, householdCount, claimCount"
+							},
+							"response": []
+						}
+					],
+					"description": "Property unit selection for revisit assignments."
+				},
+				{
+					"name": "6.3 Field Collectors",
+					"item": [
+						{
+							"name": "Get Available Field Collectors",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('👥 Available Field Collectors:', jsonData.length);",
+											"",
+											"if (jsonData.length > 0) {",
+											"    pm.environment.set('fieldCollectorId', jsonData[0].id);",
+											"    console.log('✅ First collector saved:', jsonData[0].fullNameArabic);",
+											"    jsonData.slice(0,5).forEach(function(c, i) {",
+											"        console.log('   ' + (i+1) + '. ' + c.fullNameArabic + ' - Active: ' + c.activeAssignments + ', Units: ' + c.totalPropertyUnitsAssigned);",
+											"    });",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/field-collectors?isAvailable=true&sortByWorkloadAscending=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"field-collectors"
+									],
+									"query": [
+										{
+											"key": "isAvailable",
+											"value": "true"
+										},
+										{
+											"key": "hasAssignedTablet",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "teamName",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "searchTerm",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "sortByWorkloadAscending",
+											"value": "true"
+										}
+									]
+								},
+								"description": "Get available field collectors with workload info.\nعرض جامعي البيانات المتاحين\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Filters:**\n- isAvailable: true/false/null\n- hasAssignedTablet: Has tablet assigned\n- teamName, searchTerm\n\n**Sorting:** By workload (least busy first by default)\n\n**Response includes:**\n- activeAssignments, pendingTransferCount\n- totalPropertyUnitsAssigned"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Field Collector Assignments",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('📋 Collector:', jsonData.fieldCollectorName);",
+											"console.log('   Total:', jsonData.totalAssignments);",
+											"console.log('   Pending:', jsonData.pendingTransfer);",
+											"console.log('   Ready:', jsonData.readyForSurvey);",
+											"console.log('   Completed:', jsonData.completed);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/field-collectors/{{fieldCollectorId}}/assignments?isActive=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"field-collectors",
+										"{{fieldCollectorId}}",
+										"assignments"
+									],
+									"query": [
+										{
+											"key": "isActive",
+											"value": "true"
+										},
+										{
+											"key": "transferStatus",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "isRevisit",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Get assignments for a specific field collector.\nعرض المباني المعينة لجامع بيانات\n\n**Filters:**\n- isActive: true/false/null\n- transferStatus: 1-7 (see TransferStatus enum)\n- isRevisit: Filter revisit assignments\n\n**Response includes:**\n- Summary: totalAssignments, pendingTransfer, readyForSurvey, completed\n- Assignments list with details"
+							},
+							"response": []
+						}
+					],
+					"description": "Field collector selection and workload management."
+				},
+				{
+					"name": "6.4 Assign/Unassign",
+					"item": [
+						{
+							"name": "Assign Buildings (Regular)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test('Assignment successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.success).to.be.true;",
+											"});",
+											"",
+											"console.log('✅ Assignment Result:');",
+											"console.log('   Success:', jsonData.success);",
+											"console.log('   Assigned:', jsonData.assignedCount);",
+											"console.log('   Failed:', jsonData.failedCount);",
+											"",
+											"if (jsonData.createdAssignmentIds && jsonData.createdAssignmentIds.length > 0) {",
+											"    pm.environment.set('assignmentId', jsonData.createdAssignmentIds[0]);",
+											"    console.log('   Assignment ID saved:', jsonData.createdAssignmentIds[0]);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"fieldCollectorId\": \"{{fieldCollectorId}}\",\n  \"buildings\": [\n    { \"buildingId\": \"{{assignmentBuildingId}}\" }\n  ],\n  \"targetCompletionDate\": \"2026-02-15T00:00:00Z\",\n  \"priority\": \"Normal\",\n  \"assignmentNotes\": \"مباني منطقة العزيزية - Regular assignment\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/assign",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"assign"
+									]
+								},
+								"description": "Assign buildings to field collector.\nتعيين مباني لجامع بيانات\n\n**UC-012: S06-S07** - Create assignment\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Supports:**\n- Bulk assignment (multiple buildings)\n- Priority: Normal, High, Urgent\n- Assignment notes\n\n**Note:** Transfer to tablet happens during sync, not immediately.\nInitial TransferStatus = Pending (1)"
+							},
+							"response": []
+						},
+						{
+							"name": "Assign Buildings (Revisit)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test('Revisit assignment successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"console.log('✅ Revisit Assignment:');",
+											"console.log('   Success:', jsonData.success);",
+											"console.log('   Message:', jsonData.message);",
+											"",
+											"if (jsonData.createdAssignmentIds && jsonData.createdAssignmentIds.length > 0) {",
+											"    pm.environment.set('revisitAssignmentId', jsonData.createdAssignmentIds[0]);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"fieldCollectorId\": \"{{fieldCollectorId}}\",\n  \"buildings\": [\n    {\n      \"buildingId\": \"{{assignmentBuildingId}}\",\n      \"propertyUnitIdsForRevisit\": [\"{{propertyUnitId1}}\", \"{{propertyUnitId2}}\"],\n      \"revisitReason\": \"بيانات ناقصة - إعادة جمع معلومات الأسرة\"\n    }\n  ],\n  \"priority\": \"High\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/assign",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"assign"
+									]
+								},
+								"description": "Create revisit assignment for specific property units.\nتعيين إعادة زيارة لوحدات محددة\n\n**Revisit Assignment:**\n- propertyUnitIdsForRevisit: List of unit GUIDs\n- revisitReason: Reason for revisit (Arabic)\n\n**Common Revisit Reasons:**\n- بيانات ناقصة - Missing data\n- تحديث معلومات - Update information\n- تصحيح أخطاء - Correct errors\n- معلومات إضافية مطلوبة - Additional info required"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Assignment by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('📋 Assignment Details:');",
+											"console.log('   Building:', jsonData.buildingCode);",
+											"console.log('   Collector:', jsonData.fieldCollectorName);",
+											"console.log('   Status:', jsonData.transferStatusName);",
+											"console.log('   Progress:', jsonData.completionPercentage + '%');",
+											"console.log('   Revisit:', jsonData.isRevisit);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/{{assignmentId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"{{assignmentId}}"
+									]
+								},
+								"description": "Get assignment details by ID.\nعرض تفاصيل التعيين\n\n**Response includes:**\n- Building info (code, address, hierarchy)\n- Collector info (name, device)\n- Transfer status and dates\n- Progress (completed/total units)\n- Revisit info if applicable"
+							},
+							"response": []
+						},
+						{
+							"name": "Unassign Building",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test('Unassignment successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(jsonData.success).to.be.true;",
+											"});",
+											"",
+											"console.log('✅ Unassignment Result:');",
+											"console.log('   Success:', jsonData.success);",
+											"console.log('   Building:', jsonData.buildingCode);",
+											"console.log('   Collector:', jsonData.fieldCollectorName);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"cancellationReason\": \"تم نقل جامع البيانات إلى منطقة أخرى\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/BuildingAssignments/{{assignmentId}}/unassign",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"BuildingAssignments",
+										"{{assignmentId}}",
+										"unassign"
+									]
+								},
+								"description": "Cancel/unassign a building assignment.\nإلغاء تعيين مبنى\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Restrictions:**\n- Cannot cancel if TransferStatus = Synchronized (7)\n- Cannot cancel already inactive assignments\n- Cancellation reason required\n\n**What happens:**\n- IsActive = false\n- TransferStatus = Cancelled (5)\n- Reason recorded in AssignmentNotes"
+							},
+							"response": []
+						}
+					],
+					"description": "Create and manage building assignments."
+				}
+			],
+			"description": "## 📋 Building Assignments (UC-012)\n\n**Requires:** Administrator or DataManager role\n\n**Permissions:**\n- Buildings_View (4000) - Search buildings, view assignments\n- Buildings_Assign (4003) - Create/cancel assignments\n\n**Workflow:**\n1. Search buildings (by hierarchy, radius, or polygon)\n2. Select property units for revisit (optional)\n3. Get available field collectors\n4. Assign buildings to collector\n5. Monitor assignment status\n\n**TransferStatus Flow:**\n```\nPending (1) → InProgress (2) → Transferred (3) → Synchronized (7)\n                              ↓\n                           Failed (4) → Retry\n                              ↓\n                        Cancelled (5)\n```\n\n**Priority Values:** Normal, High, Urgent"
+		}
+	]
+}

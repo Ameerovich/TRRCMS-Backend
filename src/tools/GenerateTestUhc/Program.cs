@@ -3,8 +3,8 @@
 //
 // The .uhc file is a renamed SQLite database containing:
 //   - manifest table (key-value metadata)
-//   - 8 data tables: surveys, buildings, property_units, persons,
-//     households, person_property_relations, claims, evidences
+//   - 9 data tables: surveys, buildings, building_documents, property_units,
+//     persons, households, person_property_relations, claims, evidences
 //
 // Scenario: Field collector "collector" surveyed one building in Aleppo
 //           (حي الجميلية — Al-Jamiliyah neighbourhood) containing 2 apartments.
@@ -48,6 +48,7 @@ var relationId2     = DeriveGuid(packageId, "relation_2");
 var claimId1        = DeriveGuid(packageId, "claim_1");
 var evidenceId1     = DeriveGuid(packageId, "evidence_1");
 var surveyId1       = DeriveGuid(packageId, "survey_1");
+var buildingDocId1  = DeriveGuid(packageId, "building_doc_1");
 
 // The collector user ID — must match the seeded "collector" user in your DB.
 // You will replace this after login (Step 0 of the test guide).
@@ -114,6 +115,7 @@ using (var conn = new SqliteConnection(connStr))
         ["relation_count"]            = "2",
         ["claim_count"]               = "1",
         ["document_count"]            = "1",
+        ["building_document_count"]   = "1",
         ["total_attachment_size_bytes"]= "0",
         ["vocab_versions"]            = vocabVersions
     };
@@ -136,6 +138,7 @@ using (var conn = new SqliteConnection(connStr))
             interviewee_relationship TEXT,
             notes                   TEXT,
             field_collector_id      TEXT,
+            contact_person_id       TEXT,
             reference_code          TEXT,
             type                    INTEGER,
             source                  INTEGER,
@@ -143,18 +146,20 @@ using (var conn = new SqliteConnection(connStr))
         );");
 
     // Survey linked to Building AND to Unit 1 (Ahmed's apartment — the interviewee)
+    // contact_person_id → Ahmed (personId1) is the contact person for this survey
     Execute(conn, @"
         INSERT INTO surveys VALUES (
             @id, @bid, @date, @uid,
             '36.2021,37.1343', 'أحمد محمد العلي', 'مالك',
             'مسح ميداني لمبنى سكني في حي الجميلية - حالة المبنى جيدة',
-            @cid, 'SRV-2026-001', 1, 1, 3
+            @cid, @cpid, 'SRV-2026-001', 1, 1, 3
         );",
         ("@id", surveyId1.ToString()),
         ("@bid", buildingId.ToString()),
         ("@date", DateTime.UtcNow.AddHours(-2).ToString("o")),
         ("@uid", unitId1.ToString()),
-        ("@cid", collectorUserId.ToString()));
+        ("@cid", collectorUserId.ToString()),
+        ("@cpid", personId1.ToString()));
 
     // ── 3. BUILDINGS TABLE ─────────────────────────────────────────────────────
     Execute(conn, @"
@@ -174,7 +179,6 @@ using (var conn = new SqliteConnection(connStr))
             latitude                REAL,
             longitude               REAL,
             building_geometry_wkt   TEXT,
-            location_description    TEXT,
             notes                   TEXT,
             building_id             TEXT,
             governorate_name        TEXT,
@@ -184,9 +188,7 @@ using (var conn = new SqliteConnection(connStr))
             neighborhood_name       TEXT,
             damage_level            INTEGER,
             number_of_floors        INTEGER,
-            year_of_construction    INTEGER,
-            address                 TEXT,
-            landmark                TEXT
+            year_of_construction    INTEGER
         );");
 
     // Aleppo — Al-Jamiliyah neighbourhood
@@ -198,15 +200,39 @@ using (var conn = new SqliteConnection(connStr))
             1, 1, 2, 2, 0,
             36.2021, 37.1343,
             'POINT(37.1343 36.2021)',
-            'شارع الجميلية الرئيسي، قرب جامع الرحمن',
             'مبنى سكني من 3 طوابق بحالة جيدة',
             '14140101001100001',
             'حلب', 'حلب', 'مركز حلب', 'حلب المدينة', 'الجميلية',
-            0, 3, 2005,
-            'شارع الجميلية، بناء رقم 1',
-            'مقابل صيدلية النور'
+            0, 3, 2005
         );",
         ("@id", buildingId.ToString()));
+
+    // ── 3b. BUILDING_DOCUMENTS TABLE ─────────────────────────────────────────
+    Execute(conn, @"
+        CREATE TABLE building_documents (
+            id                  TEXT PRIMARY KEY,
+            building_id         TEXT NOT NULL,
+            original_file_name  TEXT NOT NULL,
+            file_size_bytes     INTEGER NOT NULL,
+            file_path           TEXT NOT NULL,
+            file_hash           TEXT,
+            description         TEXT,
+            notes               TEXT
+        );");
+
+    // Building photo document — linked to the building
+    Execute(conn, @"
+        INSERT INTO building_documents VALUES (
+            @id, @bid,
+            'building_photo_front.jpg',
+            512000,
+            'documents/building_photo_front.jpg',
+            'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+            'صورة واجهة المبنى الأمامية',
+            'تم التقاط الصورة أثناء المسح الميداني'
+        );",
+        ("@id", buildingDocId1.ToString()),
+        ("@bid", buildingId.ToString()));
 
     // ── 4. PROPERTY_UNITS TABLE ────────────────────────────────────────────────
     Execute(conn, @"
@@ -224,15 +250,14 @@ using (var conn = new SqliteConnection(connStr))
             damage_level        INTEGER,
             estimated_area_sqm  REAL,
             occupancy_type      INTEGER,
-            occupancy_nature    INTEGER,
-            position_on_floor   TEXT
+            occupancy_nature    INTEGER
         );");
 
     // Unit 1: Ground floor apartment — Occupied
     Execute(conn, @"
         INSERT INTO property_units VALUES (
             @id, @bid, 'شقة 1', 1, 1, 1, 4, 120.5,
-            'شقة أرضية مع حديقة صغيرة', 'مأهولة', 0, 120.5, NULL, NULL, 'يمين'
+            'شقة أرضية مع حديقة صغيرة', 'مأهولة', 0, 120.5, NULL, NULL
         );",
         ("@id", unitId1.ToString()), ("@bid", buildingId.ToString()));
 
@@ -240,7 +265,7 @@ using (var conn = new SqliteConnection(connStr))
     Execute(conn, @"
         INSERT INTO property_units VALUES (
             @id, @bid, 'شقة 2', 1, 1, 2, 3, 110.0,
-            'شقة في الطابق الأول', 'مأهولة', 0, 110.0, NULL, NULL, 'يسار'
+            'شقة في الطابق الأول', 'مأهولة', 0, 110.0, NULL, NULL
         );",
         ("@id", unitId2.ToString()), ("@bid", buildingId.ToString()));
 
@@ -261,15 +286,16 @@ using (var conn = new SqliteConnection(connStr))
             gender                  TEXT,
             nationality             TEXT,
             household_id            TEXT,
-            relationship_to_head    TEXT
+            relationship_to_head    TEXT,
+            is_contact_person       INTEGER DEFAULT 0
         );");
 
-    // Person 1: Ahmed (head of household 1, owner of unit 1)
+    // Person 1: Ahmed (head of household 1, owner of unit 1, CONTACT PERSON for the survey)
     Execute(conn, @"
         INSERT INTO persons VALUES (
             @id, 'العلي', 'أحمد', 'محمد', 'فاطمة',
             '01234567890', 1978, NULL, '+963-944-123456', NULL,
-            'Ahmed Al-Ali', 'Male', 'Syrian', @hid, 'رب الأسرة'
+            'Ahmed Al-Ali', 'Male', 'Syrian', @hid, 'رب الأسرة', 1
         );",
         ("@id", personId1.ToString()), ("@hid", householdId1.ToString()));
 
@@ -278,7 +304,7 @@ using (var conn = new SqliteConnection(connStr))
         INSERT INTO persons VALUES (
             @id, 'الحسن', 'فاطمة', 'علي', 'زينب',
             '01234567891', 1982, NULL, '+963-944-123457', NULL,
-            'Fatima Al-Hassan', 'Female', 'Syrian', @hid, 'زوجة'
+            'Fatima Al-Hassan', 'Female', 'Syrian', @hid, 'زوجة', 0
         );",
         ("@id", personId2.ToString()), ("@hid", householdId1.ToString()));
 
@@ -287,7 +313,7 @@ using (var conn = new SqliteConnection(connStr))
         INSERT INTO persons VALUES (
             @id, 'الخالد', 'عمر', 'خالد', 'سعاد',
             '09876543210', 1985, NULL, '+963-944-654321', NULL,
-            'Omar Al-Khaled', 'Male', 'Syrian', @hid, 'رب الأسرة'
+            'Omar Al-Khaled', 'Male', 'Syrian', @hid, 'رب الأسرة', 0
         );",
         ("@id", personId3.ToString()), ("@hid", householdId2.ToString()));
 
@@ -296,7 +322,7 @@ using (var conn = new SqliteConnection(connStr))
         INSERT INTO persons VALUES (
             @id, 'الرشيد', 'مريم', 'رشيد', 'هدى',
             NULL, 1988, NULL, '+963-944-654322', NULL,
-            'Mariam Al-Rashid', 'Female', 'Syrian', @hid, 'زوجة'
+            'Mariam Al-Rashid', 'Female', 'Syrian', @hid, 'زوجة', 0
         );",
         ("@id", personId4.ToString()), ("@hid", householdId2.ToString()));
 
@@ -484,6 +510,7 @@ Console.WriteLine($"  PackageId: {packageId}");
 Console.WriteLine();
 Console.WriteLine("=== Data Summary ===");
 Console.WriteLine("  Building:   1 (Al-Jamiliyah, Aleppo — 14-14-01-010-011-00001)");
+Console.WriteLine("  Bldg Docs:  1 (Front photo of the building)");
 Console.WriteLine("  Units:      2 apartments (ground floor + 1st floor)");
 Console.WriteLine("  Persons:    4 (Ahmed+Fatima family, Omar+Mariam family)");
 Console.WriteLine("  Households: 2 (4-person owner family, 3-person displaced tenant family)");
@@ -493,11 +520,13 @@ Console.WriteLine("  Evidence:   1 (Ownership deed — linked to person, relatio
 Console.WriteLine("  Survey:     1 (Field survey, Finalized — linked to building and Unit 1)");
 Console.WriteLine();
 Console.WriteLine("=== FK Linkages ===");
-Console.WriteLine("  Survey  → Building ✓, PropertyUnit ✓ (Unit 1)");
+Console.WriteLine("  Survey  → Building ✓, PropertyUnit ✓ (Unit 1), ContactPerson ✓ (Ahmed)");
 Console.WriteLine("  Evidence → Person ✓ (Ahmed), Relation ✓ (ownership), Claim ✓ (ownership)");
 Console.WriteLine("  Claim   → PropertyUnit ✓ (Unit 1), PrimaryClaimant ✓ (Ahmed)");
 Console.WriteLine("  Household → PropertyUnit ✓, HeadPerson ✓");
 Console.WriteLine("  Relation → Person ✓, PropertyUnit ✓");
+Console.WriteLine("  BldgDoc → Building ✓");
+Console.WriteLine("  Person[Ahmed] → IsContactPerson ✓");
 Console.WriteLine();
 Console.WriteLine("=== Checksum ===");
 Console.WriteLine("  Algorithm: SHA-256 of data table contents only (excluding manifest table)");

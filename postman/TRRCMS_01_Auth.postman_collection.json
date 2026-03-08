@@ -1,0 +1,302 @@
+{
+	"info": {
+		"_postman_id": "trrcms-auth-v1",
+		"name": "TRRCMS — 01. Authentication",
+		"description": "# TRRCMS — Authentication\n\nLogin, token refresh, current user, and logout.\n\n**Import this collection first** — it populates `accessToken` used by all other collections.\n\n**Environment:** Use `TRRCMS_Development.postman_environment.json`\n\n**Default credentials:**\n- Admin: `admin` / `Admin@123`\n- Field Collector: `fieldcollector1` / `Test@123`\n- Office Clerk: `officeclerk1` / `Test@123`\n\n## Enum Reference\n\n### UserRole\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FieldCollector | جامع بيانات |\n| 2 | FieldSupervisor | مشرف ميداني |\n| 3 | OfficeClerk | موظف مكتب |\n| 4 | DataManager | مدير بيانات |\n| 5 | Analyst | محلل |\n| 6 | Administrator | مدير النظام |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "0. Authentication",
+			"item": [
+				{
+					"name": "Login (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    pm.environment.set('currentUserId', jsonData.userId);",
+									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
+									"    pm.environment.set('currentUserRole', jsonData.role);",
+									"    console.log('✅ Admin logged in:', jsonData.fullNameArabic);",
+									"    console.log('✅ Token expires:', jsonData.accessTokenExpiresAt);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"deviceId\": \"postman-admin-device\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"login"
+							]
+						},
+						"description": "Login as Administrator. Full system access.\n\n**Response:**\n- accessToken (15 min expiry)\n- refreshToken (7 days expiry)\n- userId, fullNameArabic, role"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Field Collector)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    pm.environment.set('currentUserId', jsonData.userId);",
+									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
+									"    pm.environment.set('currentUserRole', jsonData.role);",
+									"    console.log('✅ Field Collector logged in:', jsonData.fullNameArabic);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{fieldCollectorUsername}}\",\n  \"password\": \"{{password}}\",\n  \"deviceId\": \"postman-mobile-device\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"login"
+							]
+						},
+						"description": "Login as Field Collector for mobile survey workflow.\n\n**Permissions:** Create/Edit own surveys, upload evidence"
+					},
+					"response": []
+				},
+				{
+					"name": "Login (Office Clerk)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    pm.environment.set('currentUserId', jsonData.userId);",
+									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
+									"    pm.environment.set('currentUserRole', jsonData.role);",
+									"    console.log('✅ Office Clerk logged in:', jsonData.fullNameArabic);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{officeClerkUsername}}\",\n  \"password\": \"{{password}}\",\n  \"deviceId\": \"postman-desktop-device\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"login"
+							]
+						},
+						"description": "Login as Office Clerk for desktop survey workflow.\n\n**Permissions:** Create/Edit surveys, finalize with claim creation"
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Token refreshed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(jsonData.accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    console.log('✅ Token refreshed successfully');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/refresh",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"refresh"
+							]
+						},
+						"description": "Refresh access token using refresh token.\n\nCall when access token expires (15 min) or proactively."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('👤 Current user:', jsonData.fullNameArabic, '| Role:', jsonData.role);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user info from JWT claims."
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Auth/logout",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"logout"
+							]
+						},
+						"description": "Logout current user. Client should discard tokens."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints. Run login first to get token.\n\n**Token Lifetimes:**\n- Access Token: 15 minutes\n- Refresh Token: 7 days"
+		}
+	]
+}

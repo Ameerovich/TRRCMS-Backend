@@ -1,0 +1,419 @@
+{
+	"info": {
+		"_postman_id": "trrcms-admin-v1",
+		"name": "TRRCMS — 06. Admin (Users & Dashboard)",
+		"description": "# TRRCMS — Admin (Users & Dashboard)\n\nUser management (CRUD, activate/deactivate, permissions) and dashboard statistics.\n\n**Audience:** Administrators\n\n**Requires:** `accessToken` from 01_Auth collection (login as Admin)\n\n**Environment:** `TRRCMS_Development.postman_environment.json`\n\n## Enum Reference\n\n### UserRole\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FieldCollector | جامع بيانات |\n| 2 | FieldSupervisor | مشرف ميداني |\n| 3 | OfficeClerk | موظف مكتب |\n| 4 | DataManager | مدير بيانات |\n| 5 | Analyst | محلل |\n| 6 | Administrator | مدير النظام |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "5. User Management (Admin)",
+			"item": [
+				{
+					"name": "Get All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('👥 Total users:', jsonData.totalCount);",
+									"",
+									"if (jsonData.users && jsonData.users.length > 0) {",
+									"    pm.environment.set('targetUserId', jsonData.users[0].id);",
+									"    console.log('✅ First user ID saved');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users?page=1&pageSize=20",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users"
+							],
+							"query": [
+								{
+									"key": "role",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "isActive",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "searchTerm",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get all users with filtering and pagination.\n\n**Filters:**\n- role: 1-6 (see UserRole enum)\n- isActive: true/false\n- searchTerm: Search username, name, email"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}"
+							]
+						},
+						"description": "Get user details including permissions list."
+					},
+					"response": []
+				},
+				{
+					"name": "Create User (Field Collector)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('User created', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('targetUserId', jsonData.id);",
+									"    console.log('✅ User created:', jsonData.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"fc002\",\n  \"email\": \"fc002@trrcms.org\",\n  \"fullNameArabic\": \"خالد محمود علي\",\n  \"fullNameEnglish\": \"Khaled Mahmoud Ali\",\n  \"phoneNumber\": \"+963 992 345 678\",\n  \"role\": 1,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": true,\n  \"hasDesktopAccess\": false,\n  \"organization\": \"فريق حلب الميداني\",\n  \"jobTitle\": \"جامع بيانات\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users"
+							]
+						},
+						"description": "Create new Field Collector user.\n\n**UserRole:** 1=FieldCollector, 2=FieldSupervisor, 3=OfficeClerk, 4=DataManager, 5=Analyst, 6=Administrator\n\n**Password Requirements:**\n- Min 8 characters\n- Uppercase, lowercase, digit, special char"
+					},
+					"response": []
+				},
+				{
+					"name": "Create User (Office Clerk)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"oc002\",\n  \"email\": \"oc002@trrcms.org\",\n  \"fullNameArabic\": \"سارة أحمد الخالد\",\n  \"role\": 3,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": false,\n  \"hasDesktopAccess\": true,\n  \"organization\": \"مكتب حلب\",\n  \"jobTitle\": \"موظف تسجيل\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users"
+							]
+						},
+						"description": "Create new Office Clerk user."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumber\": \"+963 993 456 789\",\n  \"organization\": \"فريق دمشق الميداني\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}"
+							]
+						},
+						"description": "Update user profile (partial update)."
+					},
+					"response": []
+				},
+				{
+					"name": "Activate User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/activate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"activate"
+							]
+						},
+						"description": "Reactivate a deactivated user."
+					},
+					"response": []
+				},
+				{
+					"name": "Deactivate User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"انتهاء عقد العمل - End of employment\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/deactivate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"deactivate"
+							]
+						},
+						"description": "Deactivate user account."
+					},
+					"response": []
+				},
+				{
+					"name": "Unlock User",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/unlock",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"unlock"
+							]
+						},
+						"description": "Unlock user locked due to failed login attempts."
+					},
+					"response": []
+				},
+				{
+					"name": "Grant Permissions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permissions\": [2000, 2001, 2002],\n  \"grantReason\": \"مطلوب للمشروع الجديد - Required for new project\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/permissions",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"permissions"
+							]
+						},
+						"description": "Grant additional permissions to user.\n\n**Common Permissions:**\n- Evidence: 2000 (View), 2001 (Upload), 2002 (Verify)\n- Surveys: 7000 (Create), 7004 (ViewAll)"
+					},
+					"response": []
+				},
+				{
+					"name": "Revoke Permission",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"انتهاء المشروع - Project completed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/permissions/Evidence_Upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"permissions",
+								"Evidence_Upload"
+							]
+						},
+						"description": "Revoke a specific permission from user."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Audit Log",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Users/{{targetUserId}}/audit-log",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Users",
+								"{{targetUserId}}",
+								"audit-log"
+							]
+						},
+						"description": "Get user's audit log (all account changes)."
+					},
+					"response": []
+				}
+			],
+			"description": "## 👨‍💼 User Management (Admin Only)\n\n**Requires:** Administrator role\n\n**Operations:**\n- CRUD users\n- Activate/Deactivate accounts\n- Unlock locked accounts\n- Grant/Revoke permissions\n- View audit logs"
+		},
+		{
+			"name": "10. Dashboard (FR-D-12)",
+			"item": [
+				{
+					"name": "Get Dashboard Summary",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Dashboard summary retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('\\ud83d\\udcca Dashboard Summary (FR-D-12):');",
+									"console.log('');",
+									"console.log('CLAIMS:');",
+									"console.log('  Total:', data.claims.totalClaims);",
+									"console.log('  By Status:', JSON.stringify(data.claims.byStatus));",
+									"console.log('  Overdue:', data.claims.overdueCount);",
+									"console.log('  With Conflicts:', data.claims.withConflictsCount);",
+									"console.log('');",
+									"console.log('SURVEYS:');",
+									"console.log('  Total:', data.surveys.totalSurveys);",
+									"console.log('  By Status:', JSON.stringify(data.surveys.byStatus));",
+									"console.log('  Last 7 days:', data.surveys.completedLast7Days);",
+									"console.log('');",
+									"console.log('IMPORTS:');",
+									"console.log('  Total Packages:', data.imports.totalPackages);",
+									"console.log('  By Status:', JSON.stringify(data.imports.byStatus));",
+									"console.log('  Unresolved Conflicts:', data.imports.withUnresolvedConflicts);",
+									"console.log('');",
+									"console.log('BUILDINGS:');",
+									"console.log('  Total:', data.buildings.totalBuildings);",
+									"console.log('  Avg Units/Building:', data.buildings.averageUnitsPerBuilding);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"dashboard",
+								"summary"
+							]
+						},
+						"description": "**Dashboard Summary** - Aggregated statistics for the desktop application dashboard.\n\n**Returns:**\n- `claims` — Total, by status, overdue, with conflicts, awaiting documents, pending verification\n- `surveys` — Total, by status, field/office split, completed last 7/30 days\n- `imports` — Total packages, by status, active, unresolved conflicts, entities imported\n- `buildings` — Total buildings, property units, by status, by damage level, average units per building\n- `generatedAtUtc` — Timestamp of report generation\n\n**Requires:** Any authenticated user [Authorize]\n\n**FSD:** FR-D-12"
+					},
+					"response": []
+				}
+			],
+			"description": "## Dashboard (FR-D-12)\n\n**Desktop Application Dashboard Endpoint**\n\nProvides real-time aggregated statistics for the desktop team's status overview:\n\n### Claims Section\n- Total claims count\n- Breakdown by status (Draft, Submitted, UnderReview, Verified, Approved, Rejected)\n- Breakdown by lifecycle stage\n- Overdue count\n- Claims with unresolved conflicts\n- Claims awaiting documents\n- Claims pending verification\n\n### Surveys Section\n- Total surveys count\n- Breakdown by status (Draft, InProgress, Completed, Cancelled)\n- Field surveys vs office surveys split\n- Completed in last 7 days\n- Completed in last 30 days\n\n### Imports Section\n- Total import packages\n- Breakdown by status (Pending, Completed, Failed, Cancelled, Quarantined)\n- Active packages in pipeline\n- Packages with unresolved conflicts\n- Total entities imported (surveys, buildings, persons)\n\n### Buildings Section\n- Total buildings\n- Total property units\n- Breakdown by building status (Occupied, Damaged, Destroyed, etc.)\n- Breakdown by damage level (None, Minor, Major, Destroyed)\n- Average property units per building\n\n**Policy:** [Authorize] — Any authenticated user"
+		}
+	]
+}

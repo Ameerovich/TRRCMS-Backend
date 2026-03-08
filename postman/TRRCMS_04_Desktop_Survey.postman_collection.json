@@ -1,0 +1,735 @@
+{
+	"info": {
+		"_postman_id": "trrcms-desktop-survey-v1",
+		"name": "TRRCMS — 04. Desktop Team (Office Survey & Claims)",
+		"description": "# TRRCMS — Desktop Team (Office Survey & Claims)\n\nOffice survey lifecycle + claim viewing:\nCreate Survey → Property Units → Households → Persons → Relations → Evidence → Finalize (creates Claim)\n\n**Audience:** Desktop Team (Office Clerks)\n\n**Requires:** `accessToken` from 01_Auth collection (login as Office Clerk)\n\n**Environment:** `TRRCMS_Development.postman_environment.json`\n\n**New in v1.1:** `isContactPerson` field on Add Person to Household\n\n## Enum Reference\n\n### PropertyUnitType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Apartment | شقة سكنية |\n| 2 | Shop | محل تجاري |\n| 3 | Office | مكتب |\n| 4 | Warehouse | مستودع |\n| 5 | Other | أخرى |\n\n### PropertyUnitStatus\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Occupied | مشغول |\n| 2 | Vacant | شاغر |\n| 3 | Damaged | متضرر |\n| 4 | UnderRenovation | قيد الترميم |\n| 5 | Uninhabitable | غير صالح للسكن |\n| 6 | Locked | مغلق |\n| 99 | Unknown | غير معروف |\n\n### RelationType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Owner | مالك |\n| 2 | Occupant | ساكن |\n| 3 | Tenant | مستأجر |\n| 4 | Guest | ضيف |\n| 5 | Heir | وريث |\n| 99 | Other | أخرى |\n\n### TenureContractType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FullOwnership | ملكية تامة |\n| 2 | SharedOwnership | ملكية مشتركة |\n| 3 | LongTermRental | إيجار طويل الأمد |\n| 4 | ShortTermRental | إيجار قصير الأمد |\n| 5 | InformalTenure | حيازة غير رسمية |\n| 6 | UnauthorizedOccupation | إشغال غير مصرح |\n| 7 | CustomaryRights | حقوق عرفية |\n| 8 | InheritanceBased | ميراث |\n| 9 | HostedGuest | استضافة |\n| 10 | TemporaryShelter | مأوى مؤقت |\n| 11 | GovernmentAllocation | تخصيص حكومي |\n| 12 | Usufruct | حق الانتفاع |\n| 99 | Other | أخرى |\n\n### EvidenceType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | IdentificationDocument | بطاقة هوية |\n| 2 | OwnershipDeed | سند ملكية |\n| 3 | RentalContract | عقد إيجار |\n| 4 | UtilityBill | فاتورة مرافق |\n| 5 | Photo | صورة |\n| 6 | OfficialLetter | رسالة رسمية |\n| 7 | CourtOrder | أمر محكمة |\n| 8 | InheritanceDocument | وثيقة ميراث |\n| 9 | TaxReceipt | إيصال ضريبة |\n| 99 | Other | أخرى |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "3. Desktop Team - Office Survey",
+			"item": [
+				{
+					"name": "3.1 Create Survey",
+					"item": [
+						{
+							"name": "Create Office Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('surveyId', jsonData.id);",
+											"    pm.environment.set('referenceCode', jsonData.referenceCode);",
+											"    console.log('✅ Office Survey created:');",
+											"    console.log('   ID:', jsonData.id);",
+											"    console.log('   Reference:', jsonData.referenceCode);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"officeLocation\": \"مكتب UN-Habitat حلب\",\n  \"registrationNumber\": \"REG-2026-001234\",\n  \"inPersonVisit\": true,\n  \"intervieweeName\": \"محمد أحمد السيد\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"owner@example.com\",\n  \"notes\": \"زيارة مكتبية - المراجع يحمل سند ملكية\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office"
+									]
+								},
+								"description": "**UC-004** - Create office survey for walk-in claimant.\n\n**Reference Code Format:** OFC-YYYY-NNNNN\n\n**Office-specific fields:**\n- officeLocation: Office where claim is registered\n- registrationNumber: Manual registration number\n- inPersonVisit: true if claimant visited in person\n- contactPhone/contactEmail: For follow-up"
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Draft Office Surveys",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/drafts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"drafts"
+									]
+								},
+								"description": "**UC-005** - Get current clerk's draft office surveys."
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Office Surveys",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office?page=1&pageSize=20&sortBy=SurveyDate&sortDirection=desc",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office"
+									],
+									"query": [
+										{
+											"key": "status",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "buildingId",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "clerkId",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "fromDate",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "toDate",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "referenceCode",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "intervieweeName",
+											"value": "",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "pageSize",
+											"value": "20"
+										},
+										{
+											"key": "sortBy",
+											"value": "SurveyDate"
+										},
+										{
+											"key": "sortDirection",
+											"value": "desc"
+										}
+									]
+								},
+								"description": "Get all office surveys with filtering and pagination."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Office Survey by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"{{surveyId}}"
+									]
+								},
+								"description": "Get full office survey details."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Office Survey",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"intervieweeName\": \"محمد أحمد السيد الخالد\",\n  \"contactPhone\": \"+963992345678\",\n  \"notes\": \"تم تحديث معلومات الاتصال\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"{{surveyId}}"
+									]
+								},
+								"description": "Update office survey details (Draft only)."
+							},
+							"response": []
+						}
+					],
+					"description": "Create and manage office surveys"
+				},
+				{
+					"name": "3.2 Property Unit",
+					"item": [
+						{
+							"name": "Get Property Units",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.length > 0) {",
+											"    pm.environment.set('propertyUnitId', jsonData[0].id);",
+											"    console.log('✅ First unit saved:', jsonData[0].unitIdentifier);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Property Unit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('propertyUnitId', jsonData.id);",
+											"    console.log('✅ Property unit created:', jsonData.unitIdentifier);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"unitIdentifier\": \"2A\",\n  \"floorNumber\": 2,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 120.0,\n  \"numberOfRooms\": 4,\n  \"description\": \"شقة سكنية واسعة - 4 غرف\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Link Existing Property Unit",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/link",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"link"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Property unit management for office survey"
+				},
+				{
+					"name": "3.3 Household & Persons",
+					"item": [
+						{
+							"name": "Create Household",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('householdId', jsonData.id);",
+											"    console.log('✅ Household created');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"headOfHouseholdName\": \"محمد أحمد السيد\",\n  \"householdSize\": 4,\n  \"maleCount\": 1,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"notes\": \"أسرة من 4 أفراد - زيارة مكتبية\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Person (Claimant/Owner)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person1Id', jsonData.id);",
+											"    console.log('✅ Person added:', jsonData.fullNameArabic);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"familyNameArabic\": \"السيد\",\n  \"firstNameArabic\": \"محمد\",\n  \"fatherNameArabic\": \"أحمد\",\n  \"nationalId\": \"09876543210\",\n  \"yearOfBirth\": 1970,\n  \"relationshipToHead\": \"Head\",\n  \"email\": \"owner@example.com\",\n  \"mobileNumber\": \"+963912345678\",\n  \"isContactPerson\": true\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Household and person registration for office survey"
+				},
+				{
+					"name": "3.4 Relations",
+					"item": [
+						{
+							"name": "Create Owner Relation",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('relationId', jsonData.id);",
+											"    console.log('✅ Owner relation created');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2005-08-20\",\n  \"notes\": \"مالك العقار - يحمل سند ملكية أصلي\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "Create ownership relation for claim creation.\n\n**Important:** At least one Owner relation is required for automatic claim creation."
+							},
+							"response": []
+						}
+					],
+					"description": "Create ownership relations for claim creation"
+				},
+				{
+					"name": "3.5 Evidence",
+					"item": [
+						{
+							"name": "Upload Ownership Deed",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ Deed uploaded');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personPropertyRelationId",
+											"value": "{{relationId}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "سند ملكية أصلي - طابو أخضر",
+											"type": "text"
+										},
+										{
+											"key": "documentIssuedDate",
+											"value": "2005-08-20",
+											"type": "text"
+										},
+										{
+											"key": "issuingAuthority",
+											"value": "أمانة السجل العقاري - حلب",
+											"type": "text"
+										},
+										{
+											"key": "documentReferenceNumber",
+											"value": "طابو-2005-789456",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/tenure",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"tenure"
+									]
+								},
+								"description": "Upload ownership deed document."
+							},
+							"response": []
+						},
+						{
+							"name": "Upload ID Document",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personId",
+											"value": "{{person1Id}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "بطاقة الهوية الوطنية",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/identification",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"identification"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Evidence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Document upload for office survey"
+				},
+				{
+					"name": "3.6 Finalize",
+					"item": [
+						{
+							"name": "Finalize Office Survey (Create Claim)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey finalized', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('✅ Office survey finalized');",
+											"console.log('   Status:', jsonData.status);",
+											"",
+											"if (jsonData.claimCreated && jsonData.claim) {",
+											"    pm.environment.set('claimId', jsonData.claim.id);",
+											"    pm.environment.set('claimNumber', jsonData.claim.claimNumber);",
+											"    console.log('✅ Claim auto-created:');",
+											"    console.log('   Claim ID:', jsonData.claim.id);",
+											"    console.log('   Claim Number:', jsonData.claim.claimNumber);",
+											"} else {",
+											"    console.log('ℹ️ No claim created (no ownership relations or autoCreateClaim=false)');",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"finalNotes\": \"تم إنهاء المسح المكتبي بنجاح - جميع الوثائق مكتملة\",\n  \"durationMinutes\": 60,\n  \"autoCreateClaim\": true\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}/finalize",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"office",
+										"{{surveyId}}",
+										"finalize"
+									]
+								},
+								"description": "**UC-004 Final Stage** - Finalize office survey and create claim.\n\n**autoCreateClaim=true:**\n- Generates claim number (CLM-YYYY-NNNNNNNNN)\n- Creates claim with ClaimSource=OfficeSubmission\n- Links claim to survey\n\n**Requires:** At least one Owner/Heir relation"
+							},
+							"response": []
+						}
+					],
+					"description": "Finalize survey and auto-create claim"
+				}
+			],
+			"description": "## 🖥️ Desktop Team - Office Survey Flow\n\n**Use Cases:** UC-004 (Office Survey), UC-005 (Resume Draft)\n\n**Workflow:**\n1. Login as Office Clerk\n2. Get/Create Building\n3. Create Office Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Claimant Person\n7. Create Owner Relation\n8. Upload Documents (deed, ID)\n9. Finalize Survey → Creates Claim\n\n**Reference Code Format:** OFC-YYYY-NNNNN\n\n**Key Difference from Field Survey:**\n- Office surveys can auto-create claims on finalization\n- Field surveys are exported to .uhc containers"
+		},
+		{
+			"name": "4. Claims",
+			"item": [
+				{
+					"name": "Get Claim by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Request successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('📋 Claim:', jsonData.claimNumber);",
+									"console.log('   Status:', jsonData.status);",
+									"console.log('   Source:', jsonData.claimSource);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Claims/{{claimId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Claims",
+								"{{claimId}}"
+							]
+						},
+						"description": "Get claim details by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claim by Number",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/Claims/number/{{claimNumber}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Claims",
+								"number",
+								"{{claimNumber}}"
+							]
+						},
+						"description": "Get claim by claim number (CLM-YYYY-NNNNNNNNN)."
+					},
+					"response": []
+				}
+			],
+			"description": "Claims viewing endpoints.\n\n**Claim Number Format:** CLM-YYYY-NNNNNNNNN\n\n**Note:** Claims are auto-created when office surveys with ownership relations are finalized."
+		}
+	]
+}

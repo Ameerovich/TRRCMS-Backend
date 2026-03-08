@@ -1,0 +1,1121 @@
+{
+	"info": {
+		"_postman_id": "trrcms-mobile-survey-v1",
+		"name": "TRRCMS — 03. Mobile Team (Field Survey)",
+		"description": "# TRRCMS — Mobile Team (Field Survey)\n\nComplete field survey lifecycle:\nCreate Survey → Property Units → Households → Persons → Relations → Evidence → Finalize\n\n**Audience:** Mobile Team (Field Collectors)\n\n**Requires:** `accessToken` from 01_Auth collection (login as Field Collector)\n\n**Environment:** `TRRCMS_Development.postman_environment.json`\n\n**New in v1.1:** `isContactPerson` field on Add Person to Household\n\n## Enum Reference\n\n### PropertyUnitType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Apartment | شقة سكنية |\n| 2 | Shop | محل تجاري |\n| 3 | Office | مكتب |\n| 4 | Warehouse | مستودع |\n| 5 | Other | أخرى |\n\n### PropertyUnitStatus\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Occupied | مشغول |\n| 2 | Vacant | شاغر |\n| 3 | Damaged | متضرر |\n| 4 | UnderRenovation | قيد الترميم |\n| 5 | Uninhabitable | غير صالح للسكن |\n| 6 | Locked | مغلق |\n| 99 | Unknown | غير معروف |\n\n### RelationType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Owner | مالك |\n| 2 | Occupant | ساكن |\n| 3 | Tenant | مستأجر |\n| 4 | Guest | ضيف |\n| 5 | Heir | وريث |\n| 99 | Other | أخرى |\n\n### TenureContractType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FullOwnership | ملكية تامة |\n| 2 | SharedOwnership | ملكية مشتركة |\n| 3 | LongTermRental | إيجار طويل الأمد |\n| 4 | ShortTermRental | إيجار قصير الأمد |\n| 5 | InformalTenure | حيازة غير رسمية |\n| 6 | UnauthorizedOccupation | إشغال غير مصرح |\n| 7 | CustomaryRights | حقوق عرفية |\n| 8 | InheritanceBased | ميراث |\n| 9 | HostedGuest | استضافة |\n| 10 | TemporaryShelter | مأوى مؤقت |\n| 11 | GovernmentAllocation | تخصيص حكومي |\n| 12 | Usufruct | حق الانتفاع |\n| 99 | Other | أخرى |\n\n### EvidenceType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | IdentificationDocument | بطاقة هوية |\n| 2 | OwnershipDeed | سند ملكية |\n| 3 | RentalContract | عقد إيجار |\n| 4 | UtilityBill | فاتورة مرافق |\n| 5 | Photo | صورة |\n| 6 | OfficialLetter | رسالة رسمية |\n| 7 | CourtOrder | أمر محكمة |\n| 8 | InheritanceDocument | وثيقة ميراث |\n| 9 | TaxReceipt | إيصال ضريبة |\n| 99 | Other | أخرى |",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "2. Mobile Team - Field Survey",
+			"item": [
+				{
+					"name": "2.1 Create Survey",
+					"item": [
+						{
+							"name": "Create Field Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('surveyId', jsonData.id);",
+											"    pm.environment.set('referenceCode', jsonData.referenceCode);",
+											"    console.log('✅ Field Survey created:');",
+											"    console.log('   ID:', jsonData.id);",
+											"    console.log('   Reference:', jsonData.referenceCode);",
+											"    console.log('   Status:', jsonData.status);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"notes\": \"مسح ميداني أولي - معاينة العقار\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field"
+									]
+								},
+								"description": "**UC-001 Stage 1** - Create new field survey.\n\n**Reference Code Format:** FLD-YYYY-NNNNN\n\n**Required:** buildingId, surveyDate\n\n**Auto-set:** Status=Draft, assigned to current user"
+							},
+							"response": []
+						},
+						{
+							"name": "Get My Draft Surveys",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('📋 Found', jsonData.surveys ? jsonData.surveys.length : 0, 'draft survey(s)');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field/drafts",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field",
+										"drafts"
+									]
+								},
+								"description": "**UC-002** - Get current user's draft field surveys to resume."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Field Survey by ID",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('📋 Survey:', jsonData.referenceCode, '| Status:', jsonData.status);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field/{{surveyId}}?includeHouseholds=true&includePersons=true&includeRelations=true&includeEvidence=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field",
+										"{{surveyId}}"
+									],
+									"query": [
+										{
+											"key": "includeHouseholds",
+											"value": "true"
+										},
+										{
+											"key": "includePersons",
+											"value": "true"
+										},
+										{
+											"key": "includeRelations",
+											"value": "true"
+										},
+										{
+											"key": "includeEvidence",
+											"value": "true"
+										}
+									]
+								},
+								"description": "Get full field survey details with all related data."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 1: Create and retrieve field surveys"
+				},
+				{
+					"name": "2.2 Property Unit",
+					"item": [
+						{
+							"name": "Get Property Units for Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Request successful', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.length > 0) {",
+											"    pm.environment.set('propertyUnitId', jsonData[0].id);",
+											"    console.log('✅ First unit saved:', jsonData[0].unitIdentifier);",
+											"}",
+											"console.log('📋 Found', jsonData.length, 'unit(s) in building');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								},
+								"description": "**UC-001 Stage 2** - Get existing property units in survey's building."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Property Unit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Property unit created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('propertyUnitId', jsonData.id);",
+											"    console.log('✅ Property unit created:', jsonData.unitIdentifier);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"unitIdentifier\": \"1A\",\n  \"floorNumber\": 1,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 85.5,\n  \"numberOfRooms\": 3,\n  \"description\": \"شقة سكنية - 3 غرف وصالة\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units"
+									]
+								},
+								"description": "**UC-001 Stage 2** - Create new property unit in survey.\n\n**UnitType:** 1=Apartment, 2=Shop, 3=Office, 4=Warehouse, 5=Other\n\n**Status:** 1=Occupied, 2=Vacant, 3=Damaged, 4=UnderRenovation, 5=Uninhabitable, 6=Locked, 99=Unknown"
+							},
+							"response": []
+						},
+						{
+							"name": "Link Existing Property Unit",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Property unit linked', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"console.log('✅ Property unit linked to survey');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/link",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"link"
+									]
+								},
+								"description": "Link existing property unit to survey (instead of creating new)."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Property Unit",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": 3,\n  \"description\": \"تم اكتشاف أضرار في السقف\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}"
+									]
+								},
+								"description": "Update property unit details (partial update)."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 2: Property unit management"
+				},
+				{
+					"name": "2.3 Household & Persons",
+					"item": [
+						{
+							"name": "Create Household",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Household created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('householdId', jsonData.id);",
+											"    console.log('✅ Household created:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"headOfHouseholdName\": \"أحمد محمد علي\",\n  \"householdSize\": 5,\n  \"maleCount\": 2,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"maleElderlyCount\": 0,\n  \"femaleElderlyCount\": 0,\n  \"maleDisabledCount\": 0,\n  \"femaleDisabledCount\": 0,\n  \"notes\": \"أسرة مكونة من الوالدين و3 أطفال\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households"
+									]
+								},
+								"description": "**UC-001 Stage 3** - Create household in survey.\n\n**Demographic Breakdown:**\n- Adults (18-64): maleCount, femaleCount\n- Children (<18): maleChildCount, femaleChildCount\n- Elderly (65+): maleElderlyCount, femaleElderlyCount\n- Disabled (any age): maleDisabledCount, femaleDisabledCount"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Households",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households"
+									]
+								},
+								"description": "Get all households for survey."
+							},
+							"response": []
+						},
+						{
+							"name": "Add Person to Household (Head)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Person added', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person1Id', jsonData.id);",
+											"    console.log('✅ Person added (Head):', jsonData.fullNameArabic);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"familyNameArabic\": \"الحسن\",\n  \"firstNameArabic\": \"أحمد\",\n  \"fatherNameArabic\": \"محمد\",\n  \"motherNameArabic\": \"فاطمة\",\n  \"nationalId\": \"01234567890\",\n  \"yearOfBirth\": 1975,\n  \"relationshipToHead\": \"Head\",\n  \"mobileNumber\": \"+963 991 234 567\",\n  \"isContactPerson\": true\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								},
+								"description": "**UC-001 Stage 3** - Add person to household as head.\n\n**Required:** familyNameArabic, firstNameArabic, fatherNameArabic\n\n**RelationshipToHead:** Head, Spouse, Child, Parent, Sibling, Other\n\n**isContactPerson:** Set to `true` to designate this person as the survey contact person. Only one person per survey should be marked as contact."
+							},
+							"response": []
+						},
+						{
+							"name": "Add Person to Household (Spouse)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Person added', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('person2Id', jsonData.id);",
+											"    console.log('✅ Person added (Spouse):', jsonData.fullNameArabic);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"familyNameArabic\": \"الحسن\",\n  \"firstNameArabic\": \"سارة\",\n  \"fatherNameArabic\": \"خالد\",\n  \"yearOfBirth\": 1980,\n  \"relationshipToHead\": \"Spouse\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								},
+								"description": "Add spouse to household."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Household Persons",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"persons"
+									]
+								},
+								"description": "Get all persons in household."
+							},
+							"response": []
+						},
+						{
+							"name": "Set Household Head",
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/head/{{person1Id}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"households",
+										"{{householdId}}",
+										"head",
+										"{{person1Id}}"
+									]
+								},
+								"description": "Set or change household head."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 3: Household registration and person management"
+				},
+				{
+					"name": "2.4 Relations",
+					"item": [
+						{
+							"name": "Create Relation (Owner 100%)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Relation created', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('relationId', jsonData.id);",
+											"    console.log('✅ Relation created:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2010-06-15\",\n  \"notes\": \"مالك العقار الأصلي - طابو أخضر\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "**UC-001 Stage 3** - Link person to property as Owner (100%).\n\n**RelationType:** 1=Owner, 2=Occupant, 3=Tenant, 4=Guest, 5=Heir, 99=Other\n\n**ContractType:** 1=FullOwnership, 2=SharedOwnership, 3=LongTermRental, etc."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Relation (Co-Owner 50%)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person2Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 2,\n  \"ownershipShare\": 0.5,\n  \"startDate\": \"2015-03-20\",\n  \"notes\": \"ملكية مشتركة - 50% بعد الزواج\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "Link person as co-owner with 50% share."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Relation (Tenant)",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 3,\n  \"contractType\": 3,\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2025-12-31\",\n  \"contractDetails\": \"عقد إيجار سنوي - رقم العقد: RC-2024-001\",\n  \"notes\": \"مستأجر بعقد رسمي\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"property-units",
+										"{{propertyUnitId}}",
+										"relations"
+									]
+								},
+								"description": "Link person as Tenant with rental contract."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Relation",
+							"request": {
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"ownershipShare\": 0.75,\n  \"notes\": \"تم تحديث نسبة الملكية\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/relations/{{relationId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"relations",
+										"{{relationId}}"
+									]
+								},
+								"description": "Update relation (partial update - PATCH)."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Relation",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/relations/{{relationId}}?deleteEvidenceFiles=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"relations",
+										"{{relationId}}"
+									],
+									"query": [
+										{
+											"key": "deleteEvidenceFiles",
+											"value": "true"
+										}
+									]
+								},
+								"description": "Delete person-property relation."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 3: Person-property relations (tenure rights)"
+				},
+				{
+					"name": "2.5 Evidence",
+					"item": [
+						{
+							"name": "Upload Property Photo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Photo uploaded', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ Photo uploaded:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "description",
+											"value": "صورة واجهة المبنى الأمامية",
+											"type": "text"
+										},
+										{
+											"key": "propertyUnitId",
+											"value": "{{propertyUnitId}}",
+											"type": "text"
+										},
+										{
+											"key": "notes",
+											"value": "صورة ملتقطة أثناء الزيارة الميدانية",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/photos",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"photos"
+									]
+								},
+								"description": "**UC-001 Stage 4** - Upload property photo.\n\n**Supported formats:** JPG, JPEG, PNG, GIF\n**Max size:** 10MB"
+							},
+							"response": []
+						},
+						{
+							"name": "Upload ID Document",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Document uploaded', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ ID document uploaded:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personId",
+											"value": "{{person1Id}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "بطاقة الهوية الوطنية",
+											"type": "text"
+										},
+										{
+											"key": "documentIssuedDate",
+											"value": "2020-01-15",
+											"type": "text"
+										},
+										{
+											"key": "documentExpiryDate",
+											"value": "2030-01-14",
+											"type": "text"
+										},
+										{
+											"key": "issuingAuthority",
+											"value": "السجل المدني",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/identification",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"identification"
+									]
+								},
+								"description": "Upload identification document (ID card, passport, etc.).\n\n**Supported formats:** PDF, JPG, JPEG, PNG\n**Max size:** 10MB"
+							},
+							"response": []
+						},
+						{
+							"name": "Upload Tenure Document",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Document uploaded', function () {",
+											"    pm.response.to.have.status(201);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"if (jsonData.id) {",
+											"    pm.environment.set('evidenceId', jsonData.id);",
+											"    console.log('✅ Tenure document uploaded:', jsonData.id);",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": ""
+										},
+										{
+											"key": "personPropertyRelationId",
+											"value": "{{relationId}}",
+											"type": "text"
+										},
+										{
+											"key": "description",
+											"value": "سند ملكية - طابو أخضر",
+											"type": "text"
+										},
+										{
+											"key": "documentIssuedDate",
+											"value": "2010-06-15",
+											"type": "text"
+										},
+										{
+											"key": "issuingAuthority",
+											"value": "أمانة السجل العقاري",
+											"type": "text"
+										},
+										{
+											"key": "documentReferenceNumber",
+											"value": "DEED-2010-123456",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/tenure",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"tenure"
+									]
+								},
+								"description": "Upload tenure/ownership document (deed, contract, etc.)."
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Evidence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence"
+									],
+									"query": [
+										{
+											"key": "evidenceType",
+											"value": "",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Get all evidence for survey."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Evidence by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/evidence/{{evidenceId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"evidence",
+										"{{evidenceId}}"
+									]
+								},
+								"description": "Get evidence details."
+							},
+							"response": []
+						},
+						{
+							"name": "Download Evidence File",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/evidence/{{evidenceId}}/download",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"evidence",
+										"{{evidenceId}}",
+										"download"
+									]
+								},
+								"description": "Download evidence file."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Evidence",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/evidence/{{evidenceId}}",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"evidence",
+										"{{evidenceId}}"
+									]
+								},
+								"description": "Delete evidence (only for Draft surveys)."
+							},
+							"response": []
+						}
+					],
+					"description": "Stage 4: Evidence collection (photos, documents)"
+				},
+				{
+					"name": "2.6 Finalize",
+					"item": [
+						{
+							"name": "Save Draft",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"notes\": \"تم حفظ المسودة - العمل قيد التقدم\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/draft",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"{{surveyId}}",
+										"draft"
+									]
+								},
+								"description": "Save survey progress without finalizing."
+							},
+							"response": []
+						},
+						{
+							"name": "Finalize Field Survey",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Survey finalized', function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"console.log('✅ Field survey finalized');",
+											"console.log('   Status:', jsonData.status);",
+											"console.log('   Ready for export to .uhc container');"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"finalNotes\": \"تم إنهاء المسح الميداني بنجاح\",\n  \"durationMinutes\": 45\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/Surveys/field/{{surveyId}}/finalize",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"Surveys",
+										"field",
+										"{{surveyId}}",
+										"finalize"
+									]
+								},
+								"description": "**UC-001 Final Stage** - Finalize field survey.\n\nMarks survey as Finalized, ready for export to .uhc container.\n\n**Note:** Field surveys do NOT auto-create claims (unlike office surveys)."
+							},
+							"response": []
+						}
+					],
+					"description": "Final stage: Save draft or finalize survey"
+				}
+			],
+			"description": "## 📱 Mobile Team - Field Survey Flow\n\n**Use Cases:** UC-001 (Field Survey), UC-002 (Resume Draft)\n\n**Workflow:**\n1. Login as Field Collector\n2. Get/Select Building\n3. Create Field Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Persons to Household\n7. Create Person-Property Relations\n8. Upload Evidence (photos, documents)\n9. Finalize Survey\n\n**Reference Code Format:** FLD-YYYY-NNNNN"
+		}
+	]
+}
