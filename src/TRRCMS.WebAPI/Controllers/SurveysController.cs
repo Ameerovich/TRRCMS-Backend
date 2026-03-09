@@ -7,6 +7,7 @@ using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
+using TRRCMS.Application.Surveys.Commands.CreateContactPerson;
 using TRRCMS.Application.Surveys.Commands.CreateFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
@@ -1332,6 +1333,95 @@ public class SurveysController : ControllerBase
     // ==================== PERSON MANAGEMENT ====================
 
     /// <summary>
+    /// Add contact person to survey (no household required)
+    /// إضافة شخص الاتصال للمسح
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 / UC-004 - Add contact person as soon as survey starts
+    ///
+    /// **Purpose**: Creates a person marked as contact person and links them to the survey.
+    /// No household is required — this is for recording who was contacted at the survey site.
+    /// Can be called immediately after creating the survey, before any household or property unit is linked.
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
+    ///
+    /// **Required Fields (الحقول المطلوبة)**:
+    /// - الاسم الأول: FirstNameArabic - Given name
+    /// - اسم الأب: FatherNameArabic - Father's name
+    /// - الكنية: FamilyNameArabic - Family/surname
+    /// - اسم الأم: MotherNameArabic - Mother's name
+    ///
+    /// **Optional Fields (الحقول الاختيارية)** - same as Add Person to Household:
+    /// - الرقم الوطني: NationalId (optional) - 11-digit national ID
+    /// - الجنس: Gender (optional) - Enum: 1=Male, 2=Female
+    /// - الجنسية: Nationality (optional) - Enum: 1=Syrian, 2=Palestinian, 3=Iraqi, etc.
+    /// - تاريخ الميلاد: DateOfBirth (optional) - Full date (e.g., "1985-06-15T00:00:00Z")
+    /// - البريد الالكتروني: Email (optional)
+    /// - رقم الموبايل: MobileNumber (optional)
+    /// - رقم الهاتف: PhoneNumber (optional)
+    ///
+    /// **Example Request - Minimal (required fields only)**:
+    /// ```json
+    /// {
+    ///   "firstNameArabic": "محمد",
+    ///   "fatherNameArabic": "أحمد",
+    ///   "familyNameArabic": "الأحمد",
+    ///   "motherNameArabic": "فاطمة"
+    /// }
+    /// ```
+    ///
+    /// **Example Request - Full data**:
+    /// ```json
+    /// {
+    ///   "firstNameArabic": "محمد",
+    ///   "fatherNameArabic": "أحمد",
+    ///   "familyNameArabic": "الأحمد",
+    ///   "motherNameArabic": "فاطمة",
+    ///   "nationalId": "00000000000",
+    ///   "gender": 1,
+    ///   "nationality": 1,
+    ///   "dateOfBirth": "1985-06-15T00:00:00Z",
+    ///   "email": "example@gmail.com",
+    ///   "mobileNumber": "+963912345678",
+    ///   "phoneNumber": "0000000"
+    /// }
+    /// ```
+    ///
+    /// **What happens**:
+    /// - Person created with `isContactPerson = true` and `householdId = null`
+    /// - Survey's `contactPersonId` and `contactPersonFullName` are set
+    /// - Person appears in Get All Persons in Household endpoint (alongside household members)
+    /// - Person appears in survey detail responses (field/office survey by ID)
+    /// - If called again on the same survey, the previous contact person remains in the database but is unlinked from the survey
+    /// </remarks>
+    /// <param name="surveyId">Survey ID to link contact person to</param>
+    /// <param name="command">Contact person data</param>
+    /// <returns>Created person details</returns>
+    /// <response code="201">Contact person added successfully.</response>
+    /// <response code="400">Validation error (missing required name fields).</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only add persons to your own surveys.</response>
+    /// <response code="404">Survey not found.</response>
+    [HttpPost("{surveyId}/contact-person")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(PersonDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PersonDto>> CreateContactPerson(
+        Guid surveyId,
+        [FromBody] CreateContactPersonCommand command)
+    {
+        command.SurveyId = surveyId;
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(
+            nameof(CreateContactPerson),
+            new { surveyId },
+            result);
+    }
+
+    /// <summary>
     /// Add person to household in survey context (Office Survey workflow)
     /// </summary>
     /// <remarks>
@@ -1386,6 +1476,11 @@ public class SurveysController : ControllerBase
     ///   "gender": 1
     /// }
     /// ```
+    ///
+    /// **Contact Person**:
+    /// - `isContactPerson` (optional, default false) - Set to `true` to also mark this person as the survey contact person.
+    ///   This sets `contactPersonId` and `contactPersonFullName` on the survey entity.
+    /// - To add a contact person **without** a household, use `POST /api/v1/surveys/{surveyId}/contact-person` instead.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="householdId">Household ID to add person to</param>
@@ -1507,17 +1602,22 @@ public class SurveysController : ControllerBase
     /// عرض أفراد الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - View household members
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - View household members and contact person
     ///
-    /// **Purpose**: Lists all registered persons/members in a household.
+    /// **Purpose**: Lists all registered persons in a household, plus the survey's contact person (if any).
     ///
     /// **Required Permission**: Surveys_ViewOwn (CanViewOwnSurveys)
+    ///
+    /// **Contact Person**: If the survey has a linked contact person (added via `POST /api/v1/surveys/{surveyId}/contact-person`),
+    /// they are included in the response with `householdId = null` and `isContactPerson = true`.
+    /// This allows the desktop UI to show all persons associated with a survey in a single list.
     ///
     /// **Response**: Array of PersonDto ordered by creation date. Each person includes:
     /// - Personal info: familyNameArabic, firstNameArabic, fatherNameArabic, motherNameArabic
     /// - Identity: nationalId, gender (enum), nationality (enum), dateOfBirth
     /// - Contact: email, mobileNumber, phoneNumber
-    /// - Household context: householdId, relationshipToHead (enum)
+    /// - Household context: householdId (null for contact person), relationshipToHead (enum)
+    /// - Contact person flag: isContactPerson (true if this person is the survey contact)
     /// - Computed: fullNameArabic, age
     ///
     /// **Example Response**:

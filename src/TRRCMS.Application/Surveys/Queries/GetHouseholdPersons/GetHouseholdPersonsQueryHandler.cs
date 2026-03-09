@@ -50,8 +50,23 @@ public class GetHouseholdPersonsQueryHandler : IRequestHandler<GetHouseholdPerso
 
         // Get persons for this household
         var persons = await _personRepository.GetByHouseholdIdAsync(request.HouseholdId, cancellationToken);
+        var personList = persons.ToList();
+
+        // Include the survey's contact person (has no household but belongs to the survey)
+        if (survey.ContactPersonId.HasValue)
+        {
+            var alreadyIncluded = personList.Any(p => p.Id == survey.ContactPersonId.Value);
+            if (!alreadyIncluded)
+            {
+                var contactPerson = await _personRepository.GetByIdAsync(survey.ContactPersonId.Value, cancellationToken);
+                if (contactPerson != null)
+                {
+                    personList.Add(contactPerson);
+                }
+            }
+        }
 
         // Map to DTOs
-        return _mapper.Map<List<PersonDto>>(persons);
+        return _mapper.Map<List<PersonDto>>(personList);
     }
 }
