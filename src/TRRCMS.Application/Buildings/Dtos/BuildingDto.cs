@@ -154,6 +154,14 @@ public class BuildingDto
     /// </summary>
     public string? BuildingGeometryWkt { get; set; }
 
+    // ==================== BUILDING DOCUMENTS ====================
+
+    /// <summary>
+    /// IDs of building documents (photos/PDFs) attached to this building (وثائق البناء)
+    /// Use GET /api/v1/building-documents/{id} to retrieve document details.
+    /// </summary>
+    public List<Guid> BuildingDocumentIds { get; set; } = new();
+
     // ==================== ADDITIONAL INFORMATION ====================
 
     /// <summary>

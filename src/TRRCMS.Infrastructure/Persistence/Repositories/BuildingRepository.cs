@@ -37,6 +37,7 @@ public class BuildingRepository : IBuildingRepository
     public async Task<Building?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Buildings
+            .Include(b => b.BuildingDocuments)
             .FirstOrDefaultAsync(b => b.Id == id && !b.IsDeleted, cancellationToken);
     }
 

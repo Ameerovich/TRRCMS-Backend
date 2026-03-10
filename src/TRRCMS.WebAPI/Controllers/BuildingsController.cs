@@ -255,6 +255,9 @@ public class BuildingsController : ControllerBase
     ///   "numberOfPropertyUnits": 10,
     ///   "numberOfApartments": 8,
     ///   "numberOfShops": 2,
+    ///   "buildingDocumentIds": [
+    ///     "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    ///   ],
     ///   "latitude": 36.2021,
     ///   "longitude": 37.1343,
     ///   "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
@@ -648,15 +651,15 @@ public class BuildingsController : ControllerBase
     /// **Example Request:**
     /// ```json
     /// {
-    ///   "minLatitude": 36.1900,
-    ///   "maxLatitude": 36.2100,
-    ///   "minLongitude": 37.1200,
-    ///   "maxLongitude": 37.1500,
+    ///   "northEastLat": 36.2100,
+    ///   "northEastLng": 37.1500,
+    ///   "southWestLat": 36.1900,
+    ///   "southWestLng": 37.1200,
     ///   "buildingType": 1,
     ///   "maxResults": 500
     /// }
     /// ```
-    /// 
+    ///
     /// **Example Response:**
     /// ```json
     /// [
@@ -667,8 +670,8 @@ public class BuildingsController : ControllerBase
     ///     "latitude": 36.2021,
     ///     "longitude": 37.1343,
     ///     "buildingGeometryWkt": "POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))",
-    ///     "status": 1,
-    ///     "buildingType": 1,
+    ///     "status": "Existing",
+    ///     "buildingType": "Residential",
     ///     "numberOfPropertyUnits": 8,
     ///     "numberOfApartments": 6,
     ///     "numberOfShops": 2
