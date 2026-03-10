@@ -275,6 +275,15 @@ public class PropertyUnit : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Update unit type (نوع الوحدة)
+    /// </summary>
+    public void UpdateUnitType(PropertyUnitType unitType, Guid modifiedByUserId)
+    {
+        UnitType = unitType;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Update unit identifier
     /// </summary>
     public void UpdateUnitIdentifier(string unitIdentifier, Guid modifiedByUserId)

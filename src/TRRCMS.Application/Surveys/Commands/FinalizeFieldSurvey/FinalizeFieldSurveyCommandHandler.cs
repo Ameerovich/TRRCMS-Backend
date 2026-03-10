@@ -58,7 +58,7 @@ public class FinalizeFieldSurveyCommandHandler : IRequestHandler<FinalizeFieldSu
         var relations = (await _unitOfWork.PersonPropertyRelations.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
         // Get evidence using EvidenceType? enum (null = no filter)
-        var evidence = await _unitOfWork.Evidences.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
+        var evidence = await _unitOfWork.Evidences.GetBySurveyContextAsync(survey.BuildingId, evidenceType: null, personId: null, cancellationToken);
 
         var personCount = 0;
         foreach (var household in households)
@@ -66,6 +66,10 @@ public class FinalizeFieldSurveyCommandHandler : IRequestHandler<FinalizeFieldSu
             var persons = await _unitOfWork.Persons.GetByHouseholdIdAsync(household.Id, cancellationToken);
             personCount += persons.Count;
         }
+
+        // Include contact person in person count (has no household)
+        if (survey.ContactPersonId.HasValue)
+            personCount++;
 
         // Count ownership relations using enum comparison
         var ownershipRelations = relations.Where(r =>

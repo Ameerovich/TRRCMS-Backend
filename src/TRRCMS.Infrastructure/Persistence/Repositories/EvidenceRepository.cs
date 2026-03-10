@@ -102,6 +102,7 @@ public class EvidenceRepository : IEvidenceRepository
     public async Task<List<Evidence>> GetBySurveyContextAsync(
         Guid buildingId,
         EvidenceType? evidenceType = null,
+        Guid? personId = null,
         CancellationToken cancellationToken = default)
     {
         var personIds = await _context.Persons
@@ -131,6 +132,9 @@ public class EvidenceRepository : IEvidenceRepository
 
         if (evidenceType.HasValue)
             query = query.Where(e => e.EvidenceType == evidenceType.Value);
+
+        if (personId.HasValue)
+            query = query.Where(e => e.PersonId == personId.Value);
 
         return await query.OrderByDescending(e => e.CreatedAtUtc).ToListAsync(cancellationToken);
     }

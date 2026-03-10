@@ -15,4 +15,9 @@ public class GetSurveyEvidenceQuery : IRequest<List<EvidenceDto>>
     /// Optional filter by evidence type enum
     /// </summary>
     public EvidenceType? EvidenceType { get; set; }
+
+    /// <summary>
+    /// Optional filter by person ID (شخص معين)
+    /// </summary>
+    public Guid? PersonId { get; set; }
 }

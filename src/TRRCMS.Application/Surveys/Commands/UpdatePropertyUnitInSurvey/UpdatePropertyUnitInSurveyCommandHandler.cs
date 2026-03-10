@@ -97,6 +97,12 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
             propertyUnit.UpdateUnitIdentifier(request.UnitIdentifier, currentUserId);
         }
 
+        // Update unit type if provided
+        if (request.UnitType.HasValue)
+        {
+            propertyUnit.UpdateUnitType((PropertyUnitType)request.UnitType.Value, currentUserId);
+        }
+
         // Update floor number if provided
         if (request.FloorNumber.HasValue)
         {

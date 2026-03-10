@@ -112,13 +112,17 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
                 personCount += persons.Count;
             }
 
+            // Include contact person in person count (has no household)
+            if (survey.ContactPersonId.HasValue)
+                personCount++;
+
             // Count ownership relations using enum comparison
             var ownershipRelationsCount = relations.Count(r =>
                 r.RelationType == RelationType.Owner ||
                 r.RelationType == RelationType.Heir);
 
             // Get evidence using EvidenceType? enum (null = no filter)
-            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
+            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, evidenceType: null, personId: null, cancellationToken);
             result.Evidence = _mapper.Map<List<EvidenceDto>>(evidence);
 
             result.DataSummary = new SurveyDataSummaryDto

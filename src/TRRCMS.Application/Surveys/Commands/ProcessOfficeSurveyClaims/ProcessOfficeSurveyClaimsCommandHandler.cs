@@ -70,7 +70,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
             survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
         // Get all evidence for the survey context (for the data summary)
-        var allEvidence = await _unitOfWork.Evidences.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
+        var allEvidence = await _unitOfWork.Evidences.GetBySurveyContextAsync(survey.BuildingId, evidenceType: null, personId: null, cancellationToken);
 
         var personCount = 0;
         foreach (var household in households)
@@ -79,7 +79,11 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
             personCount += persons.Count;
         }
 
-        // Filter ownership/heir relations — ONLY from this survey's relations
+        // Include contact person in person count (has no household)
+        if (survey.ContactPersonId.HasValue)
+            personCount++;
+
+        // Count ownership/heir relations for the data summary
         var ownershipRelations = surveyRelations.Where(r =>
             r.RelationType == RelationType.Owner ||
             r.RelationType == RelationType.Heir).ToList();
@@ -115,12 +119,12 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
 
         if (request.AutoCreateClaim)
         {
-            if (ownershipRelations.Any())
+            if (surveyRelations.Any())
             {
                 // Derive TypeOfWorks once from the property unit
                 var typeOfWorks = MapPropertyUnitTypeToTypeOfWorks(propertyUnit?.UnitType);
 
-                foreach (var relation in ownershipRelations)
+                foreach (var relation in surveyRelations)
                 {
                     var person = await _unitOfWork.Persons.GetByIdAsync(relation.PersonId, cancellationToken);
                     if (person == null)
@@ -138,18 +142,23 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         ? LifecycleStage.DraftPendingSubmission
                         : LifecycleStage.AwaitingDocuments;
 
+                    // Determine claim type based on relation type
+                    var isOwnershipRelation = relation.RelationType == RelationType.Owner
+                                           || relation.RelationType == RelationType.Heir;
+                    var claimType = isOwnershipRelation ? "Ownership Claim" : "Occupancy Claim";
+
                     var claim = Claim.Create(
                         claimNumber: claimNumber,
                         propertyUnitId: survey.PropertyUnitId.Value,
                         primaryClaimantId: person.Id,
-                        claimType: "Ownership Claim",
+                        claimType: claimType,
                         claimSource: ClaimSource.OfficeSubmission,
                         createdByUserId: currentUserId);
 
                     claim.MoveToStage(lifecycleStage, currentUserId);
 
-                    // Set CaseStatus based on RelationType: Owner/Heir → Closed, others → Open
-                    if (relation.RelationType == RelationType.Owner || relation.RelationType == RelationType.Heir)
+                    // CaseStatus: Owner/Heir → Closed, all others → Open (default)
+                    if (isOwnershipRelation)
                         claim.CloseCase(currentUserId);
 
                     await _unitOfWork.Claims.AddAsync(claim, cancellationToken);
@@ -196,6 +205,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                             claim.ClaimType,
                             claim.ClaimSource,
                             claim.LifecycleStage,
+                            CaseStatus = claim.CaseStatus.ToString(),
                             RelationId = relation.Id,
                             RelationType = relation.RelationType.ToString(),
                             SourceSurveyId = survey.Id,
@@ -207,13 +217,13 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
 
                 if (!createdClaims.Any())
                 {
-                    claimNotCreatedReason = "Ownership relations found but all associated person records were missing.";
+                    claimNotCreatedReason = "Relations found but all associated person records were missing.";
                     warnings.Add(claimNotCreatedReason);
                 }
             }
             else
             {
-                claimNotCreatedReason = "No ownership relations found. Claim creation requires at least one owner or heir relation.";
+                claimNotCreatedReason = "No person-property relations found in this survey.";
             }
         }
         else

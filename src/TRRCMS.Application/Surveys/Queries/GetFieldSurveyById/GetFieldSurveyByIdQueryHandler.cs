@@ -168,7 +168,7 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
         if (request.IncludeEvidence)
         {
             // Get evidence using EvidenceType? enum (null = no filter)
-            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, null, cancellationToken);
+            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, evidenceType: null, personId: null, cancellationToken);
             result.Evidence = _mapper.Map<List<EvidenceDto>>(evidence);
             result.DataSummary.EvidenceCount = evidence.Count;
             result.DataSummary.TotalEvidenceSizeBytes = evidence.Sum(e => e.FileSizeBytes);

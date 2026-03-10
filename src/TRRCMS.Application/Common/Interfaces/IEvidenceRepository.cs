@@ -22,6 +22,7 @@ public interface IEvidenceRepository
     Task<List<Evidence>> GetBySurveyContextAsync(
         Guid buildingId,
         EvidenceType? evidenceType = null,
+        Guid? personId = null,
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<Evidence>> GetVersionHistoryAsync(Guid evidenceId, CancellationToken cancellationToken = default);

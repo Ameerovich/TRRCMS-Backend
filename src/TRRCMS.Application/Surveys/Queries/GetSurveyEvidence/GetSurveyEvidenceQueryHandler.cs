@@ -40,10 +40,11 @@ public class GetSurveyEvidenceQueryHandler : IRequestHandler<GetSurveyEvidenceQu
         if (survey.FieldCollectorId != currentUserId)
             throw new UnauthorizedAccessException("You can only view evidence for your own surveys");
 
-        // Get evidence using EvidenceType? enum
+        // Get evidence using EvidenceType? and PersonId? filters
         var evidences = await _evidenceRepository.GetBySurveyContextAsync(
             survey.BuildingId,
             request.EvidenceType,
+            request.PersonId,
             cancellationToken);
 
         var result = evidences.Select(evidence =>

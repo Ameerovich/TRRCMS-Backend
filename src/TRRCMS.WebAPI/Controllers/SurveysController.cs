@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
@@ -13,6 +14,7 @@ using TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.DeleteEvidence;
+using TRRCMS.Application.Surveys.Commands.DeleteHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.DeletePersonPropertyRelation;
 using TRRCMS.Application.Surveys.Commands.FinalizeFieldSurvey;
 using TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
@@ -420,30 +422,32 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
-    /// Process office survey claims from ownership/heir relations
+    /// Process office survey claims from all person-property relations
     /// </summary>
     /// <remarks>
     /// **Use Case**: UC-004 S21 / UC-005 - Process office survey data and create claims
-    /// 
+    ///
     /// **Purpose**: Validates survey data, collects summary, and creates one claim per
-    /// ownership/heir relation — WITHOUT changing the survey status.
+    /// person-property relation — WITHOUT changing the survey status.
     /// The survey remains in Draft status. Call the finalize endpoint separately.
-    /// 
+    ///
     /// **What it does**:
     /// - Validates survey has required data (property unit linked)
     /// - Collects data summary (households, persons, relations, evidence)
     /// - **Only considers relations created within THIS survey** (scoped by SurveyId FK on PersonPropertyRelation)
     /// - Relations from other surveys referencing the same property unit are NOT included
-    /// - If AutoCreateClaim=true AND ownership/heir relations exist in this survey:
-    ///   - Creates one claim per Owner/Heir relation
+    /// - If AutoCreateClaim=true AND relations exist in this survey:
+    ///   - Creates one claim per relation
+    ///   - **Owner/Heir** relations → CaseStatus=Closed, ClaimType="Ownership Claim"
+    ///   - **Occupant/Tenant/Guest/Other** relations → CaseStatus=Open, ClaimType="Occupancy Claim"
     ///   - Generates claim number (CLM-YYYY-NNNNNNNNN) per claim
     ///   - Sets ClaimSource=OfficeSubmission
     ///   - Checks per-relation evidence for HasEvidence flag
     ///   - Links first claim to survey for backward compatibility
     /// - Returns processing result with all created claims and data summary
-    /// 
+    ///
     /// **Survey status**: Remains unchanged (Draft)
-    /// 
+    ///
     /// **Required permissions**: CanFinalizeSurveys
     /// 
     /// **Example request**:
@@ -1325,6 +1329,71 @@ public class SurveysController : ControllerBase
     {
         command.SurveyId = surveyId;
         command.HouseholdId = householdId;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Delete household (cascade soft delete)
+    /// حذف الأسرة مع جميع البيانات المرتبطة
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: UC-001 Stage 3 / UC-004 - Remove household and all related data
+    ///
+    /// **Purpose**: Cascade soft-deletes a household and all its descendants:
+    /// - All persons in the household
+    /// - All person-property relations for those persons
+    /// - All evidence documents linked to those relations/persons
+    ///
+    /// **Required Permission**: CanEditOwnSurveys
+    ///
+    /// **Important**: Only works for surveys in Draft status.
+    ///
+    /// **Example Request**:
+    /// ```
+    /// DELETE /api/v1/surveys/{surveyId}/households/{householdId}
+    /// ```
+    ///
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "primaryEntityId": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
+    ///   "primaryEntityType": "Household",
+    ///   "affectedEntities": [
+    ///     { "entityId": "guid", "entityType": "Household", "entityIdentifier": "أحمد محمد الخالد" },
+    ///     { "entityId": "guid", "entityType": "Person", "entityIdentifier": "أحمد محمد علي" },
+    ///     { "entityId": "guid", "entityType": "PersonPropertyRelation", "entityIdentifier": "Relation Owner" },
+    ///     { "entityId": "guid", "entityType": "Evidence", "entityIdentifier": "contract.pdf" }
+    ///   ],
+    ///   "totalAffected": 4,
+    ///   "deletedAtUtc": "2026-03-10T10:00:00Z",
+    ///   "message": "Household deleted successfully along with 1 person(s), 1 relation(s), and 1 evidence(s)"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="householdId">Household ID to delete</param>
+    /// <response code="200">Household and related data deleted successfully with cascade details.</response>
+    /// <response code="400">Survey not in Draft status or household already deleted.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only delete from your own surveys.</response>
+    /// <response code="404">Survey or household not found.</response>
+    [HttpDelete("{surveyId}/households/{householdId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(DeleteResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DeleteResultDto>> DeleteHouseholdInSurvey(
+        Guid surveyId,
+        Guid householdId)
+    {
+        var command = new DeleteHouseholdInSurveyCommand
+        {
+            SurveyId = surveyId,
+            HouseholdId = householdId
+        };
         var result = await _mediator.Send(command);
         return Ok(result);
     }
@@ -2482,11 +2551,13 @@ public class SurveysController : ControllerBase
     /// 
     /// **Filter options**:
     /// - evidenceType: Filter by type (1=IdentificationDocument, 2=OwnershipDeed, 3=RentalContract, 4=UtilityBill, 5=Photo, etc.)
-    /// 
+    /// - personId: Filter by person ID (returns only evidence linked to this person)
+    ///
     /// **Required permissions**: Field collector can only view their own surveys.
     /// </remarks>
     /// <param name="surveyId">Survey ID</param>
     /// <param name="evidenceType">Optional filter by evidence type (int or name: 1, "Photo", "OwnershipDeed", etc.)</param>
+    /// <param name="personId">Optional filter by person ID (GUID)</param>
     /// <response code="200">Success. Returns array of evidence (may be empty).</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only view evidence for your own surveys.</response>
@@ -2499,7 +2570,8 @@ public class SurveysController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<List<EvidenceDto>>> GetSurveyEvidence(
         Guid surveyId,
-        [FromQuery] string? evidenceType = null)
+        [FromQuery] string? evidenceType = null,
+        [FromQuery] Guid? personId = null)
     {
         // Parse string to EvidenceType enum (supports both int and name)
         EvidenceType? parsedType = null;
@@ -2515,13 +2587,13 @@ public class SurveysController : ControllerBase
             {
                 parsedType = namedValue;
             }
-            // Invalid value - you could throw an error here, or just ignore it
         }
 
         var query = new GetSurveyEvidenceQuery
         {
             SurveyId = surveyId,
-            EvidenceType = parsedType
+            EvidenceType = parsedType,
+            PersonId = personId
         };
         var result = await _mediator.Send(query);
         return Ok(result);
