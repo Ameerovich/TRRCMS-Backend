@@ -150,6 +150,8 @@ public interface IClaimRepository
         Guid? createdByUserId,
         Guid? claimId,
         string? buildingCode = null,
+        Guid? propertyUnitId = null,
+        Guid? originatingSurveyId = null,
         CancellationToken cancellationToken = default);
 
     // ==================== EXISTENCE CHECKS ====================

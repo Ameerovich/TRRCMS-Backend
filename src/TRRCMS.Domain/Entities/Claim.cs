@@ -27,13 +27,18 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public Guid? PrimaryClaimantId { get; private set; }
 
+    /// <summary>
+    /// Foreign key to the Survey that originated this claim (optional).
+    /// Set during office survey finalization or .uhc import commit.
+    /// </summary>
+    public Guid? OriginatingSurveyId { get; private set; }
+
     // ==================== CLAIM CLASSIFICATION ====================
 
     /// <summary>
-    /// Claim type (controlled vocabulary)
-    /// Example: "Ownership Claim", "Occupancy Claim", "Rental Claim"
+    /// Claim type classification: OwnershipClaim=1, OccupancyClaim=2 (نوع المطالبة)
     /// </summary>
-    public string ClaimType { get; private set; }
+    public ClaimType ClaimType { get; private set; }
 
     /// <summary>
     /// Claim source - how the claim entered the system
@@ -279,7 +284,7 @@ public class Claim : BaseAuditableEntity
     private Claim() : base()
     {
         ClaimNumber = string.Empty;
-        ClaimType = string.Empty;
+        ClaimType = ClaimType.OwnershipClaim;
         CaseStatus = CaseStatus.Open;
         LifecycleStage = LifecycleStage.DraftPendingSubmission;
         ClaimSource = ClaimSource.FieldCollection;
@@ -302,9 +307,10 @@ public class Claim : BaseAuditableEntity
         string claimNumber,  // Sequential claim number from ClaimNumberGenerator
         Guid propertyUnitId,
         Guid? primaryClaimantId,
-        string claimType,
+        ClaimType claimType,
         ClaimSource claimSource,
-        Guid createdByUserId)
+        Guid createdByUserId,
+        Guid? originatingSurveyId = null)
     {
         var claim = new Claim
         {
@@ -321,7 +327,8 @@ public class Claim : BaseAuditableEntity
             HasConflicts = false,
             ConflictCount = 0,
             EvidenceCount = 0,
-            AllRequiredDocumentsSubmitted = false
+            AllRequiredDocumentsSubmitted = false,
+            OriginatingSurveyId = originatingSurveyId
         };
 
         claim.MarkAsCreated(createdByUserId);
@@ -572,7 +579,7 @@ public class Claim : BaseAuditableEntity
     /// Update claim classification (type and priority)
     /// UC-006: Update Existing Claim
     /// </summary>
-    public void UpdateClassification(string claimType, CasePriority priority, Guid modifiedByUserId)
+    public void UpdateClassification(ClaimType claimType, CasePriority priority, Guid modifiedByUserId)
     {
         ClaimType = claimType;
         Priority = priority;

@@ -28,10 +28,17 @@ public class GetClaimSummariesQuery : IRequest<List<CreatedClaimSummaryDto>>
     public Guid? CreatedByUserId { get; set; }
 
     /// <summary>
-    /// Filter by survey visit ID.
-    /// Joins via Survey.ClaimId to find the claim linked to this survey.
+    /// Filter by originating survey ID.
+    /// Returns only claims created during that specific survey finalization.
+    /// Uses Claim.OriginatingSurveyId for direct lookup.
     /// </summary>
     public Guid? SurveyVisitId { get; set; }
+
+    /// <summary>
+    /// Filter by property unit ID.
+    /// Returns all claims for the specified property unit.
+    /// </summary>
+    public Guid? PropertyUnitId { get; set; }
 
     /// <summary>
     /// Filter by building code (17-digit GGDDSSCCNCNNBBBBB).

@@ -71,14 +71,14 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Cla
         }
 
         // Update claim classification if provided
-        if (!string.IsNullOrWhiteSpace(request.ClaimType) || request.Priority.HasValue)
+        if (request.ClaimType.HasValue || request.Priority.HasValue)
         {
             claim.UpdateClassification(
-                request.ClaimType ?? claim.ClaimType,
+                request.ClaimType.HasValue ? (ClaimType)request.ClaimType.Value : claim.ClaimType,
                 request.Priority.HasValue ? (CasePriority)request.Priority.Value : claim.Priority,
                 currentUserId);
 
-            if (!string.IsNullOrWhiteSpace(request.ClaimType)) changedFields.Add("ClaimType");
+            if (request.ClaimType.HasValue) changedFields.Add("ClaimType");
             if (request.Priority.HasValue) changedFields.Add("Priority");
         }
 

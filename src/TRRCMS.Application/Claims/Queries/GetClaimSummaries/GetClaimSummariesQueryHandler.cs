@@ -19,21 +19,7 @@ public class GetClaimSummariesQueryHandler
         GetClaimSummariesQuery request,
         CancellationToken cancellationToken)
     {
-        // 1. Resolve SurveyVisitId → ClaimId (if provided)
-        Guid? surveyLinkedClaimId = null;
-
-        if (request.SurveyVisitId.HasValue)
-        {
-            var survey = await _unitOfWork.Surveys.GetByIdAsync(
-                request.SurveyVisitId.Value, cancellationToken);
-
-            if (survey?.ClaimId == null)
-                return new List<CreatedClaimSummaryDto>();
-
-            surveyLinkedClaimId = survey.ClaimId;
-        }
-
-        // 2. Cast int filters to enum types for the repository
+        // 1. Cast int filters to enum types for the repository
         CaseStatus? statusFilter = request.CaseStatus.HasValue
             ? (CaseStatus)request.CaseStatus.Value
             : null;
@@ -42,13 +28,17 @@ public class GetClaimSummariesQueryHandler
             ? (ClaimSource)request.ClaimSource.Value
             : null;
 
-        // 3. Get filtered claims (server-side, single DB query)
+        // 2. Get filtered claims (server-side, single DB query)
+        //    SurveyVisitId filters by Claim.OriginatingSurveyId (all claims from that survey).
+        //    PropertyUnitId filters by Claim.PropertyUnitId (all claims for that property unit).
         var claims = await _unitOfWork.Claims.GetFilteredAsync(
             statusFilter,
             sourceFilter,
             request.CreatedByUserId,
-            surveyLinkedClaimId,
+            claimId: null,
             request.BuildingCode,
+            propertyUnitId: request.PropertyUnitId,
+            originatingSurveyId: request.SurveyVisitId,
             cancellationToken);
 
         if (claims.Count == 0)

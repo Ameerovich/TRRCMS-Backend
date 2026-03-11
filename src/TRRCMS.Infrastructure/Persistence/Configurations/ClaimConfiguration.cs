@@ -34,13 +34,16 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         
         builder.Property(c => c.PrimaryClaimantId)
             .HasComment("Foreign key to Person - Primary claimant (معرف المدعي الأساسي)");
-        
+
+        builder.Property(c => c.OriginatingSurveyId)
+            .HasComment("Foreign key to Survey that originated this claim (معرف الزيارة المنشئة)");
+
         // ==================== CLAIM CLASSIFICATION ====================
         
         builder.Property(c => c.ClaimType)
             .IsRequired()
-            .HasMaxLength(100)
-            .HasComment("Claim type from controlled vocabulary - e.g., Ownership Claim, Occupancy Claim (نوع المطالبة)");
+            .HasConversion<int>()
+            .HasComment("Claim type: 1=OwnershipClaim (مطالبة ملكية), 2=OccupancyClaim (مطالبة إشغال)");
         
         builder.Property(c => c.ClaimSource)
             .IsRequired()
@@ -258,7 +261,13 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .WithMany()
             .HasForeignKey(c => c.PrimaryClaimantId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
+        // OriginatingSurvey relationship (optional — no navigation on Survey side)
+        builder.HasOne<Domain.Entities.Survey>()
+            .WithMany()
+            .HasForeignKey(c => c.OriginatingSurveyId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Evidences relationship (collection)
         builder.HasMany(c => c.Evidences)
             .WithOne(e => e.Claim)
@@ -291,6 +300,10 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         // Index on PrimaryClaimantId (for claimant view)
         builder.HasIndex(c => c.PrimaryClaimantId)
             .HasDatabaseName("IX_Claims_PrimaryClaimantId");
+
+        // Index on OriginatingSurveyId (for finding all claims from a survey)
+        builder.HasIndex(c => c.OriginatingSurveyId)
+            .HasDatabaseName("IX_Claims_OriginatingSurveyId");
         
         // Index on AssignedToUserId (for officer workload)
         builder.HasIndex(c => c.AssignedToUserId)

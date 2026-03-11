@@ -145,7 +145,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                     // Determine claim type based on relation type
                     var isOwnershipRelation = relation.RelationType == RelationType.Owner
                                            || relation.RelationType == RelationType.Heir;
-                    var claimType = isOwnershipRelation ? "Ownership Claim" : "Occupancy Claim";
+                    var claimType = isOwnershipRelation ? ClaimType.OwnershipClaim : ClaimType.OccupancyClaim;
 
                     var claim = Claim.Create(
                         claimNumber: claimNumber,
@@ -153,7 +153,8 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         primaryClaimantId: person.Id,
                         claimType: claimType,
                         claimSource: ClaimSource.OfficeSubmission,
-                        createdByUserId: currentUserId);
+                        createdByUserId: currentUserId,
+                        originatingSurveyId: survey.Id);
 
                     claim.MoveToStage(lifecycleStage, currentUserId);
 

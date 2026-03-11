@@ -148,6 +148,7 @@ public class MappingProfile : Profile
 
         // Claim mappings
         CreateMap<Claim, TRRCMS.Application.Claims.Dtos.ClaimDto>()
+            .ForMember(dest => dest.ClaimType, opt => opt.MapFrom(src => (int)src.ClaimType))
             .ForMember(dest => dest.ClaimSource, opt => opt.MapFrom(src => (int)src.ClaimSource))
             .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => (int)src.Priority))
             .ForMember(dest => dest.LifecycleStage, opt => opt.MapFrom(src => (int)src.LifecycleStage))

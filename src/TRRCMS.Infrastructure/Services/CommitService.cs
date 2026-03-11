@@ -955,11 +955,16 @@ public class CommitService : ICommitService
                 // Generate a proper claim number via the existing generator (FR-D-8)
                 var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(ct);
 
+                // Parse ClaimType from staging string to enum
+                var claimType = staging.ClaimType?.Contains("Ownership", StringComparison.OrdinalIgnoreCase) == true
+                    ? ClaimType.OwnershipClaim
+                    : ClaimType.OccupancyClaim;
+
                 var claim = Claim.Create(
                     claimNumber: claimNumber,
                     propertyUnitId: productionUnitId,
                     primaryClaimantId: productionClaimantId,
-                    claimType: staging.ClaimType,
+                    claimType: claimType,
                     claimSource: staging.ClaimSource,
                     createdByUserId: userId);
 

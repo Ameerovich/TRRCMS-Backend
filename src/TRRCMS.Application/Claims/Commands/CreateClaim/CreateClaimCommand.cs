@@ -18,9 +18,9 @@ public class CreateClaimCommand : IRequest<ClaimDto>
     public Guid PropertyUnitId { get; set; }
     
     /// <summary>
-    /// Claim type (required) - e.g., "Ownership Claim", "Occupancy Claim"
+    /// Claim type (required, int). OwnershipClaim=1, OccupancyClaim=2.
     /// </summary>
-    public string ClaimType { get; set; } = string.Empty;
+    public int ClaimType { get; set; }
     
     /// <summary>
     /// How the claim entered the system (required)

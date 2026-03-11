@@ -262,6 +262,8 @@ public class ClaimRepository : IClaimRepository
         Guid? createdByUserId,
         Guid? claimId,
         string? buildingCode = null,
+        Guid? propertyUnitId = null,
+        Guid? originatingSurveyId = null,
         CancellationToken cancellationToken = default)
     {
         var query = _context.Claims
@@ -280,6 +282,10 @@ public class ClaimRepository : IClaimRepository
             query = query.Where(c => c.Id == claimId.Value);
         if (!string.IsNullOrWhiteSpace(buildingCode))
             query = query.Where(c => c.PropertyUnit.Building.BuildingId == buildingCode);
+        if (propertyUnitId.HasValue)
+            query = query.Where(c => c.PropertyUnitId == propertyUnitId.Value);
+        if (originatingSurveyId.HasValue)
+            query = query.Where(c => c.OriginatingSurveyId == originatingSurveyId.Value);
 
         return await query
             .OrderByDescending(c => c.CreatedAtUtc)

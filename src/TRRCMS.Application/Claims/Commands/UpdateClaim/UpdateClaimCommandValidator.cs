@@ -19,9 +19,9 @@ public class UpdateClaimCommandValidator : AbstractValidator<UpdateClaimCommand>
             .WithMessage("Reason must not exceed 500 characters");
 
         RuleFor(x => x.ClaimType)
-            .MaximumLength(100)
-            .When(x => !string.IsNullOrWhiteSpace(x.ClaimType))
-            .WithMessage("Claim type must not exceed 100 characters");
+            .Must(v => v!.Value == 1 || v.Value == 2)
+            .When(x => x.ClaimType.HasValue)
+            .WithMessage("Invalid claim type. OwnershipClaim=1, OccupancyClaim=2.");
 
         RuleFor(x => x.TenureContractDetails)
             .MaximumLength(1000)

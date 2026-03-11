@@ -15,7 +15,7 @@ public class UpdateClaimCommand : IRequest<ClaimDto>
     public Guid? PrimaryClaimantId { get; set; }
 
     // Claim Classification
-    public string? ClaimType { get; set; }
+    public int? ClaimType { get; set; }
     public int? Priority { get; set; }
 
     // Tenure Details

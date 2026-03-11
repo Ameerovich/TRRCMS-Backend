@@ -58,10 +58,10 @@ public class CreateClaimCommandHandler : IRequestHandler<CreateClaimCommand, Cla
         // Create claim using factory method
         // ==================== Pass claim number as parameter ====================
         var claim = Claim.Create(
-            claimNumber: claimNumber, 
+            claimNumber: claimNumber,
             propertyUnitId: request.PropertyUnitId,
             primaryClaimantId: request.PrimaryClaimantId,
-            claimType: request.ClaimType,
+            claimType: (ClaimType)request.ClaimType,
             claimSource: (ClaimSource)request.ClaimSource,
             createdByUserId: request.CreatedByUserId
         );

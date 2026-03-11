@@ -10,6 +10,7 @@ using TRRCMS.Application.Claims.Commands.VerifyClaim;
 using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Claims.Queries.GetAllClaims;
 using TRRCMS.Application.Claims.Queries.GetClaim;
+using TRRCMS.Application.Claims.Queries.GetClaimByNumber;
 using TRRCMS.Application.Claims.Queries.GetClaimSummaries;
 using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Domain.Enums;
@@ -84,6 +85,29 @@ public class ClaimsController : ControllerBase
     }
 
     /// <summary>
+    /// Get claim by claim number (e.g. CLM-2026-000000015)
+    /// </summary>
+    /// <param name="claimNumber">Claim number</param>
+    /// <returns>Claim with all details</returns>
+    /// <response code="200">Claim found</response>
+    /// <response code="404">Claim not found</response>
+    [HttpGet("by-number/{claimNumber}")]
+    [Authorize(Policy = "CanViewAllClaims")]
+    [ProducesResponseType(typeof(ClaimDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClaimDto>> GetClaimByNumber(string claimNumber)
+    {
+        var claim = await _mediator.Send(new GetClaimByNumberQuery(claimNumber));
+
+        if (claim == null)
+            return NotFound($"Claim with number '{claimNumber}' not found.");
+
+        return Ok(claim);
+    }
+
+    /// <summary>
     /// Get all claims with optional filtering and pagination
     /// </summary>
     /// <param name="query">Filter and pagination parameters</param>
@@ -110,7 +134,8 @@ public class ClaimsController : ControllerBase
     /// <param name="caseStatus">Filter by case status (int). Open=1, Closed=2.</param>
     /// <param name="claimSource">Filter by claim source (int). FieldCollection=1, OfficeSubmission=2, etc.</param>
     /// <param name="createdByUserId">Filter by the user who created the claim</param>
-    /// <param name="surveyVisitId">Filter by linked survey visit ID</param>
+    /// <param name="surveyVisitId">Filter by originating survey ID. Returns only claims created during that survey.</param>
+    /// <param name="propertyUnitId">Filter by property unit ID. Returns all claims for that property unit.</param>
     /// <param name="buildingCode">Filter by building code (17-digit GGDDSSCCNCNNBBBBB)</param>
     /// <returns>List of claim summaries matching filter criteria</returns>
     /// <response code="200">Claim summaries retrieved successfully</response>
@@ -126,6 +151,7 @@ public class ClaimsController : ControllerBase
         [FromQuery] int? claimSource = null,
         [FromQuery] Guid? createdByUserId = null,
         [FromQuery] Guid? surveyVisitId = null,
+        [FromQuery] Guid? propertyUnitId = null,
         [FromQuery] string? buildingCode = null)
     {
         var query = new GetClaimSummariesQuery
@@ -134,6 +160,7 @@ public class ClaimsController : ControllerBase
             ClaimSource = claimSource,
             CreatedByUserId = createdByUserId,
             SurveyVisitId = surveyVisitId,
+            PropertyUnitId = propertyUnitId,
             BuildingCode = buildingCode
         };
 

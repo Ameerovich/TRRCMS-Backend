@@ -17,8 +17,8 @@ public class CreateClaimCommandValidator : AbstractValidator<CreateClaimCommand>
             .NotEmpty().WithMessage("Property unit ID is required");
 
         RuleFor(x => x.ClaimType)
-            .NotEmpty().WithMessage("Claim type is required")
-            .MaximumLength(100).WithMessage("Claim type must not exceed 100 characters");
+            .Must(v => vocabService.IsValidCode("claim_type", v))
+            .WithMessage("Invalid claim type. OwnershipClaim=1, OccupancyClaim=2.");
 
         RuleFor(x => x.ClaimSource)
             .Must(v => vocabService.IsValidCode("claim_source", v))

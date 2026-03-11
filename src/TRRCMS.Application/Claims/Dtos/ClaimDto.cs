@@ -12,10 +12,11 @@ public class ClaimDto
     public string ClaimNumber { get; set; } = string.Empty;
     public Guid PropertyUnitId { get; set; }
     public Guid? PrimaryClaimantId { get; set; }
+    public Guid? OriginatingSurveyId { get; set; }
     
     // ==================== CLAIM CLASSIFICATION ====================
     
-    public string ClaimType { get; set; } = string.Empty;
+    public int ClaimType { get; set; }
     public int ClaimSource { get; set; }
     public int Priority { get; set; }
     
