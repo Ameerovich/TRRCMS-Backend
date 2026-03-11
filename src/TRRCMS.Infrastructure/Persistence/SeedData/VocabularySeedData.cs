@@ -50,8 +50,6 @@ public static class VocabularySeedData
         Def<ClaimSource>("claim_source", "مصدر المطالبة", "Claim Source", "Claims"),
         Def<CasePriority>("case_priority", "أولوية الحالة", "Case Priority", "Claims"),
         Def<LifecycleStage>("lifecycle_stage", "مرحلة دورة الحياة", "Lifecycle Stage", "Claims"),
-        Def<CertificateStatus>("certificate_status", "حالة الشهادة", "Certificate Status", "Claims"),
-
         // Survey
         Def<SurveyType>("survey_type", "نوع الاستطلاع", "Survey Type", "Survey"),
         Def<SurveyStatus>("survey_status", "حالة الاستطلاع", "Survey Status", "Survey"),
@@ -59,8 +57,6 @@ public static class VocabularySeedData
 
         // Operations
         Def<TransferStatus>("transfer_status", "حالة النقل", "Transfer Status", "Operations"),
-        Def<ReferralRole>("referral_role", "دور الإحالة", "Referral Role", "Operations"),
-
         // Property Units
         Def<PropertyUnitType>("property_unit_type", "نوع الوحدة العقارية", "Property Unit Type", "Property"),
         Def<PropertyUnitStatus>("property_unit_status", "حالة الوحدة العقارية", "Property Unit Status", "Property"),

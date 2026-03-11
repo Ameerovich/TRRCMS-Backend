@@ -142,8 +142,7 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
             .HasForeignKey(d => d.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Note: Surveys and Certificates relationships will be configured when those entities are implemented
+        // Note: Surveys relationship will be configured when needed
         builder.Ignore(p => p.Surveys);
-        builder.Ignore(p => p.Certificates);
     }
 }

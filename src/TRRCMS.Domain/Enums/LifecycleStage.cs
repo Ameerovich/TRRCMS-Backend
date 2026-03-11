@@ -92,13 +92,6 @@ public enum LifecycleStage
     Reassigned = 12,
 
     /// <summary>
-    /// Certificate Issued - Final certificate issued (شهادة صادرة)
-    /// Final tenure certificate has been issued
-    /// </summary>
-    [ArabicLabel("شهادة صادرة")]
-    CertificateIssued = 13,
-
-    /// <summary>
     /// Archived - Closed and archived (مؤرشف)
     /// Claim processing complete and archived
     /// </summary>

@@ -89,11 +89,6 @@ public interface IClaimRepository
     /// </summary>
     Task<IEnumerable<Claim>> GetByVerificationStatusAsync(VerificationStatus status, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get all claims by certificate status
-    /// </summary>
-    Task<IEnumerable<Claim>> GetByCertificateStatusAsync(CertificateStatus status, CancellationToken cancellationToken = default);
-
     // ==================== SPECIALIZED QUERIES ====================
 
     /// <summary>

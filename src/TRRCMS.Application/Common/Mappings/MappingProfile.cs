@@ -155,7 +155,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CaseStatus, opt => opt.MapFrom(src => (int)src.CaseStatus))
             .ForMember(dest => dest.TenureContractType, opt => opt.MapFrom(src => src.TenureContractType.HasValue ? (int?)src.TenureContractType : null))
             .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => (int)src.VerificationStatus))
-            .ForMember(dest => dest.CertificateStatus, opt => opt.MapFrom(src => (int)src.CertificateStatus))
             .ForMember(dest => dest.IsOverdue, opt => opt.MapFrom(src => src.IsOverdue()))
             .ForMember(dest => dest.DaysUntilDeadline, opt => opt.MapFrom(src =>
                 src.TargetCompletionDate.HasValue

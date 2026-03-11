@@ -60,7 +60,7 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.Property(c => c.LifecycleStage)
             .IsRequired()
             .HasConversion<int>()
-            .HasComment("Current lifecycle stage: 1=DraftPendingSubmission, 2=Submitted, 3=InitialScreening, 4=UnderReview, 5=AwaitingDocuments, 6=ConflictDetected, 7=InAdjudication, 8=Approved, 9=Rejected, 10=CertificateIssued, 11=Archived (مرحلة دورة الحياة)");
+            .HasComment("Current lifecycle stage: 1=DraftPendingSubmission, 2=Submitted, 3=InitialScreening, 4=UnderReview, 5=AwaitingDocuments, 6=ConflictDetected, 7=InAdjudication, 8=PendingApproval, 9=Approved, 10=Rejected, 11=OnHold, 12=Reassigned, 99=Archived (مرحلة دورة الحياة)");
         
         builder.Property(c => c.CaseStatus)
             .IsRequired()
@@ -189,17 +189,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .HasMaxLength(2000)
             .HasComment("Decision notes (ملاحظات القرار)");
         
-        // ==================== CERTIFICATE ====================
-        
-        builder.Property(c => c.CertificateStatus)
-            .IsRequired()
-            .HasConversion<int>()
-            .HasComment("Certificate status: 1=NotRequired, 2=PendingGeneration, 3=Generated, 4=Issued, 5=Collected, 6=Rejected, 7=Revoked (حالة الشهادة)");
-        
-        // Certificate relationship will be configured when Certificate entity is implemented
-        builder.Ignore(c => c.CertificateId);
-        builder.Ignore(c => c.Certificate);
-        
         // ==================== NOTES & HISTORY ====================
         
         builder.Property(c => c.ProcessingNotes)
@@ -280,12 +269,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .HasForeignKey(d => d.ClaimId)
             .OnDelete(DeleteBehavior.Restrict);
         
-        // Referrals relationship (collection)
-        builder.HasMany(c => c.Referrals)
-            .WithOne(r => r.Claim)
-            .HasForeignKey(r => r.ClaimId)
-            .OnDelete(DeleteBehavior.Cascade);
-        
         // ==================== INDEXES ====================
         
         // Unique index on ClaimNumber
@@ -324,10 +307,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         // Index on VerificationStatus (for verification queue)
         builder.HasIndex(c => c.VerificationStatus)
             .HasDatabaseName("IX_Claims_VerificationStatus");
-        
-        // Index on CertificateStatus (for certificate processing)
-        builder.HasIndex(c => c.CertificateStatus)
-            .HasDatabaseName("IX_Claims_CertificateStatus");
         
         // Index on HasConflicts (for adjudication queue)
         builder.HasIndex(c => c.HasConflicts)

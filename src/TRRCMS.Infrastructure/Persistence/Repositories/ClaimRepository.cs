@@ -28,7 +28,6 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PrimaryClaimant)
             .Include(c => c.Evidences)
             .Include(c => c.Documents)
-            .Include(c => c.Referrals)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
@@ -66,7 +65,6 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PrimaryClaimant)
             .Include(c => c.Evidences)
             .Include(c => c.Documents)
-            .Include(c => c.Referrals)
             .FirstOrDefaultAsync(c => c.ClaimNumber == claimNumber, cancellationToken);
     }
 
@@ -151,16 +149,6 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PrimaryClaimant)
             .Where(c => c.VerificationStatus == status)
             .OrderBy(c => c.SubmittedDate)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<Claim>> GetByCertificateStatusAsync(CertificateStatus status, CancellationToken cancellationToken = default)
-    {
-        return await _context.Claims
-            .Include(c => c.PropertyUnit)
-            .Include(c => c.PrimaryClaimant)
-            .Where(c => c.CertificateStatus == status)
-            .OrderBy(c => c.DecisionDate)
             .ToListAsync(cancellationToken);
     }
 

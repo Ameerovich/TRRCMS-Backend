@@ -73,10 +73,6 @@ public class ClaimDto
     public string? DecisionReason { get; set; }
     public string? DecisionNotes { get; set; }
     
-    // ==================== CERTIFICATE ====================
-    
-    public int CertificateStatus { get; set; }
-    
     // ==================== NOTES & HISTORY ====================
     
     public string? ProcessingNotes { get; set; }

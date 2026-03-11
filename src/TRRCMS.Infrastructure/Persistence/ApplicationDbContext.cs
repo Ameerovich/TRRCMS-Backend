@@ -77,9 +77,6 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<Vocabulary> Vocabularies => Set<Vocabulary>();
 
-    // TODO: future phase — Enable when Certificate feature is needed
-    // public DbSet<Certificate> Certificates => Set<Certificate>();
-
     // ==================== IMPORT PIPELINE ====================
 
     /// <summary>

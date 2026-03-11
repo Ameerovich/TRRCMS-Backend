@@ -172,11 +172,6 @@ public class PropertyUnit : BaseAuditableEntity
     /// </summary>
     public virtual ICollection<Survey> Surveys { get; private set; }
 
-    /// <summary>
-    /// Certificates issued for this unit
-    /// </summary>
-    public virtual ICollection<Certificate> Certificates { get; private set; }
-
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>
@@ -190,7 +185,6 @@ public class PropertyUnit : BaseAuditableEntity
         Claims = new List<Claim>();
         Documents = new List<Document>();
         Surveys = new List<Survey>();
-        Certificates = new List<Certificate>();
         Status = PropertyUnitStatus.Unknown;
         // Initialize Day 2 fields
         HasElectricity = false;

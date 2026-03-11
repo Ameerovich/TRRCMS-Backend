@@ -214,18 +214,6 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public string? DecisionNotes { get; private set; }
 
-    // ==================== CERTIFICATE ====================
-
-    /// <summary>
-    /// Certificate status for this claim
-    /// </summary>
-    public CertificateStatus CertificateStatus { get; private set; }
-
-    /// <summary>
-    /// Foreign key to issued certificate (if any)
-    /// </summary>
-    public Guid? CertificateId { get; private set; }
-
     // ==================== NOTES & HISTORY ====================
 
     /// <summary>
@@ -260,16 +248,6 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public virtual ICollection<Document> Documents { get; private set; }
 
-    /// <summary>
-    /// Referrals for this claim
-    /// </summary>
-    public virtual ICollection<Referral> Referrals { get; private set; }
-
-    /// <summary>
-    /// Issued certificate (if any)
-    /// </summary>
-    public virtual Certificate? Certificate { get; private set; }
-
     // Note: AssignedToUser, SubmittedByUser, etc. would be User entities
     // public virtual User? AssignedToUser { get; private set; }
     // public virtual User? SubmittedByUser { get; private set; }
@@ -290,14 +268,12 @@ public class Claim : BaseAuditableEntity
         ClaimSource = ClaimSource.FieldCollection;
         Priority = CasePriority.Normal;
         VerificationStatus = VerificationStatus.Pending;
-        CertificateStatus = CertificateStatus.NotApplicable;
         HasConflicts = false;
         ConflictCount = 0;
         EvidenceCount = 0;
         AllRequiredDocumentsSubmitted = false;
         Evidences = new List<Evidence>();
         Documents = new List<Document>();
-        Referrals = new List<Referral>();
     }
 
     /// <summary>
@@ -323,7 +299,6 @@ public class Claim : BaseAuditableEntity
             LifecycleStage = LifecycleStage.DraftPendingSubmission,
             Priority = CasePriority.Normal,
             VerificationStatus = VerificationStatus.Pending,
-            CertificateStatus = CertificateStatus.NotApplicable,
             HasConflicts = false,
             ConflictCount = 0,
             EvidenceCount = 0,
@@ -491,7 +466,6 @@ public class Claim : BaseAuditableEntity
         DecisionNotes = decisionNotes;
         DecisionDate = DateTime.UtcNow;
         DecisionByUserId = decisionByUserId;
-        CertificateStatus = CertificateStatus.PendingGeneration;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -510,17 +484,6 @@ public class Claim : BaseAuditableEntity
         DecisionNotes = decisionNotes;
         DecisionDate = DateTime.UtcNow;
         DecisionByUserId = decisionByUserId;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Link certificate to claim
-    /// </summary>
-    public void LinkCertificate(Guid certificateId, Guid modifiedByUserId)
-    {
-        CertificateId = certificateId;
-        CertificateStatus = CertificateStatus.Issued;
-        LifecycleStage = LifecycleStage.CertificateIssued;
         MarkAsModified(modifiedByUserId);
     }
 
