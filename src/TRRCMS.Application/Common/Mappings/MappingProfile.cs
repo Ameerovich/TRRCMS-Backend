@@ -9,6 +9,8 @@ using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.Surveys.Dtos;
+using TRRCMS.Application.Landmarks.Dtos;
+using TRRCMS.Application.Streets.Dtos;
 using TRRCMS.Application.Users.Dtos;
 using TRRCMS.Domain.Entities;
 
@@ -262,6 +264,22 @@ public class MappingProfile : Profile
         CreateMap<District, DistrictDto>();
         CreateMap<SubDistrict, SubDistrictDto>();
         CreateMap<Community, CommunityDto>();
+
+        // Landmark mappings
+        CreateMap<Landmark, LandmarkDto>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (int)src.Type))
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.ToString()));
+
+        CreateMap<Landmark, LandmarkMapDto>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (int)src.Type))
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.ToString()));
+
+        // Street mappings
+        CreateMap<Street, StreetDto>()
+            .ForMember(dest => dest.GeometryWkt, opt => opt.MapFrom(src => src.GeometryWkt));
+
+        CreateMap<Street, StreetMapDto>()
+            .ForMember(dest => dest.GeometryWkt, opt => opt.MapFrom(src => src.GeometryWkt));
     }
 
 }

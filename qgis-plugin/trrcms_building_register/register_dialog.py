@@ -307,7 +307,7 @@ class RegisterBuildingDialog(QDialog):
         parts.append(dist["code"] if dist else "DD")
         parts.append(sd["code"] if sd else "SS")
         parts.append(comm["code"] if comm else "CCC")
-        parts.append(neigh["code"] if neigh else "NNN")
+        parts.append((neigh.get("code") or neigh.get("neighborhoodCode") or "NNN") if neigh else "NNN")
         parts.append(bnum.zfill(5) if bnum else "BBBBB")
 
         self.building_id_preview.setText("-".join(parts))
@@ -425,7 +425,7 @@ class RegisterBuildingDialog(QDialog):
             "districtCode": dist["code"],
             "subDistrictCode": sd["code"],
             "communityCode": comm["code"],
-            "neighborhoodCode": neigh["code"],
+            "neighborhoodCode": neigh.get("code") or neigh.get("neighborhoodCode"),
             "buildingNumber": bnum.zfill(5),
             "buildingGeometryWkt": wkt,
         }

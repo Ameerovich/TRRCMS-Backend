@@ -154,12 +154,23 @@ public class ApplicationDbContext : DbContext
 
 
     /// <summary>
-    /// Security Policy 
+    /// Security Policy
     /// </summary>
     public DbSet<SecurityPolicy> SecurityPolicies => Set<SecurityPolicy>();
 
+    // ==================== MAP REFERENCE LAYERS ====================
 
-    // TODO: Add other entities later as we implement them
+    /// <summary>
+    /// Landmarks — point features for map reference (mosques, schools, etc.)
+    /// Managed via QGIS plugin through the API.
+    /// </summary>
+    public DbSet<Landmark> Landmarks => Set<Landmark>();
+
+    /// <summary>
+    /// Streets — line features for map reference.
+    /// Managed via QGIS plugin through the API.
+    /// </summary>
+    public DbSet<Street> Streets => Set<Street>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

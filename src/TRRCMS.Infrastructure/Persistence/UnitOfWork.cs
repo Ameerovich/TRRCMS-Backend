@@ -41,6 +41,8 @@ public class UnitOfWork : IUnitOfWork
     private IImportPackageRepository? _importPackages;
     private IConflictResolutionRepository? _conflictResolutions;
     private ISecurityPolicyRepository? _securityPolicies;
+    private ILandmarkRepository? _landmarks;
+    private IStreetRepository? _streets;
 
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService)
@@ -108,6 +110,12 @@ public class UnitOfWork : IUnitOfWork
 
     public ISecurityPolicyRepository SecurityPolicies =>
     _securityPolicies ??= new SecurityPolicyRepository(_context);
+
+    public ILandmarkRepository Landmarks =>
+        _landmarks ??= new LandmarkRepository(_context);
+
+    public IStreetRepository Streets =>
+        _streets ??= new StreetRepository(_context);
 
 
     // ==================== TRANSACTION OPERATIONS ====================

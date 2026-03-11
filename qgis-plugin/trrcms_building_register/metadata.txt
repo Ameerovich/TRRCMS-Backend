@@ -1,14 +1,14 @@
 [general]
-name=TRRCMS Building Register
+name=TRRCMS GIS Register
 qgisMinimumVersion=3.28
-description=Register buildings on TRRCMS server from QGIS map canvas
-version=1.0.0
+description=Register buildings, landmarks, and streets on TRRCMS server from QGIS map canvas
+version=1.1.0
 author=UN-Habitat
 email=info@unhabitat.org
-about=QGIS plugin for the Tenure Rights Registration & Claims Management System (TRRCMS). Allows DataManagers and Administrators to log in to the TRRCMS server, select administrative hierarchy (Governorate, District, SubDistrict, Community, Neighborhood), draw or select a building polygon, and register it via the TRRCMS API.
+about=QGIS plugin for the Tenure Rights Registration & Claims Management System (TRRCMS). Allows DataManagers and Administrators to register buildings (polygon), landmarks (point), and streets (line) via the TRRCMS API. Supports selecting features from layers or drawing directly on the map canvas.
 tracker=https://github.com/unhabitat/trrcms/issues
 repository=https://github.com/unhabitat/trrcms
-tags=buildings,registration,TRRCMS,UN-Habitat,cadastre
+tags=buildings,landmarks,streets,registration,TRRCMS,UN-Habitat,cadastre,GIS
 homepage=https://github.com/unhabitat/trrcms
 category=Plugins
 icon=icon.png

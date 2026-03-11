@@ -117,6 +117,16 @@ public interface IUnitOfWork : IDisposable
     /// </summary>
     ISecurityPolicyRepository SecurityPolicies { get; }
 
+    /// <summary>
+    /// Landmark repository — point features for map reference layers
+    /// </summary>
+    ILandmarkRepository Landmarks { get; }
+
+    /// <summary>
+    /// Street repository — line features for map reference layers
+    /// </summary>
+    IStreetRepository Streets { get; }
+
 
     // ==================== TRANSACTION OPERATIONS ====================
 

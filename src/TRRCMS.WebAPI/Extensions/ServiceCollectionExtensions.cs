@@ -63,6 +63,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
         services.AddScoped<IVocabularyRepository, VocabularyRepository>();
         services.AddScoped<IBuildingAssignmentRepository, BuildingAssignmentRepository>();
+        services.AddScoped<ILandmarkRepository, LandmarkRepository>();
+        services.AddScoped<IStreetRepository, StreetRepository>();
 
         // ── Administrative hierarchy repositories ────────────────────
         services.AddScoped<IGovernorateRepository, GovernorateRepository>();

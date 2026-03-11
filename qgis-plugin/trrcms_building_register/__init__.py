@@ -1,6 +1,6 @@
 """
-TRRCMS Building Register - QGIS Plugin
-Registers buildings on the TRRCMS server from QGIS map canvas.
+TRRCMS GIS Register - QGIS Plugin
+Registers buildings, landmarks, and streets on the TRRCMS server from QGIS map canvas.
 """
 
 

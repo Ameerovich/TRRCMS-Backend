@@ -85,6 +85,34 @@ class TRRCMSApiClient:
         """Register a new building. Returns the created BuildingDto."""
         return self._request("POST", "/api/v1/buildings/register", json_data=data)
 
+    # ==================== Landmark Registration ====================
+
+    def register_landmark(self, data):
+        """Register a new landmark. Returns the created LandmarkDto."""
+        return self._request("POST", "/api/v1/landmarks/register", json_data=data)
+
+    def update_landmark(self, landmark_id, data):
+        """Update an existing landmark. Returns the updated LandmarkDto."""
+        return self._request("PUT", f"/api/v1/landmarks/{landmark_id}", json_data=data)
+
+    def delete_landmark(self, landmark_id):
+        """Delete a landmark (soft delete)."""
+        return self._request("DELETE", f"/api/v1/landmarks/{landmark_id}")
+
+    # ==================== Street Registration ====================
+
+    def register_street(self, data):
+        """Register a new street. Returns the created StreetDto."""
+        return self._request("POST", "/api/v1/streets/register", json_data=data)
+
+    def update_street(self, street_id, data):
+        """Update an existing street. Returns the updated StreetDto."""
+        return self._request("PUT", f"/api/v1/streets/{street_id}", json_data=data)
+
+    def delete_street(self, street_id):
+        """Delete a street (soft delete)."""
+        return self._request("DELETE", f"/api/v1/streets/{street_id}")
+
     # ==================== Internal ====================
 
     def _request(self, method, path, json_data=None, params=None, auth=True):
