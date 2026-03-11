@@ -360,4 +360,46 @@ public class ClaimRepository : IClaimRepository
             .Select(g => new { Stage = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Stage, x => x.Count, cancellationToken);
     }
+
+    // ==================== DASHBOARD EXTENDED QUERIES ====================
+
+    public async Task<Dictionary<ClaimType, int>> GetClaimTypeCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .GroupBy(c => c.ClaimType)
+            .Select(g => new { Type = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Type, x => x.Count, cancellationToken);
+    }
+
+    public async Task<int> GetCountWithAllDocumentsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .Where(c => c.AllRequiredDocumentsSubmitted)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<int> GetCountMissingDocumentsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .Where(c => !c.AllRequiredDocumentsSubmitted)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Claims.AsQueryable();
+        if (from.HasValue) query = query.Where(c => c.CreatedAtUtc >= from.Value);
+        if (to.HasValue) query = query.Where(c => c.CreatedAtUtc <= to.Value);
+
+        var results = await query
+            .GroupBy(c => new { c.CreatedAtUtc.Year, c.CreatedAtUtc.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.Year, r.Month, r.Count)).ToList();
+    }
 }

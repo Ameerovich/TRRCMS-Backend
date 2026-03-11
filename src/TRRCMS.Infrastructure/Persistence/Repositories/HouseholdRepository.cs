@@ -69,4 +69,11 @@ public class HouseholdRepository : IHouseholdRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Households.Where(h => !h.IsDeleted).CountAsync(cancellationToken);
+    }
 }

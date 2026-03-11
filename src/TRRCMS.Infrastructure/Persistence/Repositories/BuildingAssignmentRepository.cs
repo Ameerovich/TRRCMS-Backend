@@ -417,4 +417,27 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
                 .Count()
         };
     }
+
+    // ==================== DASHBOARD PERSONNEL QUERIES ====================
+
+    public async Task<List<(Guid UserId, int Assigned, int Completed)>> GetCountsByFieldCollectorAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.BuildingAssignments.AsQueryable();
+        if (from.HasValue) query = query.Where(ba => ba.AssignedDate >= from.Value);
+        if (to.HasValue) query = query.Where(ba => ba.AssignedDate <= to.Value);
+
+        var results = await query
+            .GroupBy(ba => ba.FieldCollectorId)
+            .Select(g => new
+            {
+                UserId = g.Key,
+                Assigned = g.Count(),
+                Completed = g.Count(ba => ba.ActualCompletionDate.HasValue)
+            })
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.UserId, r.Assigned, r.Completed)).ToList();
+    }
 }

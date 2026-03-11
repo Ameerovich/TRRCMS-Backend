@@ -128,4 +128,29 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.PersonPropertyRelations.Where(r => !r.IsDeleted).CountAsync(cancellationToken);
+    }
+
+    public async Task<Dictionary<Domain.Enums.RelationType, int>> GetRelationTypeCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.PersonPropertyRelations
+            .Where(r => !r.IsDeleted)
+            .GroupBy(r => r.RelationType)
+            .Select(g => new { Type = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Type, x => x.Count, cancellationToken);
+    }
+
+    public async Task<int> GetCountWithEvidenceAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.PersonPropertyRelations
+            .Where(r => !r.IsDeleted)
+            .Where(r => r.EvidenceRelations.Any(er => !er.IsDeleted && er.IsActive))
+            .CountAsync(cancellationToken);
+    }
 }

@@ -160,4 +160,19 @@ public interface IBuildingRepository
     /// Returns (TotalBuildings, TotalPropertyUnits).
     /// </summary>
     Task<(int TotalBuildings, int TotalPropertyUnits)> GetBuildingAndUnitCountsAsync(CancellationToken cancellationToken = default);
+
+    // ==================== DASHBOARD TREND QUERIES ====================
+
+    /// <summary>
+    /// Get monthly creation counts for time-series trends.
+    /// </summary>
+    Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get building and property unit counts grouped by neighborhood code.
+    /// </summary>
+    Task<List<(string NeighborhoodCode, int BuildingCount, int PropertyUnitCount)>> GetCountsByNeighborhoodAsync(
+        CancellationToken cancellationToken = default);
 }

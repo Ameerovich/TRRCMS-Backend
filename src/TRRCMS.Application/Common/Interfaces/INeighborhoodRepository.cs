@@ -57,4 +57,11 @@ public interface INeighborhoodRepository
     Task<Neighborhood> AddAsync(Neighborhood neighborhood, CancellationToken cancellationToken = default);
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    /// <summary>
+    /// Get total count of active neighborhoods.
+    /// </summary>
+    Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
 }

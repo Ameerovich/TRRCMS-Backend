@@ -124,4 +124,13 @@ public class NeighborhoodRepository : INeighborhoodRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Neighborhoods
+            .Where(n => !n.IsDeleted && n.IsActive)
+            .CountAsync(cancellationToken);
+    }
 }

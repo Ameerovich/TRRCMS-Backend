@@ -324,6 +324,10 @@ public static class ServiceCollectionExtensions
             options.AddPolicy("CanViewAuditLogs", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Audit_ViewAll)));
 
+            // Dashboard
+            options.AddPolicy("CanViewDashboard", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Dashboard_View)));
+
             // System
             options.AddPolicy("CanImportData", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.System_Import)));

@@ -110,5 +110,45 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories
         {
             return await _context.SaveChangesAsync(cancellationToken);
         }
+
+        // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+        public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Persons.Where(p => !p.IsDeleted).CountAsync(cancellationToken);
+        }
+
+        public async Task<Dictionary<Domain.Enums.Gender, int>> GetGenderCountsAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Persons
+                .Where(p => !p.IsDeleted && p.Gender.HasValue)
+                .GroupBy(p => p.Gender!.Value)
+                .Select(g => new { Gender = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Gender, x => x.Count, cancellationToken);
+        }
+
+        public async Task<int> GetCountWithNationalIdAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Persons
+                .Where(p => !p.IsDeleted && p.NationalId != null && p.NationalId != "")
+                .CountAsync(cancellationToken);
+        }
+
+        public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+            DateTime? from = null, DateTime? to = null,
+            CancellationToken cancellationToken = default)
+        {
+            var query = _context.Persons.Where(p => !p.IsDeleted);
+            if (from.HasValue) query = query.Where(p => p.CreatedAtUtc >= from.Value);
+            if (to.HasValue) query = query.Where(p => p.CreatedAtUtc <= to.Value);
+
+            var results = await query
+                .GroupBy(p => new { p.CreatedAtUtc.Year, p.CreatedAtUtc.Month })
+                .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+                .OrderBy(x => x.Year).ThenBy(x => x.Month)
+                .ToListAsync(cancellationToken);
+
+            return results.Select(r => (r.Year, r.Month, r.Count)).ToList();
+        }
     }
 }

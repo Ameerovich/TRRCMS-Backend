@@ -55,5 +55,29 @@ namespace TRRCMS.Application.Common.Interfaces
         /// Save changes to database
         /// </summary>
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+        // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+        /// <summary>
+        /// Get total count of persons (excluding soft-deleted).
+        /// </summary>
+        Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Get count of persons grouped by gender.
+        /// </summary>
+        Task<Dictionary<Domain.Enums.Gender, int>> GetGenderCountsAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Get count of persons who have a national ID.
+        /// </summary>
+        Task<int> GetCountWithNationalIdAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Get monthly creation counts for time-series trends.
+        /// </summary>
+        Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+            DateTime? from = null, DateTime? to = null,
+            CancellationToken cancellationToken = default);
     }
 }

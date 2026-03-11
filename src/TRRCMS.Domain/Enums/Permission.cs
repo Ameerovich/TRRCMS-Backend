@@ -365,6 +365,15 @@ public enum Permission
     [ArabicLabel("عرض جميع السجلات")]
     Audit_ViewAll = 8400,
 
+    // ==================== DASHBOARD PERMISSIONS ====================
+
+    /// <summary>
+    /// View dashboard statistics and analytics (Administrator, DataManager, FieldSupervisor, Analyst)
+    /// FR-D-12: Dashboard Statistics
+    /// </summary>
+    [ArabicLabel("عرض لوحة المعلومات")]
+    Dashboard_View = 8500,
+
     // ==================== SYSTEM PERMISSIONS ====================
 
     /// <summary>

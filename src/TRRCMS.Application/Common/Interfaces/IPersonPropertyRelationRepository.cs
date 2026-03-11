@@ -21,4 +21,21 @@ public interface IPersonPropertyRelationRepository
     Task UpdateAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default);
     Task DeleteAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    /// <summary>
+    /// Get total count of person-property relations (excluding soft-deleted).
+    /// </summary>
+    Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of relations grouped by relation type.
+    /// </summary>
+    Task<Dictionary<Domain.Enums.RelationType, int>> GetRelationTypeCountsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of relations that have at least one evidence attached.
+    /// </summary>
+    Task<int> GetCountWithEvidenceAsync(CancellationToken cancellationToken = default);
 }

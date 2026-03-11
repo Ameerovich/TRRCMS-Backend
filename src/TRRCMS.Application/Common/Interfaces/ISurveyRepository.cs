@@ -178,4 +178,21 @@ public interface ISurveyRepository
         string sortBy,
         string sortDirection,
         CancellationToken cancellationToken = default);
+
+    // ==================== DASHBOARD TREND QUERIES ====================
+
+    /// <summary>
+    /// Get monthly creation counts for time-series trends.
+    /// </summary>
+    Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get survey counts grouped by collector (FieldCollectorId).
+    /// Returns completed, draft, and total counts per user.
+    /// </summary>
+    Task<List<(Guid UserId, int Completed, int Draft, int Total)>> GetCountsByCollectorAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
 }

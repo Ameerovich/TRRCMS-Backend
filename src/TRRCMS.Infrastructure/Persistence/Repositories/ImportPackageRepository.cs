@@ -271,4 +271,23 @@ public class ImportPackageRepository : IImportPackageRepository
             .Where(p => !p.IsDeleted)
             .AsQueryable();
     }
+
+    // ==================== DASHBOARD TREND QUERIES ====================
+
+    public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.ImportPackages.Where(p => !p.IsDeleted);
+        if (from.HasValue) query = query.Where(p => p.CreatedAtUtc >= from.Value);
+        if (to.HasValue) query = query.Where(p => p.CreatedAtUtc <= to.Value);
+
+        var results = await query
+            .GroupBy(p => new { p.CreatedAtUtc.Year, p.CreatedAtUtc.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.Year, r.Month, r.Count)).ToList();
+    }
 }

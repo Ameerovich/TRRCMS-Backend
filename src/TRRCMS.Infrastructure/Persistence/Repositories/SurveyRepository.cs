@@ -463,4 +463,45 @@ public class SurveyRepository : ISurveyRepository
                 : query.OrderBy(s => s.SurveyDate)
         };
     }
+
+    // ==================== DASHBOARD TREND QUERIES ====================
+
+    public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Surveys.Where(s => !s.IsDeleted);
+        if (from.HasValue) query = query.Where(s => s.CreatedAtUtc >= from.Value);
+        if (to.HasValue) query = query.Where(s => s.CreatedAtUtc <= to.Value);
+
+        var results = await query
+            .GroupBy(s => new { s.CreatedAtUtc.Year, s.CreatedAtUtc.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.Year, r.Month, r.Count)).ToList();
+    }
+
+    public async Task<List<(Guid UserId, int Completed, int Draft, int Total)>> GetCountsByCollectorAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Surveys.Where(s => !s.IsDeleted);
+        if (from.HasValue) query = query.Where(s => s.CreatedAtUtc >= from.Value);
+        if (to.HasValue) query = query.Where(s => s.CreatedAtUtc <= to.Value);
+
+        var results = await query
+            .GroupBy(s => s.FieldCollectorId)
+            .Select(g => new
+            {
+                UserId = g.Key,
+                Completed = g.Count(s => s.Status >= SurveyStatus.Completed),
+                Draft = g.Count(s => s.Status == SurveyStatus.Draft),
+                Total = g.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.UserId, r.Completed, r.Draft, r.Total)).ToList();
+    }
 }

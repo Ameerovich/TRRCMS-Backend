@@ -183,6 +183,14 @@ public interface IBuildingAssignmentRepository
     /// </summary>
     Task<AssignmentOverviewStats> GetOverviewStatsAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get assignment counts grouped by field collector.
+    /// Returns assigned and completed counts per user within optional date range.
+    /// </summary>
+    Task<List<(Guid UserId, int Assigned, int Completed)>> GetCountsByFieldCollectorAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>

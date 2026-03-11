@@ -202,4 +202,11 @@ public class EvidenceRepository : IEvidenceRepository
             .Where(e => e.FileHash == fileHash && e.IsCurrentVersion)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Evidences.Where(e => !e.IsDeleted).CountAsync(cancellationToken);
+    }
 }

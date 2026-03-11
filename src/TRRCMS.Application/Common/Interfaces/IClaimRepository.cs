@@ -211,4 +211,28 @@ public interface IClaimRepository
     /// Used for dashboard summary tiles.
     /// </summary>
     Task<Dictionary<LifecycleStage, int>> GetLifecycleStageCountsAsync(CancellationToken cancellationToken = default);
+
+    // ==================== DASHBOARD EXTENDED QUERIES ====================
+
+    /// <summary>
+    /// Get count of claims grouped by claim type (OwnershipClaim/OccupancyClaim).
+    /// </summary>
+    Task<Dictionary<ClaimType, int>> GetClaimTypeCountsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of claims where AllRequiredDocumentsSubmitted is true.
+    /// </summary>
+    Task<int> GetCountWithAllDocumentsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get count of claims where AllRequiredDocumentsSubmitted is false.
+    /// </summary>
+    Task<int> GetCountMissingDocumentsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get monthly creation counts for time-series trends.
+    /// </summary>
+    Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
 }

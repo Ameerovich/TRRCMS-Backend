@@ -106,6 +106,9 @@ public static class PermissionSeeder
             Permission.Security_Settings,
             Permission.Audit_ViewAll,
 
+            // ==================== DASHBOARD ====================
+            Permission.Dashboard_View,
+
             // ==================== SYSTEM ====================
             Permission.System_Import,
             Permission.System_Export,
@@ -175,6 +178,9 @@ public static class PermissionSeeder
             Permission.Surveys_Export,      // Export to .uhc
             Permission.Surveys_Import,      // UC-003: Import .uhc packages
             // No Surveys_Delete - Admin only
+
+            // ==================== DASHBOARD ====================
+            Permission.Dashboard_View,
 
             // ==================== SYSTEM ====================
             Permission.System_Import,
@@ -261,6 +267,9 @@ public static class PermissionSeeder
             Permission.Surveys_ViewAll,     // View all surveys (alias)
             Permission.Surveys_ViewOwn,     // View own if created any
             Permission.Surveys_Export,      // Export for reporting
+
+            // ==================== DASHBOARD ====================
+            Permission.Dashboard_View,
 
             // ==================== SYSTEM ====================
             Permission.System_Sync          // Tablet LAN sync — supervisor may trigger sync sessions
@@ -353,6 +362,9 @@ public static class PermissionSeeder
             Permission.Surveys_View,        // View all surveys for analysis
             Permission.Surveys_ViewAll,     // View all surveys (alias)
             // No create, edit, finalize, export, import, delete
+
+            // ==================== DASHBOARD ====================
+            Permission.Dashboard_View,
 
             // ==================== SYSTEM (EXPORT ONLY) ====================
             Permission.System_Export,

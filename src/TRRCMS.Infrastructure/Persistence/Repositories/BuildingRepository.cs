@@ -470,4 +470,43 @@ public class BuildingRepository : IBuildingRepository
 
         return (totalBuildings, totalPropertyUnits);
     }
+
+    // ==================== DASHBOARD TREND QUERIES ====================
+
+    public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Buildings.Where(b => !b.IsDeleted);
+        if (from.HasValue) query = query.Where(b => b.CreatedAtUtc >= from.Value);
+        if (to.HasValue) query = query.Where(b => b.CreatedAtUtc <= to.Value);
+
+        var results = await query
+            .GroupBy(b => new { b.CreatedAtUtc.Year, b.CreatedAtUtc.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+            .OrderBy(x => x.Year).ThenBy(x => x.Month)
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.Year, r.Month, r.Count)).ToList();
+    }
+
+    public async Task<List<(string NeighborhoodCode, int BuildingCount, int PropertyUnitCount)>> GetCountsByNeighborhoodAsync(
+        CancellationToken cancellationToken = default)
+    {
+        // Group by the full hierarchy code (GovernorateCode + DistrictCode + SubDistrictCode + CommunityCode + NeighborhoodCode)
+        // to match Neighborhood.FullCode (12 digits), not just the 3-digit NeighborhoodCode
+        var results = await _context.Buildings
+            .Where(b => !b.IsDeleted)
+            .GroupBy(b => b.GovernorateCode + b.DistrictCode + b.SubDistrictCode + b.CommunityCode + b.NeighborhoodCode)
+            .Select(g => new
+            {
+                NeighborhoodCode = g.Key,
+                BuildingCount = g.Count(),
+                PropertyUnitCount = g.Sum(b => b.NumberOfPropertyUnits)
+            })
+            .OrderBy(x => x.NeighborhoodCode)
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.NeighborhoodCode, r.BuildingCount, r.PropertyUnitCount)).ToList();
+    }
 }

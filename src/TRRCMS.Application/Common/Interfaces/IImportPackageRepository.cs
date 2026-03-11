@@ -162,4 +162,13 @@ public interface IImportPackageRepository
     /// Get IQueryable for custom queries.
     /// </summary>
     IQueryable<ImportPackage> GetQueryable();
+
+    // ==================== DASHBOARD TREND QUERIES ====================
+
+    /// <summary>
+    /// Get monthly creation counts for time-series trends.
+    /// </summary>
+    Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
 }

@@ -37,4 +37,11 @@ public interface IEvidenceRepository
     /// Returns null if no matching evidence exists.
     /// </summary>
     Task<Evidence?> GetByFileHashAsync(string fileHash, CancellationToken cancellationToken = default);
+
+    // ==================== AGGREGATE QUERIES (Dashboard) ====================
+
+    /// <summary>
+    /// Get total count of evidence items (excluding soft-deleted).
+    /// </summary>
+    Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
 }
