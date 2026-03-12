@@ -9,7 +9,7 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// - MaleCount + FemaleCount must be consistent with HouseholdSize
 /// - Head of household must exist in StagingPersons
 /// - Gender composition totals must be internally consistent
-/// 
+///
 /// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingHousehold : BaseStagingEntity
@@ -61,69 +61,18 @@ public class StagingHousehold : BaseStagingEntity
     /// <summary>Number of females with disabilities.</summary>
     public int FemaleDisabledCount { get; private set; }
 
-    // ==================== AGE CATEGORIES ====================
+    // ==================== COMPUTED TOTALS ====================
 
-    /// <summary>Number of infants (0-1 years).</summary>
-    public int InfantCount { get; private set; }
-
-    /// <summary>Number of children (2-5 years).</summary>
+    /// <summary>Total number of children (MaleChildCount + FemaleChildCount).</summary>
     public int ChildCount { get; private set; }
 
-    /// <summary>Number of minors (6-17 years).</summary>
-    public int MinorCount { get; private set; }
-
-    /// <summary>Number of adults (18-59 years).</summary>
-    public int AdultCount { get; private set; }
-
-    /// <summary>Number of elderly (60+ years).</summary>
+    /// <summary>Total number of elderly (MaleElderlyCount + FemaleElderlyCount).</summary>
     public int ElderlyCount { get; private set; }
 
-    /// <summary>Number of persons with disabilities.</summary>
+    /// <summary>Total number of persons with disabilities (MaleDisabledCount + FemaleDisabledCount).</summary>
     public int PersonsWithDisabilitiesCount { get; private set; }
 
-    // ==================== VULNERABILITY INDICATORS ====================
-
-    /// <summary>Whether the household is headed by a female.</summary>
-    public bool IsFemaleHeaded { get; private set; }
-
-    /// <summary>Number of widows in the household.</summary>
-    public int WidowCount { get; private set; }
-
-    /// <summary>Number of orphans in the household.</summary>
-    public int OrphanCount { get; private set; }
-
-    /// <summary>Number of single parents.</summary>
-    public int SingleParentCount { get; private set; }
-
-    // ==================== ECONOMIC STATUS ====================
-
-    /// <summary>Number of employed persons.</summary>
-    public int EmployedPersonsCount { get; private set; }
-
-    /// <summary>Number of unemployed persons.</summary>
-    public int UnemployedPersonsCount { get; private set; }
-
-    /// <summary>Primary source of income.</summary>
-    public string? PrimaryIncomeSource { get; private set; }
-
-    /// <summary>Estimated monthly income.</summary>
-    public decimal? MonthlyIncomeEstimate { get; private set; }
-
-    // ==================== DISPLACEMENT ====================
-
-    /// <summary>Whether the household is displaced.</summary>
-    public bool IsDisplaced { get; private set; }
-
-    /// <summary>Original location before displacement.</summary>
-    public string? OriginLocation { get; private set; }
-
-    /// <summary>Reason for displacement.</summary>
-    public string? DisplacementReason { get; private set; }
-
     // ==================== ADDITIONAL ====================
-
-    /// <summary>Special needs description.</summary>
-    public string? SpecialNeeds { get; private set; }
 
     /// <summary>Additional notes.</summary>
     public string? Notes { get; private set; }
@@ -156,24 +105,6 @@ public class StagingHousehold : BaseStagingEntity
         int femaleElderlyCount = 0,
         int maleDisabledCount = 0,
         int femaleDisabledCount = 0,
-        int infantCount = 0,
-        int childCount = 0,
-        int minorCount = 0,
-        int adultCount = 0,
-        int elderlyCount = 0,
-        int personsWithDisabilitiesCount = 0,
-        bool isFemaleHeaded = false,
-        int widowCount = 0,
-        int orphanCount = 0,
-        int singleParentCount = 0,
-        int employedPersonsCount = 0,
-        int unemployedPersonsCount = 0,
-        string? primaryIncomeSource = null,
-        decimal? monthlyIncomeEstimate = null,
-        bool isDisplaced = false,
-        string? originLocation = null,
-        string? displacementReason = null,
-        string? specialNeeds = null,
         string? notes = null)
     {
         var entity = new StagingHousehold
@@ -190,24 +121,9 @@ public class StagingHousehold : BaseStagingEntity
             FemaleElderlyCount = femaleElderlyCount,
             MaleDisabledCount = maleDisabledCount,
             FemaleDisabledCount = femaleDisabledCount,
-            InfantCount = infantCount,
-            ChildCount = childCount,
-            MinorCount = minorCount,
-            AdultCount = adultCount,
-            ElderlyCount = elderlyCount,
-            PersonsWithDisabilitiesCount = personsWithDisabilitiesCount,
-            IsFemaleHeaded = isFemaleHeaded,
-            WidowCount = widowCount,
-            OrphanCount = orphanCount,
-            SingleParentCount = singleParentCount,
-            EmployedPersonsCount = employedPersonsCount,
-            UnemployedPersonsCount = unemployedPersonsCount,
-            PrimaryIncomeSource = primaryIncomeSource,
-            MonthlyIncomeEstimate = monthlyIncomeEstimate,
-            IsDisplaced = isDisplaced,
-            OriginLocation = originLocation,
-            DisplacementReason = displacementReason,
-            SpecialNeeds = specialNeeds,
+            ChildCount = maleChildCount + femaleChildCount,
+            ElderlyCount = maleElderlyCount + femaleElderlyCount,
+            PersonsWithDisabilitiesCount = maleDisabledCount + femaleDisabledCount,
             Notes = notes
         };
 

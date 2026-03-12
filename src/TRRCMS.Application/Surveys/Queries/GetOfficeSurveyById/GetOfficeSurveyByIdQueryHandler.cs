@@ -60,7 +60,6 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
             ReferenceCode = survey.ReferenceCode,
             BuildingId = survey.BuildingId,
             BuildingNumber = survey.Building?.BuildingNumber,
-            BuildingAddress = survey.Building?.Address,
             PropertyUnitId = survey.PropertyUnitId,
             UnitIdentifier = survey.PropertyUnit?.UnitIdentifier,
             FieldCollectorId = survey.FieldCollectorId,

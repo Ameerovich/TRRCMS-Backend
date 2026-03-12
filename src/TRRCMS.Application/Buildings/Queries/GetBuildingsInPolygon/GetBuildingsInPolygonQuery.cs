@@ -36,11 +36,6 @@ public class GetBuildingsInPolygonQuery : IRequest<GetBuildingsInPolygonResponse
     /// </summary>
     public BuildingStatus? Status { get; set; }
 
-    /// <summary>
-    /// Filter by damage level (مستوى الضرر)
-    /// </summary>
-    public DamageLevel? DamageLevel { get; set; }
-
     // ==================== PAGINATION ====================
 
     /// <summary>

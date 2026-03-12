@@ -124,7 +124,6 @@ public class CreateFieldSurveyCommandHandler : IRequestHandler<CreateFieldSurvey
         // Map to DTO
         var result = _mapper.Map<SurveyDto>(survey);
         result.BuildingNumber = building.BuildingNumber;
-        result.BuildingAddress = building.Address;
         result.FieldCollectorName = _currentUserService.Username;
 
         return result;

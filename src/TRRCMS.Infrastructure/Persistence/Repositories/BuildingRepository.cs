@@ -107,13 +107,11 @@ public class BuildingRepository : IBuildingRepository
         string? neighborhoodCode = null,
         string? buildingId = null,
         string? buildingNumber = null,
-        string? address = null,
         decimal? latitude = null,
         decimal? longitude = null,
         int? radiusMeters = null,
         BuildingStatus? status = null,
         BuildingType? buildingType = null,
-        DamageLevel? damageLevel = null,
         int page = 1,
         int pageSize = 20,
         string? sortBy = null,
@@ -153,9 +151,6 @@ public class BuildingRepository : IBuildingRepository
 
         if (!string.IsNullOrWhiteSpace(buildingNumber))
             query = query.Where(b => b.BuildingNumber == buildingNumber);
-
-        if (!string.IsNullOrWhiteSpace(address))
-            query = query.Where(b => b.Address != null && b.Address.Contains(address));
 
         // ============================================================
         // FIX: Apply spatial filter with PROPER meter-to-degree conversion
@@ -199,9 +194,6 @@ public class BuildingRepository : IBuildingRepository
 
         if (buildingType.HasValue)
             query = query.Where(b => b.BuildingType == buildingType.Value);
-
-        if (damageLevel.HasValue)
-            query = query.Where(b => b.DamageLevel == damageLevel.Value);
 
         // Get total count
         var totalCount = await query.CountAsync(cancellationToken);
@@ -295,7 +287,6 @@ public class BuildingRepository : IBuildingRepository
         string polygonWkt,
         BuildingType? buildingType = null,
         BuildingStatus? status = null,
-        DamageLevel? damageLevel = null,
         int page = 1,
         int pageSize = 100,
         CancellationToken cancellationToken = default)
@@ -313,9 +304,6 @@ public class BuildingRepository : IBuildingRepository
 
         if (status.HasValue)
             query = query.Where(b => b.Status == status.Value);
-
-        if (damageLevel.HasValue)
-            query = query.Where(b => b.DamageLevel == damageLevel.Value);
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -445,16 +433,6 @@ public class BuildingRepository : IBuildingRepository
             .GroupBy(b => b.Status)
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Status, x => x.Count, cancellationToken);
-    }
-
-    public async Task<Dictionary<DamageLevel, int>> GetDamageLevelCountsAsync(
-        CancellationToken cancellationToken = default)
-    {
-        return await _context.Buildings
-            .Where(b => !b.IsDeleted && b.DamageLevel.HasValue)
-            .GroupBy(b => b.DamageLevel!.Value)
-            .Select(g => new { Level = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.Level, x => x.Count, cancellationToken);
     }
 
     public async Task<(int TotalBuildings, int TotalPropertyUnits)> GetBuildingAndUnitCountsAsync(

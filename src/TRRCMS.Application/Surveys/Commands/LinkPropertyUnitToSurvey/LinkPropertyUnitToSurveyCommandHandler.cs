@@ -100,7 +100,6 @@ public class LinkPropertyUnitToSurveyCommandHandler : IRequestHandler<LinkProper
         // Map to DTO
         var result = _mapper.Map<SurveyDto>(survey);
         result.BuildingNumber = building?.BuildingNumber;
-        result.BuildingAddress = building?.Address;
         result.UnitIdentifier = propertyUnit.UnitIdentifier;
         result.FieldCollectorName = _currentUserService.Username;
 

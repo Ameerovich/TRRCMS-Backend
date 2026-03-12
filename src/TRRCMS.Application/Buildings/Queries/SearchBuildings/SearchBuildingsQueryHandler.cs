@@ -38,13 +38,11 @@ public class SearchBuildingsQueryHandler : IRequestHandler<SearchBuildingsQuery,
             neighborhoodCode: request.NeighborhoodCode,
             buildingId: request.BuildingId,
             buildingNumber: request.BuildingNumber,
-            address: null,          // Not used in current frontend
             latitude: null,         // Not used for search
             longitude: null,        // Not used for search
             radiusMeters: null,     // Not used in current frontend
             status: request.Status,
             buildingType: request.BuildingType,
-            damageLevel: null,      // Not used in current frontend
             page: page,
             pageSize: pageSize,
             sortBy: request.SortBy,

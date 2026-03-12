@@ -2,6 +2,7 @@ using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Sync.DTOs;
 
+
 /// <summary>
 /// Compact representation of a property unit included in a sync download payload.
 /// Contains only the attributes needed by the Flutter tablet application to
@@ -29,11 +30,6 @@ public sealed record SyncPropertyUnitDto
     public int? FloorNumber { get; init; }
 
     /// <summary>
-    /// Position of the unit on the floor (e.g., "Left", "Right", "يمين", "يسار").
-    /// </summary>
-    public string? PositionOnFloor { get; init; }
-
-    /// <summary>
     /// Type of the property unit (Apartment, Shop, Office, etc.).
     /// Stored as an integer in the database; transmitted as integer to the tablet.
     /// </summary>
@@ -49,9 +45,4 @@ public sealed record SyncPropertyUnitDto
     /// </summary>
     public decimal? AreaSquareMeters { get; init; }
 
-    /// <summary>
-    /// Damage level recorded for this unit (None, Minor, Moderate, Severe, Destroyed).
-    /// Null when damage assessment has not been performed.
-    /// </summary>
-    public DamageLevel? DamageLevel { get; init; }
 }

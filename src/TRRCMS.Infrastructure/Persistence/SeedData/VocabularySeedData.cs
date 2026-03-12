@@ -25,14 +25,12 @@ public static class VocabularySeedData
         // Demographics
         Def<Gender>("gender", "الجنس", "Gender", "Demographics"),
         Def<Nationality>("nationality", "الجنسية", "Nationality", "Demographics"),
-        Def<AgeCategory>("age_category", "الفئة العمرية", "Age Category", "Demographics"),
         Def<RelationshipToHead>("relationship_to_head", "العلاقة برب الأسرة", "Relationship to Head", "Demographics"),
 
         // Property
         Def<BuildingType>("building_type", "نوع البناء", "Building Type", "Property"),
         Def<BuildingStatus>("building_status", "حالة البناء", "Building Status", "Property"),
-        Def<DamageLevel>("damage_level", "مستوى الضرر", "Damage Level", "Property"),
-        Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", "Property"),
+Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", "Property"),
         Def<OccupancyNature>("occupancy_nature", "طبيعة الإشغال", "Occupancy Nature", "Property"),
         Def<TenureContractType>("tenure_contract_type", "نوع عقد الإشغال", "Tenure Contract Type", "Property"),
 

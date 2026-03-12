@@ -194,8 +194,6 @@ public sealed class GetSyncAssignmentsQueryHandler
             NeighborhoodName     = building.NeighborhoodName,
 
             // Building attributes
-            Address              = building.Address,
-            Landmark             = building.Landmark,
             Notes                = building.Notes,
 
             // Property units
@@ -253,11 +251,9 @@ public sealed class GetSyncAssignmentsQueryHandler
             Id               = unit.Id,
             UnitIdentifier   = unit.UnitIdentifier,
             FloorNumber      = unit.FloorNumber,
-            PositionOnFloor  = unit.PositionOnFloor,
             UnitType         = unit.UnitType,
             Status           = unit.Status,
-            AreaSquareMeters = unit.AreaSquareMeters,
-            DamageLevel      = unit.DamageLevel
+            AreaSquareMeters = unit.AreaSquareMeters
         };
 
     /// <summary>

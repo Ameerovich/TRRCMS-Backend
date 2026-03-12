@@ -1,4 +1,5 @@
 using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities.Staging;
 
@@ -37,8 +38,8 @@ public class StagingPerson : BaseStagingEntity
     /// </summary>
     public string? NationalId { get; private set; }
 
-    /// <summary>Year of birth (تاريخ الميلاد) — from command, optional. Used in duplicate detection composite.</summary>
-    public int? YearOfBirth { get; private set; }
+    /// <summary>Date of birth (تاريخ الميلاد) — from command, optional. Used in duplicate detection composite.</summary>
+    public DateTime? DateOfBirth { get; private set; }
 
     // ==================== CONTACT ====================
 
@@ -51,16 +52,13 @@ public class StagingPerson : BaseStagingEntity
     /// <summary>Landline phone number.</summary>
     public string? PhoneNumber { get; private set; }
 
-    // ==================== ADDITIONAL DETAILS ====================
+    // ==================== DEMOGRAPHICS ====================
 
-    /// <summary>Full name in English (transliteration).</summary>
-    public string? FullNameEnglish { get; private set; }
+    /// <summary>Gender (الجنس).</summary>
+    public Gender? Gender { get; private set; }
 
-    /// <summary>Gender (stored as string to accommodate .uhc variations).</summary>
-    public string? Gender { get; private set; }
-
-    /// <summary>Nationality.</summary>
-    public string? Nationality { get; private set; }
+    /// <summary>Nationality (الجنسية).</summary>
+    public Nationality? Nationality { get; private set; }
 
     // ==================== HOUSEHOLD LINK ====================
 
@@ -70,8 +68,8 @@ public class StagingPerson : BaseStagingEntity
     /// </summary>
     public Guid? OriginalHouseholdId { get; private set; }
 
-    /// <summary>Relationship to the head of household.</summary>
-    public string? RelationshipToHead { get; private set; }
+    /// <summary>Relationship to the head of household (صلة القرابة برب الأسرة).</summary>
+    public RelationshipToHead? RelationshipToHead { get; private set; }
 
     /// <summary>Whether this person is the contact person for the survey.</summary>
     public bool IsContactPerson { get; private set; }
@@ -100,16 +98,14 @@ public class StagingPerson : BaseStagingEntity
         // --- optional: from command ---
         string? motherNameArabic = null,
         string? nationalId = null,
-        int? yearOfBirth = null,
+        DateTime? dateOfBirth = null,
         string? email = null,
         string? mobileNumber = null,
         string? phoneNumber = null,
-        // --- optional: future expansion ---
-        string? fullNameEnglish = null,
-        string? gender = null,
-        string? nationality = null,
+        Gender? gender = null,
+        Nationality? nationality = null,
         Guid? originalHouseholdId = null,
-        string? relationshipToHead = null,
+        RelationshipToHead? relationshipToHead = null,
         bool isContactPerson = false)
     {
         var entity = new StagingPerson
@@ -119,11 +115,10 @@ public class StagingPerson : BaseStagingEntity
             FatherNameArabic = fatherNameArabic,
             MotherNameArabic = motherNameArabic,
             NationalId = nationalId,
-            YearOfBirth = yearOfBirth,
+            DateOfBirth = dateOfBirth,
             Email = email,
             MobileNumber = mobileNumber,
             PhoneNumber = phoneNumber,
-            FullNameEnglish = fullNameEnglish,
             Gender = gender,
             Nationality = nationality,
             OriginalHouseholdId = originalHouseholdId,

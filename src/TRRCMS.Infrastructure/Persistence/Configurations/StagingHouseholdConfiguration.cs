@@ -103,21 +103,9 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
             .IsRequired()
             .HasDefaultValue(0);
 
-        // ==================== AGE CATEGORIES ====================
-
-        builder.Property(h => h.InfantCount)
-            .IsRequired()
-            .HasDefaultValue(0);
+        // ==================== COMPUTED TOTALS ====================
 
         builder.Property(h => h.ChildCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.MinorCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.AdultCount)
             .IsRequired()
             .HasDefaultValue(0);
 
@@ -129,56 +117,7 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
             .IsRequired()
             .HasDefaultValue(0);
 
-        // ==================== VULNERABILITY INDICATORS ====================
-
-        builder.Property(h => h.IsFemaleHeaded)
-            .IsRequired()
-            .HasDefaultValue(false);
-
-        builder.Property(h => h.WidowCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.OrphanCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.SingleParentCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        // ==================== ECONOMIC STATUS ====================
-
-        builder.Property(h => h.EmployedPersonsCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.UnemployedPersonsCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.PrimaryIncomeSource)
-            .HasMaxLength(200);
-
-        builder.Property(h => h.MonthlyIncomeEstimate)
-            .HasPrecision(12, 2);
-
-        // ==================== DISPLACEMENT ====================
-
-        builder.Property(h => h.IsDisplaced)
-            .IsRequired()
-            .HasDefaultValue(false);
-
-        builder.Property(h => h.OriginLocation)
-            .HasMaxLength(500);
-
-        builder.Property(h => h.DisplacementReason)
-            .HasMaxLength(1000);
-
         // ==================== ADDITIONAL ====================
-
-        builder.Property(h => h.SpecialNeeds)
-            .HasMaxLength(2000);
 
         builder.Property(h => h.Notes)
             .HasMaxLength(2000);

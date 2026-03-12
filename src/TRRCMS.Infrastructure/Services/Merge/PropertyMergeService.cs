@@ -209,7 +209,7 @@ public class PropertyMergeService : IMergeService
         if (master.Status == Domain.Enums.PropertyUnitStatus.Unknown &&
             discarded.Status != Domain.Enums.PropertyUnitStatus.Unknown)
         {
-            master.UpdateStatus(discarded.Status, master.DamageLevel, master.Id);
+            master.UpdateStatus(discarded.Status, master.Id);
             mapping["Status"] = "discarded";
         }
         else
@@ -224,27 +224,10 @@ public class PropertyMergeService : IMergeService
             }
         }
 
-        // DamageLevel
-        if (!master.DamageLevel.HasValue && discarded.DamageLevel.HasValue)
-        {
-            master.UpdateStatus(master.Status, discarded.DamageLevel, master.Id);
-            mapping["DamageLevel"] = "discarded";
-        }
-        else
-        {
-            mapping["DamageLevel"] = "master";
-            if (master.DamageLevel.HasValue && discarded.DamageLevel.HasValue &&
-                master.DamageLevel != discarded.DamageLevel)
-            {
-                conflicts["DamageLevel"] = new FieldConflictInfo(
-                    master.DamageLevel.ToString(), discarded.DamageLevel.ToString(), "master");
-            }
-        }
-
         // FloorNumber
         if (!master.FloorNumber.HasValue && discarded.FloorNumber.HasValue)
         {
-            master.UpdateLocation(discarded.FloorNumber, master.PositionOnFloor, master.Id);
+            master.UpdateLocation(discarded.FloorNumber, master.Id);
             mapping["FloorNumber"] = "discarded";
         }
         else
@@ -318,7 +301,7 @@ public class PropertyMergeService : IMergeService
         if (production.Status == Domain.Enums.PropertyUnitStatus.Unknown &&
             staging.Status != Domain.Enums.PropertyUnitStatus.Unknown)
         {
-            production.UpdateStatus(staging.Status, production.DamageLevel, production.Id);
+            production.UpdateStatus(staging.Status, production.Id);
             mapping["Status"] = "staging";
         }
         else
@@ -333,25 +316,9 @@ public class PropertyMergeService : IMergeService
             }
         }
 
-        if (!production.DamageLevel.HasValue && staging.DamageLevel.HasValue)
-        {
-            production.UpdateStatus(production.Status, staging.DamageLevel, production.Id);
-            mapping["DamageLevel"] = "staging";
-        }
-        else
-        {
-            mapping["DamageLevel"] = "production";
-            if (production.DamageLevel.HasValue && staging.DamageLevel.HasValue &&
-                production.DamageLevel != staging.DamageLevel)
-            {
-                conflicts["DamageLevel"] = new FieldConflictInfo(
-                    production.DamageLevel.ToString(), staging.DamageLevel.ToString(), "production");
-            }
-        }
-
         if (!production.FloorNumber.HasValue && staging.FloorNumber.HasValue)
         {
-            production.UpdateLocation(staging.FloorNumber, production.PositionOnFloor, production.Id);
+            production.UpdateLocation(staging.FloorNumber, production.Id);
             mapping["FloorNumber"] = "staging";
         }
         else mapping["FloorNumber"] = "production";
@@ -399,7 +366,7 @@ public class PropertyMergeService : IMergeService
                 conflicts["Status"] = new FieldConflictInfo(
                     production.Status.ToString(), staging.Status.ToString(), "staging");
             }
-            production.UpdateStatus(staging.Status, staging.DamageLevel ?? production.DamageLevel, production.Id);
+            production.UpdateStatus(staging.Status, production.Id);
             mapping["Status"] = "staging";
         }
         else mapping["Status"] = "production";
@@ -411,7 +378,7 @@ public class PropertyMergeService : IMergeService
                 conflicts["FloorNumber"] = new FieldConflictInfo(
                     production.FloorNumber.ToString(), staging.FloorNumber.ToString(), "staging");
             }
-            production.UpdateLocation(staging.FloorNumber, staging.PositionOnFloor, production.Id);
+            production.UpdateLocation(staging.FloorNumber, production.Id);
             mapping["FloorNumber"] = "staging";
         }
         else mapping["FloorNumber"] = "production";

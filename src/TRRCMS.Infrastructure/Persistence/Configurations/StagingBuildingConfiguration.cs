@@ -113,8 +113,6 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
         builder.Property(b => b.Status)
             .IsRequired();
 
-        builder.Property(b => b.DamageLevel);
-
         // ==================== UNIT COUNTS (from command — required) ====================
 
         builder.Property(b => b.NumberOfPropertyUnits)
@@ -129,14 +127,6 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
             .IsRequired()
             .HasDefaultValue(0);
 
-        // ==================== FUTURE EXPANSION (optional) ====================
-
-        builder.Property(b => b.NumberOfFloors)
-            .HasComment("Future expansion — not in current mobile package");
-
-        builder.Property(b => b.YearOfConstruction)
-            .HasComment("Future expansion — not in current mobile package");
-
         // ==================== SPATIAL DATA ====================
 
         builder.Property(b => b.BuildingGeometryWkt)
@@ -150,12 +140,6 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
             .HasPrecision(10, 7);
 
         // ==================== OPTIONAL FIELDS ====================
-
-        builder.Property(b => b.Address)
-            .HasMaxLength(500);
-
-        builder.Property(b => b.Landmark)
-            .HasMaxLength(500);
 
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);

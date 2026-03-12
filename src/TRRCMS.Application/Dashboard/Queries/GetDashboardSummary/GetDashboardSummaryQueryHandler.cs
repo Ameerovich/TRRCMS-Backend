@@ -124,15 +124,12 @@ public sealed class GetDashboardSummaryQueryHandler
             await _uow.Buildings.GetBuildingAndUnitCountsAsync(ct);
 
         var byStatus = await _uow.Buildings.GetStatusCountsAsync(ct);
-        var byDamageLevel = await _uow.Buildings.GetDamageLevelCountsAsync(ct);
 
         return new BuildingStatisticsDto
         {
             TotalBuildings = totalBuildings,
             TotalPropertyUnits = totalPropertyUnits,
             ByStatus = byStatus.ToDictionary(
-                kvp => kvp.Key.ToString(), kvp => kvp.Value),
-            ByDamageLevel = byDamageLevel.ToDictionary(
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),
             AverageUnitsPerBuilding = totalBuildings > 0
                 ? Math.Round((double)totalPropertyUnits / totalBuildings, 2)

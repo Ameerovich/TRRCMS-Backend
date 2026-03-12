@@ -63,11 +63,6 @@ public class GetBuildingsInPolygonQueryValidator : AbstractValidator<GetBuilding
             .When(x => x.Status.HasValue)
             .WithMessage("Invalid building status value");
 
-        RuleFor(x => x.DamageLevel)
-            .Must(v => vocabService.IsValidCode("damage_level", (int)v!.Value))
-            .When(x => x.DamageLevel.HasValue)
-            .WithMessage("Invalid damage level value");
-
         // ==================== PAGINATION ====================
 
         RuleFor(x => x.Page)

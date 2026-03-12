@@ -198,7 +198,6 @@ public class AssignBuildingsCommandHandler : IRequestHandler<AssignBuildingsComm
                     Id = assignment.Id,
                     BuildingId = assignment.BuildingId,
                     BuildingCode = building?.BuildingId ?? string.Empty,
-                    BuildingAddress = building?.Address,
                     FieldCollectorId = assignment.FieldCollectorId,
                     FieldCollectorName = fieldCollector.FullNameArabic,
                     AssignedDate = assignment.AssignedDate,

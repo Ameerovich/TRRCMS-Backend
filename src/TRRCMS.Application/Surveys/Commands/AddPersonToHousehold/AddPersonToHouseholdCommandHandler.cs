@@ -69,7 +69,8 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
             phoneNumber: request.PhoneNumber,
             createdByUserId: currentUserId);
 
-        // Assign to household
+        // Always assign to household — RelationshipToHead is optional metadata
+        person.AssignToHousehold(request.HouseholdId, currentUserId);
         if (request.RelationshipToHead.HasValue)
         {
             person.AssignToHousehold(request.HouseholdId, (RelationshipToHead)request.RelationshipToHead.Value, currentUserId);

@@ -109,12 +109,6 @@ public sealed record SyncBuildingDto
 
     // ==================== BUILDING ATTRIBUTES ====================
 
-    /// <summary>Street address or description of the building location.</summary>
-    public string? Address { get; init; }
-
-    /// <summary>Nearby landmark to help locate the building in the field.</summary>
-    public string? Landmark { get; init; }
-
     /// <summary>Additional notes about the building.</summary>
     public string? Notes { get; init; }
 

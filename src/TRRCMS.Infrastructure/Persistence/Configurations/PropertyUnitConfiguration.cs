@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TRRCMS.Domain.Entities;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Infrastructure.Persistence.Configurations;
 
@@ -43,9 +42,6 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
         builder.Property(p => p.Status)
             .IsRequired();
 
-        builder.Property(p => p.DamageLevel)
-            .IsRequired(false);
-
         builder.Property(p => p.AreaSquareMeters)
             .IsRequired(false)
             .HasPrecision(10, 2);
@@ -53,35 +49,11 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
         builder.Property(p => p.NumberOfRooms)
             .IsRequired(false);
 
-        builder.Property(p => p.NumberOfBathrooms)
-            .IsRequired(false);
-
-        builder.Property(p => p.HasBalcony)
-            .IsRequired(false);
-
-        // ==================== OCCUPANCY INFORMATION ====================
-
-        builder.Property(p => p.OccupancyType)
-            .IsRequired(false);
-
-        builder.Property(p => p.OccupancyNature)
-            .IsRequired(false);
-
-        builder.Property(p => p.NumberOfHouseholds)
-            .IsRequired(false);
-
-        builder.Property(p => p.TotalOccupants)
-            .IsRequired(false);
-
         // ==================== ADDITIONAL INFORMATION ====================
 
         builder.Property(p => p.Description)
             .IsRequired(false)
             .HasMaxLength(2000);
-
-        builder.Property(p => p.SpecialFeatures)
-            .IsRequired(false)
-            .HasMaxLength(1000);
 
         // ==================== AUDIT FIELDS ====================
 

@@ -38,7 +38,6 @@ public class GetAssignmentByIdQueryHandler : IRequestHandler<GetAssignmentByIdQu
             // Building Info
             BuildingId = assignment.BuildingId,
             BuildingCode = building?.BuildingId ?? string.Empty,
-            BuildingAddress = building?.Address,
             GovernorateCode = building?.GovernorateCode,
             DistrictCode = building?.DistrictCode,
             SubDistrictCode = building?.SubDistrictCode,

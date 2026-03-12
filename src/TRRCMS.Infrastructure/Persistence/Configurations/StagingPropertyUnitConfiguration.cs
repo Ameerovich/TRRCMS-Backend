@@ -77,37 +77,12 @@ public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<Staging
         builder.Property(u => u.NumberOfRooms)
             .HasComment("Number of rooms (عدد الغرف)");
 
-        builder.Property(u => u.OccupancyStatus)
-            .HasMaxLength(50);
-
-        builder.Property(u => u.DamageLevel);
-
         builder.Property(u => u.AreaSquareMeters)
             .HasPrecision(10, 2);
-
-        builder.Property(u => u.EstimatedAreaSqm)
-            .HasPrecision(10, 2);
-
-        builder.Property(u => u.PositionOnFloor)
-            .HasMaxLength(50);
-
-        // ==================== OCCUPANCY ====================
-
-        builder.Property(u => u.OccupancyType);
-
-        builder.Property(u => u.OccupancyNature);
-
-        // ==================== UTILITIES ====================
-
-        builder.Property(u => u.UtilitiesNotes)
-            .HasMaxLength(1000);
 
         // ==================== DESCRIPTION ====================
 
         builder.Property(u => u.Description)
-            .HasMaxLength(2000);
-
-        builder.Property(u => u.SpecialFeatures)
             .HasMaxLength(2000);
 
         // ==================== CONCURRENCY ====================

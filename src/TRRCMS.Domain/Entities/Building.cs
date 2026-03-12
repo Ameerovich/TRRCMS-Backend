@@ -93,11 +93,6 @@ public class Building : BaseAuditableEntity
     public BuildingStatus Status { get; private set; }
 
     /// <summary>
-    /// Damage level assessment (مستوى الضرر)
-    /// </summary>
-    public DamageLevel? DamageLevel { get; private set; }
-
-    /// <summary>
     /// Total number of property units (عدد الوحدات)
     /// </summary>
     public int NumberOfPropertyUnits { get; private set; }
@@ -111,16 +106,6 @@ public class Building : BaseAuditableEntity
     /// Number of commercial shops (عدد المحلات)
     /// </summary>
     public int NumberOfShops { get; private set; }
-
-    /// <summary>
-    /// Number of floors in the building
-    /// </summary>
-    public int? NumberOfFloors { get; private set; }
-
-    /// <summary>
-    /// Year when building was constructed
-    /// </summary>
-    public int? YearOfConstruction { get; private set; }
 
     // ==================== SPATIAL DATA (PostGIS) ====================
 
@@ -147,16 +132,6 @@ public class Building : BaseAuditableEntity
     public decimal? Longitude { get; private set; }
 
     // ==================== ADDITIONAL INFORMATION ====================
-
-    /// <summary>
-    /// Building address or description
-    /// </summary>
-    public string? Address { get; private set; }
-
-    /// <summary>
-    /// Landmark or notable features near the building
-    /// </summary>
-    public string? Landmark { get; private set; }
 
     /// <summary>
     /// Additional notes / General description (الوصف العام)
@@ -246,12 +221,11 @@ public class Building : BaseAuditableEntity
     // ==================== DOMAIN METHODS ====================
 
     /// <summary>
-    /// Update building status and damage level
+    /// Update building status
     /// </summary>
-    public void UpdateStatus(BuildingStatus status, DamageLevel? damageLevel, Guid modifiedByUserId)
+    public void UpdateStatus(BuildingStatus status, Guid modifiedByUserId)
     {
         Status = status;
-        DamageLevel = damageLevel;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -318,17 +292,9 @@ public class Building : BaseAuditableEntity
     /// Update building details
     /// </summary>
     public void UpdateDetails(
-        int? numberOfFloors,
-        int? yearOfConstruction,
-        string? address,
-        string? landmark,
         string? notes,
         Guid modifiedByUserId)
     {
-        NumberOfFloors = numberOfFloors;
-        YearOfConstruction = yearOfConstruction;
-        Address = address;
-        Landmark = landmark;
         Notes = notes;
         MarkAsModified(modifiedByUserId);
     }
@@ -341,27 +307,17 @@ public class Building : BaseAuditableEntity
     public void UpdateFromFieldSurvey(
         BuildingType buildingType,
         BuildingStatus status,
-        DamageLevel? damageLevel,
         int numberOfPropertyUnits,
         int numberOfApartments,
         int numberOfShops,
-        int? numberOfFloors,
-        int? yearOfConstruction,
-        string? address,
-        string? landmark,
         string? notes,
         Guid modifiedByUserId)
     {
         BuildingType = buildingType;
         Status = status;
-        DamageLevel = damageLevel;
         NumberOfPropertyUnits = numberOfPropertyUnits;
         NumberOfApartments = numberOfApartments;
         NumberOfShops = numberOfShops;
-        NumberOfFloors = numberOfFloors;
-        YearOfConstruction = yearOfConstruction;
-        Address = address;
-        Landmark = landmark;
         Notes = notes;
         MarkAsModified(modifiedByUserId);
     }

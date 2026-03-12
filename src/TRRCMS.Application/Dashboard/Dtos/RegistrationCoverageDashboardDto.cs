@@ -17,7 +17,6 @@ public sealed class RegistrationCoverageDashboardDto
     public Dictionary<string, int> PersonsByGender { get; set; } = new();
 
     public int PersonsWithNationalId { get; set; }
-    public int PersonsWithIdentificationDocument { get; set; }
 
     // ==================== PERSON-PROPERTY RELATIONS ====================
 

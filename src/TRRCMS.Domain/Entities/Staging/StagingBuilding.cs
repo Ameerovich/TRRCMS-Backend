@@ -73,9 +73,6 @@ public class StagingBuilding : BaseStagingEntity
     /// <summary>Building status — physical condition (حالة البناء).</summary>
     public BuildingStatus Status { get; private set; }
 
-    /// <summary>Damage level assessment (مستوى الضرر).</summary>
-    public DamageLevel? DamageLevel { get; private set; }
-
     // ==================== UNIT COUNTS (from command — required) ====================
 
     /// <summary>Total number of property units (عدد الوحدات).</summary>
@@ -86,14 +83,6 @@ public class StagingBuilding : BaseStagingEntity
 
     /// <summary>Number of commercial shops (عدد المحلات).</summary>
     public int NumberOfShops { get; private set; }
-
-    // ==================== FUTURE EXPANSION (optional) ====================
-
-    /// <summary>Number of floors in the building — optional future expansion.</summary>
-    public int? NumberOfFloors { get; private set; }
-
-    /// <summary>Year when building was constructed — optional future expansion.</summary>
-    public int? YearOfConstruction { get; private set; }
 
     // ==================== SPATIAL DATA ====================
 
@@ -110,12 +99,6 @@ public class StagingBuilding : BaseStagingEntity
     public decimal? Longitude { get; private set; }
 
     // ==================== OPTIONAL FIELDS ====================
-
-    /// <summary>Building address or description.</summary>
-    public string? Address { get; private set; }
-
-    /// <summary>Landmark or notable features near the building.</summary>
-    public string? Landmark { get; private set; }
 
     /// <summary>Additional notes (الوصف العام).</summary>
     public string? Notes { get; private set; }
@@ -164,12 +147,7 @@ public class StagingBuilding : BaseStagingEntity
         string? districtName = null,
         string? subDistrictName = null,
         string? communityName = null,
-        string? neighborhoodName = null,
-        DamageLevel? damageLevel = null,
-        int? numberOfFloors = null,
-        int? yearOfConstruction = null,
-        string? address = null,
-        string? landmark = null)
+        string? neighborhoodName = null)
     {
         var entity = new StagingBuilding
         {
@@ -193,12 +171,7 @@ public class StagingBuilding : BaseStagingEntity
             DistrictName = districtName,
             SubDistrictName = subDistrictName,
             CommunityName = communityName,
-            NeighborhoodName = neighborhoodName,
-            DamageLevel = damageLevel,
-            NumberOfFloors = numberOfFloors,
-            YearOfConstruction = yearOfConstruction,
-            Address = address,
-            Landmark = landmark
+            NeighborhoodName = neighborhoodName
         };
 
         entity.InitializeStagingMetadata(importPackageId, originalEntityId);

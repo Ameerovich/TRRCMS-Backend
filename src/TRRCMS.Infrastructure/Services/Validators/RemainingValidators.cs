@@ -418,7 +418,6 @@ public class VocabularyVersionValidator : IStagingValidator
             var warns = new List<string>();
             if (!_vocabService.IsValidCode("building_type", (int)b.BuildingType)) warns.Add($"Unknown BuildingType value: {(int)b.BuildingType}");
             if (!_vocabService.IsValidCode("building_status", (int)b.Status)) warns.Add($"Unknown BuildingStatus value: {(int)b.Status}");
-            if (b.DamageLevel.HasValue && !_vocabService.IsValidCode("damage_level", (int)b.DamageLevel.Value)) warns.Add($"Unknown DamageLevel value: {(int)b.DamageLevel.Value}");
 
             if (warns.Count > 0) { AppendWarnings(b, warns); warnings += warns.Count; modBuildings.Add(b); }
         }

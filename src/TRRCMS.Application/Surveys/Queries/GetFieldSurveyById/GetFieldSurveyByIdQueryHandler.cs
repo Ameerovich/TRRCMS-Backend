@@ -86,7 +86,6 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
         if (survey.Building != null)
         {
             result.BuildingNumber = survey.Building.BuildingNumber;
-            result.BuildingAddress = survey.Building.Address;
         }
 
         var fieldCollector = await _userRepository.GetByIdAsync(survey.FieldCollectorId, cancellationToken);
@@ -124,15 +123,9 @@ public class GetFieldSurveyByIdQueryHandler : IRequestHandler<GetFieldSurveyById
                             HouseholdSize = household.HouseholdSize,
                             MaleCount = household.MaleCount,
                             FemaleCount = household.FemaleCount,
-                            InfantCount = household.InfantCount,
                             ChildCount = household.ChildCount,
-                            MinorCount = household.MinorCount,
-                            AdultCount = household.AdultCount,
                             ElderlyCount = household.ElderlyCount,
                             PersonsWithDisabilitiesCount = household.PersonsWithDisabilitiesCount,
-                            IsFemaleHeaded = household.IsFemaleHeaded,
-                            IsDisplaced = household.IsDisplaced,
-                            MonthlyIncomeEstimate = household.MonthlyIncomeEstimate,
                             Notes = household.Notes,
                             Persons = new List<PersonDto>()
                         };

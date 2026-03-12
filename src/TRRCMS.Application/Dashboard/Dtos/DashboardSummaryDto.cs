@@ -91,10 +91,5 @@ public sealed class BuildingStatisticsDto
     /// </summary>
     public Dictionary<string, int> ByStatus { get; set; } = new();
 
-    /// <summary>
-    /// Count per DamageLevel enum name (e.g. "None": 30, "Major": 5).
-    /// </summary>
-    public Dictionary<string, int> ByDamageLevel { get; set; } = new();
-
     public double AverageUnitsPerBuilding { get; set; }
 }

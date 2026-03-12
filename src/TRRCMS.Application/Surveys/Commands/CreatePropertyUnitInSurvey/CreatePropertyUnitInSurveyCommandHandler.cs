@@ -87,17 +87,14 @@ public class CreatePropertyUnitInSurveyCommandHandler : IRequestHandler<CreatePr
         );
 
         // Update status
-        propertyUnit.UpdateStatus((PropertyUnitStatus)request.Status, null, currentUserId);
+        propertyUnit.UpdateStatus((PropertyUnitStatus)request.Status, currentUserId);
 
         // Update physical details if provided
         if (request.AreaSquareMeters.HasValue || request.NumberOfRooms.HasValue)
         {
             propertyUnit.UpdatePhysicalDetails(
                 numberOfRooms: request.NumberOfRooms,
-                numberOfBathrooms: null,
-                hasBalcony: null,
                 areaSquareMeters: request.AreaSquareMeters,
-                specialFeatures: null,
                 modifiedByUserId: currentUserId
             );
         }

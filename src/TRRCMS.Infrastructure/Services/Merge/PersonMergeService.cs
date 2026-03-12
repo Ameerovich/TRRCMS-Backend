@@ -380,11 +380,9 @@ public class PersonMergeService : IMergeService
             staging.FatherNameArabic,
             staging.MotherNameArabic,
             staging.NationalId ?? production.NationalId,
-            staging.YearOfBirth.HasValue
-                ? new DateTime(staging.YearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-                : production.DateOfBirth,
-            production.Gender,
-            production.Nationality,
+            staging.DateOfBirth ?? production.DateOfBirth,
+            staging.Gender ?? production.Gender,
+            staging.Nationality ?? production.Nationality,
             production.Id);
 
         production.UpdateContactInfo(

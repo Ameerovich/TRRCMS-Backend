@@ -76,7 +76,6 @@ public class DashboardController : ControllerBase
     ///     "totalBuildings": 500,
     ///     "totalPropertyUnits": 1200,
     ///     "byStatus": { "Occupied": 300, "Damaged": 80 },
-    ///     "byDamageLevel": { "None": 250, "Minor": 100 },
     ///     "averageUnitsPerBuilding": 2.4
     ///   },
     ///   "generatedAtUtc": "2026-03-11T14:30:00Z"

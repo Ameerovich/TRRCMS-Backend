@@ -178,7 +178,6 @@ public class BuildingAssignmentsController : ControllerBase
     /// <param name="communityCode">Filter by community code (قرية)</param>
     /// <param name="neighborhoodCode">Filter by neighborhood code (حي)</param>
     /// <param name="buildingCode">Search by building code - partial match (رمز البناء)</param>
-    /// <param name="address">Search by address - partial match (العنوان)</param>
     /// <param name="buildingType">Filter by building type (نوع البناء)</param>
     /// <param name="buildingStatus">Filter by building status (حالة البناء)</param>
     /// <param name="hasActiveAssignment">Filter by assignment status (حالة التعيين)</param>
@@ -209,7 +208,6 @@ public class BuildingAssignmentsController : ControllerBase
         [FromQuery] string? communityCode,
         [FromQuery] string? neighborhoodCode,
         [FromQuery] string? buildingCode,
-        [FromQuery] string? address,
         [FromQuery] BuildingType? buildingType,
         [FromQuery] BuildingStatus? buildingStatus,
         [FromQuery] bool? hasActiveAssignment,
@@ -234,7 +232,6 @@ public class BuildingAssignmentsController : ControllerBase
             CommunityCode = communityCode,
             NeighborhoodCode = neighborhoodCode,
             BuildingCode = buildingCode,
-            Address = address,
             BuildingType = buildingType,
             BuildingStatus = buildingStatus,
             HasActiveAssignment = hasActiveAssignment,
@@ -377,7 +374,6 @@ public class BuildingAssignmentsController : ControllerBase
             CommunityCode = request.CommunityCode,
             NeighborhoodCode = request.NeighborhoodCode,
             BuildingCode = request.BuildingCode,
-            Address = request.Address,
             BuildingType = request.BuildingType,
             BuildingStatus = request.BuildingStatus,
             HasActiveAssignment = request.HasActiveAssignment,
@@ -1043,12 +1039,6 @@ public class BuildingSearchRequest
     /// </summary>
     /// <example>0101010030</example>
     public string? BuildingCode { get; set; }
-
-    /// <summary>
-    /// Search by address - partial match (العنوان)
-    /// </summary>
-    /// <example>شارع الجمهورية</example>
-    public string? Address { get; set; }
 
     /// <summary>
     /// Filter by building type (نوع البناء)

@@ -24,7 +24,6 @@ public class MappingProfile : Profile
         CreateMap<Building, BuildingDto>()
            .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => (int)src.BuildingType))
            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
-           .ForMember(dest => dest.DamageLevel, opt => opt.MapFrom(src => src.DamageLevel.HasValue ? (int?)src.DamageLevel : null))
            .ForMember(dest => dest.BuildingDocumentIds, opt => opt.MapFrom(src => src.BuildingDocuments.Select(d => d.Id).ToList()));
 
         // BuildingDocument mappings
@@ -215,8 +214,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.SurveyType, opt => opt.MapFrom(src => (int)src.Type))
             .ForMember(dest => dest.BuildingNumber, opt => opt.MapFrom(src =>
                 src.Building != null ? src.Building.BuildingNumber : null))
-            .ForMember(dest => dest.BuildingAddress, opt => opt.MapFrom(src =>
-                src.Building != null ? src.Building.Address : null))
             .ForMember(dest => dest.UnitIdentifier, opt => opt.MapFrom(src =>
                 src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
             .ForMember(dest => dest.FieldCollectorName, opt => opt.Ignore())
@@ -229,8 +226,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
             .ForMember(dest => dest.BuildingNumber, opt => opt.MapFrom(src =>
                 src.Building != null ? src.Building.BuildingNumber : null))
-            .ForMember(dest => dest.BuildingAddress, opt => opt.MapFrom(src =>
-                src.Building != null ? src.Building.Address : null))
             .ForMember(dest => dest.UnitIdentifier, opt => opt.MapFrom(src =>
                 src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
             .ForMember(dest => dest.FieldCollectorName, opt => opt.Ignore())

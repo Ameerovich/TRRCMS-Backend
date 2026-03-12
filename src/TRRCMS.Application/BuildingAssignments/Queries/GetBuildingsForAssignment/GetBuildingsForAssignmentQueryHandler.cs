@@ -79,9 +79,6 @@ public class GetBuildingsForAssignmentQueryHandler
                 buildings = buildings.Where(b => b.BuildingId.Contains(normalizedCode)).ToList();
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Address))
-                buildings = buildings.Where(b => b.Address != null && b.Address.Contains(request.Address)).ToList();
-
             // Update total count after additional filtering
             totalCount = buildings.Count;
         }
@@ -97,7 +94,6 @@ public class GetBuildingsForAssignmentQueryHandler
                 communityCode: request.CommunityCode,
                 neighborhoodCode: request.NeighborhoodCode,
                 buildingId: request.BuildingCode,
-                address: request.Address,
                 latitude: request.Latitude,
                 longitude: request.Longitude,
                 radiusMeters: request.RadiusMeters,
@@ -166,7 +162,6 @@ public class GetBuildingsForAssignmentQueryHandler
             {
                 Id = b.Id,
                 BuildingCode = b.BuildingId,
-                Address = b.Address,
                 GovernorateCode = b.GovernorateCode,
                 GovernorateName = b.GovernorateName,
                 DistrictCode = b.DistrictCode,

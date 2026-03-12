@@ -58,7 +58,6 @@ public class GetDraftSurveyQueryHandler : IRequestHandler<GetDraftSurveyQuery, S
         if (survey.Building != null)
         {
             result.BuildingNumber = survey.Building.BuildingNumber;
-            result.BuildingAddress = survey.Building.Address;
         }
 
         if (survey.PropertyUnit != null)

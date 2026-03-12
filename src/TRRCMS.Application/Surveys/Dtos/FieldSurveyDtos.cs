@@ -20,7 +20,6 @@ public class FieldSurveyDetailDto
 
     public Guid BuildingId { get; set; }
     public string? BuildingNumber { get; set; }
-    public string? BuildingAddress { get; set; }
 
     public Guid? PropertyUnitId { get; set; }
     public string? UnitIdentifier { get; set; }
@@ -123,58 +122,24 @@ public class HouseholdWithPersonsDto
     /// </summary>
     public int FemaleCount { get; set; }
 
-    // ==================== AGE COMPOSITION ====================
+    // ==================== COMPUTED TOTALS ====================
 
     /// <summary>
-    /// Number of infants (under 2 years)
-    /// </summary>
-    public int InfantCount { get; set; }
-
-    /// <summary>
-    /// Number of children (2-12 years)
+    /// Number of children
     /// </summary>
     public int ChildCount { get; set; }
-
-    /// <summary>
-    /// Number of minors/adolescents (13-17 years)
-    /// </summary>
-    public int MinorCount { get; set; }
-
-    /// <summary>
-    /// Number of adults (18-64 years)
-    /// </summary>
-    public int AdultCount { get; set; }
 
     /// <summary>
     /// Number of elderly (65+ years)
     /// </summary>
     public int ElderlyCount { get; set; }
 
-    // ==================== VULNERABILITY INDICATORS ====================
-
     /// <summary>
     /// Number of persons with disabilities
     /// </summary>
     public int PersonsWithDisabilitiesCount { get; set; }
 
-    /// <summary>
-    /// Indicates if household is female-headed
-    /// </summary>
-    public bool IsFemaleHeaded { get; set; }
-
-    /// <summary>
-    /// Indicates if household is displaced
-    /// </summary>
-    public bool IsDisplaced { get; set; }
-
-    // ==================== ECONOMIC INDICATORS ====================
-
-    /// <summary>
-    /// Estimated monthly household income (in local currency)
-    /// </summary>
-    public decimal? MonthlyIncomeEstimate { get; set; }
-
-    // ==================== ADDITIONAL INFO ====================
+    // ==================== ADDITIONAL ====================
 
     /// <summary>
     /// Household notes

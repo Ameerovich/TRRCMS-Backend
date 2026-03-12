@@ -100,27 +100,11 @@ public class Household : BaseAuditableEntity
     /// </summary>
     public string? Notes { get; private set; }
 
-    // ==================== LEGACY FIELDS (kept for future expansion) ====================
+    // ==================== COMPUTED TOTALS ====================
 
-    public int InfantCount { get; private set; }
     public int ChildCount { get; private set; }
-    public int MinorCount { get; private set; }
-    public int AdultCount { get; private set; }
     public int ElderlyCount { get; private set; }
     public int PersonsWithDisabilitiesCount { get; private set; }
-    public bool IsFemaleHeaded { get; private set; }
-    public int WidowCount { get; private set; }
-    public int OrphanCount { get; private set; }
-    public int SingleParentCount { get; private set; }
-    public int EmployedPersonsCount { get; private set; }
-    public int UnemployedPersonsCount { get; private set; }
-    public string? PrimaryIncomeSource { get; private set; }
-    public decimal? MonthlyIncomeEstimate { get; private set; }
-    public bool IsDisplaced { get; private set; }
-    public string? OriginLocation { get; private set; }
-    public DateTime? ArrivalDate { get; private set; }
-    public string? DisplacementReason { get; private set; }
-    public string? SpecialNeeds { get; private set; }
 
     // ==================== NAVIGATION PROPERTIES ====================
 
@@ -171,7 +155,7 @@ public class Household : BaseAuditableEntity
             Notes = notes,
             OccupancyType = occupancyType,
             OccupancyNature = occupancyNature,
-            // Auto-calculate legacy totals
+            // Auto-calculate computed totals
             ChildCount = maleChildCount + femaleChildCount,
             ElderlyCount = maleElderlyCount + femaleElderlyCount,
             PersonsWithDisabilitiesCount = maleDisabledCount + femaleDisabledCount
@@ -254,7 +238,7 @@ public class Household : BaseAuditableEntity
         MaleDisabledCount = maleDisabledCount;
         FemaleDisabledCount = femaleDisabledCount;
 
-        // Update legacy totals
+        // Update computed totals
         ChildCount = maleChildCount + femaleChildCount;
         ElderlyCount = maleElderlyCount + femaleElderlyCount;
         PersonsWithDisabilitiesCount = maleDisabledCount + femaleDisabledCount;
@@ -280,83 +264,4 @@ public class Household : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
-    // ==================== LEGACY METHODS (kept for expansion) ====================
-
-    public void UpdateSize(int newSize, Guid modifiedByUserId)
-    {
-        HouseholdSize = newSize;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    public void UpdateGenderComposition(int maleCount, int femaleCount, Guid modifiedByUserId)
-    {
-        MaleCount = maleCount;
-        FemaleCount = femaleCount;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    public void UpdateAgeComposition(
-        int infantCount, int childCount, int minorCount,
-        int adultCount, int elderlyCount, Guid modifiedByUserId)
-    {
-        InfantCount = infantCount;
-        ChildCount = childCount;
-        MinorCount = minorCount;
-        AdultCount = adultCount;
-        ElderlyCount = elderlyCount;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    public void UpdateVulnerabilityIndicators(
-        int personsWithDisabilitiesCount, bool isFemaleHeaded,
-        int widowCount, int orphanCount, int singleParentCount,
-        Guid modifiedByUserId)
-    {
-        PersonsWithDisabilitiesCount = personsWithDisabilitiesCount;
-        IsFemaleHeaded = isFemaleHeaded;
-        WidowCount = widowCount;
-        OrphanCount = orphanCount;
-        SingleParentCount = singleParentCount;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    public void UpdateEconomicIndicators(
-        int employedCount, int unemployedCount,
-        string? primaryIncomeSource, decimal? monthlyIncomeEstimate,
-        Guid modifiedByUserId)
-    {
-        EmployedPersonsCount = employedCount;
-        UnemployedPersonsCount = unemployedCount;
-        PrimaryIncomeSource = primaryIncomeSource;
-        MonthlyIncomeEstimate = monthlyIncomeEstimate;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    public void UpdateDisplacementInfo(
-        bool isDisplaced, string? originLocation,
-        DateTime? arrivalDate, string? displacementReason,
-        Guid modifiedByUserId)
-    {
-        IsDisplaced = isDisplaced;
-        OriginLocation = originLocation;
-        ArrivalDate = arrivalDate;
-        DisplacementReason = displacementReason;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    public void UpdateSpecialNeeds(string? specialNeeds, Guid modifiedByUserId)
-    {
-        SpecialNeeds = specialNeeds;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    public bool IsVulnerable()
-    {
-        return IsFemaleHeaded
-            || PersonsWithDisabilitiesCount > 0
-            || WidowCount > 0
-            || OrphanCount > 0
-            || SingleParentCount > 0
-            || IsDisplaced;
-    }
 }

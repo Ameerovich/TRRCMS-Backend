@@ -46,7 +46,6 @@ public sealed class GetRegistrationCoverageQueryHandler
             PersonsByGender = genderCounts.ToDictionary(
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),
             PersonsWithNationalId = withNationalId,
-            PersonsWithIdentificationDocument = 0,
             TotalPersonPropertyRelations = totalRelations,
             RelationsByType = relationTypeCounts.ToDictionary(
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),

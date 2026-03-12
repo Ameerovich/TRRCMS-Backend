@@ -85,11 +85,6 @@ public class BuildingInPolygonDto
     public string Status { get; set; } = string.Empty;
 
     /// <summary>
-    /// Damage level (if assessed)
-    /// </summary>
-    public string? DamageLevel { get; set; }
-
-    /// <summary>
     /// Number of property units
     /// </summary>
     public int NumberOfPropertyUnits { get; set; }

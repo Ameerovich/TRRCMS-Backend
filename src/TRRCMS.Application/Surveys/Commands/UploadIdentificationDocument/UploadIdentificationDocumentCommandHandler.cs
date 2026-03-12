@@ -116,8 +116,6 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
             notes: request.Notes,
             modifiedByUserId: currentUserId);
 
-        person.MarkIdentificationDocumentUploaded(currentUserId);
-
         await _evidenceRepository.AddAsync(evidence, cancellationToken);
         await _personRepository.UpdateAsync(person, cancellationToken);
         await _evidenceRepository.SaveChangesAsync(cancellationToken);

@@ -91,7 +91,7 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             newValues["Status"] = request.BuildingStatus.Value.ToString();
             changedFields.Add("Status");
 
-            building.UpdateStatus(request.BuildingStatus.Value, building.DamageLevel, currentUserId);
+            building.UpdateStatus(request.BuildingStatus.Value, currentUserId);
         }
 
         // Update unit counts
@@ -144,7 +144,7 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             oldValues["Notes"] = building.Notes;
             newValues["Notes"] = newNotes;
             changedFields.Add("Notes");
-            building.UpdateDetails(null, null, null, null, newNotes, currentUserId);
+            building.UpdateDetails(newNotes, currentUserId);
         }
 
         // Save changes
@@ -195,21 +195,15 @@ public class UpdateBuildingCommandHandler : IRequestHandler<UpdateBuildingComman
             // Attributes
             BuildingType = (int)building.BuildingType,
             Status = (int)building.Status,
-            DamageLevel = building.DamageLevel.HasValue ? (int?)building.DamageLevel : null,
             NumberOfPropertyUnits = building.NumberOfPropertyUnits,
             NumberOfApartments = building.NumberOfApartments,
             NumberOfShops = building.NumberOfShops,
-            NumberOfFloors = building.NumberOfFloors,
-            YearOfConstruction = building.YearOfConstruction,
-
             // Location
             Latitude = building.Latitude,
             Longitude = building.Longitude,
             BuildingGeometryWkt = building.BuildingGeometryWkt,
 
             // Additional Information
-            Address = building.Address,
-            Landmark = building.Landmark,
             Notes = building.Notes,
 
             // Audit

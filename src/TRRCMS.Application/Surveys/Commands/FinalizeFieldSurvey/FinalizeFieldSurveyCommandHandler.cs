@@ -159,7 +159,6 @@ public class FinalizeFieldSurveyCommandHandler : IRequestHandler<FinalizeFieldSu
         if (survey.Building != null)
         {
             result.Survey.BuildingNumber = survey.Building.BuildingNumber;
-            result.Survey.BuildingAddress = survey.Building.Address;
         }
 
         result.Survey.FieldCollectorName = _currentUserService.Username;

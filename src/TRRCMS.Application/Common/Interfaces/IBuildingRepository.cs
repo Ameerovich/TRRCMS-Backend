@@ -54,13 +54,11 @@ public interface IBuildingRepository
         string? neighborhoodCode = null,
         string? buildingId = null,
         string? buildingNumber = null,
-        string? address = null,
         decimal? latitude = null,
         decimal? longitude = null,
         int? radiusMeters = null,
         BuildingStatus? status = null,
         BuildingType? buildingType = null,
-        DamageLevel? damageLevel = null,
         int page = 1,
         int pageSize = 20,
         string? sortBy = null,
@@ -95,7 +93,6 @@ public interface IBuildingRepository
         string polygonWkt,
         BuildingType? buildingType = null,
         BuildingStatus? status = null,
-        DamageLevel? damageLevel = null,
         int page = 1,
         int pageSize = 100,
         CancellationToken cancellationToken = default);
@@ -148,12 +145,6 @@ public interface IBuildingRepository
     /// Used for dashboard summary tiles.
     /// </summary>
     Task<Dictionary<BuildingStatus, int>> GetStatusCountsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get count of buildings grouped by damage level (excluding null).
-    /// Used for dashboard summary tiles.
-    /// </summary>
-    Task<Dictionary<DamageLevel, int>> GetDamageLevelCountsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get total building count and total property unit count in one call.

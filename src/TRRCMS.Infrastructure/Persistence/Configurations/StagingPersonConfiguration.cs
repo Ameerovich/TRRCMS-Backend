@@ -74,8 +74,10 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
             .HasMaxLength(50)
             .HasComment("Primary key for duplicate detection (FR-D-5, §12.2.4)");
 
-        builder.Property(p => p.YearOfBirth)
-            .HasComment("Year of birth — used in duplicate detection composite with name+gender");
+        builder.Property(p => p.DateOfBirth)
+            .HasColumnType("timestamp with time zone")
+            .IsRequired(false)
+            .HasComment("Date of birth — used in duplicate detection composite with name+gender");
 
         // ==================== CONTACT ====================
 
@@ -88,16 +90,15 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
         builder.Property(p => p.PhoneNumber)
             .HasMaxLength(20);
 
-        // ==================== ADDITIONAL DETAILS ====================
-
-        builder.Property(p => p.FullNameEnglish)
-            .HasMaxLength(200);
+        // ==================== DEMOGRAPHICS ====================
 
         builder.Property(p => p.Gender)
-            .HasMaxLength(20);
+            .IsRequired(false)
+            .HasComment("الجنس - Gender enum stored as integer");
 
         builder.Property(p => p.Nationality)
-            .HasMaxLength(100);
+            .IsRequired(false)
+            .HasComment("الجنسية - Nationality enum stored as integer");
 
         // ==================== HOUSEHOLD LINK ====================
 
@@ -105,7 +106,8 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
             .HasComment("Original Household UUID from .uhc — not a FK to production Households");
 
         builder.Property(p => p.RelationshipToHead)
-            .HasMaxLength(50);
+            .IsRequired(false)
+            .HasComment("صلة القرابة برب الأسرة - Relationship to head of household enum stored as integer");
 
         // ==================== CONTACT PERSON ====================
 

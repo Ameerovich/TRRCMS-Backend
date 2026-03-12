@@ -210,15 +210,15 @@ public class PersonMatchingService
             production.FirstNameArabic, production.FatherNameArabic, production.FamilyNameArabic);
         score += nameSimilarity / 100m * MaxNameScore;
 
-        // Year of birth (staging has int YearOfBirth, production has DateTime DateOfBirth)
-        bool yearMatched = staging.YearOfBirth.HasValue &&
+        // Date of birth (both staging and production use DateTime?)
+        bool yearMatched = staging.DateOfBirth.HasValue &&
                            production.DateOfBirth.HasValue &&
-                           staging.YearOfBirth.Value == production.DateOfBirth.Value.Year;
+                           staging.DateOfBirth.Value.Year == production.DateOfBirth.Value.Year;
         if (yearMatched) score += YearOfBirthScore;
 
-        // Gender (staging has string, production has enum)
-        bool genderMatched = GendersMatch(staging.Gender,
-            production.Gender.HasValue ? production.Gender.Value.ToString() : null);
+        // Gender (both staging and production use Gender? enum)
+        bool genderMatched = staging.Gender.HasValue && production.Gender.HasValue &&
+                             staging.Gender.Value == production.Gender.Value;
         if (genderMatched) score += GenderScore;
 
         score = Math.Min(score, MaxCompositeScore);
@@ -258,12 +258,12 @@ public class PersonMatchingService
             b.FirstNameArabic, b.FatherNameArabic, b.FamilyNameArabic);
         score += nameSimilarity / 100m * MaxNameScore;
 
-        // Both are StagingPerson entities, so they both have YearOfBirth (int?) and Gender (string?)
-        if (a.YearOfBirth.HasValue && b.YearOfBirth.HasValue &&
-            a.YearOfBirth.Value == b.YearOfBirth.Value)
+        // Both are StagingPerson entities with DateTime? DateOfBirth and Gender? enum
+        if (a.DateOfBirth.HasValue && b.DateOfBirth.HasValue &&
+            a.DateOfBirth.Value.Year == b.DateOfBirth.Value.Year)
             score += YearOfBirthScore;
 
-        if (GendersMatch(a.Gender, b.Gender))
+        if (a.Gender.HasValue && b.Gender.HasValue && a.Gender.Value == b.Gender.Value)
             score += GenderScore;
 
         return Math.Min(score, MaxCompositeScore);
@@ -292,10 +292,10 @@ public class PersonMatchingService
             NameSimilarityScore = ArabicNameSimilarityHelper.ComputeFullNameSimilarity(
                 staging.FirstNameArabic, staging.FatherNameArabic, staging.FamilyNameArabic,
                 production.FirstNameArabic, production.FatherNameArabic, production.FamilyNameArabic),
-            YearOfBirthMatched = staging.YearOfBirth.HasValue && production.DateOfBirth.HasValue &&
-                                 staging.YearOfBirth.Value == production.DateOfBirth.Value.Year,
-            GenderMatched = GendersMatch(staging.Gender,
-                production.Gender.HasValue ? production.Gender.Value.ToString() : null)
+            YearOfBirthMatched = staging.DateOfBirth.HasValue && production.DateOfBirth.HasValue &&
+                                 staging.DateOfBirth.Value.Year == production.DateOfBirth.Value.Year,
+            GenderMatched = staging.Gender.HasValue && production.Gender.HasValue &&
+                            staging.Gender.Value == production.Gender.Value
         };
     }
 
@@ -318,9 +318,10 @@ public class PersonMatchingService
             NameSimilarityScore = ArabicNameSimilarityHelper.ComputeFullNameSimilarity(
                 a.FirstNameArabic, a.FatherNameArabic, a.FamilyNameArabic,
                 b.FirstNameArabic, b.FatherNameArabic, b.FamilyNameArabic),
-            YearOfBirthMatched = a.YearOfBirth.HasValue && b.YearOfBirth.HasValue &&
-                                 a.YearOfBirth.Value == b.YearOfBirth.Value,
-            GenderMatched = GendersMatch(a.Gender, b.Gender)
+            YearOfBirthMatched = a.DateOfBirth.HasValue && b.DateOfBirth.HasValue &&
+                                 a.DateOfBirth.Value.Year == b.DateOfBirth.Value.Year,
+            GenderMatched = a.Gender.HasValue && b.Gender.HasValue &&
+                            a.Gender.Value == b.Gender.Value
         };
     }
 
@@ -352,29 +353,6 @@ public class PersonMatchingService
             digits = digits[1..];
 
         return digits;
-    }
-
-    /// <summary>
-    /// Normalize and compare gender values.
-    /// Handles Arabic (ذكر/أنثى), English (M/F/Male/Female), and mixed variations.
-    /// </summary>
-    private static bool GendersMatch(string? gender1, string? gender2)
-    {
-        if (string.IsNullOrWhiteSpace(gender1) || string.IsNullOrWhiteSpace(gender2))
-            return false;
-
-        return NormalizeGender(gender1) == NormalizeGender(gender2);
-    }
-
-    private static string NormalizeGender(string gender)
-    {
-        var trimmed = gender.Trim().ToUpperInvariant();
-        return trimmed switch
-        {
-            "M" or "MALE" or "ذكر" => "M",
-            "F" or "FEMALE" or "أنثى" or "انثى" => "F",
-            _ => trimmed
-        };
     }
 
     private static string BuildPersonIdentifier(

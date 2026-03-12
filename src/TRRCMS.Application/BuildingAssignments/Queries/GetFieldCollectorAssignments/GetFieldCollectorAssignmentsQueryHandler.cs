@@ -63,7 +63,6 @@ public class GetFieldCollectorAssignmentsQueryHandler
                 Id = assignment.Id,
                 BuildingId = assignment.BuildingId,
                 BuildingCode = building?.BuildingId ?? string.Empty,
-                BuildingAddress = building?.Address,
                 BuildingGeometryWkt = building?.BuildingGeometryWkt,
                 Latitude = building?.Latitude,
                 Longitude = building?.Longitude,

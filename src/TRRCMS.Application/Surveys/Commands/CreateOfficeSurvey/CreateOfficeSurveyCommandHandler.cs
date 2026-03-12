@@ -146,7 +146,6 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
         // Map to DTO
         var result = _mapper.Map<SurveyDto>(survey);
         result.BuildingNumber = building.BuildingNumber;
-        result.BuildingAddress = building.Address;
         result.FieldCollectorName = _currentUserService.Username; // "Clerk" for office surveys
 
         if (propertyUnit != null)

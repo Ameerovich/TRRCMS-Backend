@@ -83,7 +83,6 @@ public class GetBuildingsInPolygonQueryHandler
                 polygonWkt: polygonWkt,
                 buildingType: request.BuildingType,
                 status: request.Status,
-                damageLevel: request.DamageLevel,
                 page: page,
                 pageSize: pageSize,
                 cancellationToken: cancellationToken);
@@ -101,7 +100,6 @@ public class GetBuildingsInPolygonQueryHandler
                 Longitude = b.Longitude,
                 BuildingType = b.BuildingType.ToString(),
                 Status = b.Status.ToString(),
-                DamageLevel = b.DamageLevel?.ToString(),
                 NumberOfPropertyUnits = b.NumberOfPropertyUnits,
                 NeighborhoodName = b.NeighborhoodName,
                 CommunityName = b.CommunityName,

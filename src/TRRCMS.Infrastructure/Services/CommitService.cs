@@ -443,14 +443,9 @@ public class CommitService : ICommitService
                     existingBuilding.UpdateFromFieldSurvey(
                         buildingType: staging.BuildingType,
                         status: staging.Status,
-                        damageLevel: staging.DamageLevel,
                         numberOfPropertyUnits: staging.NumberOfPropertyUnits,
                         numberOfApartments: staging.NumberOfApartments,
                         numberOfShops: staging.NumberOfShops,
-                        numberOfFloors: staging.NumberOfFloors,
-                        yearOfConstruction: staging.YearOfConstruction,
-                        address: staging.Address,
-                        landmark: staging.Landmark,
                         notes: staging.Notes,
                         modifiedByUserId: userId);
 
@@ -493,10 +488,6 @@ public class CommitService : ICommitService
                     userId);
 
                 building.UpdateDetails(
-                    staging.NumberOfFloors,
-                    staging.YearOfConstruction,
-                    staging.Address,
-                    staging.Landmark,
                     staging.Notes,
                     userId);
 
@@ -512,9 +503,6 @@ public class CommitService : ICommitService
                         (double)staging.Longitude.Value, (double)staging.Latitude.Value);
                     building.SetCoordinates(staging.Latitude.Value, staging.Longitude.Value, userId, fallbackPoint);
                 }
-
-                if (staging.DamageLevel.HasValue)
-                    building.UpdateStatus(staging.Status, staging.DamageLevel, userId);
 
                 await _unitOfWork.Buildings.AddAsync(building, ct);
 
@@ -644,9 +632,9 @@ public class CommitService : ICommitService
                     fatherNameArabic: staging.FatherNameArabic,
                     motherNameArabic: staging.MotherNameArabic,
                     nationalId: staging.NationalId,
-                    dateOfBirth: staging.YearOfBirth.HasValue ? new DateTime(staging.YearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc) : null,
-                    gender: ParseGenderFromStaging(staging.Gender),
-                    nationality: ParseNationalityFromStaging(staging.Nationality),
+                    dateOfBirth: staging.DateOfBirth,
+                    gender: staging.Gender,
+                    nationality: staging.Nationality,
                     email: staging.Email,
                     mobileNumber: staging.MobileNumber,
                     phoneNumber: staging.PhoneNumber,
@@ -1104,77 +1092,4 @@ public class CommitService : ICommitService
         }
     }
 
-    // ==================== STAGING VALUE PARSING HELPERS ====================
-
-    /// <summary>
-    /// Parse Gender enum from staging string value.
-    /// The .uhc package stores gender as a string (integer code, enum name, or Arabic label).
-    /// Maps to <see cref="Gender"/> enum values: Male=1, Female=2.
-    /// </summary>
-    private static Gender? ParseGenderFromStaging(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
-        var trimmed = value.Trim();
-
-        // Try integer code (from vocabulary)
-        if (int.TryParse(trimmed, out var intVal) && Enum.IsDefined(typeof(Gender), intVal))
-            return (Gender)intVal;
-
-        // Try enum name (English)
-        if (Enum.TryParse<Gender>(trimmed, ignoreCase: true, out var enumVal))
-            return enumVal;
-
-        // Try Arabic labels
-        return trimmed switch
-        {
-            "ذكر" => Gender.Male,
-            "أنثى" => Gender.Female,
-            "male" or "m" or "M" => Gender.Male,
-            "female" or "f" or "F" => Gender.Female,
-            _ => null
-        };
-    }
-
-    /// <summary>
-    /// Parse Nationality enum from staging string value.
-    /// The .uhc package stores nationality as a string (integer code, enum name, or Arabic label).
-    /// Maps to <see cref="Nationality"/> enum values defined in Domain.Enums.
-    /// </summary>
-    private static Nationality? ParseNationalityFromStaging(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
-        var trimmed = value.Trim();
-
-        // Try integer code (from vocabulary)
-        if (int.TryParse(trimmed, out var intVal) && Enum.IsDefined(typeof(Nationality), intVal))
-            return (Nationality)intVal;
-
-        // Try enum name (English)
-        if (Enum.TryParse<Nationality>(trimmed, ignoreCase: true, out var enumVal))
-            return enumVal;
-
-        // Try Arabic labels
-        return trimmed switch
-        {
-            "سوري" => Nationality.Syrian,
-            "فلسطيني" => Nationality.Palestinian,
-            "عراقي" => Nationality.Iraqi,
-            "لبناني" => Nationality.Lebanese,
-            "أردني" => Nationality.Jordanian,
-            "مصري" => Nationality.Egyptian,
-            "تركي" => Nationality.Turkish,
-            "سعودي" => Nationality.Saudi,
-            "يمني" => Nationality.Yemeni,
-            "سوداني" => Nationality.Sudanese,
-            "إيراني" => Nationality.Iranian,
-            "عديم الجنسية" => Nationality.Stateless,
-            "لاجئ" => Nationality.Refugee,
-            "أخرى" => Nationality.Other,
-            _ => null
-        };
-    }
 }

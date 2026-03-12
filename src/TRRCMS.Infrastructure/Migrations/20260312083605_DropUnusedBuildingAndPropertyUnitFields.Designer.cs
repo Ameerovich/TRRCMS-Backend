@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260312083605_DropUnusedBuildingAndPropertyUnitFields")]
+    partial class DropUnusedBuildingAndPropertyUnitFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1783,6 +1786,16 @@ namespace TRRCMS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("AdultCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of adults (18-64 years)");
+
+                    b.Property<DateTime?>("ArrivalDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date of arrival at current location");
+
                     b.Property<int>("ChildCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -1805,11 +1818,22 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasComment("User who deleted this record");
 
+                    b.Property<string>("DisplacementReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasComment("Reason for displacement");
+
                     b.Property<int>("ElderlyCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0)
                         .HasComment("Number of elderly (65+ years) - legacy total");
+
+                    b.Property<int>("EmployedPersonsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of employed persons");
 
                     b.Property<int>("FemaleChildCount")
                         .ValueGeneratedOnAdd()
@@ -1850,11 +1874,29 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasDefaultValue(0)
                         .HasComment("عدد الأفراد - Total household size");
 
+                    b.Property<int>("InfantCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of infants (under 2 years)");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasComment("Soft delete flag");
+
+                    b.Property<bool>("IsDisplaced")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if household is displaced");
+
+                    b.Property<bool>("IsFemaleHeaded")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Indicates if household is female-headed");
 
                     b.Property<DateTime?>("LastModifiedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1888,6 +1930,17 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasDefaultValue(0)
                         .HasComment("عدد كبار السن الذكور (أكثر من 65) - Number of male elderly over 65");
 
+                    b.Property<int>("MinorCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of minors/adolescents (13-17 years)");
+
+                    b.Property<decimal?>("MonthlyIncomeEstimate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasComment("Estimated monthly income");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
@@ -1901,11 +1954,27 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasComment("نوع الإشغال - Occupancy type enum stored as integer");
 
+                    b.Property<string>("OriginLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Origin location if displaced");
+
+                    b.Property<int>("OrphanCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of orphans");
+
                     b.Property<int>("PersonsWithDisabilitiesCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0)
                         .HasComment("Total persons with disabilities - legacy total");
+
+                    b.Property<string>("PrimaryIncomeSource")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Primary income source");
 
                     b.Property<Guid>("PropertyUnitId")
                         .HasColumnType("uuid")
@@ -1917,6 +1986,29 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("bytea")
                         .HasComment("Concurrency token");
 
+                    b.Property<int>("SingleParentCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of single parents");
+
+                    b.Property<string>("SpecialNeeds")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasComment("Special needs or circumstances");
+
+                    b.Property<int>("UnemployedPersonsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of unemployed persons");
+
+                    b.Property<int>("WidowCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasComment("Number of widows");
+
                     b.HasKey("Id");
 
                     b.HasIndex("HeadOfHouseholdPersonId")
@@ -1927,6 +2019,9 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.HasIndex("PropertyUnitId")
                         .HasDatabaseName("IX_Household_PropertyUnitId");
+
+                    b.HasIndex("IsDisplaced", "IsDeleted")
+                        .HasDatabaseName("IX_Household_IsDisplaced_IsDeleted");
 
                     b.ToTable("Households", (string)null);
                 });
@@ -2453,9 +2548,20 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasComment("الاسم الأول - First name in Arabic");
 
+                    b.Property<string>("FullNameEnglish")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasComment("Full name in English (optional)");
+
                     b.Property<int?>("Gender")
                         .HasColumnType("integer")
                         .HasComment("الجنس - Gender enum stored as integer");
+
+                    b.Property<bool>("HasIdentificationDocument")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("Flag indicating if ID document was uploaded");
 
                     b.Property<Guid?>("HouseholdId")
                         .HasColumnType("uuid")
@@ -3395,6 +3501,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("AdultCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<int>("ChildCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -3403,7 +3514,16 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<Guid?>("CommittedEntityId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("DisplacementReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<int>("ElderlyCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("EmployedPersonsCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
@@ -3439,7 +3559,22 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<Guid>("ImportPackageId")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("InfantCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<bool>("IsApprovedForCommit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsDisplaced")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsFemaleHeaded")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
@@ -3464,9 +3599,22 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<int>("MinorCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<decimal?>("MonthlyIncomeEstimate")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OriginLocation")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<Guid>("OriginalEntityId")
                         .HasColumnType("uuid");
@@ -3479,18 +3627,41 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasComment("Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits");
 
+                    b.Property<int>("OrphanCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<int>("PersonsWithDisabilitiesCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
+
+                    b.Property<string>("PrimaryIncomeSource")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
+                    b.Property<int>("SingleParentCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("SpecialNeeds")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<DateTime>("StagedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UnemployedPersonsCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<string>("ValidationErrors")
                         .HasMaxLength(8000)
@@ -3506,6 +3677,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(8000)
                         .HasColumnType("character varying(8000)")
                         .HasComment("JSON array of non-blocking validation warning messages");
+
+                    b.Property<int>("WidowCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.HasKey("Id");
 
@@ -3534,10 +3710,6 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<Guid?>("CommittedEntityId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("timestamp with time zone")
-                        .HasComment("Date of birth — used in duplicate detection composite with name+gender");
-
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -3557,9 +3729,13 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int?>("Gender")
-                        .HasColumnType("integer")
-                        .HasComment("الجنس - Gender enum stored as integer");
+                    b.Property<string>("FullNameEnglish")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<Guid>("ImportPackageId")
                         .HasColumnType("uuid");
@@ -3587,9 +3763,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(50)")
                         .HasComment("Primary key for duplicate detection (FR-D-5, §12.2.4)");
 
-                    b.Property<int?>("Nationality")
-                        .HasColumnType("integer")
-                        .HasComment("الجنسية - Nationality enum stored as integer");
+                    b.Property<string>("Nationality")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<Guid>("OriginalEntityId")
                         .HasColumnType("uuid");
@@ -3602,9 +3778,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int?>("RelationshipToHead")
-                        .HasColumnType("integer")
-                        .HasComment("صلة القرابة برب الأسرة - Relationship to head of household enum stored as integer");
+                    b.Property<string>("RelationshipToHead")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -3628,6 +3804,10 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(8000)
                         .HasColumnType("character varying(8000)")
                         .HasComment("JSON array of non-blocking validation warning messages");
+
+                    b.Property<int?>("YearOfBirth")
+                        .HasColumnType("integer")
+                        .HasComment("Year of birth — used in duplicate detection composite with name+gender");
 
                     b.HasKey("Id");
 

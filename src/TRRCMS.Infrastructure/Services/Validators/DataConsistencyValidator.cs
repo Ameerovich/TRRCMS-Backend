@@ -201,8 +201,8 @@ public class DataConsistencyValidator : IStagingValidator
         if (!string.IsNullOrWhiteSpace(p.NationalId) && p.NationalId.Length > 20)
             warnings.Add($"NationalId length ({p.NationalId.Length}) exceeds expected maximum");
 
-        if (p.YearOfBirth.HasValue && (p.YearOfBirth < 1900 || p.YearOfBirth > DateTime.UtcNow.Year))
-            warnings.Add($"YearOfBirth {p.YearOfBirth} seems invalid");
+        if (p.DateOfBirth.HasValue && (p.DateOfBirth.Value.Year < 1900 || p.DateOfBirth.Value > DateTime.UtcNow))
+            warnings.Add($"DateOfBirth {p.DateOfBirth:yyyy-MM-dd} seems invalid");
 
         return (errors, warnings);
     }

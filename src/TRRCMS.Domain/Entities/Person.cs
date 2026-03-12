@@ -59,12 +59,7 @@ public class Person : BaseAuditableEntity
     /// </summary>
     public string? PhoneNumber { get; private set; }
 
-    // ==================== LEGACY FIELDS (for future expansion) ====================
-
-    /// <summary>
-    /// Full name in English (optional)
-    /// </summary>
-    public string? FullNameEnglish { get; private set; }
+    // ==================== DEMOGRAPHICS ====================
 
     /// <summary>
     /// Gender (الجنس)
@@ -92,13 +87,6 @@ public class Person : BaseAuditableEntity
     /// Relationship to head of household (علاقة برب الأسرة)
     /// </summary>
     public RelationshipToHead? RelationshipToHead { get; private set; }
-
-    // ==================== IDENTIFICATION DOCUMENTS ====================
-
-    /// <summary>
-    /// Flag indicating if personal identification document was uploaded
-    /// </summary>
-    public bool HasIdentificationDocument { get; private set; }
 
     // ==================== NAVIGATION PROPERTIES ====================
 
@@ -147,8 +135,7 @@ public class Person : BaseAuditableEntity
             FirstNameArabic = firstNameArabic,
             FatherNameArabic = fatherNameArabic,
             MotherNameArabic = motherNameArabic,
-            IsContactPerson = false,
-            HasIdentificationDocument = false
+            IsContactPerson = false
         };
 
         person.MarkAsCreated(createdByUserId);
@@ -186,8 +173,7 @@ public class Person : BaseAuditableEntity
             Email = email,
             MobileNumber = mobileNumber,
             PhoneNumber = phoneNumber,
-            IsContactPerson = false,
-            HasIdentificationDocument = false
+            IsContactPerson = false
         };
 
         person.MarkAsCreated(createdByUserId);
@@ -255,11 +241,11 @@ public class Person : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Update English name
+    /// Assign to household without specifying relationship
     /// </summary>
-    public void UpdateEnglishName(string fullNameEnglish, Guid modifiedByUserId)
+    public void AssignToHousehold(Guid householdId, Guid modifiedByUserId)
     {
-        FullNameEnglish = fullNameEnglish;
+        HouseholdId = householdId;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -283,15 +269,6 @@ public class Person : BaseAuditableEntity
     {
         HouseholdId = null;
         RelationshipToHead = null;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark that identification document was uploaded
-    /// </summary>
-    public void MarkIdentificationDocumentUploaded(Guid modifiedByUserId)
-    {
-        HasIdentificationDocument = true;
         MarkAsModified(modifiedByUserId);
     }
 

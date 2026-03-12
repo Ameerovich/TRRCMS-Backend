@@ -105,27 +105,12 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasMaxLength(2000)
             .HasComment("ملاحظات - Household notes");
 
-        // ==================== LEGACY FIELDS (kept for expansion) ====================
-
-        builder.Property(h => h.InfantCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of infants (under 2 years)");
+        // ==================== COMPUTED TOTALS ====================
 
         builder.Property(h => h.ChildCount)
             .IsRequired()
             .HasDefaultValue(0)
             .HasComment("Number of children (2-12 years) - legacy total");
-
-        builder.Property(h => h.MinorCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of minors/adolescents (13-17 years)");
-
-        builder.Property(h => h.AdultCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of adults (18-64 years)");
 
         builder.Property(h => h.ElderlyCount)
             .IsRequired()
@@ -136,74 +121,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .IsRequired()
             .HasDefaultValue(0)
             .HasComment("Total persons with disabilities - legacy total");
-
-        builder.Property(h => h.IsFemaleHeaded)
-            .IsRequired()
-            .HasDefaultValue(false)
-            .HasComment("Indicates if household is female-headed");
-
-        builder.Property(h => h.WidowCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of widows");
-
-        builder.Property(h => h.OrphanCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of orphans");
-
-        builder.Property(h => h.SingleParentCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of single parents");
-
-        // ==================== ECONOMIC INDICATORS (LEGACY) ====================
-
-        builder.Property(h => h.EmployedPersonsCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of employed persons");
-
-        builder.Property(h => h.UnemployedPersonsCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of unemployed persons");
-
-        builder.Property(h => h.PrimaryIncomeSource)
-            .IsRequired(false)
-            .HasMaxLength(200)
-            .HasComment("Primary income source");
-
-        builder.Property(h => h.MonthlyIncomeEstimate)
-            .IsRequired(false)
-            .HasPrecision(18, 2)
-            .HasComment("Estimated monthly income");
-
-        // ==================== DISPLACEMENT & ORIGIN (LEGACY) ====================
-
-        builder.Property(h => h.IsDisplaced)
-            .IsRequired()
-            .HasDefaultValue(false)
-            .HasComment("Indicates if household is displaced");
-
-        builder.Property(h => h.OriginLocation)
-            .IsRequired(false)
-            .HasMaxLength(200)
-            .HasComment("Origin location if displaced");
-
-        builder.Property(h => h.ArrivalDate)
-            .IsRequired(false)
-            .HasComment("Date of arrival at current location");
-
-        builder.Property(h => h.DisplacementReason)
-            .IsRequired(false)
-            .HasMaxLength(500)
-            .HasComment("Reason for displacement");
-
-        builder.Property(h => h.SpecialNeeds)
-            .IsRequired(false)
-            .HasMaxLength(1000)
-            .HasComment("Special needs or circumstances");
 
         // ==================== AUDIT FIELDS ====================
 
@@ -253,10 +170,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         // Index for soft delete queries
         builder.HasIndex(h => h.IsDeleted)
             .HasDatabaseName("IX_Household_IsDeleted");
-
-        // Composite index for displacement queries
-        builder.HasIndex(h => new { h.IsDisplaced, h.IsDeleted })
-            .HasDatabaseName("IX_Household_IsDisplaced_IsDeleted");
 
         // ==================== RELATIONSHIPS ====================
 

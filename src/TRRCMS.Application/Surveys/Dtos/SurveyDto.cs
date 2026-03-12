@@ -18,7 +18,6 @@ public class SurveyDto
 
     public Guid BuildingId { get; set; }
     public string? BuildingNumber { get; set; }
-    public string? BuildingAddress { get; set; }
 
     public Guid? PropertyUnitId { get; set; }
     public string? UnitIdentifier { get; set; }

@@ -83,15 +83,7 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         builder.Property(b => b.Status)
             .IsRequired();
 
-        builder.Property(b => b.DamageLevel);
-
         // ==================== OPTIONAL FIELDS ====================
-        builder.Property(b => b.Address)
-            .HasMaxLength(500);
-
-        builder.Property(b => b.Landmark)
-            .HasMaxLength(500);
-
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);
 

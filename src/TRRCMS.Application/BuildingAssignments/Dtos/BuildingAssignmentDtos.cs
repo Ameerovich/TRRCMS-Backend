@@ -12,7 +12,6 @@ public class BuildingAssignmentDto
     // Building Info
     public Guid BuildingId { get; set; }
     public string BuildingCode { get; set; } = string.Empty;
-    public string? BuildingAddress { get; set; }
     public string? GovernorateCode { get; set; }
     public string? DistrictCode { get; set; }
     public string? SubDistrictCode { get; set; }
@@ -86,7 +85,6 @@ public class BuildingAssignmentSummaryDto
     public Guid Id { get; set; }
     public Guid BuildingId { get; set; }
     public string BuildingCode { get; set; } = string.Empty;
-    public string? BuildingAddress { get; set; }
 
     // Building Spatial Data (for map rendering)
     /// <summary>
@@ -136,7 +134,6 @@ public class BuildingForAssignmentDto
 {
     public Guid Id { get; set; }
     public string BuildingCode { get; set; } = string.Empty;
-    public string? Address { get; set; }
 
     // Administrative hierarchy
     public string GovernorateCode { get; set; } = string.Empty;

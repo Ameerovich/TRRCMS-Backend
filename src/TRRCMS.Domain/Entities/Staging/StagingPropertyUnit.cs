@@ -1,7 +1,8 @@
-using TRRCMS.Domain.Common;
+﻿using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities.Staging;
+
 
 /// <summary>
 /// Staging entity for PropertyUnit records from .uhc packages.
@@ -43,41 +44,15 @@ public class StagingPropertyUnit : BaseStagingEntity
     /// <summary>Number of rooms (عدد الغرف) — from command, optional.</summary>
     public int? NumberOfRooms { get; private set; }
 
-    /// <summary>Occupancy status description.</summary>
-    public string? OccupancyStatus { get; private set; }
-
-    /// <summary>Damage level assessment.</summary>
-    public DamageLevel? DamageLevel { get; private set; }
 
     /// <summary>Measured area in square meters.</summary>
     public decimal? AreaSquareMeters { get; private set; }
-
-    /// <summary>Estimated area in square meters (when measurement not possible).</summary>
-    public decimal? EstimatedAreaSqm { get; private set; }
-
-    /// <summary>Position of unit on its floor (e.g. "Left", "Right", "Center").</summary>
-    public string? PositionOnFloor { get; private set; }
-
-    // ==================== OCCUPANCY ====================
-
-    /// <summary>Type of occupancy arrangement.</summary>
-    public OccupancyType? OccupancyType { get; private set; }
-
-    /// <summary>Nature/basis of the occupancy.</summary>
-    public OccupancyNature? OccupancyNature { get; private set; }
-
-    // ==================== UTILITIES ====================
-
-    /// <summary>Notes about available utilities (electricity, water, etc.).</summary>
-    public string? UtilitiesNotes { get; private set; }
 
     // ==================== DESCRIPTION ====================
 
     /// <summary>General description of the property unit.</summary>
     public string? Description { get; private set; }
 
-    /// <summary>Special features or notable characteristics.</summary>
-    public string? SpecialFeatures { get; private set; }
 
     // ==================== CONSTRUCTORS ====================
 
@@ -103,16 +78,7 @@ public class StagingPropertyUnit : BaseStagingEntity
         int? floorNumber = null,
         int? numberOfRooms = null,
         decimal? areaSquareMeters = null,
-        string? description = null,
-        // --- optional: future expansion ---
-        string? occupancyStatus = null,
-        DamageLevel? damageLevel = null,
-        decimal? estimatedAreaSqm = null,
-        string? positionOnFloor = null,
-        OccupancyType? occupancyType = null,
-        OccupancyNature? occupancyNature = null,
-        string? utilitiesNotes = null,
-        string? specialFeatures = null)
+        string? description = null)
     {
         var entity = new StagingPropertyUnit
         {
@@ -123,15 +89,7 @@ public class StagingPropertyUnit : BaseStagingEntity
             FloorNumber = floorNumber,
             NumberOfRooms = numberOfRooms,
             AreaSquareMeters = areaSquareMeters,
-            Description = description,
-            OccupancyStatus = occupancyStatus,
-            DamageLevel = damageLevel,
-            EstimatedAreaSqm = estimatedAreaSqm,
-            PositionOnFloor = positionOnFloor,
-            OccupancyType = occupancyType,
-            OccupancyNature = occupancyNature,
-            UtilitiesNotes = utilitiesNotes,
-            SpecialFeatures = specialFeatures
+            Description = description
         };
 
         entity.InitializeStagingMetadata(importPackageId, originalEntityId);

@@ -159,10 +159,7 @@ public class StagingService : IStagingService
                 districtName: GetNullableString(reader, "district_name"),
                 subDistrictName: GetNullableString(reader, "sub_district_name"),
                 communityName: GetNullableString(reader, "community_name"),
-                neighborhoodName: GetNullableString(reader, "neighborhood_name"),
-                damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level", "damage_level"),
-                numberOfFloors: GetNullableInt(reader, "number_of_floors"),
-                yearOfConstruction: GetNullableInt(reader, "year_of_construction"));
+                neighborhoodName: GetNullableString(reader, "neighborhood_name"));
 
             entities.Add(entity);
         }
@@ -255,12 +252,7 @@ public class StagingService : IStagingService
                 floorNumber: GetNullableInt(reader, "floor_number"),
                 numberOfRooms: GetNullableInt(reader, "number_of_rooms"),
                 areaSquareMeters: GetNullableDecimal(reader, "area_square_meters"),
-                description: GetNullableString(reader, "description"),
-                occupancyStatus: GetNullableString(reader, "occupancy_status"),
-                damageLevel: GetNullableEnum<DamageLevel>(reader, "damage_level", "damage_level"),
-                estimatedAreaSqm: GetNullableDecimal(reader, "estimated_area_sqm"),
-                occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
-                occupancyNature: GetNullableEnum<OccupancyNature>(reader, "occupancy_nature", "occupancy_nature"));
+                description: GetNullableString(reader, "description"));
 
             entities.Add(entity);
         }
@@ -287,6 +279,12 @@ public class StagingService : IStagingService
 
         while (await reader.ReadAsync(ct))
         {
+            // Convert year_of_birth (int) to DateTime for staging alignment with production
+            int? yearOfBirth = GetNullableInt(reader, "year_of_birth");
+            DateTime? dateOfBirth = yearOfBirth.HasValue
+                ? new DateTime(yearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                : null;
+
             var entity = StagingPerson.Create(
                 importPackageId: packageId,
                 originalEntityId: GetGuid(reader, "id"),
@@ -295,15 +293,14 @@ public class StagingService : IStagingService
                 fatherNameArabic: GetString(reader, "father_name_arabic"),
                 motherNameArabic: GetNullableString(reader, "mother_name_arabic"),
                 nationalId: GetNullableString(reader, "national_id"),
-                yearOfBirth: GetNullableInt(reader, "year_of_birth"),
+                dateOfBirth: dateOfBirth,
                 email: GetNullableString(reader, "email"),
                 mobileNumber: GetNullableString(reader, "mobile_number"),
                 phoneNumber: GetNullableString(reader, "phone_number"),
-                fullNameEnglish: GetNullableString(reader, "full_name_english"),
-                gender: GetNullableString(reader, "gender"),
-                nationality: GetNullableString(reader, "nationality"),
+                gender: GetNullableEnum<Gender>(reader, "gender", "gender"),
+                nationality: GetNullableEnum<Nationality>(reader, "nationality", "nationality"),
                 originalHouseholdId: GetNullableGuid(reader, "household_id"),
-                relationshipToHead: GetNullableString(reader, "relationship_to_head"),
+                relationshipToHead: GetNullableEnum<RelationshipToHead>(reader, "relationship_to_head", "relationship_to_head"),
                 isContactPerson: GetBool(reader, "is_contact_person", false));
 
             entities.Add(entity);
@@ -346,8 +343,6 @@ public class StagingService : IStagingService
                 femaleElderlyCount: GetInt(reader, "female_elderly_count", 0),
                 maleDisabledCount: GetInt(reader, "male_disabled_count", 0),
                 femaleDisabledCount: GetInt(reader, "female_disabled_count", 0),
-                isFemaleHeaded: GetBool(reader, "is_female_headed", false),
-                isDisplaced: GetBool(reader, "is_displaced", false),
                 notes: GetNullableString(reader, "notes"));
 
             entities.Add(entity);

@@ -108,11 +108,6 @@ public class BuildingDto
     public int Status { get; set; }
 
     /// <summary>
-    /// Damage level (مستوى الضرر)
-    /// </summary>
-    public int? DamageLevel { get; set; }
-
-    /// <summary>
     /// Number of property units (عدد الوحدات)
     /// </summary>
     public int NumberOfPropertyUnits { get; set; }
@@ -126,16 +121,6 @@ public class BuildingDto
     /// Number of shops (عدد المحلات)
     /// </summary>
     public int NumberOfShops { get; set; }
-
-    /// <summary>
-    /// Number of floors
-    /// </summary>
-    public int? NumberOfFloors { get; set; }
-
-    /// <summary>
-    /// Year of construction
-    /// </summary>
-    public int? YearOfConstruction { get; set; }
 
     // ==================== SPATIAL DATA ====================
 
@@ -163,16 +148,6 @@ public class BuildingDto
     public List<Guid> BuildingDocumentIds { get; set; } = new();
 
     // ==================== ADDITIONAL INFORMATION ====================
-
-    /// <summary>
-    /// Building address
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// Landmark near the building
-    /// </summary>
-    public string? Landmark { get; set; }
 
     /// <summary>
     /// General notes (الوصف العام)

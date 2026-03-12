@@ -44,12 +44,7 @@ public record GetBuildingsForAssignmentQuery : IRequest<BuildingsForAssignmentPa
     /// Search by building code (partial match)
     /// </summary>
     public string? BuildingCode { get; init; }
-    
-    /// <summary>
-    /// Search by address (partial match)
-    /// </summary>
-    public string? Address { get; init; }
-    
+
     /// <summary>
     /// Filter by building type
     /// </summary>

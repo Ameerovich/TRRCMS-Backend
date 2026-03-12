@@ -64,11 +64,7 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasMaxLength(20)
             .HasComment("رقم الهاتف - Landline phone number");
 
-        // ==================== LEGACY FIELDS (for future expansion) ====================
-
-        builder.Property(p => p.FullNameEnglish)
-            .HasMaxLength(300)
-            .HasComment("Full name in English (optional)");
+        // ==================== DEMOGRAPHICS ====================
 
         builder.Property(p => p.Gender)
             .IsRequired(false)
@@ -91,13 +87,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.RelationshipToHead)
             .IsRequired(false)
             .HasComment("صلة القرابة برب الأسرة - Relationship to head of household enum stored as integer");
-
-        // ==================== IDENTIFICATION DOCUMENT ====================
-
-        builder.Property(p => p.HasIdentificationDocument)
-            .IsRequired()
-            .HasDefaultValue(false)
-            .HasComment("Flag indicating if ID document was uploaded");
 
         // ==================== AUDIT FIELDS ====================
 

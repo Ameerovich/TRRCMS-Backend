@@ -59,13 +59,13 @@ public class UpdatePropertyUnitCommandHandler : IRequestHandler<UpdatePropertyUn
         // Update floor number if provided
         if (request.FloorNumber.HasValue)
         {
-            propertyUnit.UpdateLocation(request.FloorNumber, null, userId);
+            propertyUnit.UpdateLocation(request.FloorNumber, userId);
         }
 
         // Update status if provided
         if (request.Status.HasValue)
         {
-            propertyUnit.UpdateStatus((PropertyUnitStatus)request.Status.Value, null, userId);
+            propertyUnit.UpdateStatus((PropertyUnitStatus)request.Status.Value, userId);
         }
 
         // Update physical details if provided
@@ -73,10 +73,7 @@ public class UpdatePropertyUnitCommandHandler : IRequestHandler<UpdatePropertyUn
         {
             propertyUnit.UpdatePhysicalDetails(
                 numberOfRooms: request.NumberOfRooms ?? propertyUnit.NumberOfRooms,
-                numberOfBathrooms: null,
-                hasBalcony: null,
                 areaSquareMeters: request.AreaSquareMeters ?? propertyUnit.AreaSquareMeters,
-                specialFeatures: null,
                 modifiedByUserId: userId
             );
         }

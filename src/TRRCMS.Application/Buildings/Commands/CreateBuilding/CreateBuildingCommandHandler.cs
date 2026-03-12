@@ -89,10 +89,6 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
         if (!string.IsNullOrWhiteSpace(request.Notes))
         {
             building.UpdateDetails(
-                numberOfFloors: null,
-                yearOfConstruction: null,
-                address: null,
-                landmark: null,
                 notes: request.Notes,
                 modifiedByUserId: userId
             );
@@ -131,21 +127,15 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             // Attributes
             BuildingType = (int)building.BuildingType,
             Status = (int)building.Status,
-            DamageLevel = building.DamageLevel.HasValue ? (int?)building.DamageLevel : null,
             NumberOfPropertyUnits = building.NumberOfPropertyUnits,
             NumberOfApartments = building.NumberOfApartments,
             NumberOfShops = building.NumberOfShops,
-            NumberOfFloors = building.NumberOfFloors,
-            YearOfConstruction = building.YearOfConstruction,
-
             // Location
             Latitude = building.Latitude,
             Longitude = building.Longitude,
             BuildingGeometryWkt = building.BuildingGeometryWkt,
 
             // Additional Information
-            Address = building.Address,
-            Landmark = building.Landmark,
             Notes = building.Notes,
 
             // Audit
