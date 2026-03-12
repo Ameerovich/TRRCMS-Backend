@@ -25,16 +25,6 @@ public sealed class ClaimStatisticsDto
     /// Count per CaseStatus enum name (e.g. "Open": 5, "Closed": 12).
     /// </summary>
     public Dictionary<string, int> ByStatus { get; set; } = new();
-
-    /// <summary>
-    /// Count per LifecycleStage enum name (e.g. "Submitted": 3, "UnderReview": 7).
-    /// </summary>
-    public Dictionary<string, int> ByLifecycleStage { get; set; } = new();
-
-    public int OverdueCount { get; set; }
-    public int WithConflictsCount { get; set; }
-    public int AwaitingDocumentsCount { get; set; }
-    public int PendingVerificationCount { get; set; }
 }
 
 /// <summary>

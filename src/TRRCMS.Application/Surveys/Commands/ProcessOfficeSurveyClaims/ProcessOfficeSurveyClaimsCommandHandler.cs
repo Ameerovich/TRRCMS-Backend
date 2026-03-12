@@ -138,10 +138,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                     // Check if this specific relation has tenure evidence attached
                     var relationHasEvidence = relation.EvidenceRelations != null && relation.EvidenceRelations.Any(er => er.IsActive && !er.IsDeleted);
 
-                    var lifecycleStage = relationHasEvidence
-                        ? LifecycleStage.DraftPendingSubmission
-                        : LifecycleStage.AwaitingDocuments;
-
                     // Determine claim type based on relation type
                     var isOwnershipRelation = relation.RelationType == RelationType.Owner
                                            || relation.RelationType == RelationType.Heir;
@@ -155,8 +151,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         claimSource: ClaimSource.OfficeSubmission,
                         createdByUserId: currentUserId,
                         originatingSurveyId: survey.Id);
-
-                    claim.MoveToStage(lifecycleStage, currentUserId);
 
                     // CaseStatus: Owner/Heir → Closed, all others → Open (default)
                     if (isOwnershipRelation)
@@ -178,7 +172,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         PropertyUnitIdNumber = propertyUnit?.UnitIdentifier ?? string.Empty,
                         FullNameArabic = person.GetFullNameArabic(),
                         ClaimSource = (int)ClaimSource.OfficeSubmission,
-                        CasePriority = (int)CasePriority.Normal,
                         CaseStatus = (int)claim.CaseStatus,
                         SurveyDate = survey.CreatedAtUtc,
                         TypeOfWorks = typeOfWorks,
@@ -205,7 +198,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                             PrimaryClaimantName = person.GetFullNameArabic(),
                             claim.ClaimType,
                             claim.ClaimSource,
-                            claim.LifecycleStage,
                             CaseStatus = claim.CaseStatus.ToString(),
                             RelationId = relation.Id,
                             RelationType = relation.RelationType.ToString(),

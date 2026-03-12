@@ -148,33 +148,13 @@ public class MappingProfile : Profile
         CreateMap<Claim, TRRCMS.Application.Claims.Dtos.ClaimDto>()
             .ForMember(dest => dest.ClaimType, opt => opt.MapFrom(src => (int)src.ClaimType))
             .ForMember(dest => dest.ClaimSource, opt => opt.MapFrom(src => (int)src.ClaimSource))
-            .ForMember(dest => dest.Priority, opt => opt.MapFrom(src => (int)src.Priority))
-            .ForMember(dest => dest.LifecycleStage, opt => opt.MapFrom(src => (int)src.LifecycleStage))
             .ForMember(dest => dest.CaseStatus, opt => opt.MapFrom(src => (int)src.CaseStatus))
             .ForMember(dest => dest.TenureContractType, opt => opt.MapFrom(src => src.TenureContractType.HasValue ? (int?)src.TenureContractType : null))
-            .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => (int)src.VerificationStatus))
-            .ForMember(dest => dest.IsOverdue, opt => opt.MapFrom(src => src.IsOverdue()))
-            .ForMember(dest => dest.DaysUntilDeadline, opt => opt.MapFrom(src =>
-                src.TargetCompletionDate.HasValue
-                    ? (int?)(src.TargetCompletionDate.Value - DateTime.UtcNow).Days
-                    : null))
-            .ForMember(dest => dest.DaysSinceSubmission, opt => opt.MapFrom(src =>
-                src.SubmittedDate.HasValue
-                    ? (int?)(DateTime.UtcNow - src.SubmittedDate.Value).Days
-                    : null))
-            .ForMember(dest => dest.HasEvidence, opt => opt.MapFrom(src => src.EvidenceCount > 0))
-            .ForMember(dest => dest.IsPendingVerification, opt => opt.MapFrom(src =>
-                src.VerificationStatus == Domain.Enums.VerificationStatus.Pending))
-            .ForMember(dest => dest.RequiresAction, opt => opt.MapFrom(src =>
-                (src.HasConflicts && src.LifecycleStage != Domain.Enums.LifecycleStage.InAdjudication)
-                || (!src.AllRequiredDocumentsSubmitted && src.LifecycleStage != Domain.Enums.LifecycleStage.AwaitingDocuments)
-                || (src.VerificationStatus == Domain.Enums.VerificationStatus.Pending && src.LifecycleStage == Domain.Enums.LifecycleStage.UnderReview)
-                || (src.IsOverdue() && !src.DecisionDate.HasValue)))
+            .ForMember(dest => dest.HasEvidence, opt => opt.MapFrom(src => src.Evidences != null && src.Evidences.Any()))
             .ForMember(dest => dest.PropertyUnitCode, opt => opt.MapFrom(src =>
                 src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
             .ForMember(dest => dest.PrimaryClaimantName, opt => opt.MapFrom(src =>
-                src.PrimaryClaimant != null ? $"{src.PrimaryClaimant.FirstNameArabic} {src.PrimaryClaimant.FatherNameArabic} {src.PrimaryClaimant.FamilyNameArabic}" : null))
-            .ForMember(dest => dest.AssignedToUserName, opt => opt.Ignore()); // Will be populated from user service later
+                src.PrimaryClaimant != null ? $"{src.PrimaryClaimant.FirstNameArabic} {src.PrimaryClaimant.FatherNameArabic} {src.PrimaryClaimant.FamilyNameArabic}" : null));
 
         // User mappings - Base DTO
         CreateMap<User, UserDto>()

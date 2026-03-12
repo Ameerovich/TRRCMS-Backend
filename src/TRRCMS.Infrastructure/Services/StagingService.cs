@@ -411,15 +411,9 @@ public class StagingService : IStagingService
                 claimType: GetString(reader, "claim_type"),
                 claimSource: GetEnum<ClaimSource>(reader, "claim_source", "claim_source"),
                 originalPrimaryClaimantId: GetNullableGuid(reader, "primary_claimant_id"),
-                priority: GetEnum(reader, "priority", "case_priority", CasePriority.Normal),
                 tenureContractType: GetNullableEnum<TenureContractType>(reader, "tenure_contract_type", "tenure_contract_type"),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
-                tenureStartDate: GetNullableDateTime(reader, "tenure_start_date"),
-                tenureEndDate: GetNullableDateTime(reader, "tenure_end_date"),
-                claimDescription: GetNullableString(reader, "claim_description"),
-                legalBasis: GetNullableString(reader, "legal_basis"),
-                supportingNarrative: GetNullableString(reader, "supporting_narrative"),
-                processingNotes: GetNullableString(reader, "processing_notes"));
+                claimDescription: GetNullableString(reader, "claim_description"));
 
             entities.Add(entity);
         }

@@ -39,9 +39,6 @@ public sealed class RegistrationCoverageDashboardDto
     /// </summary>
     public Dictionary<string, int> ClaimsByType { get; set; } = new();
 
-    public int ClaimsWithAllDocuments { get; set; }
-    public int ClaimsMissingDocuments { get; set; }
-
     // ==================== EVIDENCE ====================
 
     public int TotalEvidenceItems { get; set; }

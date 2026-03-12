@@ -42,13 +42,6 @@ public class CreatedClaimSummaryDto
     public int ClaimSource { get; set; } = 2;
 
     /// <summary>
-    /// Case priority level.
-    /// Default: Normal (2).
-    /// Maps to UI: الأولوية
-    /// </summary>
-    public int CasePriority { get; set; } = 2;
-
-    /// <summary>
     /// Case status.
     /// Default: Open (1).
     /// Maps to UI: حالة الحالة

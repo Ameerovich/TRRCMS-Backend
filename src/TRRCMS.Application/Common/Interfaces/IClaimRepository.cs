@@ -53,7 +53,7 @@ public interface IClaimRepository
     /// <summary>
     /// Get all claims for a property unit (used by PropertyUnit merge to re-point all claims).
     /// Unlike <see cref="GetByPropertyUnitIdAsync"/> which returns a single match,
-    /// this returns all claims � a property unit may have multiple claims.
+    /// this returns all claims — a property unit may have multiple claims.
     /// </summary>
     Task<List<Claim>> GetAllByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
 
@@ -62,75 +62,12 @@ public interface IClaimRepository
     /// </summary>
     Task<IEnumerable<Claim>> GetByPrimaryClaimantIdAsync(Guid personId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get all claims assigned to a specific user
-    /// </summary>
-    Task<IEnumerable<Claim>> GetByAssignedUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
-
     // ==================== QUERY BY WORKFLOW STATES ====================
-
-    /// <summary>
-    /// Get all claims by lifecycle stage
-    /// </summary>
-    Task<IEnumerable<Claim>> GetByLifecycleStageAsync(LifecycleStage stage, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get all claims by case status
     /// </summary>
     Task<IEnumerable<Claim>> GetByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all claims by priority
-    /// </summary>
-    Task<IEnumerable<Claim>> GetByPriorityAsync(CasePriority priority, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all claims by verification status
-    /// </summary>
-    Task<IEnumerable<Claim>> GetByVerificationStatusAsync(VerificationStatus status, CancellationToken cancellationToken = default);
-
-    // ==================== SPECIALIZED QUERIES ====================
-
-    /// <summary>
-    /// Get all claims with conflicts
-    /// </summary>
-    Task<IEnumerable<Claim>> GetConflictingClaimsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all overdue claims (past target completion date)
-    /// </summary>
-    Task<IEnumerable<Claim>> GetOverdueClaimsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all claims awaiting documents
-    /// </summary>
-    Task<IEnumerable<Claim>> GetClaimsAwaitingDocumentsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all claims pending verification
-    /// </summary>
-    Task<IEnumerable<Claim>> GetClaimsPendingVerificationAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all claims for adjudication (conflicts detected or in adjudication stage)
-    /// </summary>
-    Task<IEnumerable<Claim>> GetClaimsForAdjudicationAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all claims submitted within date range
-    /// </summary>
-    Task<IEnumerable<Claim>> GetClaimsBySubmittedDateRangeAsync(
-        DateTime startDate,
-        DateTime endDate,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get all claims with decisions within date range
-    /// </summary>
-    Task<IEnumerable<Claim>> GetClaimsByDecisionDateRangeAsync(
-        DateTime startDate,
-        DateTime endDate,
-        CancellationToken cancellationToken = default);
 
     // ==================== FILTERED QUERY ====================
 
@@ -166,32 +103,12 @@ public interface IClaimRepository
     /// </summary>
     Task<bool> HasClaimsAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Check if property unit has conflicting claims
-    /// </summary>
-    Task<bool> HasConflictingClaimsAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
-
     // ==================== AGGREGATE QUERIES ====================
-
-    /// <summary>
-    /// Get conflict count for a property unit
-    /// </summary>
-    Task<int> GetConflictCountAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get count of claims by lifecycle stage
-    /// </summary>
-    Task<int> GetCountByLifecycleStageAsync(LifecycleStage stage, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get count of claims by case status
     /// </summary>
     Task<int> GetCountByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get count of claims assigned to user
-    /// </summary>
-    Task<int> GetCountByAssignedUserAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get total claims count
@@ -206,28 +123,12 @@ public interface IClaimRepository
     /// </summary>
     Task<Dictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Get count of claims grouped by lifecycle stage.
-    /// Used for dashboard summary tiles.
-    /// </summary>
-    Task<Dictionary<LifecycleStage, int>> GetLifecycleStageCountsAsync(CancellationToken cancellationToken = default);
-
     // ==================== DASHBOARD EXTENDED QUERIES ====================
 
     /// <summary>
     /// Get count of claims grouped by claim type (OwnershipClaim/OccupancyClaim).
     /// </summary>
     Task<Dictionary<ClaimType, int>> GetClaimTypeCountsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get count of claims where AllRequiredDocumentsSubmitted is true.
-    /// </summary>
-    Task<int> GetCountWithAllDocumentsAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Get count of claims where AllRequiredDocumentsSubmitted is false.
-    /// </summary>
-    Task<int> GetCountMissingDocumentsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get monthly creation counts for time-series trends.

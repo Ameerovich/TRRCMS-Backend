@@ -45,16 +45,6 @@ public interface IAuditService
         Guid? entityId = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Log claim state transition (for UC-006: Claim History Timeline)
-    /// </summary>
-    Task LogClaimTransitionAsync(
-        Guid claimId,
-        string claimNumber,
-        LifecycleStage fromStage,
-        LifecycleStage toStage,
-        string? transitionReason = null,
-        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Log security-sensitive action (login, permission changes, etc.)

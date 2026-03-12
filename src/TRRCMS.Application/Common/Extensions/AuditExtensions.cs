@@ -25,8 +25,7 @@ public static class AuditExtensions
             claim.PrimaryClaimantId,
             claim.ClaimType,
             claim.ClaimSource,
-            claim.Priority,
-            claim.LifecycleStage
+            claim.CaseStatus
         });
 
         await auditService.LogActionAsync(
@@ -87,100 +86,7 @@ public static class AuditExtensions
             entityIdentifier: claimNumber,
             oldValues: null,
             newValues: JsonSerializer.Serialize(new { SubmittedDate = DateTime.UtcNow }),
-            changedFields: "SubmittedDate,LifecycleStage",
-            cancellationToken: cancellationToken
-        );
-    }
-
-    /// <summary>
-    /// Log claim assignment
-    /// </summary>
-    public static async Task LogClaimAssignedAsync(
-        this IAuditService auditService,
-        Guid claimId,
-        string claimNumber,
-        Guid assignedToUserId,
-        string assignedToUserName,
-        CancellationToken cancellationToken = default)
-    {
-        await auditService.LogActionAsync(
-            actionType: AuditActionType.Assign,
-            actionDescription: $"Assigned claim {claimNumber} to {assignedToUserName}",
-            entityType: "Claim",
-            entityId: claimId,
-            entityIdentifier: claimNumber,
-            oldValues: null,
-            newValues: JsonSerializer.Serialize(new { AssignedToUserId = assignedToUserId, AssignedDate = DateTime.UtcNow }),
-            changedFields: "AssignedToUserId,AssignedDate",
-            cancellationToken: cancellationToken
-        );
-    }
-
-    /// <summary>
-    /// Log claim verification
-    /// </summary>
-    public static async Task LogClaimVerifiedAsync(
-        this IAuditService auditService,
-        Guid claimId,
-        string claimNumber,
-        string verificationNotes,
-        CancellationToken cancellationToken = default)
-    {
-        await auditService.LogActionAsync(
-            actionType: AuditActionType.Verify,
-            actionDescription: $"Verified claim {claimNumber}",
-            entityType: "Claim",
-            entityId: claimId,
-            entityIdentifier: claimNumber,
-            oldValues: null,
-            newValues: JsonSerializer.Serialize(new { VerificationDate = DateTime.UtcNow, VerificationNotes = verificationNotes }),
-            changedFields: "VerificationStatus,VerificationDate,VerifiedByUserId,VerificationNotes",
-            cancellationToken: cancellationToken
-        );
-    }
-
-    /// <summary>
-    /// Log claim approval (Administrator only)
-    /// </summary>
-    public static async Task LogClaimApprovedAsync(
-        this IAuditService auditService,
-        Guid claimId,
-        string claimNumber,
-        string? approvalNotes = null,
-        CancellationToken cancellationToken = default)
-    {
-        await auditService.LogActionAsync(
-            actionType: AuditActionType.Approve,
-            actionDescription: $"Approved claim {claimNumber}" + (string.IsNullOrWhiteSpace(approvalNotes) ? "" : $": {approvalNotes}"),
-            entityType: "Claim",
-            entityId: claimId,
-            entityIdentifier: claimNumber,
-            oldValues: null,
-            newValues: JsonSerializer.Serialize(new { DecisionDate = DateTime.UtcNow, FinalDecision = "Approved", DecisionNotes = approvalNotes }),
-            changedFields: "FinalDecision,DecisionDate,DecisionByUserId,DecisionNotes",
-            cancellationToken: cancellationToken
-        );
-    }
-
-    /// <summary>
-    /// Log claim rejection (Administrator only)
-    /// </summary>
-    public static async Task LogClaimRejectedAsync(
-        this IAuditService auditService,
-        Guid claimId,
-        string claimNumber,
-        string rejectionReason,
-        CancellationToken cancellationToken = default)
-    {
-        await auditService.LogActionAsync(
-            actionType: AuditActionType.Reject,
-            actionDescription: $"Rejected claim {claimNumber}: {rejectionReason}",
-            entityType: "Claim",
-            entityId: claimId,
-            entityIdentifier: claimNumber,
-            oldValues: null,
-            newValues: JsonSerializer.Serialize(new { DecisionDate = DateTime.UtcNow, FinalDecision = "Rejected", DecisionReason = rejectionReason }),
-            changedFields: "FinalDecision,DecisionDate,DecisionByUserId,DecisionReason",
+            changedFields: "SubmittedDate,SubmittedByUserId",
             cancellationToken: cancellationToken
         );
     }

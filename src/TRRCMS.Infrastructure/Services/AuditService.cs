@@ -161,36 +161,6 @@ public class AuditService : IAuditService
         }
     }
 
-    /// <inheritdoc/>
-    public async Task LogClaimTransitionAsync(
-        Guid claimId,
-        string claimNumber,
-        LifecycleStage fromStage,
-        LifecycleStage toStage,
-        string? transitionReason = null,
-        CancellationToken cancellationToken = default)
-    {
-        var actionDescription = $"Claim {claimNumber} transitioned from {fromStage} to {toStage}";
-        if (!string.IsNullOrWhiteSpace(transitionReason))
-        {
-            actionDescription += $". Reason: {transitionReason}";
-        }
-
-        var oldValues = JsonSerializer.Serialize(new { LifecycleStage = fromStage.ToString() });
-        var newValues = JsonSerializer.Serialize(new { LifecycleStage = toStage.ToString() });
-
-        await LogActionAsync(
-            actionType: AuditActionType.StateTransition,
-            actionDescription: actionDescription,
-            entityType: "Claim",
-            entityId: claimId,
-            entityIdentifier: claimNumber,
-            oldValues: oldValues,
-            newValues: newValues,
-            changedFields: "LifecycleStage",
-            cancellationToken: cancellationToken
-        );
-    }
 
     /// <inheritdoc/>
     public async Task LogSecurityActionAsync(

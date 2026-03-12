@@ -76,13 +76,6 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.ClaimSource)
             .IsRequired();
 
-        builder.Property(c => c.Priority)
-            .IsRequired()
-            .HasDefaultValue(CasePriority.Normal);
-
-        builder.Property(c => c.LifecycleStage)
-            .HasComment("Optional — auto-set to DraftPendingSubmission during commit");
-
         builder.Property(c => c.CaseStatus)
             .HasComment("Optional — auto-set to Open during commit");
 
@@ -93,55 +86,10 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.OwnershipShare)
             .HasComment("Ownership percentage (0-100)");
 
-        builder.Property(c => c.TenureStartDate)
-            .HasComment("Date from which tenure/occupancy started");
-
-        builder.Property(c => c.TenureEndDate)
-            .HasComment("Date when tenure/occupancy ended");
-
-        builder.Property(c => c.TargetCompletionDate)
-            .HasComment("Target completion date for claim processing");
-
         // ==================== NARRATIVE ====================
 
         builder.Property(c => c.ClaimDescription)
             .HasMaxLength(4000);
-
-        builder.Property(c => c.LegalBasis)
-            .HasMaxLength(2000);
-
-        builder.Property(c => c.SupportingNarrative)
-            .HasMaxLength(4000);
-
-        // ==================== EVIDENCE STATUS ====================
-
-        builder.Property(c => c.EvidenceCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(c => c.AllRequiredDocumentsSubmitted)
-            .IsRequired()
-            .HasDefaultValue(false);
-
-        builder.Property(c => c.MissingDocuments)
-            .HasMaxLength(2000)
-            .HasComment("JSON array of missing required document types");
-
-        // ==================== VERIFICATION ====================
-
-        builder.Property(c => c.VerificationStatus)
-            .HasComment("Optional — auto-set to Pending during commit");
-
-        builder.Property(c => c.VerificationNotes)
-            .HasMaxLength(2000);
-
-        // ==================== NOTES ====================
-
-        builder.Property(c => c.ProcessingNotes)
-            .HasMaxLength(4000);
-
-        builder.Property(c => c.PublicRemarks)
-            .HasMaxLength(2000);
 
         // ==================== CONCURRENCY ====================
 

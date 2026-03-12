@@ -11,24 +11,9 @@ namespace TRRCMS.Application.Claims.Queries.GetAllClaims;
 public class GetAllClaimsQuery : PagedQuery, IRequest<PagedResult<ClaimDto>>
 {
     /// <summary>
-    /// Filter by lifecycle stage (optional)
-    /// </summary>
-    public LifecycleStage? LifecycleStage { get; set; }
-
-    /// <summary>
     /// Filter by case status (optional): Open=1, Closed=2
     /// </summary>
     public CaseStatus? CaseStatus { get; set; }
-
-    /// <summary>
-    /// Filter by priority (optional)
-    /// </summary>
-    public CasePriority? Priority { get; set; }
-
-    /// <summary>
-    /// Filter by assigned user (optional)
-    /// </summary>
-    public Guid? AssignedToUserId { get; set; }
 
     /// <summary>
     /// Filter by primary claimant (optional)
@@ -39,24 +24,4 @@ public class GetAllClaimsQuery : PagedQuery, IRequest<PagedResult<ClaimDto>>
     /// Filter by property unit (optional)
     /// </summary>
     public Guid? PropertyUnitId { get; set; }
-
-    /// <summary>
-    /// Filter by verification status (optional)
-    /// </summary>
-    public VerificationStatus? VerificationStatus { get; set; }
-
-    /// <summary>
-    /// Show only conflicting claims (optional)
-    /// </summary>
-    public bool? HasConflicts { get; set; }
-
-    /// <summary>
-    /// Show only overdue claims (optional)
-    /// </summary>
-    public bool? IsOverdue { get; set; }
-
-    /// <summary>
-    /// Show only claims awaiting documents (optional)
-    /// </summary>
-    public bool? AwaitingDocuments { get; set; }
 }

@@ -28,19 +28,7 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
         IEnumerable<Domain.Entities.Claim> claims;
 
         // Apply filtering based on provided parameters
-        if (request.IsOverdue == true)
-        {
-            claims = await _claimRepository.GetOverdueClaimsAsync(cancellationToken);
-        }
-        else if (request.HasConflicts == true)
-        {
-            claims = await _claimRepository.GetConflictingClaimsAsync(cancellationToken);
-        }
-        else if (request.AwaitingDocuments == true)
-        {
-            claims = await _claimRepository.GetClaimsAwaitingDocumentsAsync(cancellationToken);
-        }
-        else if (request.PropertyUnitId.HasValue)
+        if (request.PropertyUnitId.HasValue)
         {
             var claim = await _claimRepository.GetByPropertyUnitIdAsync(
                 request.PropertyUnitId.Value,
@@ -55,38 +43,10 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
                 cancellationToken
             );
         }
-        else if (request.AssignedToUserId.HasValue)
-        {
-            claims = await _claimRepository.GetByAssignedUserIdAsync(
-                request.AssignedToUserId.Value,
-                cancellationToken
-            );
-        }
-        else if (request.LifecycleStage.HasValue)
-        {
-            claims = await _claimRepository.GetByLifecycleStageAsync(
-                request.LifecycleStage.Value,
-                cancellationToken
-            );
-        }
         else if (request.CaseStatus.HasValue)
         {
             claims = await _claimRepository.GetByCaseStatusAsync(
                 request.CaseStatus.Value,
-                cancellationToken
-            );
-        }
-        else if (request.Priority.HasValue)
-        {
-            claims = await _claimRepository.GetByPriorityAsync(
-                request.Priority.Value,
-                cancellationToken
-            );
-        }
-        else if (request.VerificationStatus.HasValue)
-        {
-            claims = await _claimRepository.GetByVerificationStatusAsync(
-                request.VerificationStatus.Value,
                 cancellationToken
             );
         }

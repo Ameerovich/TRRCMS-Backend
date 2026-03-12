@@ -336,10 +336,6 @@ public class ClaimLifecycleValidator : IStagingValidator
         {
             var warns = new List<string>();
 
-            // Imported claims should map to specific lifecycle stages
-            if (c.LifecycleStage.HasValue && c.LifecycleStage != LifecycleStage.DraftPendingSubmission)
-                warns.Add($"Imported claim has LifecycleStage={c.LifecycleStage}; expected DraftPendingSubmission (will be set to Submitted on commit)");
-
             if (c.CaseStatus.HasValue && c.CaseStatus != CaseStatus.Open)
                 warns.Add($"Imported claim has CaseStatus={c.CaseStatus}; CaseStatus will be determined by RelationType on commit");
 
@@ -441,8 +437,6 @@ public class VocabularyVersionValidator : IStagingValidator
             checked_++;
             var warns = new List<string>();
             if (!_vocabService.IsValidCode("claim_source", (int)c.ClaimSource)) warns.Add($"Unknown ClaimSource value: {(int)c.ClaimSource}");
-            if (!_vocabService.IsValidCode("case_priority", (int)c.Priority)) warns.Add($"Unknown CasePriority value: {(int)c.Priority}");
-
             if (warns.Count > 0) { AppendWarnings(c, warns); warnings += warns.Count; modClaims.Add(c); }
         }
 

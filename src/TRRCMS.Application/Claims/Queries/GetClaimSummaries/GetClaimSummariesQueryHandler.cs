@@ -94,7 +94,6 @@ public class GetClaimSummariesQueryHandler
                 PropertyUnitIdNumber = propertyUnit?.UnitIdentifier ?? string.Empty,
                 FullNameArabic = person?.GetFullNameArabic() ?? string.Empty,
                 ClaimSource = (int)claim.ClaimSource,
-                CasePriority = (int)claim.Priority,
                 CaseStatus = (int)claim.CaseStatus,
                 SurveyDate = linkedSurvey?.SurveyDate ?? default,
                 TypeOfWorks = MapPropertyUnitTypeToTypeOfWorks(propertyUnit?.UnitType),

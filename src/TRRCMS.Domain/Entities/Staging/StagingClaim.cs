@@ -8,9 +8,9 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// Mirrors the <see cref="Claim"/> production entity in an isolated staging area.
 /// Subject to claim lifecycle validation (FR-D-4 Level 6):
 /// - Claim status transitions must be valid
-/// - Claims from tablets are mapped to <see cref="LifecycleStage.Submitted"/> on commit (FR-D-2)
+/// - Claims from tablets are mapped to Submitted on commit (FR-D-2)
 /// - Each claim must reference a valid property unit and optionally a primary claimant
-/// 
+///
 /// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingClaim : BaseStagingEntity
@@ -45,12 +45,6 @@ public class StagingClaim : BaseStagingEntity
     /// <summary>How the claim was created (FieldCollection, OfficeSubmission, etc.).</summary>
     public ClaimSource ClaimSource { get; private set; }
 
-    /// <summary>Priority level for claim processing. Defaults to Normal.</summary>
-    public CasePriority Priority { get; private set; }
-
-    /// <summary>Current lifecycle stage. Optional — auto-set to DraftPendingSubmission during commit.</summary>
-    public LifecycleStage? LifecycleStage { get; private set; }
-
     /// <summary>Case status. Optional — auto-set to Open during commit.</summary>
     public CaseStatus? CaseStatus { get; private set; }
 
@@ -62,52 +56,10 @@ public class StagingClaim : BaseStagingEntity
     /// <summary>Ownership percentage (0-100).</summary>
     public decimal? OwnershipShare { get; private set; }
 
-    /// <summary>Date from which tenure/occupancy started — from command, optional.</summary>
-    public DateTime? TenureStartDate { get; private set; }
-
-    /// <summary>Date when tenure/occupancy ended — from command, optional.</summary>
-    public DateTime? TenureEndDate { get; private set; }
-
-    /// <summary>Target completion date — from command, optional.</summary>
-    public DateTime? TargetCompletionDate { get; private set; }
-
     // ==================== NARRATIVE ====================
 
     /// <summary>Detailed description of the claim.</summary>
     public string? ClaimDescription { get; private set; }
-
-    /// <summary>Legal basis for the claim.</summary>
-    public string? LegalBasis { get; private set; }
-
-    /// <summary>Supporting narrative or testimony.</summary>
-    public string? SupportingNarrative { get; private set; }
-
-    // ==================== EVIDENCE STATUS ====================
-
-    /// <summary>Number of evidence items attached to this claim.</summary>
-    public int EvidenceCount { get; private set; }
-
-    /// <summary>Whether all required document types have been submitted.</summary>
-    public bool AllRequiredDocumentsSubmitted { get; private set; }
-
-    /// <summary>JSON array of missing required document types.</summary>
-    public string? MissingDocuments { get; private set; }
-
-    // ==================== VERIFICATION ====================
-
-    /// <summary>Verification status. Optional — auto-set to Pending during commit.</summary>
-    public VerificationStatus? VerificationStatus { get; private set; }
-
-    /// <summary>Notes from the verification process.</summary>
-    public string? VerificationNotes { get; private set; }
-
-    // ==================== NOTES ====================
-
-    /// <summary>Internal processing notes (visible to staff only).</summary>
-    public string? ProcessingNotes { get; private set; }
-
-    /// <summary>Public remarks (visible to claimant).</summary>
-    public string? PublicRemarks { get; private set; }
 
     // ==================== CONSTRUCTORS ====================
 
@@ -131,26 +83,12 @@ public class StagingClaim : BaseStagingEntity
         ClaimSource claimSource,
         // --- optional: from command ---
         Guid? originalPrimaryClaimantId = null,
-        CasePriority priority = CasePriority.Normal,
         TenureContractType? tenureContractType = null,
         decimal? ownershipShare = null,
-        DateTime? tenureStartDate = null,
-        DateTime? tenureEndDate = null,
-        DateTime? targetCompletionDate = null,
         string? claimDescription = null,
-        string? legalBasis = null,
-        string? supportingNarrative = null,
-        string? processingNotes = null,
-        string? publicRemarks = null,
         // --- optional: auto-generated / commit-time ---
         string? claimNumber = null,
-        LifecycleStage? lifecycleStage = null,
-        CaseStatus? caseStatus = null,
-        VerificationStatus? verificationStatus = null,
-        int evidenceCount = 0,
-        bool allRequiredDocumentsSubmitted = false,
-        string? missingDocuments = null,
-        string? verificationNotes = null)
+        CaseStatus? caseStatus = null)
     {
         var entity = new StagingClaim
         {
@@ -159,24 +97,10 @@ public class StagingClaim : BaseStagingEntity
             ClaimNumber = claimNumber,
             ClaimType = claimType,
             ClaimSource = claimSource,
-            Priority = priority,
-            LifecycleStage = lifecycleStage,
             CaseStatus = caseStatus,
             TenureContractType = tenureContractType,
             OwnershipShare = ownershipShare,
-            TenureStartDate = tenureStartDate,
-            TenureEndDate = tenureEndDate,
-            TargetCompletionDate = targetCompletionDate,
-            ClaimDescription = claimDescription,
-            LegalBasis = legalBasis,
-            SupportingNarrative = supportingNarrative,
-            EvidenceCount = evidenceCount,
-            AllRequiredDocumentsSubmitted = allRequiredDocumentsSubmitted,
-            MissingDocuments = missingDocuments,
-            VerificationStatus = verificationStatus,
-            VerificationNotes = verificationNotes,
-            ProcessingNotes = processingNotes,
-            PublicRemarks = publicRemarks
+            ClaimDescription = claimDescription
         };
 
         entity.InitializeStagingMetadata(importPackageId, originalEntityId);

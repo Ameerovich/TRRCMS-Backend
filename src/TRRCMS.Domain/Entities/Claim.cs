@@ -1,11 +1,11 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Claim entity - represents tenure rights claims
-/// Core workflow entity with complete lifecycle management
+/// Created via office survey processing or .uhc import pipeline
 /// </summary>
 public class Claim : BaseAuditableEntity
 {
@@ -45,22 +45,11 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public ClaimSource ClaimSource { get; private set; }
 
-    /// <summary>
-    /// Claim priority level
-    /// </summary>
-    public CasePriority Priority { get; private set; }
-
-    // ==================== LIFECYCLE MANAGEMENT ====================
-
-    /// <summary>
-    /// Current lifecycle stage
-    /// </summary>
-    public LifecycleStage LifecycleStage { get; private set; }
+    // ==================== CASE STATUS ====================
 
     /// <summary>
     /// Case status — Open (non-owner claim) or Closed (ownership/heir claim).
     /// Determined by RelationType of the generating PersonPropertyRelation.
-    /// Independent of LifecycleStage.
     /// </summary>
     public CaseStatus CaseStatus { get; private set; }
 
@@ -73,33 +62,6 @@ public class Claim : BaseAuditableEntity
     /// User who submitted the claim
     /// </summary>
     public Guid? SubmittedByUserId { get; private set; }
-
-    /// <summary>
-    /// Date when claim reached final decision
-    /// </summary>
-    public DateTime? DecisionDate { get; private set; }
-
-    /// <summary>
-    /// User who made final decision
-    /// </summary>
-    public Guid? DecisionByUserId { get; private set; }
-
-    // ==================== ASSIGNMENT & WORKFLOW ====================
-
-    /// <summary>
-    /// Currently assigned case officer
-    /// </summary>
-    public Guid? AssignedToUserId { get; private set; }
-
-    /// <summary>
-    /// Date when assigned to current officer
-    /// </summary>
-    public DateTime? AssignedDate { get; private set; }
-
-    /// <summary>
-    /// Target completion/decision date
-    /// </summary>
-    public DateTime? TargetCompletionDate { get; private set; }
 
     // ==================== TENURE DETAILS ====================
 
@@ -114,117 +76,12 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public int? OwnershipShare { get; private set; }
 
-    /// <summary>
-    /// Date from which tenure/occupancy started
-    /// </summary>
-    public DateTime? TenureStartDate { get; private set; }
-
-    /// <summary>
-    /// Date when tenure/occupancy ended (if applicable)
-    /// </summary>
-    public DateTime? TenureEndDate { get; private set; }
-
     // ==================== CLAIM DETAILS ====================
 
     /// <summary>
     /// Detailed description of the claim
     /// </summary>
     public string? ClaimDescription { get; private set; }
-
-    /// <summary>
-    /// Legal basis for the claim
-    /// </summary>
-    public string? LegalBasis { get; private set; }
-
-    /// <summary>
-    /// Supporting narrative or story
-    /// </summary>
-    public string? SupportingNarrative { get; private set; }
-
-    // ==================== CONFLICT & DISPUTES ====================
-
-    /// <summary>
-    /// Indicates if there are conflicting claims
-    /// </summary>
-    public bool HasConflicts { get; private set; }
-
-    /// <summary>
-    /// Number of conflicting claims detected
-    /// </summary>
-    public int ConflictCount { get; private set; }
-
-    /// <summary>
-    /// Conflict resolution status
-    /// </summary>
-    public string? ConflictResolutionStatus { get; private set; }
-
-    // ==================== EVIDENCE & DOCUMENTATION ====================
-
-    /// <summary>
-    /// Number of evidence items attached
-    /// </summary>
-    public int EvidenceCount { get; private set; }
-
-    /// <summary>
-    /// Indicates if all required documents are submitted
-    /// </summary>
-    public bool AllRequiredDocumentsSubmitted { get; private set; }
-
-    /// <summary>
-    /// List of missing document types (stored as JSON)
-    /// </summary>
-    public string? MissingDocuments { get; private set; }
-
-    // ==================== REVIEW & VERIFICATION ====================
-
-    /// <summary>
-    /// Overall verification status
-    /// </summary>
-    public VerificationStatus VerificationStatus { get; private set; }
-
-    /// <summary>
-    /// Date when verification was completed
-    /// </summary>
-    public DateTime? VerificationDate { get; private set; }
-
-    /// <summary>
-    /// User who verified the claim
-    /// </summary>
-    public Guid? VerifiedByUserId { get; private set; }
-
-    /// <summary>
-    /// Verification notes
-    /// </summary>
-    public string? VerificationNotes { get; private set; }
-
-    // ==================== DECISION & OUTCOME ====================
-
-    /// <summary>
-    /// Final decision on the claim
-    /// </summary>
-    public string? FinalDecision { get; private set; }
-
-    /// <summary>
-    /// Reason for approval or rejection
-    /// </summary>
-    public string? DecisionReason { get; private set; }
-
-    /// <summary>
-    /// Decision notes
-    /// </summary>
-    public string? DecisionNotes { get; private set; }
-
-    // ==================== NOTES & HISTORY ====================
-
-    /// <summary>
-    /// Internal processing notes
-    /// </summary>
-    public string? ProcessingNotes { get; private set; }
-
-    /// <summary>
-    /// Public remarks visible to claimant
-    /// </summary>
-    public string? PublicRemarks { get; private set; }
 
     // ==================== NAVIGATION PROPERTIES ====================
 
@@ -248,12 +105,6 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public virtual ICollection<Document> Documents { get; private set; }
 
-    // Note: AssignedToUser, SubmittedByUser, etc. would be User entities
-    // public virtual User? AssignedToUser { get; private set; }
-    // public virtual User? SubmittedByUser { get; private set; }
-    // public virtual User? DecisionByUser { get; private set; }
-    // public virtual User? VerifiedByUser { get; private set; }
-
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>
@@ -264,14 +115,7 @@ public class Claim : BaseAuditableEntity
         ClaimNumber = string.Empty;
         ClaimType = ClaimType.OwnershipClaim;
         CaseStatus = CaseStatus.Open;
-        LifecycleStage = LifecycleStage.DraftPendingSubmission;
         ClaimSource = ClaimSource.FieldCollection;
-        Priority = CasePriority.Normal;
-        VerificationStatus = VerificationStatus.Pending;
-        HasConflicts = false;
-        ConflictCount = 0;
-        EvidenceCount = 0;
-        AllRequiredDocumentsSubmitted = false;
         Evidences = new List<Evidence>();
         Documents = new List<Document>();
     }
@@ -290,19 +134,12 @@ public class Claim : BaseAuditableEntity
     {
         var claim = new Claim
         {
-            ClaimNumber = claimNumber,  // Set from parameter (sequential)
+            ClaimNumber = claimNumber,
             PropertyUnitId = propertyUnitId,
             PrimaryClaimantId = primaryClaimantId,
             ClaimType = claimType,
             ClaimSource = claimSource,
             CaseStatus = CaseStatus.Open,
-            LifecycleStage = LifecycleStage.DraftPendingSubmission,
-            Priority = CasePriority.Normal,
-            VerificationStatus = VerificationStatus.Pending,
-            HasConflicts = false,
-            ConflictCount = 0,
-            EvidenceCount = 0,
-            AllRequiredDocumentsSubmitted = false,
             OriginatingSurveyId = originatingSurveyId
         };
 
@@ -314,214 +151,17 @@ public class Claim : BaseAuditableEntity
     // ==================== DOMAIN METHODS ====================
 
     /// <summary>
-    /// Submit claim for processing
+    /// Submit claim for processing (sets submission timestamp)
     /// </summary>
     public void Submit(Guid submittedByUserId, Guid modifiedByUserId)
     {
-        LifecycleStage = LifecycleStage.Submitted;
         SubmittedDate = DateTime.UtcNow;
         SubmittedByUserId = submittedByUserId;
         MarkAsModified(modifiedByUserId);
     }
 
     /// <summary>
-    /// Move to lifecycle stage
-    /// </summary>
-    public void MoveToStage(LifecycleStage newStage, Guid modifiedByUserId)
-    {
-        LifecycleStage = newStage;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Assign to case officer
-    /// </summary>
-    public void AssignTo(Guid userId, DateTime? targetCompletionDate, Guid modifiedByUserId)
-    {
-        AssignedToUserId = userId;
-        AssignedDate = DateTime.UtcNow;
-        TargetCompletionDate = targetCompletionDate;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Set priority
-    /// </summary>
-    public void SetPriority(CasePriority priority, Guid modifiedByUserId)
-    {
-        Priority = priority;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Update tenure details
-    /// </summary>
-    public void UpdateTenureDetails(
-        TenureContractType? tenureType,
-        int? ownershipShare,
-        DateTime? tenureStartDate,
-        DateTime? tenureEndDate,
-        Guid modifiedByUserId)
-    {
-        TenureContractType = tenureType;
-        OwnershipShare = ownershipShare;
-        TenureStartDate = tenureStartDate;
-        TenureEndDate = tenureEndDate;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Update claim description
-    /// </summary>
-    public void UpdateDescription(
-        string? claimDescription,
-        string? legalBasis,
-        string? supportingNarrative,
-        Guid modifiedByUserId)
-    {
-        ClaimDescription = claimDescription;
-        LegalBasis = legalBasis;
-        SupportingNarrative = supportingNarrative;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark conflicts detected
-    /// </summary>
-    public void MarkConflictsDetected(int conflictCount, Guid modifiedByUserId)
-    {
-        HasConflicts = true;
-        ConflictCount = conflictCount;
-        ConflictResolutionStatus = "Pending";
-        LifecycleStage = LifecycleStage.ConflictDetected;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark conflicts resolved
-    /// </summary>
-    public void MarkConflictsResolved(Guid modifiedByUserId)
-    {
-        ConflictResolutionStatus = "Resolved";
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Update evidence count
-    /// </summary>
-    public void UpdateEvidenceCount(int count, Guid modifiedByUserId)
-    {
-        EvidenceCount = count;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark missing documents
-    /// </summary>
-    public void MarkMissingDocuments(string missingDocumentsJson, Guid modifiedByUserId)
-    {
-        MissingDocuments = missingDocumentsJson;
-        AllRequiredDocumentsSubmitted = false;
-        LifecycleStage = LifecycleStage.AwaitingDocuments;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark all required documents submitted
-    /// </summary>
-    public void MarkAllDocumentsSubmitted(Guid modifiedByUserId)
-    {
-        AllRequiredDocumentsSubmitted = true;
-        MissingDocuments = null;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Verify claim
-    /// </summary>
-    public void Verify(
-        Guid verifiedByUserId,
-        string? verificationNotes,
-        Guid modifiedByUserId)
-    {
-        VerificationStatus = VerificationStatus.Verified;
-        VerificationDate = DateTime.UtcNow;
-        VerifiedByUserId = verifiedByUserId;
-        VerificationNotes = verificationNotes;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Approve claim
-    /// </summary>
-    public void Approve(
-        string? decisionReason,
-        string? decisionNotes,
-        Guid decisionByUserId,
-        Guid modifiedByUserId)
-    {
-        LifecycleStage = LifecycleStage.Approved;
-        FinalDecision = "Approved";
-        DecisionReason = decisionReason;
-        DecisionNotes = decisionNotes;
-        DecisionDate = DateTime.UtcNow;
-        DecisionByUserId = decisionByUserId;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Reject claim
-    /// </summary>
-    public void Reject(
-        string decisionReason,
-        string? decisionNotes,
-        Guid decisionByUserId,
-        Guid modifiedByUserId)
-    {
-        LifecycleStage = LifecycleStage.Rejected;
-        FinalDecision = "Rejected";
-        DecisionReason = decisionReason;
-        DecisionNotes = decisionNotes;
-        DecisionDate = DateTime.UtcNow;
-        DecisionByUserId = decisionByUserId;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Add processing notes
-    /// </summary>
-    public void AddProcessingNotes(string notes, Guid modifiedByUserId)
-    {
-        ProcessingNotes = string.IsNullOrWhiteSpace(ProcessingNotes)
-            ? notes
-            : $"{ProcessingNotes}\n{notes}";
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Add public remarks
-    /// </summary>
-    public void AddPublicRemarks(string remarks, Guid modifiedByUserId)
-    {
-        PublicRemarks = string.IsNullOrWhiteSpace(PublicRemarks)
-            ? remarks
-            : $"{PublicRemarks}\n{remarks}";
-        MarkAsModified(modifiedByUserId);
-    }
-
-
-    /// <summary>
-    /// Check if claim is overdue
-    /// </summary>
-    public bool IsOverdue()
-    {
-        return TargetCompletionDate.HasValue
-            && !DecisionDate.HasValue
-            && DateTime.UtcNow > TargetCompletionDate.Value;
-    }
-    /// <summary>
     /// Update primary claimant
-    /// UC-006: Update Existing Claim
     /// </summary>
     public void UpdatePrimaryClaimant(Guid primaryClaimantId, Guid modifiedByUserId)
     {
@@ -539,13 +179,11 @@ public class Claim : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Update claim classification (type and priority)
-    /// UC-006: Update Existing Claim
+    /// Update claim type classification
     /// </summary>
-    public void UpdateClassification(ClaimType claimType, CasePriority priority, Guid modifiedByUserId)
+    public void UpdateClassification(ClaimType claimType, Guid modifiedByUserId)
     {
         ClaimType = claimType;
-        Priority = priority;
         MarkAsModified(modifiedByUserId);
     }
 
@@ -568,13 +206,30 @@ public class Claim : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Update tenure contract details (simplified version for UpdateClaim)
-    /// UC-006: Update Existing Claim
+    /// Re-derive ClaimType and CaseStatus from the source relation's RelationType.
+    /// Mirrors the creation logic: Owner/Heir → OwnershipClaim + Closed, others → OccupancyClaim + Open.
+    /// </summary>
+    public void DeriveStateFromRelation(RelationType relationType, Guid modifiedByUserId)
+    {
+        var isOwnership = relationType == RelationType.Owner || relationType == RelationType.Heir;
+        var newClaimType = isOwnership ? ClaimType.OwnershipClaim : ClaimType.OccupancyClaim;
+        var newCaseStatus = isOwnership ? CaseStatus.Closed : CaseStatus.Open;
+
+        if (ClaimType != newClaimType)
+            ClaimType = newClaimType;
+
+        if (CaseStatus != newCaseStatus)
+            CaseStatus = newCaseStatus;
+
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Update tenure contract details
     /// </summary>
     public void UpdateTenureContract(TenureContractType tenureContractType, string? contractDetails, Guid modifiedByUserId)
     {
         TenureContractType = tenureContractType;
-        // Store contract details in ClaimDescription or add a new field if needed
         if (!string.IsNullOrWhiteSpace(contractDetails))
         {
             ClaimDescription = contractDetails;

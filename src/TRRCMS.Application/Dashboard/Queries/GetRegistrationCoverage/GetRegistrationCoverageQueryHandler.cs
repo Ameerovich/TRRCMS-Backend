@@ -33,8 +33,6 @@ public sealed class GetRegistrationCoverageQueryHandler
         // Claims
         var caseStatusCounts = await _uow.Claims.GetCaseStatusCountsAsync(cancellationToken);
         var claimTypeCounts = await _uow.Claims.GetClaimTypeCountsAsync(cancellationToken);
-        var withAllDocs = await _uow.Claims.GetCountWithAllDocumentsAsync(cancellationToken);
-        var missingDocs = await _uow.Claims.GetCountMissingDocumentsAsync(cancellationToken);
 
         // Evidence
         var totalEvidence = await _uow.Evidences.GetTotalCountAsync(cancellationToken);
@@ -54,8 +52,6 @@ public sealed class GetRegistrationCoverageQueryHandler
             ClaimsClosed = caseStatusCounts.GetValueOrDefault(CaseStatus.Closed, 0),
             ClaimsByType = claimTypeCounts.ToDictionary(
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),
-            ClaimsWithAllDocuments = withAllDocs,
-            ClaimsMissingDocuments = missingDocs,
             TotalEvidenceItems = totalEvidence,
             GeneratedAtUtc = DateTime.UtcNow
         };

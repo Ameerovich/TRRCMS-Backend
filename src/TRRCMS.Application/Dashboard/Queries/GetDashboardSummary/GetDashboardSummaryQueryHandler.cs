@@ -41,24 +41,12 @@ public sealed class GetDashboardSummaryQueryHandler
     private async Task<ClaimStatisticsDto> BuildClaimStatisticsAsync(CancellationToken ct)
     {
         var statusCounts = await _uow.Claims.GetCaseStatusCountsAsync(ct);
-        var lifecycleCounts = await _uow.Claims.GetLifecycleStageCountsAsync(ct);
-
-        var overdue = await _uow.Claims.GetOverdueClaimsAsync(ct);
-        var withConflicts = await _uow.Claims.GetConflictingClaimsAsync(ct);
-        var awaitingDocs = await _uow.Claims.GetClaimsAwaitingDocumentsAsync(ct);
-        var pendingVerification = await _uow.Claims.GetClaimsPendingVerificationAsync(ct);
 
         return new ClaimStatisticsDto
         {
             TotalClaims = await _uow.Claims.GetTotalCountAsync(ct),
             ByStatus = statusCounts.ToDictionary(
-                kvp => kvp.Key.ToString(), kvp => kvp.Value),
-            ByLifecycleStage = lifecycleCounts.ToDictionary(
-                kvp => kvp.Key.ToString(), kvp => kvp.Value),
-            OverdueCount = overdue.Count(),
-            WithConflictsCount = withConflicts.Count(),
-            AwaitingDocumentsCount = awaitingDocs.Count(),
-            PendingVerificationCount = pendingVerification.Count()
+                kvp => kvp.Key.ToString(), kvp => kvp.Value)
         };
     }
 

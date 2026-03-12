@@ -46,8 +46,6 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
         Def<ClaimType>("claim_type", "نوع المطالبة", "Claim Type", "Claims"),
         Def<CaseStatus>("case_status", "حالة الحالة", "Case Status", "Claims"),
         Def<ClaimSource>("claim_source", "مصدر المطالبة", "Claim Source", "Claims"),
-        Def<CasePriority>("case_priority", "أولوية الحالة", "Case Priority", "Claims"),
-        Def<LifecycleStage>("lifecycle_stage", "مرحلة دورة الحياة", "Lifecycle Stage", "Claims"),
         // Survey
         Def<SurveyType>("survey_type", "نوع الاستطلاع", "Survey Type", "Survey"),
         Def<SurveyStatus>("survey_status", "حالة الاستطلاع", "Survey Status", "Survey"),
