@@ -39,8 +39,6 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
 
         // Legal
         Def<EvidenceType>("evidence_type", "نوع الدليل", "Evidence Type", "Legal"),
-        Def<DocumentType>("document_type", "نوع المستند", "Document Type", "Legal"),
-        Def<VerificationStatus>("verification_status", "حالة التحقق", "Verification Status", "Legal"),
 
         // Claims
         Def<ClaimType>("claim_type", "نوع المطالبة", "Claim Type", "Claims"),

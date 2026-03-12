@@ -121,32 +121,6 @@ public enum Permission
     [ArabicLabel("حذف دليل")]
     Evidence_Delete = 2003,
 
-    // ==================== DOCUMENT PERMISSIONS ====================
-
-    /// <summary>
-    /// View sensitive personal documents (Office Clerk, Data Manager, Admin)
-    /// </summary>
-    [ArabicLabel("عرض المستندات الحساسة")]
-    Documents_ViewSensitive = 3000,
-
-    /// <summary>
-    /// Download documents (Office Clerk, Data Manager, Admin)
-    /// </summary>
-    [ArabicLabel("تنزيل مستندات")]
-    Documents_Download = 3001,
-
-    /// <summary>
-    /// Upload documents (Office Clerk, Data Manager, Admin)
-    /// </summary>
-    [ArabicLabel("رفع مستندات")]
-    Documents_Upload = 3002,
-
-    /// <summary>
-    /// Delete documents (Admin only)
-    /// </summary>
-    [ArabicLabel("حذف مستندات")]
-    Documents_Delete = 3003,
-
     // ==================== BUILDING PERMISSIONS ====================
 
     /// <summary>

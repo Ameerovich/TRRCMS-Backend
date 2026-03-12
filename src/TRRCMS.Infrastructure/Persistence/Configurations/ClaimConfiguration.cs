@@ -143,12 +143,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .HasForeignKey(e => e.ClaimId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Documents relationship (collection)
-        builder.HasMany(c => c.Documents)
-            .WithOne(d => d.Claim)
-            .HasForeignKey(d => d.ClaimId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         // ==================== INDEXES ====================
 
         // Unique index on ClaimNumber

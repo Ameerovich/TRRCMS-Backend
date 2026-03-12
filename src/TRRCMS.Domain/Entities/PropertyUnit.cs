@@ -77,11 +77,6 @@ public class PropertyUnit : BaseAuditableEntity
     public virtual ICollection<Claim> Claims { get; private set; }
 
     /// <summary>
-    /// Documents related to this property unit
-    /// </summary>
-    public virtual ICollection<Document> Documents { get; private set; }
-
-    /// <summary>
     /// Surveys for this specific unit
     /// </summary>
     public virtual ICollection<Survey> Surveys { get; private set; }
@@ -97,7 +92,6 @@ public class PropertyUnit : BaseAuditableEntity
         Households = new List<Household>();
         PersonRelations = new List<PersonPropertyRelation>();
         Claims = new List<Claim>();
-        Documents = new List<Document>();
         Surveys = new List<Survey>();
         Status = PropertyUnitStatus.Unknown;
     }

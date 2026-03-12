@@ -56,8 +56,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPersonPropertyRelationRepository, PersonPropertyRelationRepository>();
         services.AddScoped<IEvidenceRepository, EvidenceRepository>();
         services.AddScoped<IEvidenceRelationRepository, EvidenceRelationRepository>();
-        services.AddScoped<IDocumentRepository, DocumentRepository>();
-        services.AddScoped<IClaimRepository, ClaimRepository>();
+services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISurveyRepository, SurveyRepository>();
         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
@@ -231,14 +230,6 @@ public static class ServiceCollectionExtensions
                 policy.Requirements.Add(new PermissionRequirement(Permission.Evidence_Verify)));
             options.AddPolicy("CanDeleteEvidence", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Evidence_Delete)));
-
-            // Documents
-            options.AddPolicy("CanViewSensitiveDocuments", policy =>
-                policy.Requirements.Add(new PermissionRequirement(Permission.Documents_ViewSensitive)));
-            options.AddPolicy("CanDownloadDocuments", policy =>
-                policy.Requirements.Add(new PermissionRequirement(Permission.Documents_Download)));
-            options.AddPolicy("CanDeleteDocuments", policy =>
-                policy.Requirements.Add(new PermissionRequirement(Permission.Documents_Delete)));
 
             // Buildings
             options.AddPolicy("CanViewAllBuildings", policy =>

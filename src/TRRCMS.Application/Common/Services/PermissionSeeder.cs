@@ -57,12 +57,6 @@ public static class PermissionSeeder
             Permission.Evidence_Verify,
             Permission.Evidence_Delete,
 
-            // ==================== DOCUMENTS ====================
-            Permission.Documents_ViewSensitive,
-            Permission.Documents_Download,
-            Permission.Documents_Upload,
-            Permission.Documents_Delete,
-
             // ==================== BUILDINGS ====================
             Permission.Buildings_View,
             Permission.Buildings_Create,
@@ -143,11 +137,6 @@ public static class PermissionSeeder
             Permission.Evidence_View,
             Permission.Evidence_Upload,
             Permission.Evidence_Verify,
-
-            // ==================== DOCUMENTS ====================
-            Permission.Documents_ViewSensitive,
-            Permission.Documents_Download,
-            Permission.Documents_Upload,
 
             // ==================== BUILDINGS ====================
             Permission.Buildings_View,
@@ -249,10 +238,6 @@ public static class PermissionSeeder
             // ==================== EVIDENCE ====================
             Permission.Evidence_View,
 
-            // ==================== DOCUMENTS ====================
-            Permission.Documents_ViewSensitive,
-            Permission.Documents_Download,
-
             // ==================== BUILDINGS ====================
             Permission.Buildings_View,
 
@@ -299,11 +284,6 @@ public static class PermissionSeeder
             Permission.Evidence_View,
             Permission.Evidence_Upload,     // Upload supporting documents
 
-            // ==================== DOCUMENTS ====================
-            Permission.Documents_ViewSensitive,
-            Permission.Documents_Download,
-            Permission.Documents_Upload,
-
             // ==================== BUILDINGS ====================
             Permission.Buildings_View,
 
@@ -344,10 +324,6 @@ public static class PermissionSeeder
 
             // ==================== EVIDENCE (READ ONLY) ====================
             Permission.Evidence_View,
-
-            // ==================== DOCUMENTS (READ ONLY) ====================
-            Permission.Documents_ViewSensitive,
-            Permission.Documents_Download,
 
             // ==================== BUILDINGS (READ ONLY) ====================
             Permission.Buildings_View,

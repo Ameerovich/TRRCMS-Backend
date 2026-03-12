@@ -56,11 +56,6 @@ public interface IUnitOfWork : IDisposable
     IEvidenceRepository Evidences { get; }
 
     /// <summary>
-    /// Document repository - uploaded files and metadata
-    /// </summary>
-    IDocumentRepository Documents { get; }
-
-    /// <summary>
     /// Claim repository - tenure rights claims
     /// </summary>
     IClaimRepository Claims { get; }

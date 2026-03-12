@@ -29,8 +29,7 @@ public class UnitOfWork : IUnitOfWork
     private IHouseholdRepository? _households;
     private IPersonPropertyRelationRepository? _personPropertyRelations;
     private IEvidenceRepository? _evidences;
-    private IDocumentRepository? _documents;
-    private IClaimRepository? _claims;
+private IClaimRepository? _claims;
     private ISurveyRepository? _surveys;
     private IUserRepository? _users;
     private IBuildingAssignmentRepository? _buildingAssignments;
@@ -75,9 +74,6 @@ public class UnitOfWork : IUnitOfWork
 
     public IEvidenceRepository Evidences =>
         _evidences ??= new EvidenceRepository(_context, _currentUserService);
-
-    public IDocumentRepository Documents =>
-        _documents ??= new DocumentRepository(_context);
 
     public IClaimRepository Claims =>
         _claims ??= new ClaimRepository(_context);

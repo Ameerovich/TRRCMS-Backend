@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using TRRCMS.Application.AdministrativeDivisions.Dtos;
 using TRRCMS.Application.Buildings.Dtos;
-using TRRCMS.Application.Documents.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.Import.Dtos;
@@ -136,13 +135,6 @@ public class MappingProfile : Profile
 
         // EvidenceRelation mappings (many-to-many join entity)
         CreateMap<EvidenceRelation, EvidenceRelationDto>();
-
-        // Document mappings
-        CreateMap<Document, DocumentDto>()
-            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => (int)src.DocumentType))
-            .ForMember(dest => dest.VerificationStatus, opt => opt.MapFrom(src => (int)src.VerificationStatus))
-            .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()))
-            .ForMember(dest => dest.IsExpiringSoon, opt => opt.MapFrom(src => src.IsExpiringSoon()));
 
         // Claim mappings
         CreateMap<Claim, TRRCMS.Application.Claims.Dtos.ClaimDto>()

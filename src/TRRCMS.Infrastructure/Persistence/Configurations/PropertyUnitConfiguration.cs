@@ -108,12 +108,6 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
             .HasForeignKey(c => c.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ✅ ADDED: Relationship to Documents (One-to-Many)
-        builder.HasMany(p => p.Documents)
-            .WithOne(d => d.PropertyUnit)
-            .HasForeignKey(d => d.PropertyUnitId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         // Note: Surveys relationship will be configured when needed
         builder.Ignore(p => p.Surveys);
     }

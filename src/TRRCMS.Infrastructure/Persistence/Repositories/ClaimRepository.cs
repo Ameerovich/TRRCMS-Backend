@@ -27,7 +27,7 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
             .Include(c => c.Evidences)
-            .Include(c => c.Documents)
+
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
@@ -64,7 +64,7 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
             .Include(c => c.Evidences)
-            .Include(c => c.Documents)
+
             .FirstOrDefaultAsync(c => c.ClaimNumber == claimNumber, cancellationToken);
     }
 
@@ -76,7 +76,7 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
             .Include(c => c.Evidences)
-            .Include(c => c.Documents)
+
             .FirstOrDefaultAsync(c => c.PropertyUnitId == propertyUnitId, cancellationToken);
     }
 

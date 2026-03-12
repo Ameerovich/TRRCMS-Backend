@@ -2,7 +2,6 @@ using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Conflicts.Dtos;
-using TRRCMS.Application.Documents.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
 
 namespace TRRCMS.Application.Conflicts.Queries.GetConflictDocumentComparison;
@@ -10,11 +9,11 @@ namespace TRRCMS.Application.Conflicts.Queries.GetConflictDocumentComparison;
 /// <summary>
 /// Handler for <see cref="GetConflictDocumentComparisonQuery"/>.
 ///
-/// Loads documents and evidence for both entities in a conflict pair,
-/// enabling side-by-side document comparison in the review UI.
+/// Loads evidence for both entities in a conflict pair,
+/// enabling side-by-side comparison in the review UI.
 ///
-/// UC-008 S04: Person duplicate — loads Evidence and Documents by PersonId.
-/// UC-007: Property duplicate — loads Documents by PropertyUnitId.
+/// UC-008 S04: Person duplicate — loads Evidence by PersonId.
+/// UC-007: Property duplicate — loads Evidence via PersonPropertyRelations.
 /// </summary>
 public class GetConflictDocumentComparisonQueryHandler
     : IRequestHandler<GetConflictDocumentComparisonQuery, DocumentComparisonDto?>
@@ -39,12 +38,12 @@ public class GetConflictDocumentComparisonQueryHandler
         if (conflict is null)
             return null;
 
-        // ── 2. Load documents/evidence for both entities ────────────────────────
-        var firstEntity = await LoadEntityDocumentsAsync(
+        // ── 2. Load evidence for both entities ──────────────────────────────────
+        var firstEntity = await LoadEntityEvidenceAsync(
             conflict.EntityType, conflict.FirstEntityId,
             conflict.FirstEntityIdentifier, cancellationToken);
 
-        var secondEntity = await LoadEntityDocumentsAsync(
+        var secondEntity = await LoadEntityEvidenceAsync(
             conflict.EntityType, conflict.SecondEntityId,
             conflict.SecondEntityIdentifier, cancellationToken);
 
@@ -58,29 +57,21 @@ public class GetConflictDocumentComparisonQueryHandler
         );
     }
 
-    private async Task<EntityDocumentsDto> LoadEntityDocumentsAsync(
+    private async Task<EntityDocumentsDto> LoadEntityEvidenceAsync(
         string entityType, Guid entityId, string? entityIdentifier,
         CancellationToken ct)
     {
         IReadOnlyList<EvidenceDto> evidenceDtos;
-        IReadOnlyList<DocumentDto> documentDtos;
 
         if (entityType == "Person")
         {
-            // Person: load evidence and documents directly by PersonId
+            // Person: load evidence directly by PersonId
             var evidences = await _uow.Evidences.GetByPersonIdAsync(entityId, ct);
-            var documents = await _uow.Documents.GetByPersonIdAsync(entityId, ct);
-
             evidenceDtos = _mapper.Map<List<EvidenceDto>>(evidences);
-            documentDtos = _mapper.Map<List<DocumentDto>>(documents);
         }
         else // PropertyUnit
         {
-            // PropertyUnit: load documents by PropertyUnitId
-            var documents = await _uow.Documents.GetByPropertyUnitIdAsync(entityId, ct);
-            documentDtos = _mapper.Map<List<DocumentDto>>(documents);
-
-            // Evidence for property units is linked via PersonPropertyRelations
+            // PropertyUnit: evidence is linked via PersonPropertyRelations
             var relations = await _uow.PersonPropertyRelations
                 .GetByPropertyUnitIdAsync(entityId, ct);
 
@@ -101,8 +92,7 @@ public class GetConflictDocumentComparisonQueryHandler
         return new EntityDocumentsDto(
             EntityId: entityId,
             EntityIdentifier: entityIdentifier,
-            Evidences: evidenceDtos,
-            Documents: documentDtos
+            Evidences: evidenceDtos
         );
     }
 }

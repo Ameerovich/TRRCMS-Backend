@@ -100,11 +100,6 @@ public class Claim : BaseAuditableEntity
     /// </summary>
     public virtual ICollection<Evidence> Evidences { get; private set; }
 
-    /// <summary>
-    /// Documents supporting this claim
-    /// </summary>
-    public virtual ICollection<Document> Documents { get; private set; }
-
     // ==================== CONSTRUCTORS ====================
 
     /// <summary>
@@ -117,7 +112,6 @@ public class Claim : BaseAuditableEntity
         CaseStatus = CaseStatus.Open;
         ClaimSource = ClaimSource.FieldCollection;
         Evidences = new List<Evidence>();
-        Documents = new List<Document>();
     }
 
     /// <summary>
