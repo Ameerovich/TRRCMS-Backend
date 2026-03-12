@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Claims.Commands.DeleteClaim;
 using TRRCMS.Application.Claims.Commands.UpdateClaim;
 using TRRCMS.Application.Claims.Dtos;
@@ -20,7 +19,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// All endpoints require authentication and specific permissions
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v1/[controller]")]
 public class ClaimsController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -145,18 +144,119 @@ public class ClaimsController : ControllerBase
     }
 
     /// <summary>
-    /// Composite update: modifies the source PersonPropertyRelation + manages evidence links,
-    /// then re-derives claim state (ClaimType, CaseStatus).
-    /// Requires: Data Manager or Administrator role
+    /// Composite claim update — updates the source PersonPropertyRelation, manages evidence links,
+    /// and re-derives claim state (ClaimType, CaseStatus) from the updated relation.
+    /// تحديث مركب للمطالبة — يحدّث علاقة الشخص بالعقار المصدر، ويدير روابط الأدلة، ويعيد اشتقاق حالة المطالبة.
     /// </summary>
-    /// <param name="id">Claim ID</param>
-    /// <param name="command">Relation fields, evidence operations, and audit reason</param>
-    /// <returns>Updated claim with source relation summary</returns>
+    /// <remarks>
+    /// **How it works:**
+    /// Claims are never modified directly. Instead, this endpoint updates the underlying
+    /// PersonPropertyRelation that created the claim, optionally manages evidence (tenure documents),
+    /// and then re-derives the claim's ClaimType and CaseStatus automatically.
+    ///
+    /// **Auto-derivation rules (from RelationType):**
+    /// - Owner (1) or Heir (5) → ClaimType = OwnershipClaim (1), CaseStatus = Closed (2)
+    /// - Occupant (2), Tenant (3), Guest (4), Other (99) → ClaimType = OccupancyClaim (2), CaseStatus = Open (1)
+    ///
+    /// **All fields are optional** except ReasonForModification. Send only what you want to change:
+    /// - Relation fields only (e.g., change RelationType from Tenant to Owner)
+    /// - Evidence operations only (e.g., add new tenure documents)
+    /// - TenureContractType only (claim-level legal classification)
+    /// - Any combination of the above
+    ///
+    /// **Source relation auto-creation:**
+    /// If the claim was imported via .uhc and has no existing PersonPropertyRelation,
+    /// one is automatically created with RelationType inferred from the current ClaimType.
+    ///
+    /// **Relation fields (partial update — only provided fields change):**
+    /// | Field | Type | Description |
+    /// |-------|------|-------------|
+    /// | RelationType | int? | Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99. Changes auto-derive ClaimType and CaseStatus. |
+    /// | OccupancyType | int? | OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, MixedOccupancy=4, Vacant=5, TemporarySeasonal=6, CommercialUse=7, Abandoned=8, Disputed=9, Unknown=99 |
+    /// | OwnershipShare | decimal? | Fraction out of 2400 (e.g., 1200 = 50%). For shared ownership. |
+    /// | ContractDetails | string? | Free-text contract details. |
+    /// | Notes | string? | Free-text notes on the relation. |
+    /// | ClearOccupancyType | bool | Set to true to explicitly clear OccupancyType to null. |
+    /// | ClearOwnershipShare | bool | Set to true to explicitly clear OwnershipShare to null. |
+    /// | ClearContractDetails | bool | Set to true to explicitly clear ContractDetails to null. |
+    /// | ClearNotes | bool | Set to true to explicitly clear Notes to null. |
+    ///
+    /// **Claim-level fields (directly set on claim):**
+    /// | Field | Type | Description |
+    /// |-------|------|-------------|
+    /// | TenureContractType | int? | FullOwnership=1, SharedOwnership=2, LongTermRental=3, ShortTermRental=4, InformalTenure=5, UnauthorizedOccupation=6, CustomaryRights=7, InheritanceBased=8, HostedGuest=9, TemporaryShelter=10, GovernmentAllocation=11, Usufruct=12, Other=99 |
+    /// | TenureContractDetails | string? | Additional tenure contract details (max 1000 chars). |
+    ///
+    /// **Evidence operations (all optional, processed in order):**
+    ///
+    /// 1. **NewEvidence** (List) — Create new evidence records and link them to the source relation:
+    ///    - EvidenceType (int, required): IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, UtilityBill=4, Photo=5, OfficialLetter=6, CourtOrder=7, InheritanceDocument=8, TaxReceipt=9, Other=99
+    ///    - Description (string, required), OriginalFileName (string, required), FilePath (string, required)
+    ///    - FileSizeBytes (long, required, > 0), MimeType (string, required)
+    ///    - Optional: FileHash, LinkReason, DocumentIssuedDate, DocumentExpiryDate, IssuingAuthority, DocumentReferenceNumber
+    ///
+    /// 2. **LinkExistingEvidenceIds** (List&lt;Guid&gt;) — Link already-existing Evidence records to the source relation.
+    ///    Duplicate links are silently skipped. Deactivated links are reactivated.
+    ///
+    /// 3. **UnlinkEvidenceRelationIds** (List&lt;Guid&gt;) — Deactivate existing EvidenceRelation links by their IDs.
+    ///    The EvidenceRelation must belong to this claim's source relation.
+    ///
+    /// **HasEvidence** is automatically recomputed after all evidence operations.
+    ///
+    /// **Required Permission:** Claims_Update (CanEditClaims policy)
+    ///
+    /// **Sample request — change relation type only:**
+    /// ```json
+    /// {
+    ///   "relationType": 1,
+    ///   "reasonForModification": "Corrected relation from Tenant to Owner based on deed verification"
+    /// }
+    /// ```
+    ///
+    /// **Sample request — add new evidence:**
+    /// ```json
+    /// {
+    ///   "newEvidence": [{
+    ///     "evidenceType": 2,
+    ///     "description": "Ownership deed scan",
+    ///     "originalFileName": "deed_scan.pdf",
+    ///     "filePath": "/uploads/evidence/deed_scan.pdf",
+    ///     "fileSizeBytes": 245760,
+    ///     "mimeType": "application/pdf",
+    ///     "linkReason": "Original ownership deed"
+    ///   }],
+    ///   "reasonForModification": "Added ownership deed document received from claimant"
+    /// }
+    /// ```
+    ///
+    /// **Sample request — full update (relation + evidence + tenure):**
+    /// ```json
+    /// {
+    ///   "relationType": 1,
+    ///   "ownershipShare": 2400,
+    ///   "tenureContractType": 1,
+    ///   "tenureContractDetails": "Full ownership with registered deed",
+    ///   "newEvidence": [{
+    ///     "evidenceType": 2,
+    ///     "description": "Ownership deed",
+    ///     "originalFileName": "deed.pdf",
+    ///     "filePath": "/uploads/evidence/deed.pdf",
+    ///     "fileSizeBytes": 102400,
+    ///     "mimeType": "application/pdf"
+    ///   }],
+    ///   "unlinkEvidenceRelationIds": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
+    ///   "reasonForModification": "Updated claim after field verification confirmed ownership"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="id">Claim ID (GUID)</param>
+    /// <param name="command">Relation fields, evidence operations, claim-level fields, and mandatory audit reason</param>
+    /// <returns>Updated claim DTO with source relation summary (SourceRelationId, RelationType, HasEvidence, ActiveEvidenceLinkCount)</returns>
     /// <response code="200">Claim updated successfully</response>
-    /// <response code="400">Invalid request or validation failed</response>
+    /// <response code="400">Validation failed (invalid enum values, missing reason, evidence not found, etc.)</response>
     /// <response code="401">Not authenticated</response>
     /// <response code="403">Missing required permission (Claims_Update)</response>
-    /// <response code="404">Claim not found</response>
+    /// <response code="404">Claim not found, or referenced Evidence/EvidenceRelation not found</response>
     [HttpPut("{id}")]
     [Authorize(Policy = "CanEditClaims")]
     [ProducesResponseType(typeof(UpdateClaimResultDto), StatusCodes.Status200OK)]
