@@ -48,7 +48,6 @@ public class GetFieldCollectorAssignmentsQueryHandler
         var activeAssignments = assignments.Where(a => a.IsActive).ToList();
         var pendingTransfer = activeAssignments.Count(a => a.TransferStatus == TransferStatus.Pending);
         var transferred = activeAssignments.Count(a => a.TransferStatus == TransferStatus.Transferred);
-        var inProgress = activeAssignments.Count(a => a.TransferStatus == TransferStatus.InProgress);
         var synchronized = activeAssignments.Count(a => a.TransferStatus == TransferStatus.Synchronized);
 
         // Map assignments to DTOs
@@ -88,7 +87,6 @@ public class GetFieldCollectorAssignmentsQueryHandler
             TotalAssignments = assignments.Count,
             PendingTransfer = pendingTransfer,
             ReadyForSurvey = transferred,
-            InProgress = inProgress,
             Completed = synchronized,
             Assignments = assignmentDtos
         };

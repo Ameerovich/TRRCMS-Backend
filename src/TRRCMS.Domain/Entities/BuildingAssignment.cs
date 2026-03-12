@@ -237,45 +237,6 @@ public class BuildingAssignment : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Mark transfer as failed with error message
-    /// </summary>
-    public void MarkTransferFailed(string errorMessage, Guid modifiedByUserId)
-    {
-        TransferStatus = TransferStatus.Failed;
-        TransferErrorMessage = errorMessage;
-        TransferRetryCount++;
-        LastTransferAttemptDate = DateTime.UtcNow;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Reset a failed assignment for retry. Transitions Failed → Pending
-    /// and clears the error message. Does NOT reset TransferRetryCount
-    /// (keeps the history of how many retries occurred).
-    /// UC-012: S12 — Retry failed transfer.
-    /// </summary>
-    public void ResetForRetry(Guid modifiedByUserId)
-    {
-        if (TransferStatus != TransferStatus.Failed)
-            throw new InvalidOperationException(
-                $"Cannot retry: assignment is '{TransferStatus}', expected 'Failed'.");
-
-        TransferStatus = TransferStatus.Pending;
-        TransferErrorMessage = null;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark transfer as in progress
-    /// </summary>
-    public void MarkTransferInProgress(Guid modifiedByUserId)
-    {
-        TransferStatus = TransferStatus.InProgress;
-        LastTransferAttemptDate = DateTime.UtcNow;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
     /// Mark data as synchronized back from tablet
     /// </summary>
     public void MarkAsSynchronized(Guid modifiedByUserId)

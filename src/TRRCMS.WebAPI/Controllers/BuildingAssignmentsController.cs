@@ -2,16 +2,15 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.BuildingAssignments.Commands.AssignBuildings;
-using TRRCMS.Application.BuildingAssignments.Commands.CheckTransferTimeout;
-using TRRCMS.Application.BuildingAssignments.Commands.InitiateTransfer;
-using TRRCMS.Application.BuildingAssignments.Commands.RetryTransfer;
 using TRRCMS.Application.BuildingAssignments.Commands.UnassignBuilding;
 using TRRCMS.Application.BuildingAssignments.Dtos;
 using TRRCMS.Application.BuildingAssignments.Queries.GetAssignmentById;
 using TRRCMS.Application.BuildingAssignments.Queries.GetAvailableFieldCollectors;
 using TRRCMS.Application.BuildingAssignments.Queries.GetBuildingsForAssignment;
 using TRRCMS.Application.BuildingAssignments.Queries.GetFieldCollectorAssignments;
+using TRRCMS.Application.BuildingAssignments.Queries.GetAllAssignments;
 using TRRCMS.Application.BuildingAssignments.Queries.GetPropertyUnitsForRevisit;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.WebAPI.Controllers;
@@ -29,7 +28,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// 2. Review property units for revisit selection (S04-S05)
 /// 3. Select field collector with workload info
 /// 4. Assign buildings to collector (S06-S07)
-/// 5. Transfer happens during tablet synchronization (S08-S12)
+/// 5. Tablet downloads assignments during sync, acknowledges receipt
 /// 
 /// **TransferStatus Values (حالة النقل):**
 /// | Value | Name | Arabic | Description |
@@ -629,6 +628,54 @@ public class BuildingAssignmentsController : ControllerBase
         return Ok(result);
     }
 
+    // ==================== GET ALL ASSIGNMENTS ====================
+
+    /// <summary>
+    /// Get all building assignments with optional filtering and pagination.
+    /// عرض جميع تعيينات المباني مع التصفية والتقسيم إلى صفحات
+    /// </summary>
+    /// <remarks>
+    /// Returns a paginated list of building assignments across all field collectors.
+    /// All filters are optional — omit to get all assignments.
+    ///
+    /// **TransferStatus filter values (حالة النقل):**
+    /// | Value | Name | Arabic |
+    /// |-------|------|--------|
+    /// | 1 | Pending | قيد الانتظار |
+    /// | 2 | InProgress | جاري النقل |
+    /// | 3 | Transferred | تم النقل |
+    /// | 4 | Failed | فشل النقل |
+    /// | 5 | Cancelled | ملغي |
+    /// | 6 | PartialTransfer | نقل جزئي |
+    /// | 7 | Synchronized | متزامن |
+    ///
+    /// **Sorting:** Use `sortBy` with values: `assigneddate`, `targetcompletiondate`, `transferstatus`, `priority`.
+    /// Default sort: by assigned date ascending.
+    ///
+    /// **Example Request:**
+    /// ```
+    /// GET /api/v1/buildingassignments?transferStatus=1&amp;isActive=true&amp;pageNumber=1&amp;pageSize=20
+    /// ```
+    /// </remarks>
+    /// <param name="query">Filter, sort, and pagination parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated list of assignment summaries</returns>
+    /// <response code="200">Assignments retrieved successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission - requires Buildings_View (4000)</response>
+    [HttpGet]
+    [Authorize(Policy = "CanViewAllBuildings")]
+    [ProducesResponseType(typeof(PagedResult<BuildingAssignmentSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<PagedResult<BuildingAssignmentSummaryDto>>> GetAllAssignments(
+        [FromQuery] GetAllAssignmentsQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
     // ==================== GET ASSIGNMENT BY ID ====================
 
     /// <summary>
@@ -885,111 +932,6 @@ public class BuildingAssignmentsController : ControllerBase
         return Ok(result);
     }
 
-    // ==================== S08: INITIATE TRANSFER ====================
-
-    /// <summary>
-    /// Initiate transfer of assigned buildings to a field collector's tablet (S08)
-    /// بدء نقل المباني المعيّنة إلى جهاز جامع البيانات اللوحي
-    /// </summary>
-    /// <remarks>
-    /// Validates tablet connectivity (checks for an active sync session within the last 24 hours)
-    /// and transitions each specified assignment from Pending to InProgress.
-    /// The tablet will download InProgress assignments during its next sync (Step 3).
-    ///
-    /// **Required Permission:** Buildings_Assign (4003) — CanAssignBuildings policy
-    ///
-    /// **UC-012: S08** — Initiate Building Transfer to Tablet
-    /// </remarks>
-    /// <param name="command">Transfer initiation details</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <response code="200">Transfer initiation result with counts and tablet connectivity status</response>
-    /// <response code="400">Validation error (empty IDs, invalid field collector)</response>
-    /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
-    /// <response code="404">Field collector not found</response>
-    [HttpPost("initiate-transfer")]
-    [Authorize(Policy = "CanAssignBuildings")]
-    [ProducesResponseType(typeof(InitiateTransferResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<InitiateTransferResult>> InitiateTransfer(
-        [FromBody] InitiateTransferCommand command,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await _mediator.Send(command, cancellationToken);
-        return Ok(result);
-    }
-
-    // ==================== S11: CHECK TRANSFER TIMEOUT ====================
-
-    /// <summary>
-    /// Check for timed-out transfers and mark them as failed (S11)
-    /// التحقق من مهل النقل المنتهية وتحديدها كفاشلة
-    /// </summary>
-    /// <remarks>
-    /// Finds all InProgress assignments that have exceeded the specified timeout
-    /// threshold and marks them as Failed. The Data Manager can then retry failed
-    /// transfers using the retry endpoint.
-    ///
-    /// **Required Permission:** Buildings_Assign (4003) — CanAssignBuildings policy
-    ///
-    /// **UC-012: S11** — Transfer Failure Handling
-    /// </remarks>
-    /// <param name="command">Timeout check parameters</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <response code="200">Timeout check result with timed-out and still-in-progress counts</response>
-    /// <response code="400">Validation error (invalid timeout value)</response>
-    /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
-    [HttpPost("check-transfer-timeout")]
-    [Authorize(Policy = "CanAssignBuildings")]
-    [ProducesResponseType(typeof(TransferTimeoutCheckResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<TransferTimeoutCheckResult>> CheckTransferTimeout(
-        [FromBody] CheckTransferTimeoutCommand command,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await _mediator.Send(command, cancellationToken);
-        return Ok(result);
-    }
-
-    // ==================== S12: RETRY TRANSFER ====================
-
-    /// <summary>
-    /// Retry failed transfers by resetting assignments to Pending (S12)
-    /// إعادة محاولة عمليات النقل الفاشلة بإعادة تعيينها كقيد الانتظار
-    /// </summary>
-    /// <remarks>
-    /// Resets each Failed assignment back to Pending so it becomes eligible
-    /// for the next sync download. The TransferRetryCount is preserved for history.
-    ///
-    /// **Required Permission:** Buildings_Assign (4003) — CanAssignBuildings policy
-    ///
-    /// **UC-012: S12** — Retry Failed Transfer
-    /// </remarks>
-    /// <param name="command">Retry details with assignment IDs</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <response code="200">Retry result with counts</response>
-    /// <response code="400">Validation error (empty IDs, wrong status)</response>
-    /// <response code="401">Not authenticated</response>
-    /// <response code="403">Missing required permission</response>
-    [HttpPost("retry-transfer")]
-    [Authorize(Policy = "CanAssignBuildings")]
-    [ProducesResponseType(typeof(RetryTransferResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<RetryTransferResult>> RetryTransfer(
-        [FromBody] RetryTransferCommand command,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await _mediator.Send(command, cancellationToken);
-        return Ok(result);
-    }
 }
 
 // ==================== REQUEST MODELS ====================

@@ -202,7 +202,6 @@ public class FieldCollectorTasksDto
     public int TotalAssignments { get; set; }
     public int PendingTransfer { get; set; }
     public int ReadyForSurvey { get; set; }
-    public int InProgress { get; set; }
     public int Completed { get; set; }
 
     // Assignments list
