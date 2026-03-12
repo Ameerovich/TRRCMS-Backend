@@ -67,25 +67,11 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
         builder.Property(r => r.RelationType)
             .IsRequired();
 
-        builder.Property(r => r.RelationTypeOtherDesc)
-            .HasMaxLength(200);
-
-        builder.Property(r => r.ContractType);
-
-        builder.Property(r => r.ContractTypeOtherDesc)
-            .HasMaxLength(200);
-
         builder.Property(r => r.OwnershipShare)
             .HasPrecision(5, 2);
 
         builder.Property(r => r.ContractDetails)
             .HasMaxLength(2000);
-
-        builder.Property(r => r.StartDate)
-            .HasComment("Start date of the relation/contract");
-
-        builder.Property(r => r.EndDate)
-            .HasComment("End date of the relation/contract");
 
         builder.Property(r => r.Notes)
             .HasMaxLength(2000);

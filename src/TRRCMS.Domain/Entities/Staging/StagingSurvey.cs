@@ -48,9 +48,6 @@ public class StagingSurvey : BaseStagingEntity
     /// <summary>How the survey data entered the system. Optional — auto-set during commit.</summary>
     public SurveySource? Source { get; private set; }
 
-    /// <summary>Human-readable survey type name. Optional — auto-set during commit.</summary>
-    public string? SurveyTypeName { get; private set; }
-
     // ==================== SURVEY DETAILS ====================
 
     /// <summary>Date when the survey was conducted.</summary>
@@ -99,7 +96,7 @@ public class StagingSurvey : BaseStagingEntity
 
     /// <summary>
     /// Create a new StagingSurvey record from .uhc package data.
-    /// Required parameters match CreateFieldSurveyCommand/CreateOfficeSurveyCommand fields.
+    /// Required parameters match .uhc package survey fields.
     /// </summary>
     public static StagingSurvey Create(
         Guid importPackageId,
@@ -124,7 +121,6 @@ public class StagingSurvey : BaseStagingEntity
         string? referenceCode = null,
         SurveyType? type = null,
         SurveySource? source = null,
-        string? surveyTypeName = null,
         SurveyStatus? status = null)
     {
         var entity = new StagingSurvey
@@ -137,7 +133,6 @@ public class StagingSurvey : BaseStagingEntity
             ReferenceCode = referenceCode,
             Type = type,
             Source = source,
-            SurveyTypeName = surveyTypeName,
             SurveyDate = surveyDate,
             Status = status,
             GpsCoordinates = gpsCoordinates,

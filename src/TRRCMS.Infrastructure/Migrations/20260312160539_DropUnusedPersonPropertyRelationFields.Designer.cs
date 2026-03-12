@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260312160539_DropUnusedPersonPropertyRelationFields")]
+    partial class DropUnusedPersonPropertyRelationFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3909,6 +3912,11 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<DateTime>("SurveyDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("SurveyTypeName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("Optional — auto-set during commit");
+
                     b.Property<int?>("Type")
                         .HasColumnType("integer")
                         .HasComment("Optional — auto-set (Field/Office) during commit");
@@ -4148,12 +4156,21 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<int?>("DurationMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("ExportPackageId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ExportedDate")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("FieldCollectorId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("GpsCoordinates")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("ImportedDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool?>("InPersonVisit")
                         .HasColumnType("boolean");
@@ -4212,6 +4229,13 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.Property<DateTime>("SurveyDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SurveyType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasDefaultValue("Field");
 
                     b.Property<int>("Type")
                         .ValueGeneratedOnAdd()

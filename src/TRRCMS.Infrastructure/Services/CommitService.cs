@@ -833,8 +833,8 @@ public class CommitService : ICommitService
                             staging.OriginalFieldCollectorId.Value, staging.OriginalEntityId, userId);
                 }
 
-                var surveyType = staging.Type?.ToString() ?? "Field";
-                var prefix = staging.Type == SurveyType.Office ? "OFC" : "ALG";
+                var type = staging.Type ?? SurveyType.Field;
+                var prefix = type == SurveyType.Office ? "OFC" : "ALG";
                 var refCode = staging.ReferenceCode
                     ?? await _surveyRefCodeGenerator.GenerateNextAsync(prefix, ct);
 
@@ -864,7 +864,7 @@ public class CommitService : ICommitService
                 var survey = Survey.Create(
                     buildingId: productionBuildingId,
                     fieldCollectorId: fieldCollectorId,
-                    surveyType: surveyType,
+                    type: type,
                     surveyDate: staging.SurveyDate,
                     propertyUnitId: productionPropertyUnitId,
                     createdByUserId: userId,

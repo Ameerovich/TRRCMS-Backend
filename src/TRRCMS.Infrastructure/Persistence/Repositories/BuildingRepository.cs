@@ -89,11 +89,11 @@ public class BuildingRepository : IBuildingRepository
 
     public async Task<bool> HasActiveSurveysAsync(Guid buildingId, CancellationToken cancellationToken = default)
     {
-        // Active surveys = Draft or Completed (not yet Finalized/Exported/etc.)
+        // Active surveys = Draft (not yet Finalized)
         return await _context.Surveys
             .AnyAsync(s => s.BuildingId == buildingId
                        && !s.IsDeleted
-                       && (s.Status == SurveyStatus.Draft || s.Status == SurveyStatus.Completed),
+                       && s.Status == SurveyStatus.Draft,
                        cancellationToken);
     }
 

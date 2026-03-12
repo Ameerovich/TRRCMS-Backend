@@ -83,10 +83,6 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         builder.Property(s => s.Source)
             .HasComment("Optional — auto-set during commit");
 
-        builder.Property(s => s.SurveyTypeName)
-            .HasMaxLength(200)
-            .HasComment("Optional — auto-set during commit");
-
         // ==================== SURVEY DETAILS ====================
 
         builder.Property(s => s.SurveyDate)

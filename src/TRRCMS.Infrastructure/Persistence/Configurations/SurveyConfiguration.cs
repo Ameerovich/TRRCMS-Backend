@@ -65,11 +65,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
             .HasDefaultValue(SurveySource.FieldCollection)
             .HasConversion<int>();
 
-        builder.Property(s => s.SurveyType)
-            .IsRequired()
-            .HasMaxLength(50)
-            .HasDefaultValue("Field");
-
         // Index for filtering by type
         builder.HasIndex(s => s.Type)
             .HasDatabaseName("IX_Surveys_Type");
@@ -129,14 +124,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
             .HasMaxLength(100);
 
         builder.Property(s => s.InPersonVisit);
-
-        // ==================== EXPORT TRACKING ====================
-
-        builder.Property(s => s.ExportedDate);
-
-        builder.Property(s => s.ExportPackageId);
-
-        builder.Property(s => s.ImportedDate);
 
         // ==================== CONTACT PERSON ====================
 

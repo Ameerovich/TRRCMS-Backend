@@ -77,9 +77,9 @@ public sealed class GetDashboardSummaryQueryHandler
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),
             FieldSurveyCount = typeCounts.GetValueOrDefault(SurveyType.Field, 0),
             OfficeSurveyCount = typeCounts.GetValueOrDefault(SurveyType.Office, 0),
-            CompletedLast7Days = await _uow.Surveys.GetCompletedCountSinceAsync(
+            CompletedLast7Days = await _uow.Surveys.GetFinalizedCountSinceAsync(
                 now.AddDays(-7), ct),
-            CompletedLast30Days = await _uow.Surveys.GetCompletedCountSinceAsync(
+            CompletedLast30Days = await _uow.Surveys.GetFinalizedCountSinceAsync(
                 now.AddDays(-30), ct)
         };
     }

@@ -35,26 +35,11 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
     /// <summary>Type of person-property relation (Owner, Tenant, Occupant, etc.).</summary>
     public RelationType RelationType { get; private set; }
 
-    /// <summary>Description when RelationType is "Other".</summary>
-    public string? RelationTypeOtherDesc { get; private set; }
-
-    /// <summary>Type of tenure/contract.</summary>
-    public TenureContractType? ContractType { get; private set; }
-
-    /// <summary>Description when ContractType is "Other".</summary>
-    public string? ContractTypeOtherDesc { get; private set; }
-
     /// <summary>Ownership share percentage (0-100).</summary>
     public decimal? OwnershipShare { get; private set; }
 
     /// <summary>Additional contract or arrangement details.</summary>
     public string? ContractDetails { get; private set; }
-
-    /// <summary>Start date of the relation/contract — from command, optional.</summary>
-    public DateTime? StartDate { get; private set; }
-
-    /// <summary>End date of the relation/contract — from command, optional.</summary>
-    public DateTime? EndDate { get; private set; }
 
     /// <summary>Additional notes about the relation.</summary>
     public string? Notes { get; private set; }
@@ -82,13 +67,8 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
         Guid originalPropertyUnitId,
         RelationType relationType,
         // --- optional: from command ---
-        string? relationTypeOtherDesc = null,
-        TenureContractType? contractType = null,
-        string? contractTypeOtherDesc = null,
         decimal? ownershipShare = null,
         string? contractDetails = null,
-        DateTime? startDate = null,
-        DateTime? endDate = null,
         string? notes = null,
         bool isActive = true)
     {
@@ -97,13 +77,8 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
             OriginalPersonId = originalPersonId,
             OriginalPropertyUnitId = originalPropertyUnitId,
             RelationType = relationType,
-            RelationTypeOtherDesc = relationTypeOtherDesc,
-            ContractType = contractType,
-            ContractTypeOtherDesc = contractTypeOtherDesc,
             OwnershipShare = ownershipShare,
             ContractDetails = contractDetails,
-            StartDate = startDate,
-            EndDate = endDate,
             Notes = notes,
             IsActive = isActive
         };

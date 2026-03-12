@@ -73,7 +73,6 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
             relation.PersonId,
             relation.PropertyUnitId,
             RelationType = relation.RelationType.ToString(),
-            ContractType = relation.ContractType?.ToString(),
             relation.OwnershipShare,
             EvidenceRelationCount = activeEvidenceRelations.Count
         };

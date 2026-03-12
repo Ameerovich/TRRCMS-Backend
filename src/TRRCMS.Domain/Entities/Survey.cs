@@ -47,11 +47,6 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public SurveySource Source { get; private set; }
 
-    /// <summary>
-    /// Survey type as string (kept for backward compatibility with existing queries)
-    /// </summary>
-    public string SurveyType { get; private set; }
-
     // ==================== SURVEY DETAILS ====================
 
     /// <summary>
@@ -125,23 +120,6 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public bool? InPersonVisit { get; private set; }
 
-    // ==================== EXPORT TRACKING ====================
-
-    /// <summary>
-    /// Date when survey was exported to .uhc container
-    /// </summary>
-    public DateTime? ExportedDate { get; private set; }
-
-    /// <summary>
-    /// Package ID of the .uhc container this survey was exported in
-    /// </summary>
-    public Guid? ExportPackageId { get; private set; }
-
-    /// <summary>
-    /// Date when survey was imported to desktop system
-    /// </summary>
-    public DateTime? ImportedDate { get; private set; }
-
     // ==================== CLAIM LINKING ====================
 
     /// <summary>
@@ -202,34 +180,6 @@ public class Survey : BaseAuditableEntity
     private Survey() : base()
     {
         ReferenceCode = string.Empty;
-        SurveyType = string.Empty;
-    }
-
-    /// <summary>
-    /// Create new field survey (UC-001)
-    /// </summary>
-    public static Survey CreateFieldSurvey(
-        Guid buildingId,
-        Guid fieldCollectorId,
-        DateTime surveyDate,
-        Guid? propertyUnitId,
-        Guid createdByUserId)
-    {
-        var survey = new Survey
-        {
-            BuildingId = buildingId,
-            FieldCollectorId = fieldCollectorId,
-            Type = Enums.SurveyType.Field,
-            Source = SurveySource.FieldCollection,
-            SurveyType = "Field", // Backward compatibility
-            SurveyDate = surveyDate,
-            PropertyUnitId = propertyUnitId,
-            Status = SurveyStatus.Draft
-        };
-
-        survey.MarkAsCreated(createdByUserId);
-
-        return survey;
     }
 
     /// <summary>
@@ -251,7 +201,6 @@ public class Survey : BaseAuditableEntity
             FieldCollectorId = officeClerkId, // Using same field for compatibility
             Type = Enums.SurveyType.Office,
             Source = SurveySource.OfficeSubmission,
-            SurveyType = "Office", // Backward compatibility
             SurveyDate = surveyDate,
             PropertyUnitId = propertyUnitId,
             OfficeLocation = officeLocation,
@@ -266,13 +215,13 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Create new survey (backward compatible - kept for existing code).
+    /// Create new survey from import pipeline.
     /// Reference code must be supplied by the caller (generated via ISurveyReferenceCodeGenerator).
     /// </summary>
     public static Survey Create(
         Guid buildingId,
         Guid fieldCollectorId,
-        string surveyType,
+        Enums.SurveyType type,
         DateTime surveyDate,
         Guid? propertyUnitId,
         Guid createdByUserId,
@@ -281,15 +230,14 @@ public class Survey : BaseAuditableEntity
         if (string.IsNullOrWhiteSpace(referenceCode))
             throw new ArgumentException("Reference code is required.", nameof(referenceCode));
 
-        var isOffice = surveyType.Equals("Office", StringComparison.OrdinalIgnoreCase);
+        var isOffice = type == Enums.SurveyType.Office;
 
         var survey = new Survey
         {
             BuildingId = buildingId,
             FieldCollectorId = fieldCollectorId,
-            Type = isOffice ? Enums.SurveyType.Office : Enums.SurveyType.Field,
+            Type = type,
             Source = isOffice ? SurveySource.OfficeSubmission : SurveySource.FieldCollection,
-            SurveyType = surveyType,
             SurveyDate = surveyDate,
             PropertyUnitId = propertyUnitId,
             Status = SurveyStatus.Draft,
@@ -367,15 +315,6 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Mark survey as completed
-    /// </summary>
-    public void MarkAsCompleted(Guid modifiedByUserId)
-    {
-        Status = SurveyStatus.Completed;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
     /// Mark survey as finalized (ready for export/claim creation)
     /// </summary>
     public void MarkAsFinalized(Guid modifiedByUserId)
@@ -391,60 +330,6 @@ public class Survey : BaseAuditableEntity
     {
         ClaimId = claimId;
         ClaimCreatedDate = DateTime.UtcNow;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark survey as exported
-    /// </summary>
-    public void MarkAsExported(Guid exportPackageId, Guid modifiedByUserId)
-    {
-        Status = SurveyStatus.Exported;
-        ExportedDate = DateTime.UtcNow;
-        ExportPackageId = exportPackageId;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark survey as imported to desktop system
-    /// </summary>
-    public void MarkAsImported(Guid modifiedByUserId)
-    {
-        Status = SurveyStatus.Imported;
-        ImportedDate = DateTime.UtcNow;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark survey as validated by data manager
-    /// </summary>
-    public void MarkAsValidated(Guid modifiedByUserId)
-    {
-        Status = SurveyStatus.Validated;
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Mark survey as requiring revision
-    /// </summary>
-    public void MarkAsRequiringRevision(string revisionNotes, Guid modifiedByUserId)
-    {
-        Status = SurveyStatus.RequiresRevision;
-        Notes = string.IsNullOrWhiteSpace(Notes)
-            ? revisionNotes
-            : $"{Notes}\n[Revision Required]: {revisionNotes}";
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Cancel survey
-    /// </summary>
-    public void Cancel(string cancellationReason, Guid modifiedByUserId)
-    {
-        Status = SurveyStatus.Cancelled;
-        Notes = string.IsNullOrWhiteSpace(Notes)
-            ? $"[Cancelled]: {cancellationReason}"
-            : $"{Notes}\n[Cancelled]: {cancellationReason}";
         MarkAsModified(modifiedByUserId);
     }
 
@@ -465,11 +350,6 @@ public class Survey : BaseAuditableEntity
         if (Status != SurveyStatus.Draft)
             throw new InvalidOperationException($"Cannot modify survey in {Status} status. Only Draft surveys can be modified.");
     }
-
-    /// <summary>
-    /// Check if this is a field survey
-    /// </summary>
-    public bool IsFieldSurvey => Type == Enums.SurveyType.Field;
 
     /// <summary>
     /// Check if this is an office survey

@@ -29,22 +29,6 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
             .HasConversion<int>()
             .HasComment("نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99");
 
-        builder.Property(ppr => ppr.RelationTypeOtherDesc)
-            .IsRequired(false)
-            .HasMaxLength(500)
-            .HasComment("Description when relation type is 'Other' (deprecated for office survey)");
-
-        // ContractType stored as int (nullable enum conversion) - Deprecated for office survey
-        builder.Property(ppr => ppr.ContractType)
-            .IsRequired(false)
-            .HasConversion<int?>()
-            .HasComment("نوع العقد - FullOwnership=1, SharedOwnership=2, etc. (deprecated for office survey)");
-
-        builder.Property(ppr => ppr.ContractTypeOtherDesc)
-            .IsRequired(false)
-            .HasMaxLength(500)
-            .HasComment("Description when contract type is 'Other' (deprecated for office survey)");
-
         // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
 
         // OccupancyType stored as integer (nullable enum)
@@ -67,14 +51,6 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
             .IsRequired(false)
             .HasMaxLength(2000)
             .HasComment("Contract or agreement details");
-
-        builder.Property(ppr => ppr.StartDate)
-            .IsRequired(false)
-            .HasComment("تاريخ بدء العلاقة - Start date of the relation (deprecated for office survey)");
-
-        builder.Property(ppr => ppr.EndDate)
-            .IsRequired(false)
-            .HasComment("End date of the relation (deprecated for office survey)");
 
         builder.Property(ppr => ppr.Notes)
             .IsRequired(false)
@@ -104,7 +80,6 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
         builder.HasIndex(ppr => ppr.IsDeleted).HasDatabaseName("IX_PersonPropertyRelation_IsDeleted");
         builder.HasIndex(ppr => new { ppr.IsActive, ppr.IsDeleted }).HasDatabaseName("IX_PersonPropertyRelation_IsActive_IsDeleted");
         builder.HasIndex(ppr => ppr.RelationType).HasDatabaseName("IX_PersonPropertyRelation_RelationType");
-        builder.HasIndex(ppr => ppr.ContractType).HasDatabaseName("IX_PersonPropertyRelation_ContractType");
         builder.HasIndex(ppr => ppr.SurveyId).HasDatabaseName("IX_PersonPropertyRelation_SurveyId");
 
         // Relationships

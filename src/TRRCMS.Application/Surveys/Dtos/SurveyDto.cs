@@ -80,23 +80,6 @@ public class SurveyDto
     /// </summary>
     public string? ContactPersonFullName { get; set; }
 
-    // ==================== EXPORT TRACKING ====================
-
-    /// <summary>
-    /// Date when survey was exported to .uhc container
-    /// </summary>
-    public DateTime? ExportedDate { get; set; }
-
-    /// <summary>
-    /// Package ID of the .uhc container this survey was exported in
-    /// </summary>
-    public Guid? ExportPackageId { get; set; }
-
-    /// <summary>
-    /// Date when survey was imported to desktop system
-    /// </summary>
-    public DateTime? ImportedDate { get; set; }
-
     // ==================== AUDIT ====================
 
     public DateTime CreatedAtUtc { get; set; }

@@ -126,8 +126,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.RelationType, opt => opt.MapFrom(src => (int)src.RelationType))
             .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? (int?)src.OccupancyType : null))
             .ForMember(dest => dest.HasEvidence, opt => opt.MapFrom(src => src.HasEvidence))
-            .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src => src.IsActive))
-            .ForMember(dest => dest.DurationInDays, opt => opt.Ignore()); // No longer calculated from dates
+            .ForMember(dest => dest.IsOngoing, opt => opt.MapFrom(src => src.IsActive));
 
         // Evidence mappings
         CreateMap<Evidence, EvidenceDto>()

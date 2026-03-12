@@ -46,7 +46,6 @@ public class PersonPropertyRelationDto
     public Guid? DeletedBy { get; set; }
 
     // Computed fields
-    public int? DurationInDays { get; set; }
     public bool IsOngoing { get; set; }
     public int EvidenceCount { get; set; }
 }

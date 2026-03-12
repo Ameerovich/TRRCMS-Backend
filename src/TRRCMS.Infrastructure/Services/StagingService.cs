@@ -376,11 +376,7 @@ public class StagingService : IStagingService
                 originalPersonId: GetGuid(reader, "person_id"),
                 originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
                 relationType: GetEnum<RelationType>(reader, "relation_type", "relation_type"),
-                relationTypeOtherDesc: GetNullableString(reader, "relation_type_other_desc"),
-                contractType: GetNullableEnum<TenureContractType>(reader, "contract_type", "tenure_contract_type"),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
-                startDate: GetNullableDateTime(reader, "start_date"),
-                endDate: GetNullableDateTime(reader, "end_date"),
                 notes: GetNullableString(reader, "notes"));
 
             entities.Add(entity);

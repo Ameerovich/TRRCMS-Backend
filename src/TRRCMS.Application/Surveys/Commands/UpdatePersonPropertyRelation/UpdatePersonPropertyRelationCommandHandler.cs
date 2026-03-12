@@ -135,7 +135,6 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             System.Text.Json.JsonSerializer.Serialize(new
             {
                 RelationType = relation.RelationType.ToString(),
-                ContractType = relation.ContractType?.ToString(),
                 relation.OwnershipShare
             }),
             string.Join(", ", changedFields),
