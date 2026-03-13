@@ -1,0 +1,1128 @@
+// TRRCMS - Entity Relationship Diagram (DBML)
+// PostgreSQL 16 + PostGIS 3.4
+// Generated: 2026-03-13
+//
+// Base Classes (inherited fields present in all tables):
+// ─────────────────────────────────────────────────────
+// BaseAuditableEntity (all production tables except AuditLogs):
+//   Id uuid [pk], RowVersion bytea,
+//   CreatedAtUtc timestamp, CreatedBy uuid,
+//   LastModifiedAtUtc timestamp, LastModifiedBy uuid,
+//   IsDeleted boolean, DeletedAtUtc timestamp, DeletedBy uuid
+//
+// BaseStagingEntity (all Staging* tables):
+//   Id uuid [pk], ImportPackageId uuid [ref: > ImportPackages.Id],
+//   OriginalEntityId uuid, StagingValidationStatus int,
+//   ValidationErrors jsonb, ValidationWarnings jsonb,
+//   IsApprovedForCommit boolean, CommittedEntityId uuid, StagedAtUtc timestamp
+
+// ═══════════════════════════════════════════════════════
+// CORE PROPERTY
+// ═══════════════════════════════════════════════════════
+
+Table Buildings {
+  Id uuid [pk]
+  RowVersion bytea
+  BuildingId varchar(17) [unique, not null, note: 'Composite code: Gov+Dist+SubDist+Comm+Neigh+BuildingNo']
+  GovernorateCode varchar(2) [not null]
+  DistrictCode varchar(2) [not null]
+  SubDistrictCode varchar(2) [not null]
+  CommunityCode varchar(3) [not null]
+  NeighborhoodCode varchar(3) [not null]
+  BuildingNumber varchar(5) [not null]
+  GovernorateName varchar [not null]
+  DistrictName varchar [not null]
+  SubDistrictName varchar [not null]
+  CommunityName varchar [not null]
+  NeighborhoodName varchar [not null]
+  BuildingType int [not null, note: 'BuildingType enum']
+  Status int [not null, note: 'BuildingStatus enum']
+  NumberOfPropertyUnits int [not null]
+  NumberOfApartments int [not null]
+  NumberOfShops int [not null]
+  BuildingGeometry geometry [note: 'PostGIS POLYGON/MULTIPOLYGON SRID 4326']
+  Latitude decimal
+  Longitude decimal
+  Notes text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table BuildingDocuments {
+  Id uuid [pk]
+  RowVersion bytea
+  BuildingId uuid [not null, ref: > Buildings.Id]
+  Description text
+  OriginalFileName varchar [not null]
+  FilePath varchar [not null]
+  FileSizeBytes bigint [not null]
+  MimeType varchar [not null]
+  FileHash varchar(64) [note: 'SHA-256']
+  Notes text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table PropertyUnits {
+  Id uuid [pk]
+  RowVersion bytea
+  BuildingId uuid [not null, ref: > Buildings.Id]
+  UnitIdentifier varchar [not null]
+  FloorNumber int
+  UnitType int [not null, note: 'PropertyUnitType enum']
+  Status int [not null, note: 'PropertyUnitStatus enum']
+  AreaSquareMeters decimal
+  NumberOfRooms int
+  Description text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+// ═══════════════════════════════════════════════════════
+// PEOPLE
+// ═══════════════════════════════════════════════════════
+
+Table Persons {
+  Id uuid [pk]
+  RowVersion bytea
+  FamilyNameArabic varchar
+  FirstNameArabic varchar
+  FatherNameArabic varchar
+  MotherNameArabic varchar
+  NationalId varchar
+  DateOfBirth timestamp
+  Gender int [note: 'Gender enum']
+  Nationality int [note: 'Nationality enum']
+  Email varchar
+  MobileNumber varchar
+  PhoneNumber varchar
+  IsContactPerson boolean [not null, default: false]
+  HouseholdId uuid [ref: > Households.Id]
+  RelationshipToHead int [note: 'RelationshipToHead enum']
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Households {
+  Id uuid [pk]
+  RowVersion bytea
+  PropertyUnitId uuid [not null, ref: > PropertyUnits.Id]
+  HeadOfHouseholdPersonId uuid [ref: > Persons.Id]
+  HeadOfHouseholdName varchar
+  HouseholdSize int
+  OccupancyType int [note: 'OccupancyType enum']
+  OccupancyNature int [note: 'OccupancyNature enum']
+  MaleCount int
+  FemaleCount int
+  MaleChildCount int
+  FemaleChildCount int
+  MaleElderlyCount int
+  FemaleElderlyCount int
+  MaleDisabledCount int
+  FemaleDisabledCount int
+  ChildCount int [not null, default: 0, note: 'Computed: MaleChildCount + FemaleChildCount']
+  ElderlyCount int [not null, default: 0, note: 'Computed: MaleElderlyCount + FemaleElderlyCount']
+  PersonsWithDisabilitiesCount int [not null, default: 0, note: 'Computed: MaleDisabledCount + FemaleDisabledCount']
+  Notes text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table PersonPropertyRelations {
+  Id uuid [pk]
+  RowVersion bytea
+  PersonId uuid [not null, ref: > Persons.Id]
+  PropertyUnitId uuid [not null, ref: > PropertyUnits.Id]
+  SurveyId uuid [ref: > Surveys.Id]
+  RelationType int [not null, note: 'RelationType enum']
+  OccupancyType int [note: 'OccupancyType enum']
+  HasEvidence boolean [not null, default: false]
+  OwnershipShare decimal
+  ContractDetails text
+  Notes text
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+// ═══════════════════════════════════════════════════════
+// CLAIMS & EVIDENCE
+// ═══════════════════════════════════════════════════════
+
+Table Claims {
+  Id uuid [pk]
+  RowVersion bytea
+  ClaimNumber varchar [unique, not null, note: 'Auto-generated']
+  PropertyUnitId uuid [not null, ref: > PropertyUnits.Id]
+  PrimaryClaimantId uuid [ref: > Persons.Id]
+  OriginatingSurveyId uuid [ref: > Surveys.Id]
+  ClaimType int [not null, note: 'ClaimType enum']
+  ClaimSource int [not null, note: 'ClaimSource enum']
+  CaseStatus int [not null, note: 'CaseStatus enum (Open/Closed)']
+  TenureContractType int [note: 'TenureContractType enum']
+  OwnershipShare int
+  SubmittedDate timestamp
+  SubmittedByUserId uuid
+  ClaimDescription text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Evidences {
+  Id uuid [pk]
+  RowVersion bytea
+  EvidenceType int [not null, note: 'EvidenceType enum']
+  Description text [not null]
+  OriginalFileName varchar [not null]
+  FilePath varchar [not null]
+  FileSizeBytes bigint [not null]
+  MimeType varchar [not null]
+  FileHash varchar(64) [note: 'SHA-256']
+  DocumentIssuedDate timestamp
+  DocumentExpiryDate timestamp
+  IssuingAuthority varchar
+  DocumentReferenceNumber varchar
+  Notes text
+  VersionNumber int [not null, default: 1]
+  PreviousVersionId uuid [ref: > Evidences.Id]
+  IsCurrentVersion boolean [not null, default: true]
+  PersonId uuid [ref: > Persons.Id]
+  ClaimId uuid [ref: > Claims.Id]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table EvidenceRelations {
+  Id uuid [pk]
+  RowVersion bytea
+  EvidenceId uuid [not null, ref: > Evidences.Id]
+  PersonPropertyRelationId uuid [not null, ref: > PersonPropertyRelations.Id]
+  LinkReason text
+  LinkedAtUtc timestamp [not null]
+  LinkedBy uuid [not null]
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Surveys {
+  Id uuid [pk]
+  RowVersion bytea
+  ReferenceCode varchar [unique, not null, note: 'ALG-YYYY-NNNNN or OFC-YYYY-NNNNN']
+  BuildingId uuid [not null, ref: > Buildings.Id]
+  PropertyUnitId uuid [ref: > PropertyUnits.Id]
+  FieldCollectorId uuid [not null, ref: > Users.Id]
+  Type int [not null, note: 'SurveyType enum (Field/Office)']
+  Source int [not null, note: 'SurveySource enum']
+  SurveyDate timestamp [not null]
+  Status int [not null, note: 'SurveyStatus enum']
+  GpsCoordinates varchar
+  IntervieweeName varchar
+  IntervieweeRelationship varchar
+  Notes text
+  DurationMinutes int
+  OfficeLocation varchar [note: 'Office surveys only']
+  RegistrationNumber varchar
+  AppointmentReference varchar
+  ContactPhone varchar
+  ContactEmail varchar
+  InPersonVisit boolean
+  ClaimId uuid [ref: > Claims.Id]
+  ClaimCreatedDate timestamp
+  ContactPersonId uuid [ref: > Persons.Id]
+  ContactPersonFullName varchar [note: 'Denormalized']
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+// ═══════════════════════════════════════════════════════
+// OPERATIONS
+// ═══════════════════════════════════════════════════════
+
+Table BuildingAssignments {
+  Id uuid [pk]
+  RowVersion bytea
+  BuildingId uuid [not null, ref: > Buildings.Id]
+  FieldCollectorId uuid [not null, ref: > Users.Id]
+  AssignedByUserId uuid [ref: > Users.Id]
+  AssignedDate timestamp [not null]
+  TargetCompletionDate timestamp
+  ActualCompletionDate timestamp
+  TransferStatus int [not null, note: 'TransferStatus enum']
+  TransferredToTabletDate timestamp
+  SynchronizedFromTabletDate timestamp
+  UnitsForRevisit jsonb [note: 'Array of PropertyUnit UUIDs']
+  RevisitReason text
+  IsRevisit boolean [not null, default: false]
+  OriginalAssignmentId uuid [ref: > BuildingAssignments.Id]
+  Priority varchar [not null, default: 'Normal']
+  AssignmentNotes text
+  IsActive boolean [not null, default: true]
+  TotalPropertyUnits int [not null]
+  CompletedPropertyUnits int [not null, default: 0]
+  TransferErrorMessage text
+  TransferRetryCount int [not null, default: 0]
+  LastTransferAttemptDate timestamp
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table SyncSessions {
+  Id uuid [pk]
+  RowVersion bytea
+  FieldCollectorId uuid [not null, ref: > Users.Id]
+  DeviceId varchar [not null]
+  ServerIpAddress varchar
+  SessionStatus int [not null, note: 'SyncSessionStatus enum']
+  StartedAtUtc timestamp [not null]
+  CompletedAtUtc timestamp
+  PackagesUploaded int [not null, default: 0]
+  PackagesFailed int [not null, default: 0]
+  AssignmentsDownloaded int [not null, default: 0]
+  AssignmentsAcknowledged int [not null, default: 0]
+  VocabularyVersionsSent jsonb
+  ErrorMessage text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table ImportPackages {
+  Id uuid [pk]
+  RowVersion bytea
+  PackageId uuid [not null, note: 'From .uhc manifest']
+  PackageNumber varchar [unique, not null, note: 'PKG-YYYY-NNNN']
+  FileName varchar [not null]
+  FileSizeBytes bigint [not null]
+  PackageCreatedDate timestamp [not null]
+  PackageExportedDate timestamp [not null]
+  ExportedByUserId uuid [not null]
+  DeviceId varchar
+  Status int [not null, note: 'ImportStatus enum']
+  ImportedDate timestamp
+  ImportedByUserId uuid
+  ValidationStartedDate timestamp
+  ValidationCompletedDate timestamp
+  CommittedDate timestamp
+  CommittedByUserId uuid
+  Checksum varchar(64) [not null, note: 'SHA-256']
+  DigitalSignature text
+  IsSignatureValid boolean [not null, default: false]
+  IsChecksumValid boolean [not null, default: false]
+  SurveyCount int [not null, default: 0]
+  BuildingCount int [not null, default: 0]
+  PropertyUnitCount int [not null, default: 0]
+  PersonCount int [not null, default: 0]
+  ClaimCount int [not null, default: 0]
+  DocumentCount int [not null, default: 0]
+  TotalAttachmentSizeBytes bigint [not null, default: 0]
+  VocabularyVersions jsonb
+  IsVocabularyCompatible boolean [not null, default: true]
+  VocabularyCompatibilityIssues text
+  SchemaVersion varchar
+  IsSchemaValid boolean [not null, default: false]
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  ValidationErrorCount int [not null, default: 0]
+  ValidationWarningCount int [not null, default: 0]
+  PersonDuplicateCount int [not null, default: 0]
+  PropertyDuplicateCount int [not null, default: 0]
+  ConflictCount int [not null, default: 0]
+  AreConflictsResolved boolean [not null, default: false]
+  SuccessfulImportCount int [not null, default: 0]
+  FailedImportCount int [not null, default: 0]
+  SkippedRecordCount int [not null, default: 0]
+  ImportSummary text
+  ErrorMessage text
+  ErrorLog jsonb
+  ArchivePath varchar
+  IsArchived boolean [not null, default: false]
+  ArchivedDate timestamp
+  UploadedFilePath varchar
+  ProcessingNotes text
+  ImportMethod varchar
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table ConflictResolutions {
+  Id uuid [pk]
+  RowVersion bytea
+  ConflictNumber varchar [unique, not null, note: 'CNF-YYYY-NNNN']
+  ConflictType varchar [not null, note: 'PersonDuplicate/PropertyDuplicate/ClaimConflict']
+  EntityType varchar [not null, note: 'Person/PropertyUnit/Building']
+  FirstEntityId uuid [not null]
+  SecondEntityId uuid [not null]
+  FirstEntityIdentifier varchar
+  SecondEntityIdentifier varchar
+  ImportPackageId uuid [ref: > ImportPackages.Id]
+  SimilarityScore decimal [not null, note: '0-100%']
+  ConfidenceLevel varchar [not null, note: 'Low/Medium/High']
+  ConflictDescription text [not null]
+  MatchingCriteria jsonb
+  DataComparison jsonb
+  Status varchar [not null, default: 'PendingReview', note: 'PendingReview/Resolved/Ignored']
+  ResolutionAction int [note: 'ConflictResolutionAction enum']
+  DetectedDate timestamp [not null]
+  DetectedByUserId uuid
+  AssignedDate timestamp
+  AssignedToUserId uuid
+  ResolvedDate timestamp
+  ResolvedByUserId uuid
+  ResolutionReason text
+  ResolutionNotes text
+  MergedEntityId uuid
+  DiscardedEntityId uuid
+  MergeMapping jsonb
+  Priority varchar [not null, default: 'Normal']
+  TargetResolutionHours int
+  IsOverdue boolean [not null, default: false]
+  IsAutoDetected boolean [not null, default: false]
+  IsAutoResolved boolean [not null, default: false]
+  AutoResolutionRule varchar
+  IsEscalated boolean [not null, default: false]
+  EscalationReason text
+  EscalatedDate timestamp
+  EscalatedByUserId uuid
+  ReviewAttemptCount int [not null, default: 0]
+  ReviewHistory jsonb
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+// ═══════════════════════════════════════════════════════
+// REFERENCE DATA
+// ═══════════════════════════════════════════════════════
+
+Table Governorates {
+  Id uuid [pk]
+  RowVersion bytea
+  Code varchar(2) [unique, not null]
+  NameArabic varchar [not null]
+  NameEnglish varchar [not null]
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Districts {
+  Id uuid [pk]
+  RowVersion bytea
+  Code varchar(2) [not null]
+  GovernorateCode varchar(2) [not null, ref: > Governorates.Code]
+  NameArabic varchar [not null]
+  NameEnglish varchar [not null]
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table SubDistricts {
+  Id uuid [pk]
+  RowVersion bytea
+  Code varchar(2) [not null]
+  GovernorateCode varchar(2) [not null]
+  DistrictCode varchar(2) [not null, ref: > Districts.Code]
+  NameArabic varchar [not null]
+  NameEnglish varchar [not null]
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Communities {
+  Id uuid [pk]
+  RowVersion bytea
+  Code varchar(3) [not null]
+  GovernorateCode varchar(2) [not null]
+  DistrictCode varchar(2) [not null]
+  SubDistrictCode varchar(2) [not null, ref: > SubDistricts.Code]
+  NameArabic varchar [not null]
+  NameEnglish varchar [not null]
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Neighborhoods {
+  Id uuid [pk]
+  RowVersion bytea
+  GovernorateCode varchar(2) [not null]
+  DistrictCode varchar(2) [not null]
+  SubDistrictCode varchar(2) [not null]
+  CommunityCode varchar(3) [not null]
+  NeighborhoodCode varchar(3) [not null]
+  FullCode varchar(12) [unique, not null, note: 'Composite: Gov+Dist+SubDist+Comm+Neigh']
+  NameArabic varchar [not null]
+  NameEnglish varchar
+  CenterPoint geometry [note: 'PostGIS POINT SRID 4326']
+  CenterLatitude decimal [not null]
+  CenterLongitude decimal [not null]
+  BoundaryGeometry geometry [note: 'PostGIS POLYGON/MULTIPOLYGON SRID 4326']
+  AreaSquareKm double
+  ZoomLevel int [not null]
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Landmarks {
+  Id uuid [pk]
+  RowVersion bytea
+  Identifier int [not null]
+  Name varchar [not null]
+  Type int [not null, note: 'LandmarkType enum']
+  Location geometry [note: 'PostGIS POINT SRID 4326']
+  Latitude decimal [not null]
+  Longitude decimal [not null]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table Streets {
+  Id uuid [pk]
+  RowVersion bytea
+  Identifier int [not null]
+  Name varchar [not null]
+  Geometry geometry [note: 'PostGIS LINESTRING SRID 4326']
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+// ═══════════════════════════════════════════════════════
+// SYSTEM
+// ═══════════════════════════════════════════════════════
+
+Table Users {
+  Id uuid [pk]
+  RowVersion bytea
+  Username varchar [unique, not null]
+  Email varchar [unique]
+  PasswordHash varchar [not null]
+  PasswordSalt varchar [not null]
+  FullNameArabic varchar [not null]
+  FullNameEnglish varchar
+  EmployeeId varchar
+  PhoneNumber varchar
+  Organization varchar
+  JobTitle varchar
+  Role int [not null, note: 'UserRole enum']
+  AdditionalRoles jsonb
+  HasMobileAccess boolean [not null, default: false]
+  HasDesktopAccess boolean [not null, default: false]
+  IsActive boolean [not null, default: true]
+  IsLockedOut boolean [not null, default: false]
+  LockoutEndDate timestamp
+  FailedLoginAttempts int [not null, default: 0]
+  LastFailedLoginDate timestamp
+  LastLoginDate timestamp
+  LastPasswordChangeDate timestamp
+  MustChangePassword boolean [not null, default: false]
+  PasswordExpiryDate timestamp
+  AssignedTabletId varchar
+  TabletAssignedDate timestamp
+  IsAvailable boolean [not null, default: true]
+  SupervisorUserId uuid [ref: > Users.Id]
+  TeamName varchar
+  PreferredLanguage varchar [not null, default: 'ar']
+  Preferences jsonb
+  SecurityStamp varchar [not null]
+  TwoFactorEnabled boolean [not null, default: false]
+  RefreshToken text
+  RefreshTokenExpiryDate timestamp
+  Notes text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table UserPermissions {
+  Id uuid [pk]
+  RowVersion bytea
+  UserId uuid [not null, ref: > Users.Id]
+  Permission int [not null, note: 'Permission enum']
+  GrantReason text
+  GrantedAtUtc timestamp [not null]
+  GrantedBy uuid [not null]
+  ExpiresAtUtc timestamp
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table AuditLogs {
+  Id uuid [pk, note: 'Inherits BaseEntity only (no soft delete)']
+  AuditLogNumber bigint [unique, not null, increment]
+  Timestamp timestamp [not null]
+  ActionType int [not null, note: 'AuditActionType enum']
+  ActionDescription varchar [not null]
+  ActionResult varchar [not null, default: 'Success']
+  UserId uuid [not null]
+  Username varchar [not null]
+  UserRole varchar [not null]
+  UserFullName varchar [not null]
+  EntityType varchar
+  EntityId uuid
+  EntityIdentifier varchar
+  OldValues jsonb
+  NewValues jsonb
+  ChangedFields jsonb
+  IpAddress varchar
+  UserAgent varchar
+  SourceApplication varchar
+  DeviceId varchar
+  SessionId varchar
+  AdditionalData jsonb
+  ErrorMessage text
+  StackTrace text
+  CorrelationId uuid
+  ParentAuditLogId uuid [ref: > AuditLogs.Id]
+  IsSecuritySensitive boolean [not null, default: false]
+  RequiresLegalRetention boolean [not null, default: false]
+  RetentionEndDate timestamp
+}
+
+Table Vocabularies {
+  Id uuid [pk]
+  RowVersion bytea
+  VocabularyName varchar [not null]
+  DisplayNameArabic varchar [not null]
+  DisplayNameEnglish varchar
+  Description text
+  Version varchar [not null, note: 'Semantic: MAJOR.MINOR.PATCH']
+  MajorVersion int [not null]
+  MinorVersion int [not null]
+  PatchVersion int [not null]
+  VersionDate timestamp [not null]
+  IsCurrentVersion boolean [not null, default: true]
+  PreviousVersionId uuid [ref: > Vocabularies.Id]
+  ValuesJson jsonb [not null, note: 'Array of {code, labelAr, labelEn, displayOrder}']
+  ValueCount int [not null, default: 0]
+  Category varchar
+  IsSystemVocabulary boolean [not null, default: false]
+  AllowCustomValues boolean [not null, default: false]
+  IsMandatory boolean [not null, default: false]
+  IsActive boolean [not null, default: true]
+  MinimumCompatibleVersion varchar
+  ChangeLog text
+  LastUsedDate timestamp
+  UsageCount int [not null, default: 0]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table SecurityPolicies {
+  Id uuid [pk]
+  RowVersion bytea
+  Version int [unique, not null]
+  IsActive boolean [not null, default: false]
+  EffectiveFromUtc timestamp [not null]
+  EffectiveToUtc timestamp
+  // ── Password Policy (owned value object) ──
+  Password_MinLength int [not null, default: 8]
+  Password_RequireUppercase boolean [not null, default: true]
+  Password_RequireLowercase boolean [not null, default: true]
+  Password_RequireDigit boolean [not null, default: true]
+  Password_RequireSpecialCharacter boolean [not null, default: true]
+  Password_ExpiryDays int [not null, default: 90]
+  Password_ReuseHistory int [not null, default: 5]
+  // ── Session & Lockout Policy (owned value object) ──
+  Session_TimeoutMinutes int [not null, default: 30]
+  Session_MaxFailedLoginAttempts int [not null, default: 5]
+  Session_LockoutDurationMinutes int [not null, default: 15]
+  // ── Access Control Policy (owned value object) ──
+  Access_AllowPasswordAuth boolean [not null, default: true]
+  Access_AllowSsoAuth boolean [not null, default: false]
+  Access_AllowTokenAuth boolean [not null, default: true]
+  Access_EnforceIpAllowlist boolean [not null, default: false]
+  Access_IpAllowlist varchar(2000)
+  Access_IpDenylist varchar(2000)
+  Access_RestrictByEnvironment boolean [not null, default: false]
+  Access_AllowedEnvironments varchar(500)
+  // ── Metadata ──
+  ChangeDescription varchar(1000)
+  AppliedByUserId uuid [not null]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+// ═══════════════════════════════════════════════════════
+// STAGING (Import Pipeline)
+// All staging tables inherit BaseStagingEntity fields:
+//   Id, ImportPackageId, OriginalEntityId,
+//   StagingValidationStatus, ValidationErrors,
+//   ValidationWarnings, IsApprovedForCommit,
+//   CommittedEntityId, StagedAtUtc
+//   + BaseAuditableEntity audit fields
+// ═══════════════════════════════════════════════════════
+
+Table StagingBuildings {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int [note: 'StagingValidationStatus enum']
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  BuildingId varchar(17)
+  GovernorateCode varchar(2) [not null]
+  DistrictCode varchar(2) [not null]
+  SubDistrictCode varchar(2) [not null]
+  CommunityCode varchar(3) [not null]
+  NeighborhoodCode varchar(3) [not null]
+  BuildingNumber varchar(5) [not null]
+  GovernorateName varchar
+  DistrictName varchar
+  SubDistrictName varchar
+  CommunityName varchar
+  NeighborhoodName varchar
+  BuildingType int [not null, note: 'BuildingType enum']
+  Status int [not null, note: 'BuildingStatus enum']
+  NumberOfPropertyUnits int
+  NumberOfApartments int
+  NumberOfShops int
+  BuildingGeometryWkt text [note: 'WKT string, not PostGIS geometry']
+  Latitude decimal
+  Longitude decimal
+  Notes text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingBuildingDocuments {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  OriginalBuildingId uuid [not null, note: 'Refs StagingBuilding by OriginalEntityId']
+  Description text
+  OriginalFileName varchar [not null]
+  FilePath varchar [not null]
+  FileSizeBytes bigint [not null]
+  MimeType varchar [not null]
+  FileHash varchar(64)
+  Notes text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingPropertyUnits {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  OriginalBuildingId uuid [not null, note: 'Refs StagingBuilding by OriginalEntityId']
+  UnitIdentifier varchar [not null]
+  UnitType int [not null, note: 'PropertyUnitType enum']
+  Status int [not null, note: 'PropertyUnitStatus enum']
+  FloorNumber int
+  NumberOfRooms int
+  AreaSquareMeters decimal
+  Description text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingPersons {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  FamilyNameArabic varchar [not null]
+  FirstNameArabic varchar [not null]
+  FatherNameArabic varchar [not null]
+  MotherNameArabic varchar
+  NationalId varchar
+  DateOfBirth timestamp
+  Email varchar
+  MobileNumber varchar
+  PhoneNumber varchar
+  Gender int [note: 'Gender enum']
+  Nationality int [note: 'Nationality enum']
+  OriginalHouseholdId uuid [note: 'Refs StagingHousehold by OriginalEntityId']
+  RelationshipToHead int [note: 'RelationshipToHead enum']
+  IsContactPerson boolean [not null, default: false]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingHouseholds {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  OriginalPropertyUnitId uuid [not null, note: 'Refs StagingPropertyUnit']
+  OriginalHeadOfHouseholdPersonId uuid [note: 'Refs StagingPerson']
+  HeadOfHouseholdName varchar [not null]
+  HouseholdSize int [not null]
+  MaleCount int [not null, default: 0]
+  FemaleCount int [not null, default: 0]
+  MaleChildCount int [not null, default: 0]
+  FemaleChildCount int [not null, default: 0]
+  MaleElderlyCount int [not null, default: 0]
+  FemaleElderlyCount int [not null, default: 0]
+  MaleDisabledCount int [not null, default: 0]
+  FemaleDisabledCount int [not null, default: 0]
+  Notes text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingPersonPropertyRelations {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  OriginalPersonId uuid [not null, note: 'Refs StagingPerson']
+  OriginalPropertyUnitId uuid [not null, note: 'Refs StagingPropertyUnit']
+  RelationType int [not null, note: 'RelationType enum']
+  OwnershipShare decimal
+  ContractDetails text
+  Notes text
+  IsActive boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingClaims {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  OriginalPropertyUnitId uuid [not null, note: 'Refs StagingPropertyUnit']
+  OriginalPrimaryClaimantId uuid [note: 'Refs StagingPerson']
+  ClaimNumber varchar
+  ClaimType varchar [not null]
+  ClaimSource int [not null, note: 'ClaimSource enum']
+  CaseStatus int [note: 'CaseStatus enum']
+  TenureContractType int [note: 'TenureContractType enum']
+  OwnershipShare decimal
+  ClaimDescription text
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingEvidences {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  OriginalPersonId uuid [note: 'Refs StagingPerson']
+  OriginalPersonPropertyRelationId uuid [note: 'Refs StagingPersonPropertyRelation']
+  OriginalClaimId uuid [note: 'Refs StagingClaim']
+  EvidenceType int [not null, note: 'EvidenceType enum']
+  Description text [not null]
+  OriginalFileName varchar [not null]
+  FilePath varchar [not null]
+  FileSizeBytes bigint [not null]
+  MimeType varchar [not null]
+  FileHash varchar(64)
+  IssuingAuthority varchar
+  DocumentIssuedDate timestamp
+  DocumentExpiryDate timestamp
+  DocumentReferenceNumber varchar
+  Notes text
+  VersionNumber int [not null, default: 1]
+  OriginalPreviousVersionId uuid
+  IsCurrentVersion boolean [not null, default: true]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table StagingSurveys {
+  Id uuid [pk]
+  ImportPackageId uuid [not null, ref: > ImportPackages.Id]
+  OriginalEntityId uuid
+  StagingValidationStatus int
+  ValidationErrors jsonb
+  ValidationWarnings jsonb
+  IsApprovedForCommit boolean [not null, default: false]
+  CommittedEntityId uuid
+  StagedAtUtc timestamp
+  OriginalBuildingId uuid [not null, note: 'Refs StagingBuilding']
+  OriginalPropertyUnitId uuid [note: 'Refs StagingPropertyUnit']
+  OriginalFieldCollectorId uuid [note: 'Refs User']
+  OriginalClaimId uuid [note: 'Refs StagingClaim']
+  OriginalContactPersonId uuid [note: 'Refs StagingPerson']
+  ReferenceCode varchar
+  Type int [note: 'SurveyType enum']
+  Source int [note: 'SurveySource enum']
+  SurveyDate timestamp [not null]
+  Status int [note: 'SurveyStatus enum']
+  GpsCoordinates varchar
+  IntervieweeName varchar
+  IntervieweeRelationship varchar
+  Notes text
+  OfficeLocation varchar
+  RegistrationNumber varchar
+  AppointmentReference varchar
+  ContactPhone varchar
+  ContactEmail varchar
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+// ═══════════════════════════════════════════════════════
+// TABLE GROUPS
+// ═══════════════════════════════════════════════════════
+
+TableGroup CoreProperty {
+  Buildings
+  BuildingDocuments
+  PropertyUnits
+}
+
+TableGroup People {
+  Persons
+  Households
+  PersonPropertyRelations
+}
+
+TableGroup ClaimsAndEvidence {
+  Claims
+  Evidences
+  EvidenceRelations
+  Surveys
+}
+
+TableGroup Operations {
+  BuildingAssignments
+  SyncSessions
+  ImportPackages
+  ConflictResolutions
+}
+
+TableGroup ReferenceData {
+  Governorates
+  Districts
+  SubDistricts
+  Communities
+  Neighborhoods
+  Landmarks
+  Streets
+}
+
+TableGroup System {
+  Users
+  UserPermissions
+  AuditLogs
+  Vocabularies
+  SecurityPolicies
+}
+
+TableGroup StagingImportPipeline {
+  StagingBuildings
+  StagingBuildingDocuments
+  StagingPropertyUnits
+  StagingPersons
+  StagingHouseholds
+  StagingPersonPropertyRelations
+  StagingClaims
+  StagingEvidences
+  StagingSurveys
+}
