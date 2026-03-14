@@ -1,0 +1,390 @@
+{
+	"info": {
+		"_postman_id": "trrcms-mobile-sync-flow-v1",
+		"name": "TRRCMS — Mobile Sync Flow",
+		"description": "# TRRCMS — Mobile Sync Flow\n\n**Audience:** Mobile/Tablet Development Team\n\n**Purpose:** Complete 4-step LAN sync protocol for offline-first field tablets.\n\n**Protocol:**\n```\n0. POST /Auth/login              → Get JWT token (FieldCollector role)\n1. POST /sync/session            → Open sync session\n2. POST /sync/upload             → Upload .uhc survey package(s)\n3. GET  /sync/assignments        → Download building assignments + vocabularies\n4. POST /sync/assignments/ack    → Acknowledge receipt\n```\n\n**Also includes:**\n- GET /vocabularies — Fetch all controlled vocabularies (public, no auth)\n\n**Environment:** `TRRCMS_Development.postman_environment.json`\n\n**Companion docs:**\n- `TRRCMS_Mobile_Sync_Integration_Guide.md` (v1.3) — Protocol, .uhc format, checksum algorithm\n- Swagger UI: `https://localhost:7001/swagger`\n- OpenAPI JSON: `https://localhost:7001/swagger/v1/swagger.json`\n\n**Auth:** JWT Bearer token. Default field collector: `fieldcollector1` / `Test@123`\n\n**Required Permission:** CanSyncData (System_Sync 9010)\n**Roles:** FieldCollector, FieldSupervisor, Administrator",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "0. Authenticate",
+			"item": [
+				{
+					"name": "Login (Field Collector)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().accessToken).to.not.be.empty;",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.accessToken) {",
+									"    pm.environment.set('accessToken', jsonData.accessToken);",
+									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
+									"    pm.environment.set('currentUserId', jsonData.userId);",
+									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
+									"    pm.environment.set('currentUserRole', jsonData.role);",
+									"    console.log('Logged in:', jsonData.fullNameArabic, '| Role:', jsonData.role);",
+									"    console.log('Token expires:', jsonData.accessTokenExpiresAt);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"{{fieldCollectorUsername}}\",\n  \"password\": \"{{password}}\",\n  \"deviceId\": \"TABLET-FIELD-001\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["Auth", "login"]
+						},
+						"description": "**Authenticate as Field Collector.**\n\nNo Bearer token needed for this request.\n\nAuto-saves `accessToken`, `currentUserId` to environment for subsequent requests.\n\n**Response fields:**\n| Field | Type | Description |\n|-------|------|-------------|\n| accessToken | string | JWT (15 min expiry) |\n| refreshToken | string | Refresh token (7 days) |\n| userId | GUID | Current user ID |\n| fullNameArabic | string | User display name |\n| role | string | User role name |\n| accessTokenExpiresAt | ISO-8601 | Token expiry timestamp |"
+					},
+					"response": []
+				}
+			],
+			"description": "Login to get JWT token. Run this first.\n\nDefault: `fieldcollector1` / `Test@123`\nAdmin: `admin` / `Admin@123`"
+		},
+		{
+			"name": "1. Vocabularies (Optional)",
+			"item": [
+				{
+					"name": "GET All Vocabularies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Vocabularies retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});",
+									"",
+									"var data = pm.response.json();",
+									"console.log('Vocabularies:', data.length);",
+									"data.slice(0, 5).forEach(function(v) {",
+									"    console.log('  ' + v.name + ' v' + v.version + ' (' + (v.values ? v.values.length : 0) + ' values)');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": { "type": "noauth" },
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/vocabularies",
+							"host": ["{{baseUrl}}"],
+							"path": ["vocabularies"]
+						},
+						"description": "**Fetch all active vocabularies (public endpoint, no auth required).**\n\nUse this for initial dropdown population before first sync.\nStep 3 (GET assignments) also returns vocabularies, so this is optional after first sync.\n\n**Vocabulary format:**\n```json\n{\n  \"id\": \"guid\",\n  \"name\": \"building_type\",\n  \"version\": \"1.0.0\",\n  \"category\": \"Building\",\n  \"values\": [\n    { \"code\": 1, \"labelArabic\": \"سكني\", \"labelEnglish\": \"Residential\" }\n  ]\n}\n```\n\n**Vocabulary domains:** building_type, building_usage, building_condition, property_unit_type, floor_location, gender, nationality, relationship_to_head, relation_type, evidence_type, evidence_source_type, evidence_condition, survey_type"
+					},
+					"response": []
+				}
+			],
+			"description": "Fetch vocabularies for dropdown population.\n\nPublic endpoint — no JWT required.\nAlso bundled in Step 3 (assignments download)."
+		},
+		{
+			"name": "2. Sync Protocol",
+			"item": [
+				{
+					"name": "Step 1 — Create Sync Session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Session created (201)', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"if (jsonData.id) {",
+									"    pm.environment.set('syncSessionId', jsonData.id);",
+									"    console.log('Session ID:', jsonData.id);",
+									"    console.log('  Status:', jsonData.sessionStatus);",
+									"    console.log('  Device:', jsonData.deviceId);",
+									"    console.log('  Collector:', jsonData.fieldCollectorId);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fieldCollectorId\": \"{{currentUserId}}\",\n  \"deviceId\": \"TABLET-FIELD-001\",\n  \"serverIpAddress\": \"192.168.1.100\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/sync/session",
+							"host": ["{{baseUrl}}"],
+							"path": ["sync", "session"]
+						},
+						"description": "**Sync Step 1 — Open a sync session.**\n\nCall this once per sync cycle. Returns `syncSessionId` needed for Steps 2-4.\n\n**Request body:**\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| fieldCollectorId | GUID | Yes | Logged-in user's ID |\n| deviceId | string | Yes | Unique tablet identifier |\n| serverIpAddress | string | No | LAN server IP |\n\n**Response (SyncSessionDto):**\n| Field | Type | Description |\n|-------|------|-------------|\n| id | GUID | Session ID (use in Steps 2-4) |\n| fieldCollectorId | GUID | Collector ID |\n| deviceId | string | Device identifier |\n| serverIpAddress | string? | Server IP |\n| sessionStatus | int | 1=InProgress, 2=Completed, 3=PartiallyCompleted, 4=Failed |\n| startedAtUtc | ISO-8601 | Session start time |\n| completedAtUtc | ISO-8601? | null until session closes |\n| packagesUploaded | int | Counter (starts at 0) |\n| packagesFailed | int | Counter (starts at 0) |\n| assignmentsDownloaded | int | Counter (starts at 0) |\n| assignmentsAcknowledged | int | Counter (starts at 0) |\n| vocabularyVersionsSent | string? | JSON of vocab versions sent |\n| errorMessage | string? | null unless failed |"
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 — Upload .uhc Package",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Package accepted (200)', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().accepted).to.be.true;",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('Package:', jsonData.packageId);",
+									"console.log('  Accepted:', jsonData.accepted);",
+									"console.log('  Duplicate:', jsonData.isDuplicate);",
+									"console.log('  Message:', jsonData.message);",
+									"if (jsonData.importPackageId) {",
+									"    pm.environment.set('importPackageId', jsonData.importPackageId);",
+									"    console.log('  ImportPackageId:', jsonData.importPackageId);",
+									"}",
+									"if (jsonData.importError) {",
+									"    console.warn('  ImportError:', jsonData.importError);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "",
+									"description": ".uhc package file (renamed SQLite3 database). Select your .uhc file here."
+								},
+								{
+									"key": "SyncSessionId",
+									"value": "{{syncSessionId}}",
+									"type": "text",
+									"description": "Session ID from Step 1"
+								},
+								{
+									"key": "PackageId",
+									"value": "aaaa0001-0001-0001-0001-000000000001",
+									"type": "text",
+									"description": "UUID from .uhc manifest table (package_id key)"
+								},
+								{
+									"key": "DeviceId",
+									"value": "TABLET-FIELD-001",
+									"type": "text",
+									"description": "Must match the deviceId used in Step 1"
+								},
+								{
+									"key": "CreatedUtc",
+									"value": "2026-03-14T09:00:00Z",
+									"type": "text",
+									"description": "ISO-8601 UTC timestamp when package was created on tablet"
+								},
+								{
+									"key": "SchemaVersion",
+									"value": "1.0.0",
+									"type": "text",
+									"description": "SQLite schema version (from manifest schema_version key)"
+								},
+								{
+									"key": "AppVersion",
+									"value": "1.0.0",
+									"type": "text",
+									"description": "Mobile app version"
+								},
+								{
+									"key": "Sha256Checksum",
+									"value": "paste-your-sha256-here",
+									"type": "text",
+									"description": "SHA-256 of data table contents (see Integration Guide Section 4 for algorithm)"
+								},
+								{
+									"key": "VocabVersionsJson",
+									"value": "{\"building_type\":\"1.0.0\",\"gender\":\"1.0.0\"}",
+									"type": "text",
+									"description": "Optional. JSON object mapping vocabulary domain names to versions used when creating the package."
+								},
+								{
+									"key": "FormSchemaVersion",
+									"value": "1.0.0",
+									"type": "text",
+									"description": "Optional. Version of the mobile form schema used."
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/sync/upload",
+							"host": ["{{baseUrl}}"],
+							"path": ["sync", "upload"]
+						},
+						"description": "**Sync Step 2 — Upload a .uhc survey package.**\n\n**Content-Type:** multipart/form-data (auto-set by Postman)\n**Max Size:** 500 MB\n\n**Idempotent:** Same PackageId uploaded twice returns `accepted=true, isDuplicate=true`.\n\n**Checksum verification:**\nServer recomputes SHA-256 from the uploaded .uhc file and compares with `Sha256Checksum`.\nMismatch → `accepted=false`, session marked Failed.\nSee Integration Guide Section 4 for the exact checksum algorithm.\n\n**Response (UploadSyncPackageResultDto):**\n| Field | Type | Description |\n|-------|------|-------------|\n| accepted | bool | true if package stored successfully |\n| packageId | GUID | Echo of submitted PackageId |\n| isDuplicate | bool | true if package was already received |\n| message | string | Human-readable status message |\n| importPackageId | GUID? | Server-side import package ID (null if rejected) |\n| importError | string? | null on success; error details if import pipeline failed |\n\n**Repeat this step** for each .uhc package before moving to Step 3."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 — Download Assignments & Vocabularies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Assignments downloaded (200)', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('Session:', jsonData.syncSessionId);",
+									"console.log('  Assignments:', jsonData.totalAssignments);",
+									"console.log('  Vocabularies:', jsonData.vocabularies ? jsonData.vocabularies.length : 0);",
+									"console.log('  Generated at:', jsonData.generatedAtUtc);",
+									"",
+									"// Save assignment IDs for Step 4 acknowledgement",
+									"if (jsonData.assignments && jsonData.assignments.length > 0) {",
+									"    var ids = jsonData.assignments.map(function(a) { return a.assignmentId; });",
+									"    pm.environment.set('assignmentIds', JSON.stringify(ids));",
+									"    console.log('  Saved', ids.length, 'assignment IDs for Step 4');",
+									"    jsonData.assignments.slice(0, 3).forEach(function(a, i) {",
+									"        console.log('    ' + (i+1) + '. Building:', a.buildingCode, '| Status:', a.transferStatus);",
+									"    });",
+									"} else {",
+									"    pm.environment.set('assignmentIds', '[]');",
+									"    console.log('  No assignments to download');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/sync/assignments?sessionId={{syncSessionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["sync", "assignments"],
+							"query": [
+								{
+									"key": "sessionId",
+									"value": "{{syncSessionId}}",
+									"description": "Required. Session ID from Step 1."
+								},
+								{
+									"key": "modifiedSinceUtc",
+									"value": "",
+									"disabled": true,
+									"description": "Optional. ISO-8601 UTC. Omit for full download. Pass previous generatedAtUtc for incremental sync."
+								}
+							]
+						},
+						"description": "**Sync Step 3 — Download building assignments and vocabulary snapshot.**\n\n**Returns:**\n- `assignments` — Buildings assigned to this collector (Pending/Failed status)\n- `vocabularies` — Full snapshot of all controlled vocabularies (bilingual Arabic/English)\n- `generatedAtUtc` — Save this value; pass as `modifiedSinceUtc` on next sync for incremental download\n\n**Response (SyncAssignmentPayloadDto):**\n| Field | Type | Description |\n|-------|------|-------------|\n| syncSessionId | GUID | Echo of session ID |\n| fieldCollectorId | GUID | Collector ID |\n| generatedAtUtc | ISO-8601 | Payload timestamp (use for next incremental sync) |\n| assignments | array | List of SyncBuildingDto |\n| totalAssignments | int | Count of assignments |\n| vocabularies | array | List of SyncVocabularyDto |\n| vocabularyVersionsSentJson | string | JSON of vocabulary versions included |\n\n**SyncBuildingDto fields:**\n| Field | Type | Description |\n|-------|------|-------------|\n| assignmentId | GUID | Assignment ID (use in Step 4 ack) |\n| buildingId | GUID | Building entity ID |\n| buildingCode | string | Human-readable building code |\n| transferStatus | int | 1=Pending, 2=InProgress, 3=Transferred, 4=Failed |\n| geometry | GeoJSON | Building polygon |\n| address | string | Building address |\n| neighborhoodName | string | Neighborhood |\n\n**Incremental sync:** Pass `modifiedSinceUtc` to get only assignments created/modified after that timestamp."
+					},
+					"response": []
+				},
+				{
+					"name": "Step 4 — Acknowledge Assignments",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Acknowledgement processed (200)', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"console.log('Acknowledged:', jsonData.acknowledgedCount);",
+									"console.log('  Failed:', jsonData.failedCount);",
+									"if (jsonData.failedAssignmentIds && jsonData.failedAssignmentIds.length > 0) {",
+									"    console.warn('  Failed IDs:', JSON.stringify(jsonData.failedAssignmentIds));",
+									"}",
+									"console.log('  Message:', jsonData.message);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Auto-populate assignmentIds from Step 3 if available",
+									"var ids = pm.environment.get('assignmentIds');",
+									"if (ids) {",
+									"    try {",
+									"        var parsed = JSON.parse(ids);",
+									"        if (parsed.length > 0) {",
+									"            var body = {",
+									"                syncSessionId: pm.environment.get('syncSessionId'),",
+									"                assignmentIds: parsed",
+									"            };",
+									"            pm.request.body.raw = JSON.stringify(body, null, 2);",
+									"            console.log('Auto-populated', parsed.length, 'assignment IDs from Step 3');",
+									"        }",
+									"    } catch(e) { /* use manual body */ }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"syncSessionId\": \"{{syncSessionId}}\",\n  \"assignmentIds\": [\n    \"paste-assignment-guid-1\",\n    \"paste-assignment-guid-2\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/sync/assignments/ack",
+							"host": ["{{baseUrl}}"],
+							"path": ["sync", "assignments", "ack"]
+						},
+						"description": "**Sync Step 4 — Acknowledge successful assignment download.**\n\nConfirms the tablet has stored the assignments received in Step 3.\n\n**Idempotent:** Already-acknowledged assignments are silently skipped.\n\n**Effect:** Each assignment transitions Pending/Failed → Transferred.\n\n**Session closes after this step:**\n- Completed (2) — all packages OK\n- PartiallyCompleted (3) — some packages failed checksum\n\n**Pre-request script:** Auto-populates `assignmentIds` from Step 3 response.\n\n**Request body:**\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| syncSessionId | GUID | Yes | Session from Step 1 |\n| assignmentIds | GUID[] | Yes | Assignment IDs from Step 3 response |\n\n**Response (SyncAckResultDto):**\n| Field | Type | Description |\n|-------|------|-------------|\n| acknowledgedCount | int | Successfully acknowledged |\n| failedCount | int | Failed to acknowledge |\n| failedAssignmentIds | GUID[] | IDs that failed (empty on success) |\n| message | string | Human-readable result |"
+					},
+					"response": []
+				}
+			],
+			"description": "## 4-Step Sync Protocol\n\n**Flow:** Session → Upload → Download → Acknowledge\n\n```\nStep 1: POST /sync/session          → Open session\nStep 2: POST /sync/upload            → Upload .uhc package (repeat per package)\nStep 3: GET  /sync/assignments       → Download assignments + vocabularies\nStep 4: POST /sync/assignments/ack   → Confirm receipt\n```\n\n**Session lifecycle:**\n- InProgress (1) → Completed (2) after Step 4\n- InProgress (1) → PartiallyCompleted (3) if some packages failed\n- InProgress (1) → Failed (4) on checksum mismatch\n\n**Idempotency:** Steps 2 and 4 are idempotent. Safe to retry on network failure."
+		}
+	]
+}

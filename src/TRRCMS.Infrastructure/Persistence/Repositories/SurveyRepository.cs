@@ -104,7 +104,7 @@ public class SurveyRepository : ISurveyRepository
         var query = _context.Surveys
             .Include(s => s.Building)
             .Include(s => s.PropertyUnit)
-            .Where(s => s.Type == SurveyType.Office && !s.IsDeleted);
+            .Where(s => !s.IsDeleted);
 
         // Apply filters
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SurveyStatus>(status, true, out var statusEnum))
@@ -139,8 +139,9 @@ public class SurveyRepository : ISurveyRepository
 
         if (!string.IsNullOrWhiteSpace(intervieweeName))
         {
-            query = query.Where(s => s.IntervieweeName != null &&
-                s.IntervieweeName.Contains(intervieweeName));
+            query = query.Where(s =>
+                (s.ContactPersonFullName != null && s.ContactPersonFullName.Contains(intervieweeName)) ||
+                (s.IntervieweeName != null && s.IntervieweeName.Contains(intervieweeName)));
         }
 
         // Get total count before pagination

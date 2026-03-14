@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
@@ -51,9 +52,6 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
         var survey = await _surveyRepository.GetByIdAsync(request.SurveyId, cancellationToken)
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        if (survey.Type != SurveyType.Office)
-            throw new ValidationException("This endpoint is only for office surveys. Use field survey endpoints for field surveys.");
-
         var result = new OfficeSurveyDetailDto
         {
             Id = survey.Id,
@@ -68,7 +66,9 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
             Status = (int)survey.Status,
             SurveyType = (int)survey.Type,
             GpsCoordinates = survey.GpsCoordinates,
-            IntervieweeName = survey.IntervieweeName,
+            IntervieweeName = !string.IsNullOrEmpty(survey.ContactPersonFullName)
+                ? survey.ContactPersonFullName
+                : survey.IntervieweeName,
             IntervieweeRelationship = survey.IntervieweeRelationship,
             Notes = survey.Notes,
             DurationMinutes = survey.DurationMinutes,
@@ -86,11 +86,22 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
             ClaimCreatedDate = survey.ClaimCreatedDate
         };
 
+        // Load all claims originating from this survey (ownership + occupancy)
+        var allClaims = await _claimRepository.GetFilteredAsync(
+            caseStatus: null,
+            source: null,
+            createdByUserId: null,
+            claimId: null,
+            originatingSurveyId: survey.Id,
+            cancellationToken: cancellationToken);
+        result.Claims = _mapper.Map<List<ClaimDto>>(allClaims);
+
+        // Keep backward-compat single ClaimNumber from the linked claim
         if (survey.ClaimId.HasValue)
         {
-            var claim = await _claimRepository.GetByIdAsync(survey.ClaimId.Value, cancellationToken);
-            if (claim != null)
-                result.ClaimNumber = claim.ClaimNumber;
+            var linkedClaim = allClaims.FirstOrDefault(c => c.Id == survey.ClaimId.Value);
+            if (linkedClaim != null)
+                result.ClaimNumber = linkedClaim.ClaimNumber;
         }
 
         if (survey.PropertyUnitId.HasValue)

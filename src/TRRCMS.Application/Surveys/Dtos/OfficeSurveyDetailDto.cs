@@ -1,3 +1,4 @@
+using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
@@ -60,6 +61,11 @@ public class OfficeSurveyDetailDto : SurveyDto
     public DateTime? ClaimCreatedDate { get; set; }
 
     // ==================== RELATED DATA ====================
+
+    /// <summary>
+    /// All claims originating from this survey (ownership + occupancy)
+    /// </summary>
+    public List<ClaimDto> Claims { get; set; } = new();
 
     /// <summary>
     /// Households captured in this survey context

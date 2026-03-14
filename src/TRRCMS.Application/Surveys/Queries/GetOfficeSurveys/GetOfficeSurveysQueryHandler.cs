@@ -56,9 +56,16 @@ public class GetOfficeSurveysQueryHandler : IRequestHandler<GetOfficeSurveysQuer
         var surveyDtos = _mapper.Map<List<SurveyDto>>(surveys);
 
         // Enhance DTOs with additional info
-        foreach (var dto in surveyDtos)
+        foreach (var (dto, survey) in surveyDtos.Zip(surveys))
         {
             dto.FieldCollectorName = _currentUserService.Username; // Will be fetched properly in future
+
+            // Use contact person name in place of interviewee name
+            // Format: "firstname fathername familyname (mothername)"
+            if (!string.IsNullOrEmpty(survey.ContactPersonFullName))
+            {
+                dto.IntervieweeName = survey.ContactPersonFullName;
+            }
         }
 
         return new GetOfficeSurveysResponse
