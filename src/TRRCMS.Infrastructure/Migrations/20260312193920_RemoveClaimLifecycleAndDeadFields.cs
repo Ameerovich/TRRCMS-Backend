@@ -11,209 +11,69 @@ namespace TRRCMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_AssignedToUserId",
-                table: "Claims");
+            // Idempotent index drops — some may already be gone from prior manual changes.
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_AssignedToUserId"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_DecisionDate"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_HasConflicts"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_HasConflicts_LifecycleStage"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_IsDeleted_LifecycleStage"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_LifecycleStage"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_LifecycleStage_AssignedToUserId"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_Priority"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_Priority_TargetCompletionDate"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_TargetCompletionDate"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_VerificationStatus"";");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_DecisionDate",
-                table: "Claims");
+            // Idempotent column drops — some may already be gone from prior manual changes.
+            // StagingClaims columns
+            migrationBuilder.Sql(@"
+                ALTER TABLE ""StagingClaims""
+                    DROP COLUMN IF EXISTS ""AllRequiredDocumentsSubmitted"",
+                    DROP COLUMN IF EXISTS ""EvidenceCount"",
+                    DROP COLUMN IF EXISTS ""LegalBasis"",
+                    DROP COLUMN IF EXISTS ""LifecycleStage"",
+                    DROP COLUMN IF EXISTS ""MissingDocuments"",
+                    DROP COLUMN IF EXISTS ""Priority"",
+                    DROP COLUMN IF EXISTS ""ProcessingNotes"",
+                    DROP COLUMN IF EXISTS ""PublicRemarks"",
+                    DROP COLUMN IF EXISTS ""SupportingNarrative"",
+                    DROP COLUMN IF EXISTS ""TargetCompletionDate"",
+                    DROP COLUMN IF EXISTS ""TenureEndDate"",
+                    DROP COLUMN IF EXISTS ""TenureStartDate"",
+                    DROP COLUMN IF EXISTS ""VerificationNotes"",
+                    DROP COLUMN IF EXISTS ""VerificationStatus"";
+            ");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_HasConflicts",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_HasConflicts_LifecycleStage",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_IsDeleted_LifecycleStage",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_LifecycleStage",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_LifecycleStage_AssignedToUserId",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_Priority",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_Priority_TargetCompletionDate",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_TargetCompletionDate",
-                table: "Claims");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_VerificationStatus",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "AllRequiredDocumentsSubmitted",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "EvidenceCount",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "LegalBasis",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "LifecycleStage",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "MissingDocuments",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "Priority",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "ProcessingNotes",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "PublicRemarks",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "SupportingNarrative",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "TargetCompletionDate",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "TenureEndDate",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "TenureStartDate",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "VerificationNotes",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "VerificationStatus",
-                table: "StagingClaims");
-
-            migrationBuilder.DropColumn(
-                name: "AllRequiredDocumentsSubmitted",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "AssignedDate",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "AssignedToUserId",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "ConflictCount",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "ConflictResolutionStatus",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "DecisionByUserId",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "DecisionDate",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "DecisionNotes",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "DecisionReason",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "EvidenceCount",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "FinalDecision",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "HasConflicts",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "LegalBasis",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "LifecycleStage",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "MissingDocuments",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "Priority",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "ProcessingNotes",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "PublicRemarks",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "SupportingNarrative",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "TargetCompletionDate",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "TenureEndDate",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "TenureStartDate",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "VerificationDate",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "VerificationNotes",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "VerificationStatus",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "VerifiedByUserId",
-                table: "Claims");
+            // Claims columns
+            migrationBuilder.Sql(@"
+                ALTER TABLE ""Claims""
+                    DROP COLUMN IF EXISTS ""AllRequiredDocumentsSubmitted"",
+                    DROP COLUMN IF EXISTS ""AssignedDate"",
+                    DROP COLUMN IF EXISTS ""AssignedToUserId"",
+                    DROP COLUMN IF EXISTS ""ConflictCount"",
+                    DROP COLUMN IF EXISTS ""ConflictResolutionStatus"",
+                    DROP COLUMN IF EXISTS ""DecisionByUserId"",
+                    DROP COLUMN IF EXISTS ""DecisionDate"",
+                    DROP COLUMN IF EXISTS ""DecisionNotes"",
+                    DROP COLUMN IF EXISTS ""DecisionReason"",
+                    DROP COLUMN IF EXISTS ""EvidenceCount"",
+                    DROP COLUMN IF EXISTS ""FinalDecision"",
+                    DROP COLUMN IF EXISTS ""HasConflicts"",
+                    DROP COLUMN IF EXISTS ""LegalBasis"",
+                    DROP COLUMN IF EXISTS ""LifecycleStage"",
+                    DROP COLUMN IF EXISTS ""MissingDocuments"",
+                    DROP COLUMN IF EXISTS ""Priority"",
+                    DROP COLUMN IF EXISTS ""ProcessingNotes"",
+                    DROP COLUMN IF EXISTS ""PublicRemarks"",
+                    DROP COLUMN IF EXISTS ""SupportingNarrative"",
+                    DROP COLUMN IF EXISTS ""TargetCompletionDate"",
+                    DROP COLUMN IF EXISTS ""TenureEndDate"",
+                    DROP COLUMN IF EXISTS ""TenureStartDate"",
+                    DROP COLUMN IF EXISTS ""VerificationDate"",
+                    DROP COLUMN IF EXISTS ""VerificationNotes"",
+                    DROP COLUMN IF EXISTS ""VerificationStatus"",
+                    DROP COLUMN IF EXISTS ""VerifiedByUserId"";
+            ");
         }
 
         /// <inheritdoc />

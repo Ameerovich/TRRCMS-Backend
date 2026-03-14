@@ -34,7 +34,7 @@ public class UploadPackageCommandValidator : AbstractValidator<UploadPackageComm
         RuleFor(x => x.ImportMethod)
             .NotEmpty()
             .WithMessage("Import method is required")
-            .Must(m => m is "Manual" or "NetworkSync" or "WatchedFolder")
-            .WithMessage("Import method must be Manual, NetworkSync, or WatchedFolder");
+            .Must(m => m is "Manual" or "NetworkSync" or "WatchedFolder" or "Sync")
+            .WithMessage("Import method must be Manual, NetworkSync, WatchedFolder, or Sync");
     }
 }

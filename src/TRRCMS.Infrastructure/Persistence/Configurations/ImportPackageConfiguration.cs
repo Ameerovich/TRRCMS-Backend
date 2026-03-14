@@ -185,6 +185,11 @@ public class ImportPackageConfiguration : IEntityTypeConfiguration<ImportPackage
         builder.Property(p => p.ImportSummary)
             .HasMaxLength(4000);
 
+        // ==================== COMMIT REPORT ====================
+
+        builder.Property(p => p.CommitReportJson)
+            .HasComment("JSON snapshot of the full commit report (entity breakdowns, idMappings, errors)");
+
         // ==================== ERROR TRACKING ====================
 
         builder.Property(p => p.ErrorMessage)

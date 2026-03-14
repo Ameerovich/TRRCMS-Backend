@@ -11,8 +11,8 @@ namespace TRRCMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Documents");
+            // Idempotent — table may already be gone from prior manual changes.
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS ""Documents"" CASCADE;");
         }
 
         /// <inheritdoc />

@@ -11,16 +11,25 @@ namespace TRRCMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // 1. Convert ClaimType from varchar to integer
+            // 1. Convert ClaimType from varchar to integer (idempotent — skips if already integer)
             //    "Ownership Claim" / "Ownership" → 1 (OwnershipClaim)
             //    Everything else → 2 (OccupancyClaim)
             migrationBuilder.Sql(@"
-                ALTER TABLE ""Claims""
-                    ALTER COLUMN ""ClaimType"" TYPE integer
-                    USING CASE
-                        WHEN ""ClaimType"" ILIKE '%Ownership%' THEN 1
-                        ELSE 2
-                    END;
+                DO $$
+                BEGIN
+                    IF EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_name = 'Claims' AND column_name = 'ClaimType'
+                          AND data_type <> 'integer'
+                    ) THEN
+                        ALTER TABLE ""Claims""
+                            ALTER COLUMN ""ClaimType"" TYPE integer
+                            USING CASE
+                                WHEN ""ClaimType"" ILIKE '%Ownership%' THEN 1
+                                ELSE 2
+                            END;
+                    END IF;
+                END $$;
                 COMMENT ON COLUMN ""Claims"".""ClaimType"" IS 'Claim type: 1=OwnershipClaim (مطالبة ملكية), 2=OccupancyClaim (مطالبة إشغال)';
             ");
 

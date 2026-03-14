@@ -98,7 +98,7 @@ using (var conn = new SqliteConnection(connStr))
     var manifest = new Dictionary<string, string>
     {
         ["package_id"]                = packageId.ToString(),
-        ["schema_version"]            = "1.0.0",
+        ["schema_version"]            = "1.2.0",
         ["created_utc"]               = DateTime.UtcNow.ToString("o"),
         ["device_id"]                 = "TABLET-TEST-001",
         ["app_version"]               = "1.0.0",
@@ -162,6 +162,7 @@ using (var conn = new SqliteConnection(connStr))
         ("@cpid", personId1.ToString()));
 
     // ── 3. BUILDINGS TABLE ─────────────────────────────────────────────────────
+    // Columns aligned with StagingBuilding entity (no damage_level/number_of_floors/year_of_construction)
     Execute(conn, @"
         CREATE TABLE buildings (
             id                      TEXT PRIMARY KEY,
@@ -185,10 +186,7 @@ using (var conn = new SqliteConnection(connStr))
             district_name           TEXT,
             sub_district_name       TEXT,
             community_name          TEXT,
-            neighborhood_name       TEXT,
-            damage_level            INTEGER,
-            number_of_floors        INTEGER,
-            year_of_construction    INTEGER
+            neighborhood_name       TEXT
         );");
 
     // Aleppo — Al-Jamiliyah neighbourhood
@@ -202,8 +200,7 @@ using (var conn = new SqliteConnection(connStr))
             'POINT(37.1343 36.2021)',
             'مبنى سكني من 3 طوابق بحالة جيدة',
             '14140101001100001',
-            'حلب', 'حلب', 'مركز حلب', 'حلب المدينة', 'الجميلية',
-            0, 3, 2005
+            'حلب', 'حلب', 'مركز حلب', 'حلب المدينة', 'الجميلية'
         );",
         ("@id", buildingId.ToString()));
 
@@ -235,6 +232,7 @@ using (var conn = new SqliteConnection(connStr))
         ("@bid", buildingId.ToString()));
 
     // ── 4. PROPERTY_UNITS TABLE ────────────────────────────────────────────────
+    // Columns aligned with StagingPropertyUnit entity (no occupancy_status/damage_level/estimated_area_sqm)
     Execute(conn, @"
         CREATE TABLE property_units (
             id                  TEXT PRIMARY KEY,
@@ -245,19 +243,14 @@ using (var conn = new SqliteConnection(connStr))
             floor_number        INTEGER,
             number_of_rooms     INTEGER,
             area_square_meters  REAL,
-            description         TEXT,
-            occupancy_status    TEXT,
-            damage_level        INTEGER,
-            estimated_area_sqm  REAL,
-            occupancy_type      INTEGER,
-            occupancy_nature    INTEGER
+            description         TEXT
         );");
 
     // Unit 1: Ground floor apartment — Occupied
     Execute(conn, @"
         INSERT INTO property_units VALUES (
             @id, @bid, 'شقة 1', 1, 1, 1, 4, 120.5,
-            'شقة أرضية مع حديقة صغيرة', 'مأهولة', 0, 120.5, NULL, NULL
+            'شقة أرضية مع حديقة صغيرة'
         );",
         ("@id", unitId1.ToString()), ("@bid", buildingId.ToString()));
 
@@ -265,11 +258,14 @@ using (var conn = new SqliteConnection(connStr))
     Execute(conn, @"
         INSERT INTO property_units VALUES (
             @id, @bid, 'شقة 2', 1, 1, 2, 3, 110.0,
-            'شقة في الطابق الأول', 'مأهولة', 0, 110.0, NULL, NULL
+            'شقة في الطابق الأول'
         );",
         ("@id", unitId2.ToString()), ("@bid", buildingId.ToString()));
 
     // ── 5. PERSONS TABLE ───────────────────────────────────────────────────────
+    // Columns aligned with StagingPerson entity
+    // gender/nationality/relationship_to_head stored as INTEGER enum codes (not TEXT)
+    // Enum codes: Gender(Male=1,Female=2), Nationality(Syrian=1), RelationshipToHead(Head=1,Spouse=2)
     Execute(conn, @"
         CREATE TABLE persons (
             id                      TEXT PRIMARY KEY,
@@ -282,51 +278,55 @@ using (var conn = new SqliteConnection(connStr))
             email                   TEXT,
             mobile_number           TEXT,
             phone_number            TEXT,
-            full_name_english       TEXT,
-            gender                  TEXT,
-            nationality             TEXT,
+            gender                  INTEGER,
+            nationality             INTEGER,
             household_id            TEXT,
-            relationship_to_head    TEXT,
+            relationship_to_head    INTEGER,
             is_contact_person       INTEGER DEFAULT 0
         );");
 
     // Person 1: Ahmed (head of household 1, owner of unit 1, CONTACT PERSON for the survey)
+    // Gender=1(Male), Nationality=1(Syrian), RelationshipToHead=1(Head)
     Execute(conn, @"
         INSERT INTO persons VALUES (
             @id, 'العلي', 'أحمد', 'محمد', 'فاطمة',
             '01234567890', 1978, NULL, '+963-944-123456', NULL,
-            'Ahmed Al-Ali', 'Male', 'Syrian', @hid, 'رب الأسرة', 1
+            1, 1, @hid, 1, 1
         );",
         ("@id", personId1.ToString()), ("@hid", householdId1.ToString()));
 
     // Person 2: Fatima (spouse of Ahmed, household 1)
+    // Gender=2(Female), Nationality=1(Syrian), RelationshipToHead=2(Spouse)
     Execute(conn, @"
         INSERT INTO persons VALUES (
             @id, 'الحسن', 'فاطمة', 'علي', 'زينب',
             '01234567891', 1982, NULL, '+963-944-123457', NULL,
-            'Fatima Al-Hassan', 'Female', 'Syrian', @hid, 'زوجة', 0
+            2, 1, @hid, 2, 0
         );",
         ("@id", personId2.ToString()), ("@hid", householdId1.ToString()));
 
     // Person 3: Omar (head of household 2, tenant of unit 2)
+    // Gender=1(Male), Nationality=1(Syrian), RelationshipToHead=1(Head)
     Execute(conn, @"
         INSERT INTO persons VALUES (
             @id, 'الخالد', 'عمر', 'خالد', 'سعاد',
             '09876543210', 1985, NULL, '+963-944-654321', NULL,
-            'Omar Al-Khaled', 'Male', 'Syrian', @hid, 'رب الأسرة', 0
+            1, 1, @hid, 1, 0
         );",
         ("@id", personId3.ToString()), ("@hid", householdId2.ToString()));
 
     // Person 4: Mariam (spouse of Omar, household 2)
+    // Gender=2(Female), Nationality=1(Syrian), RelationshipToHead=2(Spouse)
     Execute(conn, @"
         INSERT INTO persons VALUES (
             @id, 'الرشيد', 'مريم', 'رشيد', 'هدى',
             NULL, 1988, NULL, '+963-944-654322', NULL,
-            'Mariam Al-Rashid', 'Female', 'Syrian', @hid, 'زوجة', 0
+            2, 1, @hid, 2, 0
         );",
         ("@id", personId4.ToString()), ("@hid", householdId2.ToString()));
 
     // ── 6. HOUSEHOLDS TABLE ────────────────────────────────────────────────────
+    // Columns aligned with StagingHousehold entity (no is_female_headed/is_displaced)
     Execute(conn, @"
         CREATE TABLE households (
             id                          TEXT PRIMARY KEY,
@@ -342,8 +342,6 @@ using (var conn = new SqliteConnection(connStr))
             female_elderly_count        INTEGER DEFAULT 0,
             male_disabled_count         INTEGER DEFAULT 0,
             female_disabled_count       INTEGER DEFAULT 0,
-            is_female_headed            INTEGER DEFAULT 0,
-            is_displaced                INTEGER DEFAULT 0,
             notes                       TEXT
         );");
 
@@ -351,7 +349,7 @@ using (var conn = new SqliteConnection(connStr))
     Execute(conn, @"
         INSERT INTO households VALUES (
             @id, @uid, 'أحمد محمد العلي', 4, @pid,
-            1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+            1, 1, 1, 1, 0, 0, 0, 0,
             'عائلة مقيمة منذ 2005'
         );",
         ("@id", householdId1.ToString()),
@@ -362,7 +360,7 @@ using (var conn = new SqliteConnection(connStr))
     Execute(conn, @"
         INSERT INTO households VALUES (
             @id, @uid, 'عمر خالد الخالد', 3, @pid,
-            1, 1, 1, 0, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 0, 0, 0, 0, 0,
             'عائلة نازحة من الرقة منذ 2016'
         );",
         ("@id", householdId2.ToString()),
@@ -370,25 +368,22 @@ using (var conn = new SqliteConnection(connStr))
         ("@pid", personId3.ToString()));
 
     // ── 7. PERSON_PROPERTY_RELATIONS TABLE ─────────────────────────────────────
+    // Columns aligned with StagingPersonPropertyRelation entity
+    // RelationType enum: Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     Execute(conn, @"
         CREATE TABLE person_property_relations (
             id                      TEXT PRIMARY KEY,
             person_id               TEXT NOT NULL,
             property_unit_id        TEXT NOT NULL,
             relation_type           INTEGER NOT NULL,
-            relation_type_other_desc TEXT,
-            contract_type           INTEGER,
             ownership_share         REAL,
-            start_date              TEXT,
-            end_date                TEXT,
             notes                   TEXT
         );");
 
     // Ahmed owns Unit 1 (100% ownership since 2005)
     Execute(conn, @"
         INSERT INTO person_property_relations VALUES (
-            @id, @pid, @uid, 1, NULL, NULL, 100.0,
-            '2005-03-15', NULL, 'مالك بموجب سند ملكية'
+            @id, @pid, @uid, 1, 100.0, 'مالك بموجب سند ملكية'
         );",
         ("@id", relationId1.ToString()),
         ("@pid", personId1.ToString()),
@@ -397,41 +392,34 @@ using (var conn = new SqliteConnection(connStr))
     // Omar is tenant of Unit 2 (rental contract)
     Execute(conn, @"
         INSERT INTO person_property_relations VALUES (
-            @id, @pid, @uid, 3, NULL, NULL, NULL,
-            '2016-09-01', '2027-08-31', 'مستأجر بعقد سنوي'
+            @id, @pid, @uid, 3, NULL, 'مستأجر بعقد سنوي'
         );",
         ("@id", relationId2.ToString()),
         ("@pid", personId3.ToString()),
         ("@uid", unitId2.ToString()));
 
     // ── 8. CLAIMS TABLE ────────────────────────────────────────────────────────
+    // Columns aligned with StagingClaim entity
+    // ClaimSource enum: FieldCollection=1, OfficeSubmission=2
+    // TenureContractType enum: FullOwnership=1, SharedOwnership=2, LongTermRental=3, etc.
     Execute(conn, @"
         CREATE TABLE claims (
             id                      TEXT PRIMARY KEY,
             property_unit_id        TEXT NOT NULL,
-            claim_type              TEXT,
-            claim_source            INTEGER,
+            claim_type              TEXT NOT NULL,
+            claim_source            INTEGER NOT NULL,
             primary_claimant_id     TEXT,
-            priority                INTEGER,
             tenure_contract_type    INTEGER,
             ownership_share         REAL,
-            tenure_start_date       TEXT,
-            tenure_end_date         TEXT,
-            claim_description       TEXT,
-            legal_basis             TEXT,
-            supporting_narrative    TEXT,
-            processing_notes        TEXT
+            claim_description       TEXT
         );");
 
     // Ownership claim for Unit 1 by Ahmed
+    // ClaimSource=1(FieldCollection), TenureContractType=1(FullOwnership)
     Execute(conn, @"
         INSERT INTO claims VALUES (
-            @id, @uid, 'Ownership', 1, @pid, 1, NULL, 100.0,
-            '2005-03-15', NULL,
-            'مطالبة ملكية للشقة 1 بناءً على سند ملكية أصلي',
-            'سند ملكية صادر عن السجل العقاري في حلب رقم 45678/2005',
-            'أحمد محمد العلي يملك الشقة منذ عام 2005 بموجب سند ملكية موثق. المبنى لم يتعرض لأضرار.',
-            NULL
+            @id, @uid, 'Ownership', 1, @pid, 1, 100.0,
+            'مطالبة ملكية للشقة 1 بناءً على سند ملكية أصلي'
         );",
         ("@id", claimId1.ToString()),
         ("@uid", unitId1.ToString()),

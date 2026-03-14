@@ -11,19 +11,11 @@ namespace TRRCMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Certificate");
-
-            migrationBuilder.DropTable(
-                name: "Referrals");
-
-            migrationBuilder.DropIndex(
-                name: "IX_Claims_CertificateStatus",
-                table: "Claims");
-
-            migrationBuilder.DropColumn(
-                name: "CertificateStatus",
-                table: "Claims");
+            // Idempotent drops — tables/index/column may already be gone from prior manual changes.
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS ""Certificate"" CASCADE;");
+            migrationBuilder.Sql(@"DROP TABLE IF EXISTS ""Referrals"" CASCADE;");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS ""IX_Claims_CertificateStatus"";");
+            migrationBuilder.Sql(@"ALTER TABLE ""Claims"" DROP COLUMN IF EXISTS ""CertificateStatus"";");
 
             migrationBuilder.AlterColumn<int>(
                 name: "LifecycleStage",

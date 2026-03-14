@@ -81,14 +81,18 @@ public class DetectDuplicatesCommandHandler
             var previousConflicts = await _conflictRepository
                 .GetByPackageIdAsync(package.Id, cancellationToken);
 
-            foreach (var conflict in previousConflicts.Where(c => c.Status == "PendingReview"))
-            {
-                conflict.Ignore("Superseded by re-run of duplicate detection", userId);
-            }
+            var pendingConflicts = previousConflicts
+                .Where(c => c.Status == "PendingReview")
+                .ToList();
 
-            if (previousConflicts.Count > 0)
+            if (pendingConflicts.Count > 0)
             {
+                await _conflictRepository.RemoveRangeAsync(pendingConflicts, cancellationToken);
                 await _conflictRepository.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Hard-deleted {Count} PendingReview conflicts for package {PackageId} before re-run",
+                    pendingConflicts.Count, package.PackageId);
             }
         }
 

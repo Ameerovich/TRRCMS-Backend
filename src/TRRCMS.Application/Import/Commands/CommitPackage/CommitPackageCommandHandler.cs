@@ -250,6 +250,20 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         stopwatch.Stop();
         report.Duration = stopwatch.Elapsed;
 
+        // Update persisted report JSON with final Duration and ArchivePath
+        try
+        {
+            package.SetCommitReport(
+                System.Text.Json.JsonSerializer.Serialize(report),
+                _currentUserService.UserId ?? Guid.Empty);
+            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to update final commit report JSON for package {PackageNumber}", package.PackageNumber);
+        }
+
         return report;
     }
 

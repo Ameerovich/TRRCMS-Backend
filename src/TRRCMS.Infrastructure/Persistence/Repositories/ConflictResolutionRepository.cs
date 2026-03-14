@@ -52,6 +52,12 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
         return Task.CompletedTask;
     }
 
+    public Task RemoveRangeAsync(IEnumerable<ConflictResolution> conflicts, CancellationToken cancellationToken = default)
+    {
+        _context.ConflictResolutions.RemoveRange(conflicts);
+        return Task.CompletedTask;
+    }
+
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return await _context.SaveChangesAsync(cancellationToken);

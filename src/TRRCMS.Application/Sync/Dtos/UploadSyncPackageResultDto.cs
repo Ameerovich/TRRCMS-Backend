@@ -12,10 +12,15 @@
 /// was successfully fed into the pipeline. Null if the import step was skipped
 /// or failed (the file is still safely stored in quarantine for manual re-import).
 /// </param>
+/// <param name="ImportError">
+/// Non-null when the import pipeline threw an exception. Contains the error message.
+/// The file is still safely stored in quarantine for manual re-import.
+/// </param>
 public sealed record UploadSyncPackageResultDto(
     bool Accepted,
     Guid PackageId,
     bool IsDuplicate,
     string Message,
-    Guid? ImportPackageId = null
+    Guid? ImportPackageId = null,
+    string? ImportError = null
 );

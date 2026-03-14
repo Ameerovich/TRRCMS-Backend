@@ -244,6 +244,15 @@ public class ImportPackage : BaseAuditableEntity
     /// </summary>
     public string? ImportSummary { get; private set; }
 
+    // ==================== COMMIT REPORT ====================
+
+    /// <summary>
+    /// Serialized JSON snapshot of the full commit report (entity breakdowns, idMappings, errors).
+    /// Written once during commit; used by GET /commit-report to return the report after staging
+    /// data has been cleaned up.
+    /// </summary>
+    public string? CommitReportJson { get; private set; }
+
     // ==================== ERROR TRACKING ====================
 
     /// <summary>
@@ -589,6 +598,16 @@ public class ImportPackage : BaseAuditableEntity
         SkippedRecordCount = skippedCount;
         ImportSummary = importSummary;
         CommittedDate = DateTime.UtcNow;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Store the serialized commit report JSON snapshot.
+    /// Called once after commit completes so the report survives staging cleanup.
+    /// </summary>
+    public void SetCommitReport(string commitReportJson, Guid modifiedByUserId)
+    {
+        CommitReportJson = commitReportJson;
         MarkAsModified(modifiedByUserId);
     }
 

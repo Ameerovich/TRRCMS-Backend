@@ -155,19 +155,25 @@ namespace TRRCMS.Infrastructure.Migrations
                 name: "WidowCount",
                 table: "Households");
 
-            // Convert string columns to integer enums in StagingPersons.
-            // Use raw SQL with USING NULL to safely handle old databases that may have
-            // string values (e.g. "Male", "Syrian") which can't be implicitly cast to integer.
-            // Staging data is transient so losing pending values is acceptable.
+            // Convert string columns to integer enums in StagingPersons (idempotent — skips columns already integer).
+            // Uses USING NULL because staging data is transient and losing pending values is acceptable.
             migrationBuilder.Sql(
                 """
-                ALTER TABLE "StagingPersons"
-                    ALTER COLUMN "Gender" DROP DEFAULT,
-                    ALTER COLUMN "Gender" TYPE integer USING NULL,
-                    ALTER COLUMN "Nationality" DROP DEFAULT,
-                    ALTER COLUMN "Nationality" TYPE integer USING NULL,
-                    ALTER COLUMN "RelationshipToHead" DROP DEFAULT,
-                    ALTER COLUMN "RelationshipToHead" TYPE integer USING NULL;
+                DO $$
+                DECLARE
+                    col_rec RECORD;
+                BEGIN
+                    FOR col_rec IN
+                        SELECT column_name FROM information_schema.columns
+                        WHERE table_name = 'StagingPersons'
+                          AND column_name IN ('Gender', 'Nationality', 'RelationshipToHead')
+                          AND data_type <> 'integer'
+                    LOOP
+                        EXECUTE format(
+                            'ALTER TABLE "StagingPersons" ALTER COLUMN %I DROP DEFAULT, ALTER COLUMN %I TYPE integer USING NULL',
+                            col_rec.column_name, col_rec.column_name);
+                    END LOOP;
+                END $$;
 
                 COMMENT ON COLUMN "StagingPersons"."Gender"
                     IS 'الجنس - Gender enum stored as integer';

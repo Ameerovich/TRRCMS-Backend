@@ -1,3 +1,4 @@
+using System.Text.Json;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -64,7 +65,19 @@ public class GetCommitReportQueryHandler : IRequestHandler<GetCommitReportQuery,
                 "Commit report is only available after commit has been attempted.");
         }
 
-        var report = new CommitReportDto
+        // Prefer the persisted JSON snapshot (survives staging cleanup).
+        // Fall back to staging reconstruction for packages committed before this feature.
+        if (!string.IsNullOrEmpty(package.CommitReportJson))
+        {
+            var report = JsonSerializer.Deserialize<CommitReportDto>(package.CommitReportJson)!;
+            // Refresh archival info which may have been updated after the report was saved
+            report.IsArchived = package.IsArchived;
+            report.ArchivePath = package.ArchivePath;
+            return report;
+        }
+
+        // Legacy fallback: reconstruct from staging data (may return zeros if staging was cleaned up)
+        var legacyReport = new CommitReportDto
         {
             ImportPackageId = package.Id,
             PackageNumber = package.PackageNumber,
@@ -79,29 +92,29 @@ public class GetCommitReportQueryHandler : IRequestHandler<GetCommitReportQuery,
         };
 
         // Build per-entity-type breakdown from staging data
-        report.Buildings = await BuildEntitySummaryAsync(_stagingBuildingRepo, request.ImportPackageId, "Building", cancellationToken);
-        report.PropertyUnits = await BuildEntitySummaryAsync(_stagingPropertyUnitRepo, request.ImportPackageId, "PropertyUnit", cancellationToken);
-        report.Persons = await BuildEntitySummaryAsync(_stagingPersonRepo, request.ImportPackageId, "Person", cancellationToken);
-        report.Households = await BuildEntitySummaryAsync(_stagingHouseholdRepo, request.ImportPackageId, "Household", cancellationToken);
-        report.PersonPropertyRelations = await BuildEntitySummaryAsync(_stagingRelationRepo, request.ImportPackageId, "PersonPropertyRelation", cancellationToken);
-        report.Evidences = await BuildEntitySummaryAsync(_stagingEvidenceRepo, request.ImportPackageId, "Evidence", cancellationToken);
-        report.Claims = await BuildEntitySummaryAsync(_stagingClaimRepo, request.ImportPackageId, "Claim", cancellationToken);
-        report.Surveys = await BuildEntitySummaryAsync(_stagingSurveyRepo, request.ImportPackageId, "Survey", cancellationToken);
+        legacyReport.Buildings = await BuildEntitySummaryAsync(_stagingBuildingRepo, request.ImportPackageId, "Building", cancellationToken);
+        legacyReport.PropertyUnits = await BuildEntitySummaryAsync(_stagingPropertyUnitRepo, request.ImportPackageId, "PropertyUnit", cancellationToken);
+        legacyReport.Persons = await BuildEntitySummaryAsync(_stagingPersonRepo, request.ImportPackageId, "Person", cancellationToken);
+        legacyReport.Households = await BuildEntitySummaryAsync(_stagingHouseholdRepo, request.ImportPackageId, "Household", cancellationToken);
+        legacyReport.PersonPropertyRelations = await BuildEntitySummaryAsync(_stagingRelationRepo, request.ImportPackageId, "PersonPropertyRelation", cancellationToken);
+        legacyReport.Evidences = await BuildEntitySummaryAsync(_stagingEvidenceRepo, request.ImportPackageId, "Evidence", cancellationToken);
+        legacyReport.Claims = await BuildEntitySummaryAsync(_stagingClaimRepo, request.ImportPackageId, "Claim", cancellationToken);
+        legacyReport.Surveys = await BuildEntitySummaryAsync(_stagingSurveyRepo, request.ImportPackageId, "Survey", cancellationToken);
 
-        report.TotalRecordsApproved =
-            report.Buildings.Approved + report.PropertyUnits.Approved +
-            report.Persons.Approved + report.Households.Approved +
-            report.PersonPropertyRelations.Approved + report.Evidences.Approved +
-            report.Claims.Approved + report.Surveys.Approved;
+        legacyReport.TotalRecordsApproved =
+            legacyReport.Buildings.Approved + legacyReport.PropertyUnits.Approved +
+            legacyReport.Persons.Approved + legacyReport.Households.Approved +
+            legacyReport.PersonPropertyRelations.Approved + legacyReport.Evidences.Approved +
+            legacyReport.Claims.Approved + legacyReport.Surveys.Approved;
 
         // Conflict resolutions applied
         var resolvedConflicts = await _conflictResolutionRepository
             .GetByPackageIdAsync(request.ImportPackageId, cancellationToken);
-        report.ConflictResolutionsApplied = resolvedConflicts.Count(c => c.Status == "Resolved");
-        report.MergesPerformed = resolvedConflicts.Count(c =>
+        legacyReport.ConflictResolutionsApplied = resolvedConflicts.Count(c => c.Status == "Resolved");
+        legacyReport.MergesPerformed = resolvedConflicts.Count(c =>
             c.Status == "Resolved" && c.ResolutionAction == ConflictResolutionAction.Merge);
 
-        return report;
+        return legacyReport;
     }
 
     /// <summary>

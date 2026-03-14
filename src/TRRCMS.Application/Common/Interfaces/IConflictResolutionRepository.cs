@@ -45,6 +45,13 @@ public interface IConflictResolutionRepository
     Task UpdateAsync(ConflictResolution conflict, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Hard-delete a batch of conflict records.
+    /// Used when re-running duplicate detection to remove superseded PendingReview conflicts
+    /// so fresh detection can create new ones without being blocked by stale records.
+    /// </summary>
+    Task RemoveRangeAsync(IEnumerable<ConflictResolution> conflicts, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Save all pending changes to the database.
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

@@ -134,6 +134,7 @@ public sealed class UploadSyncPackageCommandHandler
         // vocabulary compatibility check → ImportPackage entity creation.
         // Its own idempotency (by manifest PackageId) handles duplicate submissions safely.
         Guid? importPackageId = null;
+        string? importError = null;
         try
         {
             await using var fileStream = File.OpenRead(packagePath);
@@ -172,6 +173,7 @@ public sealed class UploadSyncPackageCommandHandler
         {
             // Import pipeline failure is non-fatal for sync — the file is safely
             // stored in quarantine and can be re-processed via manual import.
+            importError = ex.Message;
             _logger.LogError(ex,
                 "Failed to feed sync package {PackageId} into import pipeline. " +
                 "File is stored at {Path} for manual re-import.",
@@ -187,9 +189,12 @@ public sealed class UploadSyncPackageCommandHandler
             true,
             request.Manifest.PackageId,
             stored.AlreadyExists,
-            stored.AlreadyExists
-                ? "Duplicate package (already received)."
-                : "Package received and queued for import.",
-            importPackageId);
+            importError != null
+                ? $"Package received but import pipeline failed: {importError}. File stored for manual re-import."
+                : stored.AlreadyExists
+                    ? "Duplicate package (already received)."
+                    : "Package received and queued for import.",
+            importPackageId,
+            importError);
     }
 }

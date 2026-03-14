@@ -22,14 +22,15 @@ public static class WebApplicationExtensions
             var services = scope.ServiceProvider;
             var logger = services.GetRequiredService<ILogger<Program>>();
 
+            // Migrations must succeed — fail fast so schema mismatches are caught immediately.
+            var context = services.GetRequiredService<ApplicationDbContext>();
+
+            logger.LogInformation("Checking for pending database migrations.");
+            await context.Database.MigrateAsync();
+            logger.LogInformation("Database migrations applied successfully");
+
             try
             {
-                var context = services.GetRequiredService<ApplicationDbContext>();
-
-                logger.LogInformation("Checking for pending database migrations.");
-                await context.Database.MigrateAsync();
-                logger.LogInformation("Database migrations applied successfully");
-
                 var userRepository = services.GetRequiredService<IUserRepository>();
                 var passwordHasher = services.GetRequiredService<IPasswordHasher>();
 
