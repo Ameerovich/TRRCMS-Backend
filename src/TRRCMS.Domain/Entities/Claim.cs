@@ -23,9 +23,9 @@ public class Claim : BaseAuditableEntity
     public Guid PropertyUnitId { get; private set; }
 
     /// <summary>
-    /// Foreign key to primary claimant (Person)
+    /// Foreign key to primary claimant (Person) — required
     /// </summary>
-    public Guid? PrimaryClaimantId { get; private set; }
+    public Guid PrimaryClaimantId { get; private set; }
 
     /// <summary>
     /// Foreign key to the Survey that originated this claim (optional).
@@ -93,7 +93,7 @@ public class Claim : BaseAuditableEntity
     /// <summary>
     /// Primary claimant person
     /// </summary>
-    public virtual Person? PrimaryClaimant { get; private set; }
+    public virtual Person PrimaryClaimant { get; private set; } = null!;
 
     /// <summary>
     /// Evidence supporting this claim
@@ -120,7 +120,7 @@ public class Claim : BaseAuditableEntity
     public static Claim Create(
         string claimNumber,  // Sequential claim number from ClaimNumberGenerator
         Guid propertyUnitId,
-        Guid? primaryClaimantId,
+        Guid primaryClaimantId,
         ClaimType claimType,
         ClaimSource claimSource,
         Guid createdByUserId,

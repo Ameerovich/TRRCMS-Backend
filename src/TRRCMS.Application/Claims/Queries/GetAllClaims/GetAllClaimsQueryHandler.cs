@@ -67,10 +67,8 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
         // Enrich each claim DTO with evidence from the source PersonPropertyRelation
         foreach (var (dto, claim) in dtos.Zip(claims))
         {
-            if (!claim.PrimaryClaimantId.HasValue) continue;
-
             var relation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
-                claim.PrimaryClaimantId.Value, claim.PropertyUnitId, cancellationToken);
+                claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken);
 
             if (relation != null)
             {

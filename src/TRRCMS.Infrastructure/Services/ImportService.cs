@@ -180,10 +180,19 @@ public class ImportService : IImportService
             return Task.FromResult(false);
         }
 
-        // TODO: Implement actual signature verification when mobile team provides
-        // the signing mechanism. For now, accept any non-empty signature.
-        // Future: RSA/ECDSA signature verification using a known public key.
-        _logger.LogDebug("Digital signature verification: placeholder (accepting non-empty signature)");
+        // TODO: Implement actual digital signature verification when mobile team provides
+        // the signing mechanism. Implementation plan:
+        //   1. Algorithm: ECDSA with P-256 curve (or RSA-2048 as fallback)
+        //   2. Signing payload: SHA-256 hash of .uhc data table contents (same as content checksum)
+        //   3. Key management: server stores public key in ImportSettings config,
+        //      mobile app holds corresponding private key
+        //   4. Verification: decode Base64 signature from manifest, verify against content hash
+        // For now, accept any non-empty signature as a placeholder.
+        _logger.LogWarning(
+            "Digital signature verification is NOT YET IMPLEMENTED. " +
+            "Accepting non-empty signature as placeholder. " +
+            "Signature value: {SignaturePrefix}...",
+            signature?.Length > 8 ? signature[..8] : signature);
         return Task.FromResult(true);
     }
 

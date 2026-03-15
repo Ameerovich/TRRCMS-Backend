@@ -76,13 +76,9 @@ public class GetClaimSummariesQueryHandler
             var propertyUnit = claim.PropertyUnit;
 
             // Find the PersonPropertyRelation that generated this claim
-            Domain.Entities.PersonPropertyRelation? sourceRelation = null;
-            if (claim.PrimaryClaimantId.HasValue)
-            {
-                relationLookup.TryGetValue(
-                    (claim.PrimaryClaimantId.Value, claim.PropertyUnitId),
-                    out sourceRelation);
-            }
+            relationLookup.TryGetValue(
+                (claim.PrimaryClaimantId, claim.PropertyUnitId),
+                out var sourceRelation);
 
             // Get linked survey (if any)
             surveyByClaimId.TryGetValue(claim.Id, out var linkedSurvey);
@@ -100,7 +96,7 @@ public class GetClaimSummariesQueryHandler
                 HasEvidence = sourceRelation?.HasEvidence ?? false,
                 SourceRelationId = sourceRelation?.Id ?? Guid.Empty,
                 RelationType = sourceRelation != null ? (int)sourceRelation.RelationType : 0,
-                PersonId = claim.PrimaryClaimantId ?? Guid.Empty,
+                PersonId = claim.PrimaryClaimantId,
                 PropertyUnitId = claim.PropertyUnitId,
                 BuildingCode = propertyUnit?.Building?.BuildingId ?? string.Empty,
                 SurveyId = linkedSurvey?.Id

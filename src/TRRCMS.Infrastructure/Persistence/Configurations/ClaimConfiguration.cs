@@ -33,6 +33,7 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .HasComment("Foreign key to PropertyUnit - Property being claimed (معرف الوحدة العقارية)");
 
         builder.Property(c => c.PrimaryClaimantId)
+            .IsRequired()
             .HasComment("Foreign key to Person - Primary claimant (معرف المدعي الأساسي)");
 
         builder.Property(c => c.OriginatingSurveyId)

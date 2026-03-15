@@ -44,7 +44,7 @@ public class GetOfficeSurveysQueryHandler : IRequestHandler<GetOfficeSurveysQuer
             fromDate: request.FromDate,
             toDate: request.ToDate,
             referenceCode: request.ReferenceCode,
-            intervieweeName: request.IntervieweeName,
+            contactPersonName: request.ContactPersonName,
             page: request.Page,
             pageSize: request.PageSize,
             sortBy: request.SortBy,
@@ -59,13 +59,6 @@ public class GetOfficeSurveysQueryHandler : IRequestHandler<GetOfficeSurveysQuer
         foreach (var (dto, survey) in surveyDtos.Zip(surveys))
         {
             dto.FieldCollectorName = _currentUserService.Username; // Will be fetched properly in future
-
-            // Use contact person name in place of interviewee name
-            // Format: "firstname fathername familyname (mothername)"
-            if (!string.IsNullOrEmpty(survey.ContactPersonFullName))
-            {
-                dto.IntervieweeName = survey.ContactPersonFullName;
-            }
         }
 
         return new GetOfficeSurveysResponse

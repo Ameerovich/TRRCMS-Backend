@@ -97,8 +97,6 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
         // Update survey details if provided
         survey.UpdateSurveyDetails(
             gpsCoordinates: null, // No GPS for office surveys
-            intervieweeName: request.IntervieweeName,
-            intervieweeRelationship: request.IntervieweeRelationship,
             notes: request.Notes,
             durationMinutes: null,
             modifiedByUserId: currentUserId

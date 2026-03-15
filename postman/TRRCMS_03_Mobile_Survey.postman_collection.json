@@ -57,7 +57,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"notes\": \"مسح ميداني أولي - معاينة العقار\"\n}"
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"notes\": \"مسح ميداني أولي - معاينة العقار\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/field",

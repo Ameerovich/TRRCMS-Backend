@@ -66,10 +66,6 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
             Status = (int)survey.Status,
             SurveyType = (int)survey.Type,
             GpsCoordinates = survey.GpsCoordinates,
-            IntervieweeName = !string.IsNullOrEmpty(survey.ContactPersonFullName)
-                ? survey.ContactPersonFullName
-                : survey.IntervieweeName,
-            IntervieweeRelationship = survey.IntervieweeRelationship,
             Notes = survey.Notes,
             DurationMinutes = survey.DurationMinutes,
             CreatedAtUtc = survey.CreatedAtUtc,

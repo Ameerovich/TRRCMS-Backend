@@ -90,12 +90,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
         builder.Property(s => s.GpsCoordinates)
             .HasMaxLength(100);
 
-        builder.Property(s => s.IntervieweeName)
-            .HasMaxLength(200);
-
-        builder.Property(s => s.IntervieweeRelationship)
-            .HasMaxLength(100);
-
         builder.Property(s => s.Notes)
             .HasMaxLength(4000);
 
@@ -112,7 +106,7 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
         // Index for registration number lookups
         builder.HasIndex(s => s.RegistrationNumber)
             .HasDatabaseName("IX_Surveys_RegistrationNumber")
-            .HasFilter("[RegistrationNumber] IS NOT NULL");
+            .HasFilter("\"RegistrationNumber\" IS NOT NULL");
 
         builder.Property(s => s.AppointmentReference)
             .HasMaxLength(50);

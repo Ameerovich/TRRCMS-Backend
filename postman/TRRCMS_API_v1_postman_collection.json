@@ -982,7 +982,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"notes\": \"مسح ميداني أولي - معاينة العقار\"\n}"
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"notes\": \"مسح ميداني أولي - معاينة العقار\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/field",
@@ -2082,7 +2082,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"officeLocation\": \"مكتب UN-Habitat حلب\",\n  \"registrationNumber\": \"REG-2026-001234\",\n  \"inPersonVisit\": true,\n  \"intervieweeName\": \"محمد أحمد السيد\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"owner@example.com\",\n  \"notes\": \"زيارة مكتبية - المراجع يحمل سند ملكية\"\n}"
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"officeLocation\": \"مكتب UN-Habitat حلب\",\n  \"registrationNumber\": \"REG-2026-001234\",\n  \"inPersonVisit\": true,\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"owner@example.com\",\n  \"notes\": \"زيارة مكتبية - المراجع يحمل سند ملكية\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/office",
@@ -2164,7 +2164,7 @@
 											"disabled": true
 										},
 										{
-											"key": "intervieweeName",
+											"key": "contactPersonName",
 											"value": "",
 											"disabled": true
 										},
@@ -2222,7 +2222,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"intervieweeName\": \"محمد أحمد السيد الخالد\",\n  \"contactPhone\": \"+963992345678\",\n  \"notes\": \"تم تحديث معلومات الاتصال\"\n}"
+									"raw": "{\n  \"contactPhone\": \"+963992345678\",\n  \"notes\": \"تم تحديث معلومات الاتصال\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",

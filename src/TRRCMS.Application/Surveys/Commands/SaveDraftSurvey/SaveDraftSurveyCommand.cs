@@ -28,16 +28,6 @@ public class SaveDraftSurveyCommand : IRequest<SurveyDto>
     public string? GpsCoordinates { get; set; }
 
     /// <summary>
-    /// Update interviewee name (optional)
-    /// </summary>
-    public string? IntervieweeName { get; set; }
-
-    /// <summary>
-    /// Update interviewee relationship (optional)
-    /// </summary>
-    public string? IntervieweeRelationship { get; set; }
-
-    /// <summary>
     /// Update or add notes (optional)
     /// </summary>
     public string? Notes { get; set; }

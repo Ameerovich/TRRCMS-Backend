@@ -40,9 +40,9 @@ public class GetOfficeSurveysQuery : IRequest<GetOfficeSurveysResponse>
     public string? ReferenceCode { get; set; }
 
     /// <summary>
-    /// Search by interviewee name
+    /// Search by contact person name
     /// </summary>
-    public string? IntervieweeName { get; set; }
+    public string? ContactPersonName { get; set; }
 
     /// <summary>
     /// Page number (1-based)

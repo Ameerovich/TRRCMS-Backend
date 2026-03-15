@@ -49,16 +49,6 @@ public class SurveyDto
     public string? GpsCoordinates { get; set; }
 
     /// <summary>
-    /// Name of person interviewed
-    /// </summary>
-    public string? IntervieweeName { get; set; }
-
-    /// <summary>
-    /// Relationship of interviewee to property
-    /// </summary>
-    public string? IntervieweeRelationship { get; set; }
-
-    /// <summary>
     /// Survey notes and observations
     /// </summary>
     public string? Notes { get; set; }

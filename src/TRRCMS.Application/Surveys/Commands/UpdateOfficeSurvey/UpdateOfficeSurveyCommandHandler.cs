@@ -59,8 +59,6 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
         {
             survey.SurveyDate,
             survey.PropertyUnitId,
-            survey.IntervieweeName,
-            survey.IntervieweeRelationship,
             survey.Notes,
             survey.DurationMinutes,
             survey.OfficeLocation,
@@ -102,8 +100,6 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
         // Update common survey details
         survey.UpdateSurveyDetails(
             gpsCoordinates: null, // No GPS for office surveys
-            intervieweeName: request.IntervieweeName ?? survey.IntervieweeName,
-            intervieweeRelationship: request.IntervieweeRelationship ?? survey.IntervieweeRelationship,
             notes: request.Notes ?? survey.Notes,
             durationMinutes: request.DurationMinutes ?? survey.DurationMinutes,
             modifiedByUserId: currentUserId
@@ -128,8 +124,6 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
         var changedFields = new List<string>();
         if (request.SurveyDate.HasValue) changedFields.Add("SurveyDate");
         if (request.PropertyUnitId != oldValues.PropertyUnitId) changedFields.Add("PropertyUnitId");
-        if (request.IntervieweeName != oldValues.IntervieweeName) changedFields.Add("IntervieweeName");
-        if (request.IntervieweeRelationship != oldValues.IntervieweeRelationship) changedFields.Add("IntervieweeRelationship");
         if (request.Notes != oldValues.Notes) changedFields.Add("Notes");
         if (request.DurationMinutes != oldValues.DurationMinutes) changedFields.Add("DurationMinutes");
         if (request.OfficeLocation != oldValues.OfficeLocation) changedFields.Add("OfficeLocation");
@@ -151,8 +145,6 @@ public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurv
             {
                 survey.SurveyDate,
                 survey.PropertyUnitId,
-                survey.IntervieweeName,
-                survey.IntervieweeRelationship,
                 survey.Notes,
                 survey.DurationMinutes,
                 survey.OfficeLocation,

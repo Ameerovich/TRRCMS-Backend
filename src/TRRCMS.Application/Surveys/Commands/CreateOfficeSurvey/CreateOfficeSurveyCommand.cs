@@ -32,17 +32,6 @@ public class CreateOfficeSurveyCommand : IRequest<SurveyDto>
     public DateTime SurveyDate { get; set; }
 
     /// <summary>
-    /// Name of person being interviewed (claimant or representative)
-    /// </summary>
-    public string? IntervieweeName { get; set; }
-
-    /// <summary>
-    /// Relationship of interviewee to the property
-    /// e.g., "Owner", "Tenant", "Family Representative", "Legal Representative"
-    /// </summary>
-    public string? IntervieweeRelationship { get; set; }
-
-    /// <summary>
     /// Initial survey notes
     /// </summary>
     public string? Notes { get; set; }

@@ -22,17 +22,7 @@ public class CreateOfficeSurveyCommandValidator : AbstractValidator<CreateOffice
             .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
             .WithMessage("Survey date cannot be in the future");
 
-        // ==================== INTERVIEWEE DETAILS ====================
-
-        RuleFor(x => x.IntervieweeName)
-            .MaximumLength(200)
-            .When(x => !string.IsNullOrWhiteSpace(x.IntervieweeName))
-            .WithMessage("Interviewee name cannot exceed 200 characters");
-
-        RuleFor(x => x.IntervieweeRelationship)
-            .MaximumLength(100)
-            .When(x => !string.IsNullOrWhiteSpace(x.IntervieweeRelationship))
-            .WithMessage("Interviewee relationship cannot exceed 100 characters");
+        // ==================== OPTIONAL FIELDS ====================
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000)

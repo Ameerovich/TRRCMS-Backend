@@ -204,6 +204,14 @@ public class StagingService : IStagingService
                     filePath = savedPath;
                 }
             }
+            else if (!string.IsNullOrEmpty(originalFileName))
+            {
+                _logger.LogWarning(
+                    "BuildingDocument {DocumentId} in package {PackageId} has no BLOB in attachments table. " +
+                    "File '{FileName}' will be missing on server. " +
+                    "Mobile app must embed files as BLOBs in the attachments table.",
+                    originalId, packageId, originalFileName);
+            }
 
             var entity = StagingBuildingDocument.Create(
                 importPackageId: packageId,
@@ -504,6 +512,15 @@ public class StagingService : IStagingService
                     fileCount++;
                     totalBytes += fileSizeBytes;
                 }
+            }
+            else if (!string.IsNullOrEmpty(originalFileName))
+            {
+                // Tablet file paths are inaccessible on the server — BLOB is required
+                _logger.LogWarning(
+                    "Evidence {EvidenceId} in package {PackageId} has no BLOB in attachments table. " +
+                    "File '{FileName}' will be missing on server. " +
+                    "Mobile app must embed files as BLOBs in the attachments table.",
+                    originalId, packageId, originalFileName);
             }
 
             var entity = StagingEvidence.Create(

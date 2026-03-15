@@ -32,16 +32,6 @@ public class UpdateOfficeSurveyCommand : IRequest<SurveyDto>
     // ==================== SURVEY METADATA ====================
 
     /// <summary>
-    /// Name of person being interviewed
-    /// </summary>
-    public string? IntervieweeName { get; set; }
-
-    /// <summary>
-    /// Relationship of interviewee to the property
-    /// </summary>
-    public string? IntervieweeRelationship { get; set; }
-
-    /// <summary>
     /// Survey notes and observations
     /// </summary>
     public string? Notes { get; set; }

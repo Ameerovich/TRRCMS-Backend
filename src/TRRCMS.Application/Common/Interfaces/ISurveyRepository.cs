@@ -65,7 +65,7 @@ public interface ISurveyRepository
         DateTime? fromDate = null,
         DateTime? toDate = null,
         string? referenceCode = null,
-        string? intervieweeName = null,
+        string? contactPersonName = null,
         int page = 1,
         int pageSize = 20,
         string sortBy = "SurveyDate",

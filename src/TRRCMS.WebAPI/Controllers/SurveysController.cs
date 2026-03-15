@@ -109,8 +109,6 @@ public class SurveysController : ControllerBase
     ///   "officeLocation": "UN-Habitat Aleppo Office",
     ///   "registrationNumber": "REG-2026-001234",
     ///   "inPersonVisit": true,
-    ///   "intervieweeName": "محمد أحمد السيد",
-    ///   "intervieweeRelationship": "مالك العقار",
     ///   "contactPhone": "+963912345678",
     ///   "contactEmail": "example@email.com",
     ///   "notes": "Walk-in claimant with property deed documentation"
@@ -119,11 +117,13 @@ public class SurveysController : ControllerBase
     /// 
     /// **Response**: Returns the created survey with auto-generated reference code (OFC-YYYY-NNNNN)
     /// 
-    /// **Next steps**: 
+    /// **Next steps**:
     /// 1. Link or create property unit using POST /api/v1/surveys/{surveyId}/property-units
     /// 2. Add household and person data
-    /// 3. Upload evidence documents
-    /// 4. Finalize to create claim using POST /api/v1/surveys/office/{id}/finalize
+    /// 3. Set contact person using POST /api/v1/surveys/{surveyId}/contact-person (required for finalization)
+    /// 4. Upload evidence documents
+    /// 5. Process claims using POST /api/v1/surveys/office/{id}/process-claims
+    /// 6. Finalize survey using POST /api/v1/surveys/office/{id}/finalize
     /// </remarks>
     /// <param name="command">Office survey creation data</param>
     /// <returns>Created survey with reference code and status</returns>
@@ -166,7 +166,7 @@ public class SurveysController : ControllerBase
     /// - clerkId: Filter by office clerk who created the survey
     /// - fromDate/toDate: Date range filter for survey date
     /// - referenceCode: Search by reference code (partial match)
-    /// - intervieweeName: Search by interviewee name (partial match)
+    /// - contactPersonName: Search by contact person name (partial match)
     /// 
     /// **Sorting Options**:
     /// - SurveyDate (default), ReferenceCode, Status, CreatedAtUtc
@@ -187,7 +187,7 @@ public class SurveysController : ControllerBase
     /// <param name="fromDate">Filter surveys from this date</param>
     /// <param name="toDate">Filter surveys up to this date</param>
     /// <param name="referenceCode">Search by reference code (partial match)</param>
-    /// <param name="intervieweeName">Search by interviewee name (partial match)</param>
+    /// <param name="contactPersonName">Search by contact person name (partial match)</param>
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
     /// <param name="sortBy">Sort field (SurveyDate, ReferenceCode, Status, CreatedAtUtc)</param>
@@ -208,7 +208,7 @@ public class SurveysController : ControllerBase
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
         [FromQuery] string? referenceCode = null,
-        [FromQuery] string? intervieweeName = null,
+        [FromQuery] string? contactPersonName = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string sortBy = "SurveyDate",
@@ -222,7 +222,7 @@ public class SurveysController : ControllerBase
             FromDate = fromDate,
             ToDate = toDate,
             ReferenceCode = referenceCode,
-            IntervieweeName = intervieweeName,
+            ContactPersonName = contactPersonName,
             Page = page,
             PageSize = pageSize,
             SortBy = sortBy,
@@ -314,8 +314,6 @@ public class SurveysController : ControllerBase
     ///
     /// **Updateable fields** (all optional):
     /// - `propertyUnitId`: Link/change property unit
-    /// - `intervieweeName`: Claimant/interviewee name (اسم المستجوب)
-    /// - `intervieweeRelationship`: Relationship to property (علاقة المستجوب بالعقار)
     /// - `notes`: General notes (ملاحظات)
     /// - `durationMinutes`: Interview duration
     /// - `officeLocation`: Office location (موقع المكتب)
@@ -328,8 +326,6 @@ public class SurveysController : ControllerBase
     /// **Example Request**:
     /// ```json
     /// {
-    ///   "intervieweeName": "أحمد محمد الخالد",
-    ///   "intervieweeRelationship": "مالك العقار",
     ///   "contactPhone": "+963912345678",
     ///   "contactEmail": "ahmed@example.com",
     ///   "notes": "تم تقديم وثائق ملكية إضافية",
@@ -347,8 +343,6 @@ public class SurveysController : ControllerBase
     ///   "surveyDate": "2026-02-14T10:00:00Z",
     ///   "status": 1,
     ///   "surveyType": 2,
-    ///   "intervieweeName": "أحمد محمد الخالد",
-    ///   "intervieweeRelationship": "مالك العقار",
     ///   "notes": "تم تقديم وثائق ملكية إضافية",
     ///   "durationMinutes": 45,
     ///   "createdAtUtc": "2026-02-14T08:00:00Z",
@@ -466,16 +460,21 @@ public class SurveysController : ControllerBase
     ///
     /// **What it does**:
     /// - Validates survey is an office survey in Draft status
+    /// - Validates a contact person has been set (required for finalization)
     /// - Marks the survey as Finalized via domain method
     /// - Logs the status change in audit trail
     /// - Once finalized, survey data can no longer be modified
+    ///
+    /// **Prerequisites**:
+    /// - A contact person must be linked to the survey (via POST .../contact-person). Finalization will fail with 400 if no contact person is set.
     ///
     /// **Required permissions**: CanFinalizeSurveys
     ///
     /// **Workflow**:
     /// 1. Complete all data entry (households, persons, relations, evidence)
-    /// 2. Process claims: `POST /api/v1/surveys/office/{id}/process-claims`
-    /// 3. Finalize survey: `POST /api/v1/surveys/office/{id}/finalize`
+    /// 2. Set contact person if not already set
+    /// 3. Process claims: `POST /api/v1/surveys/office/{id}/process-claims`
+    /// 4. Finalize survey: `POST /api/v1/surveys/office/{id}/finalize`
     ///
     /// **Example Request**:
     /// ```
@@ -523,8 +522,6 @@ public class SurveysController : ControllerBase
     /// **Updateable fields** (all optional):
     /// - `propertyUnitId`: Link/update property unit
     /// - `gpsCoordinates`: GPS location (format: "latitude,longitude")
-    /// - `intervieweeName`: Interviewee name
-    /// - `intervieweeRelationship`: Interviewee relationship to property
     /// - `notes`: General notes
     /// - `durationMinutes`: Duration so far
     ///
@@ -532,7 +529,6 @@ public class SurveysController : ControllerBase
     /// ```json
     /// {
     ///   "gpsCoordinates": "36.2021,37.1343",
-    ///   "intervieweeName": "محمد أحمد",
     ///   "notes": "تم مقابلة المالك - يحتاج لزيارة ثانية",
     ///   "durationMinutes": 30
     /// }
@@ -545,7 +541,6 @@ public class SurveysController : ControllerBase
     ///   "referenceCode": "OFC-2026-00001",
     ///   "status": 1,
     ///   "surveyType": 2,
-    ///   "intervieweeName": "محمد أحمد",
     ///   "notes": "تم مقابلة المالك - يحتاج لزيارة ثانية",
     ///   "durationMinutes": 30,
     ///   "lastModifiedAtUtc": "2026-02-14T11:00:00Z"
@@ -601,8 +596,6 @@ public class SurveysController : ControllerBase
     ///   "surveyDate": "2026-02-14T10:00:00Z",
     ///   "status": 1,
     ///   "surveyType": 2,
-    ///   "intervieweeName": "محمد أحمد الخالد",
-    ///   "intervieweeRelationship": "مالك",
     ///   "notes": null,
     ///   "durationMinutes": null,
     ///   "createdAtUtc": "2026-02-14T08:00:00Z",

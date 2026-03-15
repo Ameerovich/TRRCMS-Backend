@@ -67,16 +67,6 @@ public class Survey : BaseAuditableEntity
     public string? GpsCoordinates { get; private set; }
 
     /// <summary>
-    /// Name of person interviewed (if different from property owner)
-    /// </summary>
-    public string? IntervieweeName { get; private set; }
-
-    /// <summary>
-    /// Relationship of interviewee to property (if applicable)
-    /// </summary>
-    public string? IntervieweeRelationship { get; private set; }
-
-    /// <summary>
     /// Survey notes and observations
     /// </summary>
     public string? Notes { get; private set; }
@@ -276,15 +266,11 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public void UpdateSurveyDetails(
         string? gpsCoordinates,
-        string? intervieweeName,
-        string? intervieweeRelationship,
         string? notes,
         int? durationMinutes,
         Guid modifiedByUserId)
     {
         GpsCoordinates = gpsCoordinates;
-        IntervieweeName = intervieweeName;
-        IntervieweeRelationship = intervieweeRelationship;
         Notes = notes;
         DurationMinutes = durationMinutes;
         MarkAsModified(modifiedByUserId);
@@ -319,6 +305,10 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public void MarkAsFinalized(Guid modifiedByUserId)
     {
+        if (!ContactPersonId.HasValue)
+            throw new InvalidOperationException(
+                "Cannot finalize survey without a contact person. Set a contact person first.");
+
         Status = SurveyStatus.Finalized;
         MarkAsModified(modifiedByUserId);
     }

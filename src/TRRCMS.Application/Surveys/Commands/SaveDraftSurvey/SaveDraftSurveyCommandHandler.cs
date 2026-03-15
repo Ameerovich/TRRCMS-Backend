@@ -62,8 +62,6 @@ public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyComm
         {
             survey.PropertyUnitId,
             survey.GpsCoordinates,
-            survey.IntervieweeName,
-            survey.IntervieweeRelationship,
             survey.Notes,
             survey.DurationMinutes
         });
@@ -91,8 +89,6 @@ public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyComm
         // Update survey details
         survey.UpdateSurveyDetails(
             gpsCoordinates: request.GpsCoordinates,
-            intervieweeName: request.IntervieweeName,
-            intervieweeRelationship: request.IntervieweeRelationship,
             notes: request.Notes,
             durationMinutes: request.DurationMinutes,
             modifiedByUserId: currentUserId
@@ -113,8 +109,6 @@ public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyComm
         {
             survey.PropertyUnitId,
             survey.GpsCoordinates,
-            survey.IntervieweeName,
-            survey.IntervieweeRelationship,
             survey.Notes,
             survey.DurationMinutes
         });

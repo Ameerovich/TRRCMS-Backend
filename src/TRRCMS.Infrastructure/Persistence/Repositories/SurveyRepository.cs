@@ -94,7 +94,7 @@ public class SurveyRepository : ISurveyRepository
         DateTime? fromDate = null,
         DateTime? toDate = null,
         string? referenceCode = null,
-        string? intervieweeName = null,
+        string? contactPersonName = null,
         int page = 1,
         int pageSize = 20,
         string sortBy = "SurveyDate",
@@ -137,11 +137,10 @@ public class SurveyRepository : ISurveyRepository
             query = query.Where(s => s.ReferenceCode.Contains(referenceCode));
         }
 
-        if (!string.IsNullOrWhiteSpace(intervieweeName))
+        if (!string.IsNullOrWhiteSpace(contactPersonName))
         {
             query = query.Where(s =>
-                (s.ContactPersonFullName != null && s.ContactPersonFullName.Contains(intervieweeName)) ||
-                (s.IntervieweeName != null && s.IntervieweeName.Contains(intervieweeName)));
+                s.ContactPersonFullName != null && s.ContactPersonFullName.Contains(contactPersonName));
         }
 
         // Get total count before pagination

@@ -18,16 +18,6 @@ public class SaveDraftSurveyCommandValidator : AbstractValidator<SaveDraftSurvey
             .When(x => !string.IsNullOrWhiteSpace(x.GpsCoordinates))
             .WithMessage("GPS coordinates must be in format 'latitude,longitude' (e.g., '36.2021,37.1343')");
 
-        RuleFor(x => x.IntervieweeName)
-            .MaximumLength(200)
-            .When(x => !string.IsNullOrWhiteSpace(x.IntervieweeName))
-            .WithMessage("Interviewee name cannot exceed 200 characters");
-
-        RuleFor(x => x.IntervieweeRelationship)
-            .MaximumLength(100)
-            .When(x => !string.IsNullOrWhiteSpace(x.IntervieweeRelationship))
-            .WithMessage("Interviewee relationship cannot exceed 100 characters");
-
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))

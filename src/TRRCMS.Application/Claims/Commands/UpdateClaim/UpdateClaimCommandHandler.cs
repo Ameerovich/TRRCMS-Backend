@@ -44,12 +44,9 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
         var claim = await _unitOfWork.Claims.GetByIdAsync(request.ClaimId, cancellationToken)
             ?? throw new NotFoundException($"Claim with ID {request.ClaimId} not found");
 
-        if (!claim.PrimaryClaimantId.HasValue)
-            throw new ValidationException("Claim has no primary claimant; cannot update relation.");
-
         // 3. Find or create source relation
         var relation = await _unitOfWork.PersonPropertyRelations
-            .GetByPersonAndPropertyUnitAsync(claim.PrimaryClaimantId.Value, claim.PropertyUnitId, cancellationToken);
+            .GetByPersonAndPropertyUnitAsync(claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken);
 
         bool relationWasCreated = false;
         if (relation == null)
@@ -60,7 +57,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
                 : RelationType.Occupant;
 
             relation = PersonPropertyRelation.Create(
-                claim.PrimaryClaimantId.Value,
+                claim.PrimaryClaimantId,
                 claim.PropertyUnitId,
                 inferredRelationType,
                 null,    // occupancyType

@@ -933,12 +933,14 @@ public class CommitService : ICommitService
                     throw new InvalidOperationException(
                         $"PropertyUnit {staging.OriginalPropertyUnitId} not found in ID map.");
 
-                Guid? productionClaimantId = null;
-                if (staging.OriginalPrimaryClaimantId.HasValue &&
-                    _idMap.TryGetValue(staging.OriginalPrimaryClaimantId.Value, out var claimantId))
-                {
-                    productionClaimantId = claimantId;
-                }
+                // Resolve primary claimant — required for claim creation
+                if (!staging.OriginalPrimaryClaimantId.HasValue)
+                    throw new InvalidOperationException(
+                        $"Staging claim {staging.OriginalEntityId} has no PrimaryClaimantId. Claims require a claimant.");
+
+                if (!_idMap.TryGetValue(staging.OriginalPrimaryClaimantId.Value, out var productionClaimantId))
+                    throw new InvalidOperationException(
+                        $"Person {staging.OriginalPrimaryClaimantId.Value} not found in ID map for claim {staging.OriginalEntityId}.");
 
                 // Generate a proper claim number via the existing generator (FR-D-8)
                 var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(ct);

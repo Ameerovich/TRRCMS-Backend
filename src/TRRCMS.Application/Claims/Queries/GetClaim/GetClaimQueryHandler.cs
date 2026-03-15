@@ -40,19 +40,16 @@ public class GetClaimQueryHandler : IRequestHandler<GetClaimQuery, ClaimDto?>
         var dto = _mapper.Map<ClaimDto>(claim);
 
         // Enrich with evidence from the source PersonPropertyRelation
-        if (claim.PrimaryClaimantId.HasValue)
-        {
-            var relation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
-                claim.PrimaryClaimantId.Value, claim.PropertyUnitId, cancellationToken);
+        var relation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
+            claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken);
 
-            if (relation != null)
-            {
-                dto.SourceRelationId = relation.Id;
-                var activeLinks = await _evidenceRelationRepository
-                    .GetActiveByRelationIdAsync(relation.Id, cancellationToken);
-                dto.EvidenceIds = activeLinks.Select(er => er.EvidenceId).ToList();
-                dto.HasEvidence = dto.EvidenceIds.Count > 0 || (claim.Evidences != null && claim.Evidences.Any());
-            }
+        if (relation != null)
+        {
+            dto.SourceRelationId = relation.Id;
+            var activeLinks = await _evidenceRelationRepository
+                .GetActiveByRelationIdAsync(relation.Id, cancellationToken);
+            dto.EvidenceIds = activeLinks.Select(er => er.EvidenceId).ToList();
+            dto.HasEvidence = dto.EvidenceIds.Count > 0 || (claim.Evidences != null && claim.Evidences.Any());
         }
 
         return dto;

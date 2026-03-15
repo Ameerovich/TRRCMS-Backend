@@ -106,8 +106,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
 
             survey.UpdateSurveyDetails(
                 gpsCoordinates: null,
-                intervieweeName: survey.IntervieweeName,
-                intervieweeRelationship: survey.IntervieweeRelationship,
                 notes: finalNotes,
                 durationMinutes: request.DurationMinutes ?? survey.DurationMinutes,
                 modifiedByUserId: currentUserId);
