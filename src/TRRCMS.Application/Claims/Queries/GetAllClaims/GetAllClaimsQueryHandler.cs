@@ -13,13 +13,19 @@ namespace TRRCMS.Application.Claims.Queries.GetAllClaims;
 public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, PagedResult<ClaimDto>>
 {
     private readonly IClaimRepository _claimRepository;
+    private readonly IPersonPropertyRelationRepository _relationRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly IMapper _mapper;
 
     public GetAllClaimsQueryHandler(
         IClaimRepository claimRepository,
+        IPersonPropertyRelationRepository relationRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
         IMapper mapper)
     {
         _claimRepository = claimRepository ?? throw new ArgumentNullException(nameof(claimRepository));
+        _relationRepository = relationRepository ?? throw new ArgumentNullException(nameof(relationRepository));
+        _evidenceRelationRepository = evidenceRelationRepository ?? throw new ArgumentNullException(nameof(evidenceRelationRepository));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
@@ -55,8 +61,27 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
             claims = await _claimRepository.GetAllAsync(cancellationToken);
         }
 
-        // Map to DTOs and paginate
+        // Map to DTOs
         var dtos = _mapper.Map<List<ClaimDto>>(claims);
+
+        // Enrich each claim DTO with evidence from the source PersonPropertyRelation
+        foreach (var (dto, claim) in dtos.Zip(claims))
+        {
+            if (!claim.PrimaryClaimantId.HasValue) continue;
+
+            var relation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
+                claim.PrimaryClaimantId.Value, claim.PropertyUnitId, cancellationToken);
+
+            if (relation != null)
+            {
+                dto.SourceRelationId = relation.Id;
+                var activeLinks = await _evidenceRelationRepository
+                    .GetActiveByRelationIdAsync(relation.Id, cancellationToken);
+                dto.EvidenceIds = activeLinks.Select(er => er.EvidenceId).ToList();
+                dto.HasEvidence = dto.EvidenceIds.Count > 0 || (claim.Evidences != null && claim.Evidences.Any());
+            }
+        }
+
         return PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
     }
 }

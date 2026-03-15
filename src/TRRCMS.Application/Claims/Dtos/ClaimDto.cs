@@ -37,6 +37,16 @@ public class ClaimDto
 
     public bool HasEvidence { get; set; }
 
+    /// <summary>
+    /// IDs of evidence documents linked to the source PersonPropertyRelation
+    /// </summary>
+    public List<Guid> EvidenceIds { get; set; } = new();
+
+    /// <summary>
+    /// The PersonPropertyRelation that produced this claim
+    /// </summary>
+    public Guid? SourceRelationId { get; set; }
+
     // ==================== AUDIT FIELDS ====================
 
     public DateTime CreatedAtUtc { get; set; }

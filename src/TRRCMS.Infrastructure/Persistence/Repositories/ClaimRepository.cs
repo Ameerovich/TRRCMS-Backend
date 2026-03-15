@@ -36,6 +36,7 @@ public class ClaimRepository : IClaimRepository
         return await _context.Claims
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
+            .Include(c => c.Evidences)
             .OrderByDescending(c => c.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
@@ -93,6 +94,7 @@ public class ClaimRepository : IClaimRepository
         return await _context.Claims
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
+            .Include(c => c.Evidences)
             .Where(c => c.PrimaryClaimantId == personId)
             .OrderByDescending(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
@@ -105,6 +107,7 @@ public class ClaimRepository : IClaimRepository
         return await _context.Claims
             .Include(c => c.PropertyUnit)
             .Include(c => c.PrimaryClaimant)
+            .Include(c => c.Evidences)
             .Where(c => c.CaseStatus == caseStatus)
             .OrderByDescending(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
@@ -126,6 +129,7 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.PropertyUnit)
                 .ThenInclude(pu => pu.Building)
             .Include(c => c.PrimaryClaimant)
+            .Include(c => c.Evidences)
             .AsQueryable();
 
         if (caseStatus.HasValue)

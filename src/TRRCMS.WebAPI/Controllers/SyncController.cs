@@ -157,49 +157,36 @@ public class SyncController : ControllerBase
 
     /// <summary>
     /// Upload a <c>.uhc</c> survey package from the tablet (Sync Protocol Step 2).
-    /// Verifies SHA-256 content checksum integrity (data tables only, excluding manifest),
-    /// stores the package in quarantine, and feeds it into the Import Pipeline for
-    /// staging, validation, duplicate detection, and final commit.
+    /// Only requires the <c>.uhc</c> file and <c>SyncSessionId</c> — all metadata (PackageId,
+    /// DeviceId, checksum, etc.) is extracted automatically from the .uhc manifest table.
     /// The operation is idempotent — uploading the same package twice returns <c>accepted=true, isDuplicate=true</c>.
     /// </summary>
     /// <remarks>
     /// **Purpose:**
-    /// Receives a <c>.uhc</c> file (SQLite database) collected by the tablet. The server validates:
-    /// - File exists and has <c>.uhc</c> extension
-    /// - Session is still <c>InProgress</c> and belongs to the authenticated user
-    /// - SHA-256 checksum matches (integrity verification)
-    /// - Package ID hasn't been received before (idempotency)
-    ///
-    /// On success, the package is stored to disk in the quarantine area and automatically
-    /// fed into the Import Pipeline for staging, validation, duplicate detection, and final commit.
+    /// Receives a <c>.uhc</c> file (SQLite database) collected by the tablet. The server:
+    /// - Validates file exists and has <c>.uhc</c> extension
+    /// - Validates session is still <c>InProgress</c> and belongs to the authenticated user
+    /// - Reads the manifest table from the .uhc SQLite to extract PackageId, DeviceId, checksum, etc.
+    /// - Verifies SHA-256 content checksum (server-computed vs manifest)
+    /// - Stores the package to quarantine and feeds it into the Import Pipeline
     ///
     /// **Request Format:**
     /// <c>multipart/form-data</c> with the following parts:
     /// <list type="bullet">
     ///   <item><c>file</c> — binary <c>.uhc</c> package (renamed SQLite3 database, typically 50–500 MB)</item>
-    ///   <item><c>SyncSessionId</c> — UUID from Step 1</item>
-    ///   <item><c>PackageId</c> — UUID embedded in the .uhc manifest (for idempotency)</item>
-    ///   <item><c>DeviceId</c> — tablet device identifier (e.g., "TABLET-FIELD-001")</item>
-    ///   <item><c>CreatedUtc</c> — ISO-8601 UTC timestamp when the tablet created the package</item>
-    ///   <item><c>SchemaVersion</c> — .uhc schema version (e.g., "1.0.0")</item>
-    ///   <item><c>AppVersion</c> — tablet app version (e.g., "1.0.0")</item>
-    ///   <item><c>Sha256Checksum</c> — lowercase hex SHA-256 content checksum (data tables only, excluding manifest)</item>
-    ///   <item><c>VocabVersionsJson</c> — (optional) JSON mapping vocabulary names to versions</item>
-    ///   <item><c>FormSchemaVersion</c> — (optional) survey form schema version</item>
+    ///   <item><c>SyncSessionId</c> — UUID from Step 1 (required)</item>
+    ///   <item><c>Sha256Checksum</c> — (optional) client-side SHA-256 content checksum for extra integrity verification</item>
     /// </list>
+    ///
+    /// All other metadata (PackageId, DeviceId, SchemaVersion, AppVersion, VocabVersions, etc.)
+    /// is extracted from the .uhc manifest table automatically — the mobile app does not need to send them.
     ///
     /// **Example cURL:**
     /// ```bash
     /// curl -X POST http://server:5000/api/v1/sync/upload \
     ///   -H "Authorization: Bearer JWT_TOKEN" \
     ///   -F "file=@survey-2026-02-23.uhc;type=application/octet-stream" \
-    ///   -F "SyncSessionId=f47ac10b-58cc-4372-a567-0e02b2c3d479" \
-    ///   -F "PackageId=aaaa0001-0001-0001-0001-000000000001" \
-    ///   -F "DeviceId=TABLET-FIELD-001" \
-    ///   -F "CreatedUtc=2026-02-23T09:45:00Z" \
-    ///   -F "SchemaVersion=1.0.0" \
-    ///   -F "AppVersion=1.0.0" \
-    ///   -F "Sha256Checksum=34d9f42c1305d4c85ceaa4b4f2a2dc057e72ae061cdeaa1417052aab334003f1" # content checksum
+    ///   -F "SyncSessionId=f47ac10b-58cc-4372-a567-0e02b2c3d479"
     /// ```
     ///
     /// **Success Response (200 OK):**
@@ -208,7 +195,9 @@ public class SyncController : ControllerBase
     ///   "accepted": true,
     ///   "packageId": "aaaa0001-0001-0001-0001-000000000001",
     ///   "isDuplicate": false,
-    ///   "message": "Package received."
+    ///   "message": "Package received and queued for import.",
+    ///   "importPackageId": "guid",
+    ///   "importError": null
     /// }
     /// ```
     ///
@@ -222,31 +211,14 @@ public class SyncController : ControllerBase
     /// }
     /// ```
     ///
-    /// **Checksum Mismatch (400 Bad Request):**
-    /// ```json
-    /// {
-    ///   "accepted": false,
-    ///   "packageId": "aaaa0001-0001-0001-0001-000000000001",
-    ///   "isDuplicate": false,
-    ///   "message": "Checksum mismatch. Expected: 34d9f42c..., Actual: 1a71bb2e..."
-    /// }
-    /// ```
-    ///
-    /// **Checksum Computation (Content-Based, excludes manifest):**
-    /// 1. Tablet: SHA-256 of all data table contents in the .uhc SQLite (excluding manifest and attachments tables).
-    ///    Tables are sorted alphabetically; rows ordered by rowid; columns sorted alphabetically as "col=value" pairs.
-    /// 2. Server: Same algorithm via <c>IImportService.ComputeContentChecksumAsync</c>; must match the form field value.
-    /// 3. If mismatch, session is marked Failed and no further uploads accepted.
-    /// 4. This is the same checksum algorithm used by the Import Pipeline (<c>POST /api/v1/import/upload</c>).
-    ///
     /// **Required Permission:** System_Sync (9010) - CanSyncData policy
     ///
     /// **FSD:** FR-D-2 (Upload Package), FR-D-3 (Package Integrity)
     /// </remarks>
-    /// <param name="file">The <c>.uhc</c> binary package file (multipart, renamed SQLite database). Must have <c>.uhc</c> extension and typically be 50–500 MB.</param>
-    /// <param name="manifest">Package manifest metadata as form fields, including session ID, package ID, device ID, timestamps, and SHA-256 checksum.</param>
+    /// <param name="file">The <c>.uhc</c> binary package file (multipart, renamed SQLite database). Must have <c>.uhc</c> extension.</param>
+    /// <param name="manifest">Sync session ID and optional client-side checksum.</param>
     /// <response code="200">Package accepted (may be new or duplicate). Body contains <see cref="UploadSyncPackageResultDto"/> with <c>accepted=true</c>.</response>
-    /// <response code="400">Validation error: missing file, wrong file extension, invalid form fields, or checksum mismatch. Session is marked Failed on checksum error.</response>
+    /// <response code="400">Validation error: missing file, wrong file extension, or checksum mismatch.</response>
     /// <response code="401">No valid JWT Bearer token provided.</response>
     /// <response code="403">Authenticated user lacks the <c>CanSyncData</c> permission.</response>
     /// <response code="409">Session is no longer active (already completed, failed, or belongs to a different user).</response>

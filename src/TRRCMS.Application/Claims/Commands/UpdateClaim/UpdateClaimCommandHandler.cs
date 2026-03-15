@@ -323,9 +323,18 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
             cancellationToken: cancellationToken);
 
         // 12. Build result
+        var claimDto = _mapper.Map<ClaimDto>(claim);
+        claimDto.SourceRelationId = relation.Id;
+        claimDto.HasEvidence = hasEvidence;
+
+        // Collect all active evidence IDs from the relation
+        var finalActiveLinks = (await _unitOfWork.EvidenceRelations
+            .GetActiveByRelationIdAsync(relation.Id, cancellationToken)).ToList();
+        claimDto.EvidenceIds = finalActiveLinks.Select(er => er.EvidenceId).ToList();
+
         return new UpdateClaimResultDto
         {
-            Claim = _mapper.Map<ClaimDto>(claim),
+            Claim = claimDto,
             SourceRelationId = relation.Id,
             RelationType = (int)effectiveRelationType,
             HasEvidence = hasEvidence,

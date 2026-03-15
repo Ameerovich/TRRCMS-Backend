@@ -105,39 +105,14 @@
 								{
 									"key": "SyncSessionId",
 									"value": "{{syncSessionId}}",
-									"type": "text"
-								},
-								{
-									"key": "PackageId",
-									"value": "aaaa0001-0001-0001-0001-000000000001",
 									"type": "text",
-									"description": "UUID from .uhc manifest table"
-								},
-								{
-									"key": "DeviceId",
-									"value": "TABLET-FIELD-001",
-									"type": "text"
-								},
-								{
-									"key": "CreatedUtc",
-									"value": "2026-03-01T09:45:00Z",
-									"type": "text"
-								},
-								{
-									"key": "SchemaVersion",
-									"value": "1.0.0",
-									"type": "text"
-								},
-								{
-									"key": "AppVersion",
-									"value": "1.0.0",
-									"type": "text"
+									"description": "Session ID from Step 1 (InitiateSync)"
 								},
 								{
 									"key": "Sha256Checksum",
 									"value": "34d9f42c1305d4c85ceaa4b4f2a2dc057e72ae061cdeaa1417052aab334003f1",
 									"type": "text",
-									"description": "SHA-256 of data table contents (excluding manifest and attachments)"
+									"description": "Optional client-side SHA-256 checksum for extra integrity verification. Server extracts checksum from .uhc manifest automatically."
 								}
 							]
 						},
@@ -151,7 +126,7 @@
 								"upload"
 							]
 						},
-						"description": "**Sync Step 2** - Upload a .uhc survey package.\n\n**Max Size:** 500 MB | **Content-Type:** multipart/form-data\n\n**Idempotent:** Same package uploaded twice returns `accepted=true, isDuplicate=true`.\n\n**Checksum:** SHA-256 of all data table contents sorted by table/row/column. Excludes manifest and attachments tables.\n\n**Response:**\n- `accepted=true, isDuplicate=false` - New package stored\n- `accepted=true, isDuplicate=true` - Already received (idempotent)\n- `accepted=false` - Checksum mismatch, session marked Failed\n\n**FSD:** FR-D-2, FR-D-3"
+						"description": "**Sync Step 2** - Upload a .uhc survey package.\n\n**Simplified API:** Only the .uhc file and SyncSessionId are required. All metadata (PackageId, DeviceId, SchemaVersion, etc.) is extracted from the .uhc manifest automatically.\n\n**Max Size:** 500 MB | **Content-Type:** multipart/form-data\n\n**Idempotent:** Same package uploaded twice returns \\.\n\n**Checksum:** Server computes SHA-256 of data table contents and verifies against .uhc manifest checksum. Optional client Sha256Checksum provides defense-in-depth.\n\n**Response:**\n- \\ - New package stored\n- \\ - Already received (idempotent)\n- \\ - Checksum mismatch, session marked Failed\n\n**FSD:** FR-D-2, FR-D-3"
 					},
 					"response": []
 				},

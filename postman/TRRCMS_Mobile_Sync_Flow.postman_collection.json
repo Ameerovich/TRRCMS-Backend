@@ -47,10 +47,15 @@
 						}
 					],
 					"request": {
-						"auth": { "type": "noauth" },
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "POST",
 						"header": [
-							{ "key": "Content-Type", "value": "application/json" }
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
 						],
 						"body": {
 							"mode": "raw",
@@ -58,8 +63,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Auth/login",
-							"host": ["{{baseUrl}}"],
-							"path": ["Auth", "login"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"login"
+							]
 						},
 						"description": "**Authenticate as Field Collector.**\n\nNo Bearer token needed for this request.\n\nAuto-saves `accessToken`, `currentUserId` to environment for subsequent requests.\n\n**Response fields:**\n| Field | Type | Description |\n|-------|------|-------------|\n| accessToken | string | JWT (15 min expiry) |\n| refreshToken | string | Refresh token (7 days) |\n| userId | GUID | Current user ID |\n| fullNameArabic | string | User display name |\n| role | string | User role name |\n| accessTokenExpiresAt | ISO-8601 | Token expiry timestamp |"
 					},
@@ -94,13 +104,19 @@
 						}
 					],
 					"request": {
-						"auth": { "type": "noauth" },
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/vocabularies",
-							"host": ["{{baseUrl}}"],
-							"path": ["vocabularies"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"vocabularies"
+							]
 						},
 						"description": "**Fetch all active vocabularies (public endpoint, no auth required).**\n\nUse this for initial dropdown population before first sync.\nStep 3 (GET assignments) also returns vocabularies, so this is optional after first sync.\n\n**Vocabulary format:**\n```json\n{\n  \"id\": \"guid\",\n  \"name\": \"building_type\",\n  \"version\": \"1.0.0\",\n  \"category\": \"Building\",\n  \"values\": [\n    { \"code\": 1, \"labelArabic\": \"سكني\", \"labelEnglish\": \"Residential\" }\n  ]\n}\n```\n\n**Vocabulary domains:** building_type, building_usage, building_condition, property_unit_type, floor_location, gender, nationality, relationship_to_head, relation_type, evidence_type, evidence_source_type, evidence_condition, survey_type"
 					},
@@ -139,7 +155,10 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "Content-Type", "value": "application/json" }
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
 						],
 						"body": {
 							"mode": "raw",
@@ -147,8 +166,13 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/sync/session",
-							"host": ["{{baseUrl}}"],
-							"path": ["sync", "session"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"session"
+							]
 						},
 						"description": "**Sync Step 1 — Open a sync session.**\n\nCall this once per sync cycle. Returns `syncSessionId` needed for Steps 2-4.\n\n**Request body:**\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| fieldCollectorId | GUID | Yes | Logged-in user's ID |\n| deviceId | string | Yes | Unique tablet identifier |\n| serverIpAddress | string | No | LAN server IP |\n\n**Response (SyncSessionDto):**\n| Field | Type | Description |\n|-------|------|-------------|\n| id | GUID | Session ID (use in Steps 2-4) |\n| fieldCollectorId | GUID | Collector ID |\n| deviceId | string | Device identifier |\n| serverIpAddress | string? | Server IP |\n| sessionStatus | int | 1=InProgress, 2=Completed, 3=PartiallyCompleted, 4=Failed |\n| startedAtUtc | ISO-8601 | Session start time |\n| completedAtUtc | ISO-8601? | null until session closes |\n| packagesUploaded | int | Counter (starts at 0) |\n| packagesFailed | int | Counter (starts at 0) |\n| assignmentsDownloaded | int | Counter (starts at 0) |\n| assignmentsAcknowledged | int | Counter (starts at 0) |\n| vocabularyVersionsSent | string? | JSON of vocab versions sent |\n| errorMessage | string? | null unless failed |"
 					},
@@ -202,61 +226,24 @@
 									"description": "Session ID from Step 1"
 								},
 								{
-									"key": "PackageId",
-									"value": "aaaa0001-0001-0001-0001-000000000001",
-									"type": "text",
-									"description": "UUID from .uhc manifest table (package_id key)"
-								},
-								{
-									"key": "DeviceId",
-									"value": "TABLET-FIELD-001",
-									"type": "text",
-									"description": "Must match the deviceId used in Step 1"
-								},
-								{
-									"key": "CreatedUtc",
-									"value": "2026-03-14T09:00:00Z",
-									"type": "text",
-									"description": "ISO-8601 UTC timestamp when package was created on tablet"
-								},
-								{
-									"key": "SchemaVersion",
-									"value": "1.0.0",
-									"type": "text",
-									"description": "SQLite schema version (from manifest schema_version key)"
-								},
-								{
-									"key": "AppVersion",
-									"value": "1.0.0",
-									"type": "text",
-									"description": "Mobile app version"
-								},
-								{
 									"key": "Sha256Checksum",
 									"value": "paste-your-sha256-here",
 									"type": "text",
-									"description": "SHA-256 of data table contents (see Integration Guide Section 4 for algorithm)"
-								},
-								{
-									"key": "VocabVersionsJson",
-									"value": "{\"building_type\":\"1.0.0\",\"gender\":\"1.0.0\"}",
-									"type": "text",
-									"description": "Optional. JSON object mapping vocabulary domain names to versions used when creating the package."
-								},
-								{
-									"key": "FormSchemaVersion",
-									"value": "1.0.0",
-									"type": "text",
-									"description": "Optional. Version of the mobile form schema used."
+									"description": "Optional client-side SHA-256 checksum for extra integrity verification"
 								}
 							]
 						},
 						"url": {
 							"raw": "{{baseUrl}}/sync/upload",
-							"host": ["{{baseUrl}}"],
-							"path": ["sync", "upload"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"upload"
+							]
 						},
-						"description": "**Sync Step 2 — Upload a .uhc survey package.**\n\n**Content-Type:** multipart/form-data (auto-set by Postman)\n**Max Size:** 500 MB\n\n**Idempotent:** Same PackageId uploaded twice returns `accepted=true, isDuplicate=true`.\n\n**Checksum verification:**\nServer recomputes SHA-256 from the uploaded .uhc file and compares with `Sha256Checksum`.\nMismatch → `accepted=false`, session marked Failed.\nSee Integration Guide Section 4 for the exact checksum algorithm.\n\n**Response (UploadSyncPackageResultDto):**\n| Field | Type | Description |\n|-------|------|-------------|\n| accepted | bool | true if package stored successfully |\n| packageId | GUID | Echo of submitted PackageId |\n| isDuplicate | bool | true if package was already received |\n| message | string | Human-readable status message |\n| importPackageId | GUID? | Server-side import package ID (null if rejected) |\n| importError | string? | null on success; error details if import pipeline failed |\n\n**Repeat this step** for each .uhc package before moving to Step 3."
+						"description": "**Sync Step 2** � Upload a .uhc survey package.\n\n**Simplified API:** Only the .uhc file and SyncSessionId are required. All metadata (PackageId, DeviceId, SchemaVersion, etc.) is extracted from the .uhc manifest automatically.\n\nOptional: Sha256Checksum for client-side integrity verification (defense-in-depth)."
 					},
 					"response": []
 				},
@@ -299,8 +286,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{baseUrl}}/sync/assignments?sessionId={{syncSessionId}}",
-							"host": ["{{baseUrl}}"],
-							"path": ["sync", "assignments"],
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"assignments"
+							],
 							"query": [
 								{
 									"key": "sessionId",
@@ -368,7 +360,10 @@
 					"request": {
 						"method": "POST",
 						"header": [
-							{ "key": "Content-Type", "value": "application/json" }
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
 						],
 						"body": {
 							"mode": "raw",
@@ -376,8 +371,14 @@
 						},
 						"url": {
 							"raw": "{{baseUrl}}/sync/assignments/ack",
-							"host": ["{{baseUrl}}"],
-							"path": ["sync", "assignments", "ack"]
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"sync",
+								"assignments",
+								"ack"
+							]
 						},
 						"description": "**Sync Step 4 — Acknowledge successful assignment download.**\n\nConfirms the tablet has stored the assignments received in Step 3.\n\n**Idempotent:** Already-acknowledged assignments are silently skipped.\n\n**Effect:** Each assignment transitions Pending/Failed → Transferred.\n\n**Session closes after this step:**\n- Completed (2) — all packages OK\n- PartiallyCompleted (3) — some packages failed checksum\n\n**Pre-request script:** Auto-populates `assignmentIds` from Step 3 response.\n\n**Request body:**\n| Field | Type | Required | Description |\n|-------|------|----------|-------------|\n| syncSessionId | GUID | Yes | Session from Step 1 |\n| assignmentIds | GUID[] | Yes | Assignment IDs from Step 3 response |\n\n**Response (SyncAckResultDto):**\n| Field | Type | Description |\n|-------|------|-------------|\n| acknowledgedCount | int | Successfully acknowledged |\n| failedCount | int | Failed to acknowledge |\n| failedAssignmentIds | GUID[] | IDs that failed (empty on success) |\n| message | string | Human-readable result |"
 					},

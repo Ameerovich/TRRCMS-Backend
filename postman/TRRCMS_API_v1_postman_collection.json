@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "trrcms-api-collection-v1",
 		"name": "TRRCMS API v1",
-		"description": "# TRRCMS API Collection\n\nComplete API collection for Tenure Rights Registration & Claims Management System.\n\n## Quick Start\n\n1. **Import** this collection and the environment file into Postman\n2. **Select** 'TRRCMS Development' environment\n3. **Run** appropriate login request (Admin, Field Collector, or Office Clerk)\n4. **Follow** the numbered folders for your workflow\n\n## Team Workflows\n\n### \ud83d\udcf1 Mobile Team (Field Collectors)\n```\n0. Auth \u2192 Login (Field Collector)\n1. Buildings \u2192 Get Buildings (find building to survey)\n2. Mobile Team \u2192 Create Field Survey\n2. Mobile Team \u2192 Property Unit \u2192 Create/Link\n2. Mobile Team \u2192 Household \u2192 Create\n2. Mobile Team \u2192 Persons \u2192 Add persons\n2. Mobile Team \u2192 Relations \u2192 Link persons to property\n2. Mobile Team \u2192 Evidence \u2192 Upload photos/documents\n2. Mobile Team \u2192 Finalize Field Survey\n```\n\n### \ud83d\udda5\ufe0f Desktop Team (Office Clerks)\n```\n0. Auth \u2192 Login (Office Clerk)\n1. Buildings \u2192 Get/Create Building\n3. Desktop Team \u2192 Create Office Survey\n3. Desktop Team \u2192 Property Unit \u2192 Create/Link\n3. Desktop Team \u2192 Household \u2192 Create\n3. Desktop Team \u2192 Persons \u2192 Add persons\n3. Desktop Team \u2192 Relations \u2192 Link persons to property\n3. Desktop Team \u2192 Evidence \u2192 Upload documents\n3. Desktop Team \u2192 Finalize Office Survey (creates Claim)\n4. Claims \u2192 View created claim\n```\n\n### \ud83d\udccb Data Manager - Building Assignments (UC-012)\n```\n0. Auth \u2192 Login (Admin or Data Manager)\n6. Building Assignments \u2192 Search Buildings (by hierarchy, radius, or polygon)\n6. Building Assignments \u2192 Get Property Units for Revisit (optional)\n6. Building Assignments \u2192 Get Available Field Collectors\n6. Building Assignments \u2192 Assign Buildings to Collector\n6. Building Assignments \u2192 View/Manage Assignments\n```\n\n### \ud83d\udc68\u200d\ud83d\udcbc Admin Team\n```\n0. Auth \u2192 Login (Admin)\n5. User Management \u2192 Full CRUD\n1. Buildings \u2192 Full management\n```\n\n## Enum Reference\n\n### UserRole\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FieldCollector | \u062c\u0627\u0645\u0639 \u0628\u064a\u0627\u0646\u0627\u062a |\n| 2 | FieldSupervisor | \u0645\u0634\u0631\u0641 \u0645\u064a\u062f\u0627\u0646\u064a |\n| 3 | OfficeClerk | \u0645\u0648\u0638\u0641 \u0645\u0643\u062a\u0628 |\n| 4 | DataManager | \u0645\u062f\u064a\u0631 \u0628\u064a\u0627\u0646\u0627\u062a |\n| 5 | Analyst | \u0645\u062d\u0644\u0644 |\n| 6 | Administrator | \u0645\u062f\u064a\u0631 \u0627\u0644\u0646\u0638\u0627\u0645 |\n\n### PropertyUnitType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Apartment | \u0634\u0642\u0629 \u0633\u0643\u0646\u064a\u0629 |\n| 2 | Shop | \u0645\u062d\u0644 \u062a\u062c\u0627\u0631\u064a |\n| 3 | Office | \u0645\u0643\u062a\u0628 |\n| 4 | Warehouse | \u0645\u0633\u062a\u0648\u062f\u0639 |\n| 5 | Other | \u0623\u062e\u0631\u0649 |\n\n### PropertyUnitStatus\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Occupied | \u0645\u0634\u063a\u0648\u0644 |\n| 2 | Vacant | \u0634\u0627\u063a\u0631 |\n| 3 | Damaged | \u0645\u062a\u0636\u0631\u0631 |\n| 4 | UnderRenovation | \u0642\u064a\u062f \u0627\u0644\u062a\u0631\u0645\u064a\u0645 |\n| 5 | Uninhabitable | \u063a\u064a\u0631 \u0635\u0627\u0644\u062d \u0644\u0644\u0633\u0643\u0646 |\n| 6 | Locked | \u0645\u063a\u0644\u0642 |\n| 99 | Unknown | \u063a\u064a\u0631 \u0645\u0639\u0631\u0648\u0641 |\n\n### RelationType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Owner | \u0645\u0627\u0644\u0643 |\n| 2 | Occupant | \u0633\u0627\u0643\u0646 |\n| 3 | Tenant | \u0645\u0633\u062a\u0623\u062c\u0631 |\n| 4 | Guest | \u0636\u064a\u0641 |\n| 5 | Heir | \u0648\u0631\u064a\u062b |\n| 99 | Other | \u0623\u062e\u0631\u0649 |\n\n### TenureContractType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FullOwnership | \u0645\u0644\u0643\u064a\u0629 \u062a\u0627\u0645\u0629 |\n| 2 | SharedOwnership | \u0645\u0644\u0643\u064a\u0629 \u0645\u0634\u062a\u0631\u0643\u0629 |\n| 3 | LongTermRental | \u0625\u064a\u062c\u0627\u0631 \u0637\u0648\u064a\u0644 \u0627\u0644\u0623\u0645\u062f |\n| 4 | ShortTermRental | \u0625\u064a\u062c\u0627\u0631 \u0642\u0635\u064a\u0631 \u0627\u0644\u0623\u0645\u062f |\n| 5 | InformalTenure | \u062d\u064a\u0627\u0632\u0629 \u063a\u064a\u0631 \u0631\u0633\u0645\u064a\u0629 |\n| 6 | UnauthorizedOccupation | \u0625\u0634\u063a\u0627\u0644 \u063a\u064a\u0631 \u0645\u0635\u0631\u062d |\n| 7 | CustomaryRights | \u062d\u0642\u0648\u0642 \u0639\u0631\u0641\u064a\u0629 |\n| 8 | InheritanceBased | \u0645\u064a\u0631\u0627\u062b |\n| 9 | HostedGuest | \u0627\u0633\u062a\u0636\u0627\u0641\u0629 |\n| 10 | TemporaryShelter | \u0645\u0623\u0648\u0649 \u0645\u0624\u0642\u062a |\n| 11 | GovernmentAllocation | \u062a\u062e\u0635\u064a\u0635 \u062d\u0643\u0648\u0645\u064a |\n| 12 | Usufruct | \u062d\u0642 \u0627\u0644\u0627\u0646\u062a\u0641\u0627\u0639 |\n| 99 | Other | \u0623\u062e\u0631\u0649 |\n\n### EvidenceType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | IdentificationDocument | \u0628\u0637\u0627\u0642\u0629 \u0647\u0648\u064a\u0629 |\n| 2 | OwnershipDeed | \u0633\u0646\u062f \u0645\u0644\u0643\u064a\u0629 |\n| 3 | RentalContract | \u0639\u0642\u062f \u0625\u064a\u062c\u0627\u0631 |\n| 4 | UtilityBill | \u0641\u0627\u062a\u0648\u0631\u0629 \u0645\u0631\u0627\u0641\u0642 |\n| 5 | Photo | \u0635\u0648\u0631\u0629 |\n| 6 | OfficialLetter | \u0631\u0633\u0627\u0644\u0629 \u0631\u0633\u0645\u064a\u0629 |\n| 7 | CourtOrder | \u0623\u0645\u0631 \u0645\u062d\u0643\u0645\u0629 |\n| 8 | InheritanceDocument | \u0648\u062b\u064a\u0642\u0629 \u0645\u064a\u0631\u0627\u062b |\n| 9 | TaxReceipt | \u0625\u064a\u0635\u0627\u0644 \u0636\u0631\u064a\u0628\u0629 |\n| 99 | Other | \u0623\u062e\u0631\u0649 |\n\n### TransferStatus (\u062d\u0627\u0644\u0629 \u0627\u0644\u0646\u0642\u0644)\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Pending | \u0642\u064a\u062f \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631 |\n| 2 | InProgress | \u062c\u0627\u0631\u064a \u0627\u0644\u0646\u0642\u0644 |\n| 3 | Transferred | \u062a\u0645 \u0627\u0644\u0646\u0642\u0644 |\n| 4 | Failed | \u0641\u0634\u0644 \u0627\u0644\u0646\u0642\u0644 |\n| 5 | Cancelled | \u0645\u0644\u063a\u064a |\n| 6 | PartialTransfer | \u0646\u0642\u0644 \u062c\u0632\u0626\u064a |\n| 7 | Synchronized | \u0645\u062a\u0632\u0627\u0645\u0646 |\n\n### Priority (\u0627\u0644\u0623\u0648\u0644\u0648\u064a\u0629)\n| Value | Name | Arabic |\n|-------|------|--------|\n| Normal | \u0639\u0627\u062f\u064a |\n| High | \u0639\u0627\u0644\u064a |\n| Urgent | \u0639\u0627\u062c\u0644 |",
+		"description": "# TRRCMS API Collection\n\nComplete API collection for Tenure Rights Registration & Claims Management System.\n\n## Quick Start\n\n1. **Import** this collection and the environment file into Postman\n2. **Select** 'TRRCMS Development' environment\n3. **Run** appropriate login request (Admin, Field Collector, or Office Clerk)\n4. **Follow** the numbered folders for your workflow\n\n## Team Workflows\n\n### 📱 Mobile Team (Field Collectors)\n```\n0. Auth → Login (Field Collector)\n1. Buildings → Get Buildings (find building to survey)\n2. Mobile Team → Create Field Survey\n2. Mobile Team → Property Unit → Create/Link\n2. Mobile Team → Household → Create\n2. Mobile Team → Persons → Add persons\n2. Mobile Team → Relations → Link persons to property\n2. Mobile Team → Evidence → Upload photos/documents\n2. Mobile Team → Finalize Field Survey\n```\n\n### 🖥️ Desktop Team (Office Clerks)\n```\n0. Auth → Login (Office Clerk)\n1. Buildings → Get/Create Building\n3. Desktop Team → Create Office Survey\n3. Desktop Team → Property Unit → Create/Link\n3. Desktop Team → Household → Create\n3. Desktop Team → Persons → Add persons\n3. Desktop Team → Relations → Link persons to property\n3. Desktop Team → Evidence → Upload documents\n3. Desktop Team → Finalize Office Survey (creates Claim)\n4. Claims → View created claim\n```\n\n### 📋 Data Manager - Building Assignments (UC-012)\n```\n0. Auth → Login (Admin or Data Manager)\n6. Building Assignments → Search Buildings (by hierarchy, radius, or polygon)\n6. Building Assignments → Get Property Units for Revisit (optional)\n6. Building Assignments → Get Available Field Collectors\n6. Building Assignments → Assign Buildings to Collector\n6. Building Assignments → View/Manage Assignments\n```\n\n### 👨‍💼 Admin Team\n```\n0. Auth → Login (Admin)\n5. User Management → Full CRUD\n1. Buildings → Full management\n```\n\n## Enum Reference\n\n### UserRole\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FieldCollector | جامع بيانات |\n| 2 | FieldSupervisor | مشرف ميداني |\n| 3 | OfficeClerk | موظف مكتب |\n| 4 | DataManager | مدير بيانات |\n| 5 | Analyst | محلل |\n| 6 | Administrator | مدير النظام |\n\n### PropertyUnitType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Apartment | شقة سكنية |\n| 2 | Shop | محل تجاري |\n| 3 | Office | مكتب |\n| 4 | Warehouse | مستودع |\n| 5 | Other | أخرى |\n\n### PropertyUnitStatus\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Occupied | مشغول |\n| 2 | Vacant | شاغر |\n| 3 | Damaged | متضرر |\n| 4 | UnderRenovation | قيد الترميم |\n| 5 | Uninhabitable | غير صالح للسكن |\n| 6 | Locked | مغلق |\n| 99 | Unknown | غير معروف |\n\n### RelationType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Owner | مالك |\n| 2 | Occupant | ساكن |\n| 3 | Tenant | مستأجر |\n| 4 | Guest | ضيف |\n| 5 | Heir | وريث |\n| 99 | Other | أخرى |\n\n### TenureContractType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | FullOwnership | ملكية تامة |\n| 2 | SharedOwnership | ملكية مشتركة |\n| 3 | LongTermRental | إيجار طويل الأمد |\n| 4 | ShortTermRental | إيجار قصير الأمد |\n| 5 | InformalTenure | حيازة غير رسمية |\n| 6 | UnauthorizedOccupation | إشغال غير مصرح |\n| 7 | CustomaryRights | حقوق عرفية |\n| 8 | InheritanceBased | ميراث |\n| 9 | HostedGuest | استضافة |\n| 10 | TemporaryShelter | مأوى مؤقت |\n| 11 | GovernmentAllocation | تخصيص حكومي |\n| 12 | Usufruct | حق الانتفاع |\n| 99 | Other | أخرى |\n\n### EvidenceType\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | IdentificationDocument | بطاقة هوية |\n| 2 | OwnershipDeed | سند ملكية |\n| 3 | RentalContract | عقد إيجار |\n| 4 | UtilityBill | فاتورة مرافق |\n| 5 | Photo | صورة |\n| 6 | OfficialLetter | رسالة رسمية |\n| 7 | CourtOrder | أمر محكمة |\n| 8 | InheritanceDocument | وثيقة ميراث |\n| 9 | TaxReceipt | إيصال ضريبة |\n| 99 | Other | أخرى |\n\n### TransferStatus (حالة النقل)\n| Value | Name | Arabic |\n|-------|------|--------|\n| 1 | Pending | قيد الانتظار |\n| 2 | InProgress | جاري النقل |\n| 3 | Transferred | تم النقل |\n| 4 | Failed | فشل النقل |\n| 5 | Cancelled | ملغي |\n| 6 | PartialTransfer | نقل جزئي |\n| 7 | Synchronized | متزامن |\n\n### Priority (الأولوية)\n| Value | Name | Arabic |\n|-------|------|--------|\n| Normal | عادي |\n| High | عالي |\n| Urgent | عاجل |",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -39,8 +39,8 @@
 									"    pm.environment.set('currentUserId', jsonData.userId);",
 									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
 									"    pm.environment.set('currentUserRole', jsonData.role);",
-									"    console.log('\u2705 Admin logged in:', jsonData.fullNameArabic);",
-									"    console.log('\u2705 Token expires:', jsonData.accessTokenExpiresAt);",
+									"    console.log('✅ Admin logged in:', jsonData.fullNameArabic);",
+									"    console.log('✅ Token expires:', jsonData.accessTokenExpiresAt);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -96,7 +96,7 @@
 									"    pm.environment.set('currentUserId', jsonData.userId);",
 									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
 									"    pm.environment.set('currentUserRole', jsonData.role);",
-									"    console.log('\u2705 Field Collector logged in:', jsonData.fullNameArabic);",
+									"    console.log('✅ Field Collector logged in:', jsonData.fullNameArabic);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -152,7 +152,7 @@
 									"    pm.environment.set('currentUserId', jsonData.userId);",
 									"    pm.environment.set('currentUserName', jsonData.fullNameArabic);",
 									"    pm.environment.set('currentUserRole', jsonData.role);",
-									"    console.log('\u2705 Office Clerk logged in:', jsonData.fullNameArabic);",
+									"    console.log('✅ Office Clerk logged in:', jsonData.fullNameArabic);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -205,7 +205,7 @@
 									"if (jsonData.accessToken) {",
 									"    pm.environment.set('accessToken', jsonData.accessToken);",
 									"    pm.environment.set('refreshToken', jsonData.refreshToken);",
-									"    console.log('\u2705 Token refreshed successfully');",
+									"    console.log('✅ Token refreshed successfully');",
 									"}"
 								],
 								"type": "text/javascript"
@@ -253,7 +253,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\udc64 Current user:', jsonData.fullNameArabic, '| Role:', jsonData.role);"
+									"console.log('👤 Current user:', jsonData.fullNameArabic, '| Role:', jsonData.role);"
 								],
 								"type": "text/javascript"
 							}
@@ -318,7 +318,7 @@
 									"    var building = jsonData.items[0];",
 									"    pm.environment.set('buildingId', building.id);",
 									"    pm.environment.set('buildingCode', building.buildingCode);",
-									"    console.log('\u2705 First building saved:');",
+									"    console.log('✅ First building saved:');",
 									"    console.log('   ID:', building.id);",
 									"    console.log('   Code:', building.buildingCode);",
 									"    console.log('   Total buildings:', jsonData.totalCount);",
@@ -401,7 +401,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83c\udfe2 Building:', jsonData.buildingCode);",
+									"console.log('🏢 Building:', jsonData.buildingCode);",
 									"console.log('   Type:', jsonData.buildingType);",
 									"console.log('   Floors:', jsonData.numberOfFloors);"
 								],
@@ -440,7 +440,7 @@
 									"var jsonData = pm.response.json();",
 									"if (jsonData.id) {",
 									"    pm.environment.set('buildingId', jsonData.id);",
-									"    console.log('\u2705 Building found, ID saved:', jsonData.id);",
+									"    console.log('✅ Building found, ID saved:', jsonData.id);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -477,13 +477,13 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\udd0d Search Results:');",
+									"console.log('🔍 Search Results:');",
 									"console.log('   Total:', jsonData.totalCount);",
 									"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
 									"",
 									"if (jsonData.buildings && jsonData.buildings.length > 0) {",
 									"    pm.environment.set('buildingId', jsonData.buildings[0].id);",
-									"    console.log('\u2705 First building ID saved:', jsonData.buildings[0].id);",
+									"    console.log('✅ First building ID saved:', jsonData.buildings[0].id);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -512,7 +512,7 @@
 								"search"
 							]
 						},
-						"description": "Search buildings with partial match on building code.\n\n**BuildingId Partial Match:**\n- Supports both formatted (01-01-01) and unformatted (010101) input\n- Searches anywhere in the building code\n\n**Examples:**\n- `\"01-01\"` \u2192 Finds buildings starting with governorate 01, district 01\n- `\"01010101\"` \u2192 Finds buildings in specific sub-district\n- `\"00001\"` \u2192 Finds buildings with \"00001\" anywhere in code\n\n**Filters:**\n- governorateCode, districtCode, subDistrictCode, communityCode, neighborhoodCode\n- buildingType: 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n- status: Building status\n\n**Pagination:**\n- page: Page number (default: 1)\n- pageSize: Items per page (default: 20, max: 100)\n\n**Sorting:**\n- sortBy: \"buildingId\", \"createdDate\", \"status\", \"buildingType\"\n- sortDescending: true/false"
+						"description": "Search buildings with partial match on building code.\n\n**BuildingId Partial Match:**\n- Supports both formatted (01-01-01) and unformatted (010101) input\n- Searches anywhere in the building code\n\n**Examples:**\n- `\"01-01\"` → Finds buildings starting with governorate 01, district 01\n- `\"01010101\"` → Finds buildings in specific sub-district\n- `\"00001\"` → Finds buildings with \"00001\" anywhere in code\n\n**Filters:**\n- governorateCode, districtCode, subDistrictCode, communityCode, neighborhoodCode\n- buildingType: 1=Residential, 2=Commercial, 3=MixedUse, 4=Industrial\n- status: Building status\n\n**Pagination:**\n- page: Page number (default: 1)\n- pageSize: Items per page (default: 20, max: 100)\n\n**Sorting:**\n- sortBy: \"buildingId\", \"createdDate\", \"status\", \"buildingType\"\n- sortDescending: true/false"
 					},
 					"response": []
 				},
@@ -531,7 +531,7 @@
 									"if (jsonData.id) {",
 									"    pm.environment.set('buildingId', jsonData.id);",
 									"    pm.environment.set('buildingCode', jsonData.buildingCode);",
-									"    console.log('\u2705 Building created:');",
+									"    console.log('✅ Building created:');",
 									"    console.log('   ID:', jsonData.id);",
 									"    console.log('   Code:', jsonData.buildingCode);",
 									"}"
@@ -550,7 +550,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"buildingCode\": \"11010101001001\",\n  \"buildingType\": 1,\n  \"numberOfFloors\": 4,\n  \"numberOfUnits\": 8,\n  \"buildingCondition\": 1,\n  \"constructionYear\": 1995,\n  \"addressArabic\": \"\u0634\u0627\u0631\u0639 \u0627\u0644\u0646\u0635\u0631\u060c \u062d\u064a \u0627\u0644\u062c\u0645\u064a\u0644\u064a\u0629\u060c \u062d\u0644\u0628\",\n  \"gpsLatitude\": 36.2021,\n  \"gpsLongitude\": 37.1343,\n  \"notes\": \"\u0645\u0628\u0646\u0649 \u0633\u0643\u0646\u064a - 4 \u0637\u0648\u0627\u0628\u0642\"\n}"
+							"raw": "{\n  \"buildingCode\": \"11010101001001\",\n  \"buildingType\": 1,\n  \"numberOfFloors\": 4,\n  \"numberOfUnits\": 8,\n  \"buildingCondition\": 1,\n  \"constructionYear\": 1995,\n  \"addressArabic\": \"شارع النصر، حي الجميلية، حلب\",\n  \"gpsLatitude\": 36.2021,\n  \"gpsLongitude\": 37.1343,\n  \"notes\": \"مبنى سكني - 4 طوابق\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Buildings",
@@ -561,7 +561,7 @@
 								"Buildings"
 							]
 						},
-						"description": "Create a new building.\n\n**Required:** buildingCode, buildingType\n\n**BuildingType:**\n- 1 = Residential (\u0633\u0643\u0646\u064a)\n- 2 = Commercial (\u062a\u062c\u0627\u0631\u064a)\n- 3 = MixedUse (\u0645\u062e\u062a\u0644\u0637)\n- 4 = Industrial (\u0635\u0646\u0627\u0639\u064a)\n\n**BuildingCondition:**\n- 1 = Good (\u062c\u064a\u062f)\n- 2 = Fair (\u0645\u062a\u0648\u0633\u0637)\n- 3 = Poor (\u0633\u064a\u0621)\n- 4 = Damaged (\u0645\u062a\u0636\u0631\u0631)\n- 5 = Destroyed (\u0645\u062f\u0645\u0631)"
+						"description": "Create a new building.\n\n**Required:** buildingCode, buildingType\n\n**BuildingType:**\n- 1 = Residential (سكني)\n- 2 = Commercial (تجاري)\n- 3 = MixedUse (مختلط)\n- 4 = Industrial (صناعي)\n\n**BuildingCondition:**\n- 1 = Good (جيد)\n- 2 = Fair (متوسط)\n- 3 = Poor (سيء)\n- 4 = Damaged (متضرر)\n- 5 = Destroyed (مدمر)"
 					},
 					"response": []
 				},
@@ -576,7 +576,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"console.log('\u2705 Building updated successfully');"
+									"console.log('✅ Building updated successfully');"
 								],
 								"type": "text/javascript"
 							}
@@ -592,7 +592,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"id\": \"{{buildingId}}\",\n  \"numberOfFloors\": 5,\n  \"numberOfUnits\": 10,\n  \"buildingCondition\": 2,\n  \"notes\": \"\u062a\u0645 \u062a\u062d\u062f\u064a\u062b \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a - \u0625\u0636\u0627\u0641\u0629 \u0637\u0627\u0628\u0642 \u062c\u062f\u064a\u062f\"\n}"
+							"raw": "{\n  \"id\": \"{{buildingId}}\",\n  \"numberOfFloors\": 5,\n  \"numberOfUnits\": 10,\n  \"buildingCondition\": 2,\n  \"notes\": \"تم تحديث البيانات - إضافة طابق جديد\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
@@ -619,8 +619,8 @@
 									"    pm.response.to.have.status(204);",
 									"});",
 									"",
-									"console.log('\u2705 Building soft deleted successfully');",
-									"console.log('\u2139\ufe0f Building is marked as deleted but data retained for audit');"
+									"console.log('✅ Building soft deleted successfully');",
+									"console.log('ℹ️ Building is marked as deleted but data retained for audit');"
 								],
 								"type": "text/javascript"
 							}
@@ -636,7 +636,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"reason\": \"Building demolished - no longer exists | \u062a\u0645 \u0647\u062f\u0645 \u0627\u0644\u0645\u0628\u0646\u0649\"\n}"
+							"raw": "{\n  \"reason\": \"Building demolished - no longer exists | تم هدم المبنى\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Buildings/{{buildingId}}",
@@ -664,7 +664,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\udccb Found', jsonData.length, 'property unit(s)');"
+									"console.log('📋 Found', jsonData.length, 'property unit(s)');"
 								],
 								"type": "text/javascript"
 							}
@@ -700,10 +700,10 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\uddfa\ufe0f Polygon Search Results:');",
+									"console.log('🗺️ Polygon Search Results:');",
 									"console.log('   Buildings found:', jsonData.totalCount);",
 									"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
-									"console.log('   Area:', Math.round(jsonData.polygonAreaSquareMeters || 0), 'm\u00b2');",
+									"console.log('   Area:', Math.round(jsonData.polygonAreaSquareMeters || 0), 'm²');",
 									"",
 									"if (jsonData.buildings && jsonData.buildings.length > 0) {",
 									"    pm.environment.set('polygonBuildingId', jsonData.buildings[0].id);",
@@ -738,7 +738,7 @@
 								"polygon"
 							]
 						},
-						"description": "Search buildings within a polygon using coordinates array.\n\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0645\u0628\u0627\u0646\u064a \u062f\u0627\u062e\u0644 \u0645\u0636\u0644\u0639 \u062c\u063a\u0631\u0627\u0641\u064a\n\n**Format:** [[lng, lat], [lng, lat], ...]\n**Auto-closes:** Polygon closes automatically if first != last\n\n**Test Areas:**\n- \u0627\u0644\u062c\u0645\u064a\u0644\u064a\u0629: Lat 36.2020-36.2060, Lng 37.1340-37.1400\n- \u0627\u0644\u0639\u0632\u064a\u0632\u064a\u0629: Lat 36.1960-36.2010, Lng 37.1340-37.1400\n- \u0627\u0644\u0634\u0647\u0628\u0627\u0621: Lat 36.2080-36.2140, Lng 37.1340-37.1400"
+						"description": "Search buildings within a polygon using coordinates array.\nالبحث عن المباني داخل مضلع جغرافي\n\n**Format:** [[lng, lat], [lng, lat], ...]\n**Auto-closes:** Polygon closes automatically if first != last\n\n**Test Areas:**\n- الجميلية: Lat 36.2020-36.2060, Lng 37.1340-37.1400\n- العزيزية: Lat 36.1960-36.2010, Lng 37.1340-37.1400\n- الشهباء: Lat 36.2080-36.2140, Lng 37.1340-37.1400"
 					},
 					"response": []
 				},
@@ -753,7 +753,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\uddfa\ufe0f WKT Search - Found:', jsonData.totalCount, 'buildings');"
+									"console.log('🗺️ WKT Search - Found:', jsonData.totalCount, 'buildings');"
 								],
 								"type": "text/javascript"
 							}
@@ -797,7 +797,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\uddfa\ufe0f Large Area - Total:', jsonData.totalCount);",
+									"console.log('🗺️ Large Area - Total:', jsonData.totalCount);",
 									"",
 									"var neighborhoods = {};",
 									"jsonData.buildings.forEach(function(b) {",
@@ -832,7 +832,7 @@
 								"polygon"
 							]
 						},
-						"description": "Search large area covering multiple neighborhoods.\n\n**Expected:** Buildings from:\n- \u0627\u0644\u062c\u0645\u064a\u0644\u064a\u0629 \u0627\u0644\u0634\u0631\u0642\u064a\u0629\n- \u0627\u0644\u0639\u0632\u064a\u0632\u064a\u0629\n- \u0627\u0644\u0634\u0647\u0628\u0627\u0621"
+						"description": "Search large area covering multiple neighborhoods.\n\n**Expected:** Buildings from:\n- الجميلية الشرقية\n- العزيزية\n- الشهباء"
 					},
 					"response": []
 				},
@@ -848,7 +848,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83c\udfe0 Filtered by Type - Found:', jsonData.totalCount);",
+									"console.log('🏠 Filtered by Type - Found:', jsonData.totalCount);",
 									"",
 									"pm.test('All match filter type', function() {",
 									"    jsonData.buildings.forEach(function(b) {",
@@ -882,7 +882,7 @@
 								"polygon"
 							]
 						},
-						"description": "Filter by building type.\n\n**BuildingType:**\n- 1 = Residential (\u0633\u0643\u0646\u064a)\n- 2 = Commercial (\u062a\u062c\u0627\u0631\u064a)\n- 3 = MixedUse (\u0645\u062e\u062a\u0644\u0637)\n- 4 = Industrial (\u0635\u0646\u0627\u0639\u064a)"
+						"description": "Filter by building type.\n\n**BuildingType:**\n- 1 = Residential (سكني)\n- 2 = Commercial (تجاري)\n- 3 = MixedUse (مختلط)\n- 4 = Industrial (صناعي)"
 					},
 					"response": []
 				},
@@ -906,7 +906,7 @@
 									"    }",
 									"});",
 									"",
-									"console.log('\ud83d\udccb Full details for', jsonData.totalCount, 'buildings');"
+									"console.log('📋 Full details for', jsonData.totalCount, 'buildings');"
 								],
 								"type": "text/javascript"
 							}
@@ -962,7 +962,7 @@
 											"if (jsonData.id) {",
 											"    pm.environment.set('surveyId', jsonData.id);",
 											"    pm.environment.set('referenceCode', jsonData.referenceCode);",
-											"    console.log('\u2705 Field Survey created:');",
+											"    console.log('✅ Field Survey created:');",
 											"    console.log('   ID:', jsonData.id);",
 											"    console.log('   Reference:', jsonData.referenceCode);",
 											"    console.log('   Status:', jsonData.status);",
@@ -982,7 +982,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"\u0623\u062d\u0645\u062f \u0645\u062d\u0645\u062f \u0639\u0644\u064a \u0627\u0644\u062d\u0633\u0646\",\n  \"intervieweeRelationship\": \"\u0645\u0627\u0644\u0643 \u0627\u0644\u0639\u0642\u0627\u0631\",\n  \"notes\": \"\u0645\u0633\u062d \u0645\u064a\u062f\u0627\u0646\u064a \u0623\u0648\u0644\u064a - \u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0639\u0642\u0627\u0631\"\n}"
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"intervieweeName\": \"أحمد محمد علي الحسن\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"notes\": \"مسح ميداني أولي - معاينة العقار\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/field",
@@ -1010,7 +1010,7 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\udccb Found', jsonData.surveys ? jsonData.surveys.length : 0, 'draft survey(s)');"
+											"console.log('📋 Found', jsonData.surveys ? jsonData.surveys.length : 0, 'draft survey(s)');"
 										],
 										"type": "text/javascript"
 									}
@@ -1046,7 +1046,7 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\udccb Survey:', jsonData.referenceCode, '| Status:', jsonData.status);"
+											"console.log('📋 Survey:', jsonData.referenceCode, '| Status:', jsonData.status);"
 										],
 										"type": "text/javascript"
 									}
@@ -1108,9 +1108,9 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.length > 0) {",
 											"    pm.environment.set('propertyUnitId', jsonData[0].id);",
-											"    console.log('\u2705 First unit saved:', jsonData[0].unitIdentifier);",
+											"    console.log('✅ First unit saved:', jsonData[0].unitIdentifier);",
 											"}",
-											"console.log('\ud83d\udccb Found', jsonData.length, 'unit(s) in building');"
+											"console.log('📋 Found', jsonData.length, 'unit(s) in building');"
 										],
 										"type": "text/javascript"
 									}
@@ -1148,7 +1148,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('propertyUnitId', jsonData.id);",
-											"    console.log('\u2705 Property unit created:', jsonData.unitIdentifier);",
+											"    console.log('✅ Property unit created:', jsonData.unitIdentifier);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1165,7 +1165,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"unitIdentifier\": \"1A\",\n  \"floorNumber\": 1,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 85.5,\n  \"numberOfRooms\": 3,\n  \"description\": \"\u0634\u0642\u0629 \u0633\u0643\u0646\u064a\u0629 - 3 \u063a\u0631\u0641 \u0648\u0635\u0627\u0644\u0629\"\n}"
+									"raw": "{\n  \"unitIdentifier\": \"1A\",\n  \"floorNumber\": 1,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 85.5,\n  \"numberOfRooms\": 3,\n  \"description\": \"شقة سكنية - 3 غرف وصالة\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
@@ -1193,7 +1193,7 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
-											"console.log('\u2705 Property unit linked to survey');"
+											"console.log('✅ Property unit linked to survey');"
 										],
 										"type": "text/javascript"
 									}
@@ -1231,7 +1231,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"status\": 3,\n  \"description\": \"\u062a\u0645 \u0627\u0643\u062a\u0634\u0627\u0641 \u0623\u0636\u0631\u0627\u0631 \u0641\u064a \u0627\u0644\u0633\u0642\u0641\"\n}"
+									"raw": "{\n  \"status\": 3,\n  \"description\": \"تم اكتشاف أضرار في السقف\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}",
@@ -1269,7 +1269,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('householdId', jsonData.id);",
-											"    console.log('\u2705 Household created:', jsonData.id);",
+											"    console.log('✅ Household created:', jsonData.id);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1286,7 +1286,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"headOfHouseholdName\": \"\u0623\u062d\u0645\u062f \u0645\u062d\u0645\u062f \u0639\u0644\u064a\",\n  \"householdSize\": 5,\n  \"maleCount\": 2,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"maleElderlyCount\": 0,\n  \"femaleElderlyCount\": 0,\n  \"maleDisabledCount\": 0,\n  \"femaleDisabledCount\": 0,\n  \"notes\": \"\u0623\u0633\u0631\u0629 \u0645\u0643\u0648\u0646\u0629 \u0645\u0646 \u0627\u0644\u0648\u0627\u0644\u062f\u064a\u0646 \u06483 \u0623\u0637\u0641\u0627\u0644\"\n}"
+									"raw": "{\n  \"headOfHouseholdName\": \"أحمد محمد علي\",\n  \"householdSize\": 5,\n  \"maleCount\": 2,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"maleElderlyCount\": 0,\n  \"femaleElderlyCount\": 0,\n  \"maleDisabledCount\": 0,\n  \"femaleDisabledCount\": 0,\n  \"notes\": \"أسرة مكونة من الوالدين و3 أطفال\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
@@ -1337,7 +1337,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('person1Id', jsonData.id);",
-											"    console.log('\u2705 Person added (Head):', jsonData.fullNameArabic);",
+											"    console.log('✅ Person added (Head):', jsonData.fullNameArabic);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1354,7 +1354,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"familyNameArabic\": \"\u0627\u0644\u062d\u0633\u0646\",\n  \"firstNameArabic\": \"\u0623\u062d\u0645\u062f\",\n  \"fatherNameArabic\": \"\u0645\u062d\u0645\u062f\",\n  \"motherNameArabic\": \"\u0641\u0627\u0637\u0645\u0629\",\n  \"nationalId\": \"01234567890\",\n  \"yearOfBirth\": 1975,\n  \"relationshipToHead\": \"Head\",\n  \"mobileNumber\": \"+963 991 234 567\",\n  \"isContactPerson\": true\n}"
+									"raw": "{\n  \"familyNameArabic\": \"الحسن\",\n  \"firstNameArabic\": \"أحمد\",\n  \"fatherNameArabic\": \"محمد\",\n  \"motherNameArabic\": \"فاطمة\",\n  \"nationalId\": \"01234567890\",\n  \"yearOfBirth\": 1975,\n  \"relationshipToHead\": \"Head\",\n  \"mobileNumber\": \"+963 991 234 567\",\n  \"isContactPerson\": true\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
@@ -1387,7 +1387,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('person2Id', jsonData.id);",
-											"    console.log('\u2705 Person added (Spouse):', jsonData.fullNameArabic);",
+											"    console.log('✅ Person added (Spouse):', jsonData.fullNameArabic);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1404,7 +1404,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"familyNameArabic\": \"\u0627\u0644\u062d\u0633\u0646\",\n  \"firstNameArabic\": \"\u0633\u0627\u0631\u0629\",\n  \"fatherNameArabic\": \"\u062e\u0627\u0644\u062f\",\n  \"yearOfBirth\": 1980,\n  \"relationshipToHead\": \"Spouse\"\n}"
+									"raw": "{\n  \"familyNameArabic\": \"الحسن\",\n  \"firstNameArabic\": \"سارة\",\n  \"fatherNameArabic\": \"خالد\",\n  \"yearOfBirth\": 1980,\n  \"relationshipToHead\": \"Spouse\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
@@ -1488,7 +1488,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('relationId', jsonData.id);",
-											"    console.log('\u2705 Relation created:', jsonData.id);",
+											"    console.log('✅ Relation created:', jsonData.id);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1505,7 +1505,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2010-06-15\",\n  \"notes\": \"\u0645\u0627\u0644\u0643 \u0627\u0644\u0639\u0642\u0627\u0631 \u0627\u0644\u0623\u0635\u0644\u064a - \u0637\u0627\u0628\u0648 \u0623\u062e\u0636\u0631\"\n}"
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2010-06-15\",\n  \"notes\": \"مالك العقار الأصلي - طابو أخضر\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
@@ -1536,7 +1536,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"personId\": \"{{person2Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 2,\n  \"ownershipShare\": 0.5,\n  \"startDate\": \"2015-03-20\",\n  \"notes\": \"\u0645\u0644\u0643\u064a\u0629 \u0645\u0634\u062a\u0631\u0643\u0629 - 50% \u0628\u0639\u062f \u0627\u0644\u0632\u0648\u0627\u062c\"\n}"
+									"raw": "{\n  \"personId\": \"{{person2Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 2,\n  \"ownershipShare\": 0.5,\n  \"startDate\": \"2015-03-20\",\n  \"notes\": \"ملكية مشتركة - 50% بعد الزواج\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
@@ -1567,7 +1567,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 3,\n  \"contractType\": 3,\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2025-12-31\",\n  \"contractDetails\": \"\u0639\u0642\u062f \u0625\u064a\u062c\u0627\u0631 \u0633\u0646\u0648\u064a - \u0631\u0642\u0645 \u0627\u0644\u0639\u0642\u062f: RC-2024-001\",\n  \"notes\": \"\u0645\u0633\u062a\u0623\u062c\u0631 \u0628\u0639\u0642\u062f \u0631\u0633\u0645\u064a\"\n}"
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 3,\n  \"contractType\": 3,\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2025-12-31\",\n  \"contractDetails\": \"عقد إيجار سنوي - رقم العقد: RC-2024-001\",\n  \"notes\": \"مستأجر بعقد رسمي\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
@@ -1598,7 +1598,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"ownershipShare\": 0.75,\n  \"notes\": \"\u062a\u0645 \u062a\u062d\u062f\u064a\u062b \u0646\u0633\u0628\u0629 \u0627\u0644\u0645\u0644\u0643\u064a\u0629\"\n}"
+									"raw": "{\n  \"ownershipShare\": 0.75,\n  \"notes\": \"تم تحديث نسبة الملكية\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/relations/{{relationId}}",
@@ -1663,7 +1663,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('evidenceId', jsonData.id);",
-											"    console.log('\u2705 Photo uploaded:', jsonData.id);",
+											"    console.log('✅ Photo uploaded:', jsonData.id);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1683,7 +1683,7 @@
 										},
 										{
 											"key": "description",
-											"value": "\u0635\u0648\u0631\u0629 \u0648\u0627\u062c\u0647\u0629 \u0627\u0644\u0645\u0628\u0646\u0649 \u0627\u0644\u0623\u0645\u0627\u0645\u064a\u0629",
+											"value": "صورة واجهة المبنى الأمامية",
 											"type": "text"
 										},
 										{
@@ -1693,7 +1693,7 @@
 										},
 										{
 											"key": "notes",
-											"value": "\u0635\u0648\u0631\u0629 \u0645\u0644\u062a\u0642\u0637\u0629 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u0632\u064a\u0627\u0631\u0629 \u0627\u0644\u0645\u064a\u062f\u0627\u0646\u064a\u0629",
+											"value": "صورة ملتقطة أثناء الزيارة الميدانية",
 											"type": "text"
 										}
 									]
@@ -1728,7 +1728,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('evidenceId', jsonData.id);",
-											"    console.log('\u2705 ID document uploaded:', jsonData.id);",
+											"    console.log('✅ ID document uploaded:', jsonData.id);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1753,7 +1753,7 @@
 										},
 										{
 											"key": "description",
-											"value": "\u0628\u0637\u0627\u0642\u0629 \u0627\u0644\u0647\u0648\u064a\u0629 \u0627\u0644\u0648\u0637\u0646\u064a\u0629",
+											"value": "بطاقة الهوية الوطنية",
 											"type": "text"
 										},
 										{
@@ -1768,7 +1768,7 @@
 										},
 										{
 											"key": "issuingAuthority",
-											"value": "\u0627\u0644\u0633\u062c\u0644 \u0627\u0644\u0645\u062f\u0646\u064a",
+											"value": "السجل المدني",
 											"type": "text"
 										}
 									]
@@ -1803,7 +1803,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('evidenceId', jsonData.id);",
-											"    console.log('\u2705 Tenure document uploaded:', jsonData.id);",
+											"    console.log('✅ Tenure document uploaded:', jsonData.id);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -1828,7 +1828,7 @@
 										},
 										{
 											"key": "description",
-											"value": "\u0633\u0646\u062f \u0645\u0644\u0643\u064a\u0629 - \u0637\u0627\u0628\u0648 \u0623\u062e\u0636\u0631",
+											"value": "سند ملكية - طابو أخضر",
 											"type": "text"
 										},
 										{
@@ -1838,7 +1838,7 @@
 										},
 										{
 											"key": "issuingAuthority",
-											"value": "\u0623\u0645\u0627\u0646\u0629 \u0627\u0644\u0633\u062c\u0644 \u0627\u0644\u0639\u0642\u0627\u0631\u064a",
+											"value": "أمانة السجل العقاري",
 											"type": "text"
 										},
 										{
@@ -1971,7 +1971,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"notes\": \"\u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u0645\u0633\u0648\u062f\u0629 - \u0627\u0644\u0639\u0645\u0644 \u0642\u064a\u062f \u0627\u0644\u062a\u0642\u062f\u0645\"\n}"
+									"raw": "{\n  \"gpsCoordinates\": \"36.2021,37.1343\",\n  \"notes\": \"تم حفظ المسودة - العمل قيد التقدم\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/draft",
@@ -2000,7 +2000,7 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\u2705 Field survey finalized');",
+											"console.log('✅ Field survey finalized');",
 											"console.log('   Status:', jsonData.status);",
 											"console.log('   Ready for export to .uhc container');"
 										],
@@ -2018,7 +2018,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"finalNotes\": \"\u062a\u0645 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0645\u0633\u062d \u0627\u0644\u0645\u064a\u062f\u0627\u0646\u064a \u0628\u0646\u062c\u0627\u062d\",\n  \"durationMinutes\": 45\n}"
+									"raw": "{\n  \"finalNotes\": \"تم إنهاء المسح الميداني بنجاح\",\n  \"durationMinutes\": 45\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/field/{{surveyId}}/finalize",
@@ -2040,7 +2040,7 @@
 					"description": "Final stage: Save draft or finalize survey"
 				}
 			],
-			"description": "## \ud83d\udcf1 Mobile Team - Field Survey Flow\n\n**Use Cases:** UC-001 (Field Survey), UC-002 (Resume Draft)\n\n**Workflow:**\n1. Login as Field Collector\n2. Get/Select Building\n3. Create Field Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Persons to Household\n7. Create Person-Property Relations\n8. Upload Evidence (photos, documents)\n9. Finalize Survey\n\n**Reference Code Format:** FLD-YYYY-NNNNN"
+			"description": "## 📱 Mobile Team - Field Survey Flow\n\n**Use Cases:** UC-001 (Field Survey), UC-002 (Resume Draft)\n\n**Workflow:**\n1. Login as Field Collector\n2. Get/Select Building\n3. Create Field Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Persons to Household\n7. Create Person-Property Relations\n8. Upload Evidence (photos, documents)\n9. Finalize Survey\n\n**Reference Code Format:** FLD-YYYY-NNNNN"
 		},
 		{
 			"name": "3. Desktop Team - Office Survey",
@@ -2063,7 +2063,7 @@
 											"if (jsonData.id) {",
 											"    pm.environment.set('surveyId', jsonData.id);",
 											"    pm.environment.set('referenceCode', jsonData.referenceCode);",
-											"    console.log('\u2705 Office Survey created:');",
+											"    console.log('✅ Office Survey created:');",
 											"    console.log('   ID:', jsonData.id);",
 											"    console.log('   Reference:', jsonData.referenceCode);",
 											"}"
@@ -2082,7 +2082,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"officeLocation\": \"\u0645\u0643\u062a\u0628 UN-Habitat \u062d\u0644\u0628\",\n  \"registrationNumber\": \"REG-2026-001234\",\n  \"inPersonVisit\": true,\n  \"intervieweeName\": \"\u0645\u062d\u0645\u062f \u0623\u062d\u0645\u062f \u0627\u0644\u0633\u064a\u062f\",\n  \"intervieweeRelationship\": \"\u0645\u0627\u0644\u0643 \u0627\u0644\u0639\u0642\u0627\u0631\",\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"owner@example.com\",\n  \"notes\": \"\u0632\u064a\u0627\u0631\u0629 \u0645\u0643\u062a\u0628\u064a\u0629 - \u0627\u0644\u0645\u0631\u0627\u062c\u0639 \u064a\u062d\u0645\u0644 \u0633\u0646\u062f \u0645\u0644\u0643\u064a\u0629\"\n}"
+									"raw": "{\n  \"buildingId\": \"{{buildingId}}\",\n  \"surveyDate\": \"2026-01-31T10:00:00Z\",\n  \"officeLocation\": \"مكتب UN-Habitat حلب\",\n  \"registrationNumber\": \"REG-2026-001234\",\n  \"inPersonVisit\": true,\n  \"intervieweeName\": \"محمد أحمد السيد\",\n  \"intervieweeRelationship\": \"مالك العقار\",\n  \"contactPhone\": \"+963912345678\",\n  \"contactEmail\": \"owner@example.com\",\n  \"notes\": \"زيارة مكتبية - المراجع يحمل سند ملكية\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/office",
@@ -2222,7 +2222,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"intervieweeName\": \"\u0645\u062d\u0645\u062f \u0623\u062d\u0645\u062f \u0627\u0644\u0633\u064a\u062f \u0627\u0644\u062e\u0627\u0644\u062f\",\n  \"contactPhone\": \"+963992345678\",\n  \"notes\": \"\u062a\u0645 \u062a\u062d\u062f\u064a\u062b \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0627\u062a\u0635\u0627\u0644\"\n}"
+									"raw": "{\n  \"intervieweeName\": \"محمد أحمد السيد الخالد\",\n  \"contactPhone\": \"+963992345678\",\n  \"notes\": \"تم تحديث معلومات الاتصال\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}",
@@ -2255,7 +2255,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.length > 0) {",
 											"    pm.environment.set('propertyUnitId', jsonData[0].id);",
-											"    console.log('\u2705 First unit saved:', jsonData[0].unitIdentifier);",
+											"    console.log('✅ First unit saved:', jsonData[0].unitIdentifier);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -2289,7 +2289,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('propertyUnitId', jsonData.id);",
-											"    console.log('\u2705 Property unit created:', jsonData.unitIdentifier);",
+											"    console.log('✅ Property unit created:', jsonData.unitIdentifier);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -2306,7 +2306,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"unitIdentifier\": \"2A\",\n  \"floorNumber\": 2,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 120.0,\n  \"numberOfRooms\": 4,\n  \"description\": \"\u0634\u0642\u0629 \u0633\u0643\u0646\u064a\u0629 \u0648\u0627\u0633\u0639\u0629 - 4 \u063a\u0631\u0641\"\n}"
+									"raw": "{\n  \"unitIdentifier\": \"2A\",\n  \"floorNumber\": 2,\n  \"unitType\": 1,\n  \"status\": 1,\n  \"areaSquareMeters\": 120.0,\n  \"numberOfRooms\": 4,\n  \"description\": \"شقة سكنية واسعة - 4 غرف\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units",
@@ -2359,7 +2359,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('householdId', jsonData.id);",
-											"    console.log('\u2705 Household created');",
+											"    console.log('✅ Household created');",
 											"}"
 										],
 										"type": "text/javascript"
@@ -2376,7 +2376,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"headOfHouseholdName\": \"\u0645\u062d\u0645\u062f \u0623\u062d\u0645\u062f \u0627\u0644\u0633\u064a\u062f\",\n  \"householdSize\": 4,\n  \"maleCount\": 1,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"notes\": \"\u0623\u0633\u0631\u0629 \u0645\u0646 4 \u0623\u0641\u0631\u0627\u062f - \u0632\u064a\u0627\u0631\u0629 \u0645\u0643\u062a\u0628\u064a\u0629\"\n}"
+									"raw": "{\n  \"headOfHouseholdName\": \"محمد أحمد السيد\",\n  \"householdSize\": 4,\n  \"maleCount\": 1,\n  \"femaleCount\": 1,\n  \"maleChildCount\": 1,\n  \"femaleChildCount\": 1,\n  \"notes\": \"أسرة من 4 أفراد - زيارة مكتبية\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households",
@@ -2402,7 +2402,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('person1Id', jsonData.id);",
-											"    console.log('\u2705 Person added:', jsonData.fullNameArabic);",
+											"    console.log('✅ Person added:', jsonData.fullNameArabic);",
 											"}"
 										],
 										"type": "text/javascript"
@@ -2419,7 +2419,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"familyNameArabic\": \"\u0627\u0644\u0633\u064a\u062f\",\n  \"firstNameArabic\": \"\u0645\u062d\u0645\u062f\",\n  \"fatherNameArabic\": \"\u0623\u062d\u0645\u062f\",\n  \"nationalId\": \"09876543210\",\n  \"yearOfBirth\": 1970,\n  \"relationshipToHead\": \"Head\",\n  \"email\": \"owner@example.com\",\n  \"mobileNumber\": \"+963912345678\",\n  \"isContactPerson\": true\n}"
+									"raw": "{\n  \"familyNameArabic\": \"السيد\",\n  \"firstNameArabic\": \"محمد\",\n  \"fatherNameArabic\": \"أحمد\",\n  \"nationalId\": \"09876543210\",\n  \"yearOfBirth\": 1970,\n  \"relationshipToHead\": \"Head\",\n  \"email\": \"owner@example.com\",\n  \"mobileNumber\": \"+963912345678\",\n  \"isContactPerson\": true\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/households/{{householdId}}/persons",
@@ -2453,7 +2453,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('relationId', jsonData.id);",
-											"    console.log('\u2705 Owner relation created');",
+											"    console.log('✅ Owner relation created');",
 											"}"
 										],
 										"type": "text/javascript"
@@ -2470,7 +2470,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2005-08-20\",\n  \"notes\": \"\u0645\u0627\u0644\u0643 \u0627\u0644\u0639\u0642\u0627\u0631 - \u064a\u062d\u0645\u0644 \u0633\u0646\u062f \u0645\u0644\u0643\u064a\u0629 \u0623\u0635\u0644\u064a\"\n}"
+									"raw": "{\n  \"personId\": \"{{person1Id}}\",\n  \"relationType\": 1,\n  \"contractType\": 1,\n  \"ownershipShare\": 1.0,\n  \"startDate\": \"2005-08-20\",\n  \"notes\": \"مالك العقار - يحمل سند ملكية أصلي\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/{{surveyId}}/property-units/{{propertyUnitId}}/relations",
@@ -2505,7 +2505,7 @@
 											"var jsonData = pm.response.json();",
 											"if (jsonData.id) {",
 											"    pm.environment.set('evidenceId', jsonData.id);",
-											"    console.log('\u2705 Deed uploaded');",
+											"    console.log('✅ Deed uploaded');",
 											"}"
 										],
 										"type": "text/javascript"
@@ -2530,7 +2530,7 @@
 										},
 										{
 											"key": "description",
-											"value": "\u0633\u0646\u062f \u0645\u0644\u0643\u064a\u0629 \u0623\u0635\u0644\u064a - \u0637\u0627\u0628\u0648 \u0623\u062e\u0636\u0631",
+											"value": "سند ملكية أصلي - طابو أخضر",
 											"type": "text"
 										},
 										{
@@ -2540,12 +2540,12 @@
 										},
 										{
 											"key": "issuingAuthority",
-											"value": "\u0623\u0645\u0627\u0646\u0629 \u0627\u0644\u0633\u062c\u0644 \u0627\u0644\u0639\u0642\u0627\u0631\u064a - \u062d\u0644\u0628",
+											"value": "أمانة السجل العقاري - حلب",
 											"type": "text"
 										},
 										{
 											"key": "documentReferenceNumber",
-											"value": "\u0637\u0627\u0628\u0648-2005-789456",
+											"value": "طابو-2005-789456",
 											"type": "text"
 										}
 									]
@@ -2586,7 +2586,7 @@
 										},
 										{
 											"key": "description",
-											"value": "\u0628\u0637\u0627\u0642\u0629 \u0627\u0644\u0647\u0648\u064a\u0629 \u0627\u0644\u0648\u0637\u0646\u064a\u0629",
+											"value": "بطاقة الهوية الوطنية",
 											"type": "text"
 										}
 									]
@@ -2643,17 +2643,17 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\u2705 Office survey finalized');",
+											"console.log('✅ Office survey finalized');",
 											"console.log('   Status:', jsonData.status);",
 											"",
 											"if (jsonData.claimCreated && jsonData.claim) {",
 											"    pm.environment.set('claimId', jsonData.claim.id);",
 											"    pm.environment.set('claimNumber', jsonData.claim.claimNumber);",
-											"    console.log('\u2705 Claim auto-created:');",
+											"    console.log('✅ Claim auto-created:');",
 											"    console.log('   Claim ID:', jsonData.claim.id);",
 											"    console.log('   Claim Number:', jsonData.claim.claimNumber);",
 											"} else {",
-											"    console.log('\u2139\ufe0f No claim created (no ownership relations or autoCreateClaim=false)');",
+											"    console.log('ℹ️ No claim created (no ownership relations or autoCreateClaim=false)');",
 											"}"
 										],
 										"type": "text/javascript"
@@ -2670,7 +2670,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"finalNotes\": \"\u062a\u0645 \u0625\u0646\u0647\u0627\u0621 \u0627\u0644\u0645\u0633\u062d \u0627\u0644\u0645\u0643\u062a\u0628\u064a \u0628\u0646\u062c\u0627\u062d - \u062c\u0645\u064a\u0639 \u0627\u0644\u0648\u062b\u0627\u0626\u0642 \u0645\u0643\u062a\u0645\u0644\u0629\",\n  \"durationMinutes\": 60,\n  \"autoCreateClaim\": true\n}"
+									"raw": "{\n  \"finalNotes\": \"تم إنهاء المسح المكتبي بنجاح - جميع الوثائق مكتملة\",\n  \"durationMinutes\": 60,\n  \"autoCreateClaim\": true\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/Surveys/office/{{surveyId}}/finalize",
@@ -2692,7 +2692,7 @@
 					"description": "Finalize survey and auto-create claim"
 				}
 			],
-			"description": "## \ud83d\udda5\ufe0f Desktop Team - Office Survey Flow\n\n**Use Cases:** UC-004 (Office Survey), UC-005 (Resume Draft)\n\n**Workflow:**\n1. Login as Office Clerk\n2. Get/Create Building\n3. Create Office Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Claimant Person\n7. Create Owner Relation\n8. Upload Documents (deed, ID)\n9. Finalize Survey \u2192 Creates Claim\n\n**Reference Code Format:** OFC-YYYY-NNNNN\n\n**Key Difference from Field Survey:**\n- Office surveys can auto-create claims on finalization\n- Field surveys are exported to .uhc containers"
+			"description": "## 🖥️ Desktop Team - Office Survey Flow\n\n**Use Cases:** UC-004 (Office Survey), UC-005 (Resume Draft)\n\n**Workflow:**\n1. Login as Office Clerk\n2. Get/Create Building\n3. Create Office Survey\n4. Create/Link Property Unit\n5. Create Household\n6. Add Claimant Person\n7. Create Owner Relation\n8. Upload Documents (deed, ID)\n9. Finalize Survey → Creates Claim\n\n**Reference Code Format:** OFC-YYYY-NNNNN\n\n**Key Difference from Field Survey:**\n- Office surveys can auto-create claims on finalization\n- Field surveys are exported to .uhc containers"
 		},
 		{
 			"name": "4. Claims",
@@ -2709,7 +2709,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\udccb Claim:', jsonData.claimNumber);",
+									"console.log('📋 Claim:', jsonData.claimNumber);",
 									"console.log('   Status:', jsonData.status);",
 									"console.log('   Source:', jsonData.claimSource);"
 								],
@@ -2775,13 +2775,13 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83c\udfe2 Buildings for Assignment:');",
+											"console.log('🏢 Buildings for Assignment:');",
 											"console.log('   Total:', jsonData.totalCount);",
 											"console.log('   Page:', jsonData.page, '/', jsonData.totalPages);",
 											"",
 											"if (jsonData.items && jsonData.items.length > 0) {",
 											"    pm.environment.set('assignmentBuildingId', jsonData.items[0].id);",
-											"    console.log('\u2705 First building saved for assignment');",
+											"    console.log('✅ First building saved for assignment');",
 											"    jsonData.items.slice(0,3).forEach(function(b, i) {",
 											"        console.log('   ' + (i+1) + '. ' + b.buildingCode + ' - ' + (b.hasActiveAssignment ? 'Assigned' : 'Available'));",
 											"    });",
@@ -2883,7 +2883,7 @@
 										}
 									]
 								},
-								"description": "Search buildings available for assignment.\n\u0627\u0644\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0645\u0628\u0627\u0646\u064a \u0627\u0644\u0645\u062a\u0627\u062d\u0629 \u0644\u0644\u062a\u0639\u064a\u064a\u0646\n\n**UC-012: S01-S03** - Search and select buildings\n\n**Required Permission:** Buildings_View (4000)\n\n**Filters:**\n- Administrative hierarchy (governorate\u2192neighborhood)\n- buildingCode, address (partial match)\n- buildingType, buildingStatus\n- hasActiveAssignment: null=all, true=assigned, false=unassigned\n\n**Spatial Options:**\n- Radius: latitude, longitude, radiusMeters\n- Polygon: polygonWkt (WKT format)"
+								"description": "Search buildings available for assignment.\nالبحث عن المباني المتاحة للتعيين\n\n**UC-012: S01-S03** - Search and select buildings\n\n**Required Permission:** Buildings_View (4000)\n\n**Filters:**\n- Administrative hierarchy (governorate→neighborhood)\n- buildingCode, address (partial match)\n- buildingType, buildingStatus\n- hasActiveAssignment: null=all, true=assigned, false=unassigned\n\n**Spatial Options:**\n- Radius: latitude, longitude, radiusMeters\n- Polygon: polygonWkt (WKT format)"
 							},
 							"response": []
 						},
@@ -2899,7 +2899,7 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\udccd Radius Search - Found:', jsonData.totalCount, 'buildings within 1km');"
+											"console.log('📍 Radius Search - Found:', jsonData.totalCount, 'buildings within 1km');"
 										],
 										"type": "text/javascript"
 									}
@@ -2936,7 +2936,7 @@
 										}
 									]
 								},
-								"description": "Search buildings within radius.\n\u0627\u0644\u0628\u062d\u062b \u0628\u0646\u0635\u0641 \u0627\u0644\u0642\u0637\u0631\n\n**Parameters:**\n- latitude, longitude: Center point\n- radiusMeters: Search radius in meters\n\n**Note:** Uses meters-to-degrees conversion for PostGIS SRID 4326"
+								"description": "Search buildings within radius.\nالبحث بنصف القطر\n\n**Parameters:**\n- latitude, longitude: Center point\n- radiusMeters: Search radius in meters\n\n**Note:** Uses meters-to-degrees conversion for PostGIS SRID 4326"
 							},
 							"response": []
 						},
@@ -2952,9 +2952,9 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\uddfa\ufe0f Polygon Search Results:');",
+											"console.log('🗺️ Polygon Search Results:');",
 											"console.log('   Buildings:', jsonData.totalCount);",
-											"console.log('   Polygon Area:', Math.round(jsonData.polygonAreaSquareMeters || 0), 'm\u00b2');",
+											"console.log('   Polygon Area:', Math.round(jsonData.polygonAreaSquareMeters || 0), 'm²');",
 											"",
 											"if (jsonData.items && jsonData.items.length > 0) {",
 											"    var available = jsonData.items.filter(b => !b.hasActiveAssignment).length;",
@@ -2988,7 +2988,7 @@
 										"search"
 									]
 								},
-								"description": "Search buildings in polygon using coordinates array.\n\u0627\u0644\u0628\u062d\u062b \u062f\u0627\u062e\u0644 \u0645\u0636\u0644\u0639 \u062c\u063a\u0631\u0627\u0641\u064a\n\n**UC-012: Polygon Search**\n\n**Polygon Input Options:**\n1. coordinates: [[lng, lat], ...] - Auto-closes if needed\n2. polygonWkt: \"POLYGON((lng lat, ...))\"\n\n**Response includes:**\n- polygonWkt: Parsed WKT string\n- polygonAreaSquareMeters: Approximate area"
+								"description": "Search buildings in polygon using coordinates array.\nالبحث داخل مضلع جغرافي\n\n**UC-012: Polygon Search**\n\n**Polygon Input Options:**\n1. coordinates: [[lng, lat], ...] - Auto-closes if needed\n2. polygonWkt: \"POLYGON((lng lat, ...))\"\n\n**Response includes:**\n- polygonWkt: Parsed WKT string\n- polygonAreaSquareMeters: Approximate area"
 							},
 							"response": []
 						},
@@ -3003,7 +3003,7 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\uddfa\ufe0f WKT Polygon - Found:', jsonData.totalCount, 'buildings');"
+											"console.log('🗺️ WKT Polygon - Found:', jsonData.totalCount, 'buildings');"
 										],
 										"type": "text/javascript"
 									}
@@ -3054,7 +3054,7 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83c\udfe0 Property Units:', jsonData.length);",
+											"console.log('🏠 Property Units:', jsonData.length);",
 											"",
 											"if (jsonData.length > 0) {",
 											"    pm.environment.set('propertyUnitId1', jsonData[0].id);",
@@ -3089,7 +3089,7 @@
 										}
 									]
 								},
-								"description": "Get property units for revisit selection.\n\u0639\u0631\u0636 \u0627\u0644\u0648\u062d\u062f\u0627\u062a \u0627\u0644\u0639\u0642\u0627\u0631\u064a\u0629 \u0644\u0627\u062e\u062a\u064a\u0627\u0631 \u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u0632\u064a\u0627\u0631\u0629\n\n**UC-012: S04-S05** - Review property units\n\n**Use when:** Creating revisit assignment to select specific units\n\n**Response includes:**\n- unitCode, unitType, floorNumber\n- hasCompletedSurvey, lastSurveyDate\n- personCount, householdCount, claimCount"
+								"description": "Get property units for revisit selection.\nعرض الوحدات العقارية لاختيار إعادة الزيارة\n\n**UC-012: S04-S05** - Review property units\n\n**Use when:** Creating revisit assignment to select specific units\n\n**Response includes:**\n- unitCode, unitType, floorNumber\n- hasCompletedSurvey, lastSurveyDate\n- personCount, householdCount, claimCount"
 							},
 							"response": []
 						}
@@ -3111,11 +3111,11 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\udc65 Available Field Collectors:', jsonData.length);",
+											"console.log('👥 Available Field Collectors:', jsonData.length);",
 											"",
 											"if (jsonData.length > 0) {",
 											"    pm.environment.set('fieldCollectorId', jsonData[0].id);",
-											"    console.log('\u2705 First collector saved:', jsonData[0].fullNameArabic);",
+											"    console.log('✅ First collector saved:', jsonData[0].fullNameArabic);",
 											"    jsonData.slice(0,5).forEach(function(c, i) {",
 											"        console.log('   ' + (i+1) + '. ' + c.fullNameArabic + ' - Active: ' + c.activeAssignments + ', Units: ' + c.totalPropertyUnitsAssigned);",
 											"    });",
@@ -3163,7 +3163,7 @@
 										}
 									]
 								},
-								"description": "Get available field collectors with workload info.\n\u0639\u0631\u0636 \u062c\u0627\u0645\u0639\u064a \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u062a\u0627\u062d\u064a\u0646\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Filters:**\n- isAvailable: true/false/null\n- hasAssignedTablet: Has tablet assigned\n- teamName, searchTerm\n\n**Sorting:** By workload (least busy first by default)\n\n**Response includes:**\n- activeAssignments, pendingTransferCount\n- totalPropertyUnitsAssigned"
+								"description": "Get available field collectors with workload info.\nعرض جامعي البيانات المتاحين\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Filters:**\n- isAvailable: true/false/null\n- hasAssignedTablet: Has tablet assigned\n- teamName, searchTerm\n\n**Sorting:** By workload (least busy first by default)\n\n**Response includes:**\n- activeAssignments, pendingTransferCount\n- totalPropertyUnitsAssigned"
 							},
 							"response": []
 						},
@@ -3179,7 +3179,7 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\udccb Collector:', jsonData.fieldCollectorName);",
+											"console.log('📋 Collector:', jsonData.fieldCollectorName);",
 											"console.log('   Total:', jsonData.totalAssignments);",
 											"console.log('   Pending:', jsonData.pendingTransfer);",
 											"console.log('   Ready:', jsonData.readyForSurvey);",
@@ -3220,7 +3220,7 @@
 										}
 									]
 								},
-								"description": "Get assignments for a specific field collector.\n\u0639\u0631\u0636 \u0627\u0644\u0645\u0628\u0627\u0646\u064a \u0627\u0644\u0645\u0639\u064a\u0646\u0629 \u0644\u062c\u0627\u0645\u0639 \u0628\u064a\u0627\u0646\u0627\u062a\n\n**Filters:**\n- isActive: true/false/null\n- transferStatus: 1-7 (see TransferStatus enum)\n- isRevisit: Filter revisit assignments\n\n**Response includes:**\n- Summary: totalAssignments, pendingTransfer, readyForSurvey, completed\n- Assignments list with details"
+								"description": "Get assignments for a specific field collector.\nعرض المباني المعينة لجامع بيانات\n\n**Filters:**\n- isActive: true/false/null\n- transferStatus: 1-7 (see TransferStatus enum)\n- isRevisit: Filter revisit assignments\n\n**Response includes:**\n- Summary: totalAssignments, pendingTransfer, readyForSurvey, completed\n- Assignments list with details"
 							},
 							"response": []
 						}
@@ -3244,7 +3244,7 @@
 											"    pm.expect(jsonData.success).to.be.true;",
 											"});",
 											"",
-											"console.log('\u2705 Assignment Result:');",
+											"console.log('✅ Assignment Result:');",
 											"console.log('   Success:', jsonData.success);",
 											"console.log('   Assigned:', jsonData.assignedCount);",
 											"console.log('   Failed:', jsonData.failedCount);",
@@ -3268,7 +3268,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"fieldCollectorId\": \"{{fieldCollectorId}}\",\n  \"buildings\": [\n    { \"buildingId\": \"{{assignmentBuildingId}}\" }\n  ],\n  \"targetCompletionDate\": \"2026-02-15T00:00:00Z\",\n  \"priority\": \"Normal\",\n  \"assignmentNotes\": \"\u0645\u0628\u0627\u0646\u064a \u0645\u0646\u0637\u0642\u0629 \u0627\u0644\u0639\u0632\u064a\u0632\u064a\u0629 - Regular assignment\"\n}"
+									"raw": "{\n  \"fieldCollectorId\": \"{{fieldCollectorId}}\",\n  \"buildings\": [\n    { \"buildingId\": \"{{assignmentBuildingId}}\" }\n  ],\n  \"targetCompletionDate\": \"2026-02-15T00:00:00Z\",\n  \"priority\": \"Normal\",\n  \"assignmentNotes\": \"مباني منطقة العزيزية - Regular assignment\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/BuildingAssignments/assign",
@@ -3280,7 +3280,7 @@
 										"assign"
 									]
 								},
-								"description": "Assign buildings to field collector.\n\u062a\u0639\u064a\u064a\u0646 \u0645\u0628\u0627\u0646\u064a \u0644\u062c\u0627\u0645\u0639 \u0628\u064a\u0627\u0646\u0627\u062a\n\n**UC-012: S06-S07** - Create assignment\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Supports:**\n- Bulk assignment (multiple buildings)\n- Priority: Normal, High, Urgent\n- Assignment notes\n\n**Note:** Transfer to tablet happens during sync, not immediately.\nInitial TransferStatus = Pending (1)"
+								"description": "Assign buildings to field collector.\nتعيين مباني لجامع بيانات\n\n**UC-012: S06-S07** - Create assignment\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Supports:**\n- Bulk assignment (multiple buildings)\n- Priority: Normal, High, Urgent\n- Assignment notes\n\n**Note:** Transfer to tablet happens during sync, not immediately.\nInitial TransferStatus = Pending (1)"
 							},
 							"response": []
 						},
@@ -3297,7 +3297,7 @@
 											"    pm.response.to.have.status(200);",
 											"});",
 											"",
-											"console.log('\u2705 Revisit Assignment:');",
+											"console.log('✅ Revisit Assignment:');",
 											"console.log('   Success:', jsonData.success);",
 											"console.log('   Message:', jsonData.message);",
 											"",
@@ -3319,7 +3319,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"fieldCollectorId\": \"{{fieldCollectorId}}\",\n  \"buildings\": [\n    {\n      \"buildingId\": \"{{assignmentBuildingId}}\",\n      \"propertyUnitIdsForRevisit\": [\"{{propertyUnitId1}}\", \"{{propertyUnitId2}}\"],\n      \"revisitReason\": \"\u0628\u064a\u0627\u0646\u0627\u062a \u0646\u0627\u0642\u0635\u0629 - \u0625\u0639\u0627\u062f\u0629 \u062c\u0645\u0639 \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0627\u0644\u0623\u0633\u0631\u0629\"\n    }\n  ],\n  \"priority\": \"High\"\n}"
+									"raw": "{\n  \"fieldCollectorId\": \"{{fieldCollectorId}}\",\n  \"buildings\": [\n    {\n      \"buildingId\": \"{{assignmentBuildingId}}\",\n      \"propertyUnitIdsForRevisit\": [\"{{propertyUnitId1}}\", \"{{propertyUnitId2}}\"],\n      \"revisitReason\": \"بيانات ناقصة - إعادة جمع معلومات الأسرة\"\n    }\n  ],\n  \"priority\": \"High\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/BuildingAssignments/assign",
@@ -3331,7 +3331,7 @@
 										"assign"
 									]
 								},
-								"description": "Create revisit assignment for specific property units.\n\u062a\u0639\u064a\u064a\u0646 \u0625\u0639\u0627\u062f\u0629 \u0632\u064a\u0627\u0631\u0629 \u0644\u0648\u062d\u062f\u0627\u062a \u0645\u062d\u062f\u062f\u0629\n\n**Revisit Assignment:**\n- propertyUnitIdsForRevisit: List of unit GUIDs\n- revisitReason: Reason for revisit (Arabic)\n\n**Common Revisit Reasons:**\n- \u0628\u064a\u0627\u0646\u0627\u062a \u0646\u0627\u0642\u0635\u0629 - Missing data\n- \u062a\u062d\u062f\u064a\u062b \u0645\u0639\u0644\u0648\u0645\u0627\u062a - Update information\n- \u062a\u0635\u062d\u064a\u062d \u0623\u062e\u0637\u0627\u0621 - Correct errors\n- \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0625\u0636\u0627\u0641\u064a\u0629 \u0645\u0637\u0644\u0648\u0628\u0629 - Additional info required"
+								"description": "Create revisit assignment for specific property units.\nتعيين إعادة زيارة لوحدات محددة\n\n**Revisit Assignment:**\n- propertyUnitIdsForRevisit: List of unit GUIDs\n- revisitReason: Reason for revisit (Arabic)\n\n**Common Revisit Reasons:**\n- بيانات ناقصة - Missing data\n- تحديث معلومات - Update information\n- تصحيح أخطاء - Correct errors\n- معلومات إضافية مطلوبة - Additional info required"
 							},
 							"response": []
 						},
@@ -3347,7 +3347,7 @@
 											"});",
 											"",
 											"var jsonData = pm.response.json();",
-											"console.log('\ud83d\udccb Assignment Details:');",
+											"console.log('📋 Assignment Details:');",
 											"console.log('   Building:', jsonData.buildingCode);",
 											"console.log('   Collector:', jsonData.fieldCollectorName);",
 											"console.log('   Status:', jsonData.transferStatusName);",
@@ -3371,7 +3371,7 @@
 										"{{assignmentId}}"
 									]
 								},
-								"description": "Get assignment details by ID.\n\u0639\u0631\u0636 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u062a\u0639\u064a\u064a\u0646\n\n**Response includes:**\n- Building info (code, address, hierarchy)\n- Collector info (name, device)\n- Transfer status and dates\n- Progress (completed/total units)\n- Revisit info if applicable"
+								"description": "Get assignment details by ID.\nعرض تفاصيل التعيين\n\n**Response includes:**\n- Building info (code, address, hierarchy)\n- Collector info (name, device)\n- Transfer status and dates\n- Progress (completed/total units)\n- Revisit info if applicable"
 							},
 							"response": []
 						},
@@ -3389,7 +3389,7 @@
 											"    pm.expect(jsonData.success).to.be.true;",
 											"});",
 											"",
-											"console.log('\u2705 Unassignment Result:');",
+											"console.log('✅ Unassignment Result:');",
 											"console.log('   Success:', jsonData.success);",
 											"console.log('   Building:', jsonData.buildingCode);",
 											"console.log('   Collector:', jsonData.fieldCollectorName);"
@@ -3408,7 +3408,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"cancellationReason\": \"\u062a\u0645 \u0646\u0642\u0644 \u062c\u0627\u0645\u0639 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a \u0625\u0644\u0649 \u0645\u0646\u0637\u0642\u0629 \u0623\u062e\u0631\u0649\"\n}"
+									"raw": "{\n  \"cancellationReason\": \"تم نقل جامع البيانات إلى منطقة أخرى\"\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/BuildingAssignments/{{assignmentId}}/unassign",
@@ -3421,7 +3421,7 @@
 										"unassign"
 									]
 								},
-								"description": "Cancel/unassign a building assignment.\n\u0625\u0644\u063a\u0627\u0621 \u062a\u0639\u064a\u064a\u0646 \u0645\u0628\u0646\u0649\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Restrictions:**\n- Cannot cancel if TransferStatus = Synchronized (7)\n- Cannot cancel already inactive assignments\n- Cancellation reason required\n\n**What happens:**\n- IsActive = false\n- TransferStatus = Cancelled (5)\n- Reason recorded in AssignmentNotes"
+								"description": "Cancel/unassign a building assignment.\nإلغاء تعيين مبنى\n\n**Required Permission:** Buildings_Assign (4003)\n\n**Restrictions:**\n- Cannot cancel if TransferStatus = Synchronized (7)\n- Cannot cancel already inactive assignments\n- Cancellation reason required\n\n**What happens:**\n- IsActive = false\n- TransferStatus = Cancelled (5)\n- Reason recorded in AssignmentNotes"
 							},
 							"response": []
 						}
@@ -3429,7 +3429,7 @@
 					"description": "Create and manage building assignments."
 				}
 			],
-			"description": "## \ud83d\udccb Building Assignments (UC-012)\n\n**Requires:** Administrator or DataManager role\n\n**Permissions:**\n- Buildings_View (4000) - Search buildings, view assignments\n- Buildings_Assign (4003) - Create/cancel assignments\n\n**Workflow:**\n1. Search buildings (by hierarchy, radius, or polygon)\n2. Select property units for revisit (optional)\n3. Get available field collectors\n4. Assign buildings to collector\n5. Monitor assignment status\n\n**TransferStatus Flow:**\n```\nPending (1) \u2192 InProgress (2) \u2192 Transferred (3) \u2192 Synchronized (7)\n                              \u2193\n                           Failed (4) \u2192 Retry\n                              \u2193\n                        Cancelled (5)\n```\n\n**Priority Values:** Normal, High, Urgent"
+			"description": "## 📋 Building Assignments (UC-012)\n\n**Requires:** Administrator or DataManager role\n\n**Permissions:**\n- Buildings_View (4000) - Search buildings, view assignments\n- Buildings_Assign (4003) - Create/cancel assignments\n\n**Workflow:**\n1. Search buildings (by hierarchy, radius, or polygon)\n2. Select property units for revisit (optional)\n3. Get available field collectors\n4. Assign buildings to collector\n5. Monitor assignment status\n\n**TransferStatus Flow:**\n```\nPending (1) → InProgress (2) → Transferred (3) → Synchronized (7)\n                              ↓\n                           Failed (4) → Retry\n                              ↓\n                        Cancelled (5)\n```\n\n**Priority Values:** Normal, High, Urgent"
 		},
 		{
 			"name": "5. User Management (Admin)",
@@ -3446,11 +3446,11 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\udc65 Total users:', jsonData.totalCount);",
+									"console.log('👥 Total users:', jsonData.totalCount);",
 									"",
 									"if (jsonData.users && jsonData.users.length > 0) {",
 									"    pm.environment.set('targetUserId', jsonData.users[0].id);",
-									"    console.log('\u2705 First user ID saved');",
+									"    console.log('✅ First user ID saved');",
 									"}"
 								],
 								"type": "text/javascript"
@@ -3531,7 +3531,7 @@
 									"var jsonData = pm.response.json();",
 									"if (jsonData.id) {",
 									"    pm.environment.set('targetUserId', jsonData.id);",
-									"    console.log('\u2705 User created:', jsonData.username);",
+									"    console.log('✅ User created:', jsonData.username);",
 									"}"
 								],
 								"type": "text/javascript"
@@ -3548,7 +3548,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"fc002\",\n  \"email\": \"fc002@trrcms.org\",\n  \"fullNameArabic\": \"\u062e\u0627\u0644\u062f \u0645\u062d\u0645\u0648\u062f \u0639\u0644\u064a\",\n  \"fullNameEnglish\": \"Khaled Mahmoud Ali\",\n  \"phoneNumber\": \"+963 992 345 678\",\n  \"role\": 1,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": true,\n  \"hasDesktopAccess\": false,\n  \"organization\": \"\u0641\u0631\u064a\u0642 \u062d\u0644\u0628 \u0627\u0644\u0645\u064a\u062f\u0627\u0646\u064a\",\n  \"jobTitle\": \"\u062c\u0627\u0645\u0639 \u0628\u064a\u0627\u0646\u0627\u062a\"\n}"
+							"raw": "{\n  \"username\": \"fc002\",\n  \"email\": \"fc002@trrcms.org\",\n  \"fullNameArabic\": \"خالد محمود علي\",\n  \"fullNameEnglish\": \"Khaled Mahmoud Ali\",\n  \"phoneNumber\": \"+963 992 345 678\",\n  \"role\": 1,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": true,\n  \"hasDesktopAccess\": false,\n  \"organization\": \"فريق حلب الميداني\",\n  \"jobTitle\": \"جامع بيانات\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Users",
@@ -3575,7 +3575,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"oc002\",\n  \"email\": \"oc002@trrcms.org\",\n  \"fullNameArabic\": \"\u0633\u0627\u0631\u0629 \u0623\u062d\u0645\u062f \u0627\u0644\u062e\u0627\u0644\u062f\",\n  \"role\": 3,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": false,\n  \"hasDesktopAccess\": true,\n  \"organization\": \"\u0645\u0643\u062a\u0628 \u062d\u0644\u0628\",\n  \"jobTitle\": \"\u0645\u0648\u0638\u0641 \u062a\u0633\u062c\u064a\u0644\"\n}"
+							"raw": "{\n  \"username\": \"oc002\",\n  \"email\": \"oc002@trrcms.org\",\n  \"fullNameArabic\": \"سارة أحمد الخالد\",\n  \"role\": 3,\n  \"password\": \"TempPass123!\",\n  \"hasMobileAccess\": false,\n  \"hasDesktopAccess\": true,\n  \"organization\": \"مكتب حلب\",\n  \"jobTitle\": \"موظف تسجيل\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Users",
@@ -3602,7 +3602,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"phoneNumber\": \"+963 993 456 789\",\n  \"organization\": \"\u0641\u0631\u064a\u0642 \u062f\u0645\u0634\u0642 \u0627\u0644\u0645\u064a\u062f\u0627\u0646\u064a\"\n}"
+							"raw": "{\n  \"phoneNumber\": \"+963 993 456 789\",\n  \"organization\": \"فريق دمشق الميداني\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Users/{{targetUserId}}",
@@ -3650,7 +3650,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"reason\": \"\u0627\u0646\u062a\u0647\u0627\u0621 \u0639\u0642\u062f \u0627\u0644\u0639\u0645\u0644 - End of employment\"\n}"
+							"raw": "{\n  \"reason\": \"انتهاء عقد العمل - End of employment\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Users/{{targetUserId}}/deactivate",
@@ -3699,7 +3699,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"permissions\": [2000, 2001, 2002],\n  \"grantReason\": \"\u0645\u0637\u0644\u0648\u0628 \u0644\u0644\u0645\u0634\u0631\u0648\u0639 \u0627\u0644\u062c\u062f\u064a\u062f - Required for new project\"\n}"
+							"raw": "{\n  \"permissions\": [2000, 2001, 2002],\n  \"grantReason\": \"مطلوب للمشروع الجديد - Required for new project\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Users/{{targetUserId}}/permissions",
@@ -3728,7 +3728,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"reason\": \"\u0627\u0646\u062a\u0647\u0627\u0621 \u0627\u0644\u0645\u0634\u0631\u0648\u0639 - Project completed\"\n}"
+							"raw": "{\n  \"reason\": \"انتهاء المشروع - Project completed\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/Users/{{targetUserId}}/permissions/Evidence_Upload",
@@ -3767,7 +3767,7 @@
 					"response": []
 				}
 			],
-			"description": "## \ud83d\udc68\u200d\ud83d\udcbc User Management (Admin Only)\n\n**Requires:** Administrator role\n\n**Operations:**\n- CRUD users\n- Activate/Deactivate accounts\n- Unlock locked accounts\n- Grant/Revoke permissions\n- View audit logs"
+			"description": "## 👨‍💼 User Management (Admin Only)\n\n**Requires:** Administrator role\n\n**Operations:**\n- CRUD users\n- Activate/Deactivate accounts\n- Unlock locked accounts\n- Grant/Revoke permissions\n- View audit logs"
 		},
 		{
 			"name": "7. Sync Protocol (UC-003/UC-012)",
@@ -3786,7 +3786,7 @@
 									"var jsonData = pm.response.json();",
 									"if (jsonData.id) {",
 									"    pm.environment.set('syncSessionId', jsonData.id);",
-									"    console.log('\u2705 Sync session created:', jsonData.id);",
+									"    console.log('✅ Sync session created:', jsonData.id);",
 									"    console.log('   Status:', jsonData.sessionStatus);",
 									"    console.log('   Device:', jsonData.deviceId);",
 									"}"
@@ -3834,7 +3834,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\udce6 Package:', jsonData.packageId);",
+									"console.log('📦 Package:', jsonData.packageId);",
 									"console.log('   Accepted:', jsonData.accepted);",
 									"console.log('   Duplicate:', jsonData.isDuplicate);",
 									"console.log('   Message:', jsonData.message);"
@@ -3858,39 +3858,14 @@
 								{
 									"key": "SyncSessionId",
 									"value": "{{syncSessionId}}",
-									"type": "text"
-								},
-								{
-									"key": "PackageId",
-									"value": "aaaa0001-0001-0001-0001-000000000001",
 									"type": "text",
-									"description": "UUID from .uhc manifest table"
-								},
-								{
-									"key": "DeviceId",
-									"value": "TABLET-FIELD-001",
-									"type": "text"
-								},
-								{
-									"key": "CreatedUtc",
-									"value": "2026-03-01T09:45:00Z",
-									"type": "text"
-								},
-								{
-									"key": "SchemaVersion",
-									"value": "1.0.0",
-									"type": "text"
-								},
-								{
-									"key": "AppVersion",
-									"value": "1.0.0",
-									"type": "text"
+									"description": "Session ID from Step 1 (InitiateSync)"
 								},
 								{
 									"key": "Sha256Checksum",
 									"value": "34d9f42c1305d4c85ceaa4b4f2a2dc057e72ae061cdeaa1417052aab334003f1",
 									"type": "text",
-									"description": "SHA-256 of data table contents (excluding manifest and attachments)"
+									"description": "Optional client-side SHA-256 checksum for extra integrity verification"
 								}
 							]
 						},
@@ -3920,7 +3895,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\ud83d\udce5 Payload assembled at:', jsonData.payloadAssembledAtUtc);",
+									"console.log('📥 Payload assembled at:', jsonData.payloadAssembledAtUtc);",
 									"console.log('   Assignments:', jsonData.assignmentCount);",
 									"console.log('   Vocabularies:', jsonData.vocabularies ? jsonData.vocabularies.length : 0);",
 									"",
@@ -3975,7 +3950,7 @@
 									"});",
 									"",
 									"var jsonData = pm.response.json();",
-									"console.log('\u2705 Acknowledged:', jsonData.acknowledgedCount);",
+									"console.log('✅ Acknowledged:', jsonData.acknowledgedCount);",
 									"console.log('   Failed:', jsonData.failedCount);",
 									"if (jsonData.failedAssignmentIds && jsonData.failedAssignmentIds.length > 0) {",
 									"    console.log('   Failed IDs:', jsonData.failedAssignmentIds);",
@@ -4207,7 +4182,7 @@
 								"stage"
 							]
 						},
-						"description": "**Import Step 2** - Trigger staging (unpack .uhc \u2192 staging tables) and row-level validation."
+						"description": "**Import Step 2** - Trigger staging (unpack .uhc → staging tables) and row-level validation."
 					},
 					"response": []
 				},
@@ -5213,7 +5188,7 @@
 					"response": []
 				}
 			],
-			"description": "## Conflict Resolution (UC-007/UC-008)\n\n**Required Permission:** CanImportData (System_Import permission)\n**Roles:** DataManager, OfficeClerk, FieldSupervisor, Administrator\n\n### UC-007: Property Duplicate Resolution\n**Workflow:** Review queue (S01-S02) \u2192 Side-by-side comparison (S03-S04) \u2192 Merge/Keep-Separate (S05-S06) \u2192 Optional Escalation (S05a)\n\nProperty records flagged as potential duplicates based on:\n- Same building_id (within unit)\n- Composite key (building_id + unit_code) matches\n\n### UC-008: Person Duplicate Resolution\n**Workflow:** Review queue (S01-S02) \u2192 Side-by-side comparison (S03-S04) \u2192 Document comparison (S04) \u2192 Merge/Keep-Separate (S05-S06) \u2192 Optional Escalation (S05a)\n\nPerson records sharing the same national_id value (including within-batch duplicates).\n\n### Resolution Actions\n- **Merge:** Master-detail selection, consolidates entities, propagates FK changes\n- **Keep Separate:** No merge, prevents re-surfacing\n- **Escalate:** Complex cases to supervisor investigation\n\n**FSD:** FR-D-5, FR-D-6, FR-D-7"
+			"description": "## Conflict Resolution (UC-007/UC-008)\n\n**Required Permission:** CanImportData (System_Import permission)\n**Roles:** DataManager, OfficeClerk, FieldSupervisor, Administrator\n\n### UC-007: Property Duplicate Resolution\n**Workflow:** Review queue (S01-S02) → Side-by-side comparison (S03-S04) → Merge/Keep-Separate (S05-S06) → Optional Escalation (S05a)\n\nProperty records flagged as potential duplicates based on:\n- Same building_id (within unit)\n- Composite key (building_id + unit_code) matches\n\n### UC-008: Person Duplicate Resolution\n**Workflow:** Review queue (S01-S02) → Side-by-side comparison (S03-S04) → Document comparison (S04) → Merge/Keep-Separate (S05-S06) → Optional Escalation (S05a)\n\nPerson records sharing the same national_id value (including within-batch duplicates).\n\n### Resolution Actions\n- **Merge:** Master-detail selection, consolidates entities, propagates FK changes\n- **Keep Separate:** No merge, prevents re-surfacing\n- **Escalate:** Complex cases to supervisor investigation\n\n**FSD:** FR-D-5, FR-D-6, FR-D-7"
 		},
 		{
 			"name": "10. Dashboard (FR-D-12)",
@@ -5269,12 +5244,12 @@
 								"summary"
 							]
 						},
-						"description": "**Dashboard Summary** - Aggregated statistics for the desktop application dashboard.\n\n**Returns:**\n- `claims` \u2014 Total, by status, overdue, with conflicts, awaiting documents, pending verification\n- `surveys` \u2014 Total, by status, field/office split, completed last 7/30 days\n- `imports` \u2014 Total packages, by status, active, unresolved conflicts, entities imported\n- `buildings` \u2014 Total buildings, property units, by status, by damage level, average units per building\n- `generatedAtUtc` \u2014 Timestamp of report generation\n\n**Requires:** Any authenticated user [Authorize]\n\n**FSD:** FR-D-12"
+						"description": "**Dashboard Summary** - Aggregated statistics for the desktop application dashboard.\n\n**Returns:**\n- `claims` — Total, by status, overdue, with conflicts, awaiting documents, pending verification\n- `surveys` — Total, by status, field/office split, completed last 7/30 days\n- `imports` — Total packages, by status, active, unresolved conflicts, entities imported\n- `buildings` — Total buildings, property units, by status, by damage level, average units per building\n- `generatedAtUtc` — Timestamp of report generation\n\n**Requires:** Any authenticated user [Authorize]\n\n**FSD:** FR-D-12"
 					},
 					"response": []
 				}
 			],
-			"description": "## Dashboard (FR-D-12)\n\n**Desktop Application Dashboard Endpoint**\n\nProvides real-time aggregated statistics for the desktop team's status overview:\n\n### Claims Section\n- Total claims count\n- Breakdown by status (Draft, Submitted, UnderReview, Verified, Approved, Rejected)\n- Breakdown by lifecycle stage\n- Overdue count\n- Claims with unresolved conflicts\n- Claims awaiting documents\n- Claims pending verification\n\n### Surveys Section\n- Total surveys count\n- Breakdown by status (Draft, InProgress, Completed, Cancelled)\n- Field surveys vs office surveys split\n- Completed in last 7 days\n- Completed in last 30 days\n\n### Imports Section\n- Total import packages\n- Breakdown by status (Pending, Completed, Failed, Cancelled, Quarantined)\n- Active packages in pipeline\n- Packages with unresolved conflicts\n- Total entities imported (surveys, buildings, persons)\n\n### Buildings Section\n- Total buildings\n- Total property units\n- Breakdown by building status (Occupied, Damaged, Destroyed, etc.)\n- Breakdown by damage level (None, Minor, Major, Destroyed)\n- Average property units per building\n\n**Policy:** [Authorize] \u2014 Any authenticated user"
+			"description": "## Dashboard (FR-D-12)\n\n**Desktop Application Dashboard Endpoint**\n\nProvides real-time aggregated statistics for the desktop team's status overview:\n\n### Claims Section\n- Total claims count\n- Breakdown by status (Draft, Submitted, UnderReview, Verified, Approved, Rejected)\n- Breakdown by lifecycle stage\n- Overdue count\n- Claims with unresolved conflicts\n- Claims awaiting documents\n- Claims pending verification\n\n### Surveys Section\n- Total surveys count\n- Breakdown by status (Draft, InProgress, Completed, Cancelled)\n- Field surveys vs office surveys split\n- Completed in last 7 days\n- Completed in last 30 days\n\n### Imports Section\n- Total import packages\n- Breakdown by status (Pending, Completed, Failed, Cancelled, Quarantined)\n- Active packages in pipeline\n- Packages with unresolved conflicts\n- Total entities imported (surveys, buildings, persons)\n\n### Buildings Section\n- Total buildings\n- Total property units\n- Breakdown by building status (Occupied, Damaged, Destroyed, etc.)\n- Breakdown by damage level (None, Minor, Major, Destroyed)\n- Average property units per building\n\n**Policy:** [Authorize] — Any authenticated user"
 		}
 	]
 }

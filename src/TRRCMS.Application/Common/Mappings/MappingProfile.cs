@@ -146,7 +146,9 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.PropertyUnitCode, opt => opt.MapFrom(src =>
                 src.PropertyUnit != null ? src.PropertyUnit.UnitIdentifier : null))
             .ForMember(dest => dest.PrimaryClaimantName, opt => opt.MapFrom(src =>
-                src.PrimaryClaimant != null ? $"{src.PrimaryClaimant.FirstNameArabic} {src.PrimaryClaimant.FatherNameArabic} {src.PrimaryClaimant.FamilyNameArabic}" : null));
+                src.PrimaryClaimant != null ? $"{src.PrimaryClaimant.FirstNameArabic} {src.PrimaryClaimant.FatherNameArabic} {src.PrimaryClaimant.FamilyNameArabic}" : null))
+            .ForMember(dest => dest.EvidenceIds, opt => opt.Ignore())
+            .ForMember(dest => dest.SourceRelationId, opt => opt.Ignore());
 
         // User mappings - Base DTO
         CreateMap<User, UserDto>()
