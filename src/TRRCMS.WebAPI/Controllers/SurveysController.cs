@@ -8,6 +8,7 @@ using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
+using TRRCMS.Application.Surveys.Commands.CancelSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateContactPerson;
 using TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
@@ -504,6 +505,40 @@ public class SurveysController : ControllerBase
         return Ok();
     }
 
+
+    /// <summary>
+    /// Cancel a survey (Draft or Finalized → Cancelled)
+    /// إلغاء المسح
+    /// </summary>
+    /// <remarks>
+    /// **Purpose**: Cancels a survey that is in Draft or Finalized status.
+    /// Once cancelled, the survey cannot be modified or finalized.
+    ///
+    /// **Allowed transitions**: Draft → Cancelled, Finalized → Cancelled
+    ///
+    /// **Required permissions**: CanFinalizeSurveys
+    /// </remarks>
+    /// <param name="id">Survey ID to cancel</param>
+    /// <param name="command">Cancellation reason</param>
+    /// <returns>200 OK on success</returns>
+    /// <response code="200">Survey cancelled successfully</response>
+    /// <response code="400">Survey is already cancelled or archived</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized</response>
+    /// <response code="404">Survey not found</response>
+    [HttpPost("{id}/cancel")]
+    [Authorize(Policy = "CanFinalizeSurveys")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CancelSurvey(Guid id, [FromBody] CancelSurveyCommand command)
+    {
+        command.SurveyId = id;
+        await _mediator.Send(command);
+        return Ok();
+    }
 
     // ==================== COMMON SURVEY OPERATIONS ====================
 

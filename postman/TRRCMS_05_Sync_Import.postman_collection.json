@@ -110,9 +110,10 @@
 								},
 								{
 									"key": "Sha256Checksum",
-									"value": "34d9f42c1305d4c85ceaa4b4f2a2dc057e72ae061cdeaa1417052aab334003f1",
+									"value": "",
 									"type": "text",
-									"description": "Optional client-side SHA-256 checksum for extra integrity verification. Server extracts checksum from .uhc manifest automatically."
+									"disabled": true,
+									"description": "Optional client-side SHA-256 checksum for extra integrity verification. Server verifies against the checksum embedded in the .uhc manifest automatically. Leave disabled unless testing client-side checksum validation."
 								}
 							]
 						},

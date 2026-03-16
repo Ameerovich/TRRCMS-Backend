@@ -314,6 +314,21 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Cancel survey. Allowed from Draft or Finalized status.
+    /// </summary>
+    public void Cancel(Guid modifiedByUserId)
+    {
+        if (Status == SurveyStatus.Cancelled)
+            throw new InvalidOperationException("Survey is already cancelled.");
+
+        if (Status == SurveyStatus.Archived)
+            throw new InvalidOperationException("Cannot cancel an archived survey.");
+
+        Status = SurveyStatus.Cancelled;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Link claim to survey (called when claim is auto-generated)
     /// </summary>
     public void LinkClaim(Guid claimId, Guid modifiedByUserId)
