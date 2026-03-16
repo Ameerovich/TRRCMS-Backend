@@ -4,8 +4,7 @@ using TRRCMS.Application.BuildingAssignments.Dtos;
 namespace TRRCMS.Application.BuildingAssignments.Commands.AssignBuildings;
 
 /// <summary>
-/// Command to assign multiple buildings to a field collector
-/// UC-012: Assign Buildings to Field Collectors (S06-S07)
+/// Command to assign multiple buildings to a field collector.
 /// </summary>
 public record AssignBuildingsCommand : IRequest<AssignBuildingsResult>
 {

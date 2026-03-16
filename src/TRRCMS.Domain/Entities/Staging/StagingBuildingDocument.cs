@@ -5,22 +5,16 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// <summary>
 /// Staging entity for BuildingDocument records from .uhc packages.
 /// Mirrors the <see cref="BuildingDocument"/> production entity in an isolated staging area.
-/// Subject to attachment deduplication by SHA-256 hash (FSD FR-D-9).
+/// Subject to attachment deduplication by SHA-256 hash.
 ///
 /// Parent entity link stored as original UUID from .uhc (not production FK):
 /// - <see cref="OriginalBuildingId"/>: building this document belongs to
 ///
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingBuildingDocument : BaseStagingEntity
 {
-    // ==================== RELATIONSHIP (original UUID from .uhc) ====================
-
     /// <summary>Original Building UUID from .uhc — not a FK to production Buildings.</summary>
     public Guid OriginalBuildingId { get; private set; }
-
-    // ==================== DOCUMENT METADATA ====================
-
     /// <summary>Optional description of the document.</summary>
     public string? Description { get; private set; }
 
@@ -37,16 +31,13 @@ public class StagingBuildingDocument : BaseStagingEntity
     public string MimeType { get; private set; }
 
     /// <summary>
-    /// SHA-256 hash of the file content for deduplication during commit (FR-D-9).
+    /// SHA-256 hash of the file content for deduplication during commit.
     /// Indexed for fast lookups against existing documents in production.
     /// </summary>
     public string? FileHash { get; private set; }
 
     /// <summary>Additional notes.</summary>
     public string? Notes { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>EF Core constructor</summary>
     private StagingBuildingDocument()
     {
@@ -54,9 +45,6 @@ public class StagingBuildingDocument : BaseStagingEntity
         FilePath = string.Empty;
         MimeType = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a staging building document from .uhc import data.
     /// </summary>

@@ -11,8 +11,6 @@ public class EvidenceRelationConfiguration : IEntityTypeConfiguration<EvidenceRe
         builder.ToTable("EvidenceRelations");
         builder.HasKey(er => er.Id);
 
-        // ==================== FOREIGN KEYS ====================
-
         builder.Property(er => er.EvidenceId)
             .IsRequired()
             .HasComment("Foreign key to Evidence");
@@ -20,8 +18,6 @@ public class EvidenceRelationConfiguration : IEntityTypeConfiguration<EvidenceRe
         builder.Property(er => er.PersonPropertyRelationId)
             .IsRequired()
             .HasComment("Foreign key to PersonPropertyRelation");
-
-        // ==================== METADATA ====================
 
         builder.Property(er => er.LinkReason)
             .HasMaxLength(500)
@@ -40,8 +36,6 @@ public class EvidenceRelationConfiguration : IEntityTypeConfiguration<EvidenceRe
             .HasDefaultValue(true)
             .HasComment("Whether this link is currently active");
 
-        // ==================== AUDIT FIELDS ====================
-
         builder.Property(er => er.CreatedAtUtc).IsRequired().HasComment("Creation timestamp (UTC)");
         builder.Property(er => er.CreatedBy).IsRequired().HasComment("User who created this record");
         builder.Property(er => er.LastModifiedAtUtc).IsRequired(false).HasComment("Last modification timestamp (UTC)");
@@ -50,8 +44,6 @@ public class EvidenceRelationConfiguration : IEntityTypeConfiguration<EvidenceRe
         builder.Property(er => er.DeletedAtUtc).IsRequired(false).HasComment("Deletion timestamp (UTC)");
         builder.Property(er => er.DeletedBy).IsRequired(false).HasComment("User who deleted this record");
         builder.Property(er => er.RowVersion).IsRowVersion().HasComment("Concurrency token");
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(er => er.EvidenceId)
             .HasDatabaseName("IX_EvidenceRelations_EvidenceId");
@@ -70,8 +62,6 @@ public class EvidenceRelationConfiguration : IEntityTypeConfiguration<EvidenceRe
 
         builder.HasIndex(er => er.LinkedBy)
             .HasDatabaseName("IX_EvidenceRelations_LinkedBy");
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne(er => er.Evidence)
             .WithMany(e => e.EvidenceRelations)

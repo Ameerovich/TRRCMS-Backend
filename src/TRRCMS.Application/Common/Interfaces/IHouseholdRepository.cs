@@ -42,7 +42,6 @@ public interface IHouseholdRepository
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
     /// <summary>
     /// Get total count of households (excluding soft-deleted).

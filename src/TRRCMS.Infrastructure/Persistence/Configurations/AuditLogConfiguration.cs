@@ -13,10 +13,7 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
     {
         builder.ToTable("AuditLogs");
 
-        // ==================== PRIMARY KEY ====================
         builder.HasKey(a => a.Id);
-
-        // ==================== AUDIT IDENTIFICATION ====================
 
         builder.Property(a => a.AuditLogNumber)
             .IsRequired()
@@ -32,8 +29,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 
         // Index on Timestamp for date range queries
         builder.HasIndex(a => a.Timestamp);
-
-        // ==================== ACTION DETAILS ====================
 
         builder.Property(a => a.ActionType)
             .IsRequired()
@@ -52,8 +47,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .IsRequired()
             .HasMaxLength(50)
             .HasComment("Result of the action (Success, Failed, Partial)");
-
-        // ==================== USER INFORMATION ====================
 
         builder.Property(a => a.UserId)
             .IsRequired()
@@ -77,8 +70,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .HasMaxLength(200)
             .HasComment("Full name of user for historical record");
 
-        // ==================== ENTITY INFORMATION ====================
-
         builder.Property(a => a.EntityType)
             .HasMaxLength(100)
             .HasComment("Type of entity affected (e.g., Claim, Building)");
@@ -93,8 +84,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .HasMaxLength(100)
             .HasComment("Human-readable identifier (e.g., Claim Number)");
 
-        // ==================== CHANGE TRACKING ====================
-
         builder.Property(a => a.OldValues)
             .HasColumnType("jsonb")
             .HasComment("Previous state stored as JSON");
@@ -106,8 +95,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         builder.Property(a => a.ChangedFields)
             .HasMaxLength(1000)
             .HasComment("Comma-separated list of changed fields");
-
-        // ==================== REQUEST CONTEXT ====================
 
         builder.Property(a => a.IpAddress)
             .HasMaxLength(50)
@@ -129,8 +116,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .HasMaxLength(100)
             .HasComment("Session ID");
 
-        // ==================== ADDITIONAL CONTEXT ====================
-
         builder.Property(a => a.AdditionalData)
             .HasColumnType("jsonb")
             .HasComment("Additional contextual information as JSON");
@@ -143,8 +128,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .HasColumnType("text")
             .HasComment("Stack trace if action failed");
 
-        // ==================== CORRELATION ====================
-
         builder.Property(a => a.CorrelationId)
             .HasComment("Correlation ID to group related actions");
 
@@ -153,8 +136,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 
         builder.Property(a => a.ParentAuditLogId)
             .HasComment("Parent audit log ID for nested actions");
-
-        // ==================== COMPLIANCE ====================
 
         builder.Property(a => a.IsSecuritySensitive)
             .IsRequired()
@@ -175,15 +156,11 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
         // Index on RetentionEndDate for retention policy management
         builder.HasIndex(a => a.RetentionEndDate);
 
-        // ==================== RELATIONSHIPS ====================
-
         // Self-referencing relationship for parent audit logs
         builder.HasOne(a => a.ParentAuditLog)
             .WithMany()
             .HasForeignKey(a => a.ParentAuditLogId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // ==================== COMPOSITE INDEXES FOR REPORTING ====================
 
         // Index for user activity within date range
         builder.HasIndex(a => new { a.UserId, a.Timestamp });

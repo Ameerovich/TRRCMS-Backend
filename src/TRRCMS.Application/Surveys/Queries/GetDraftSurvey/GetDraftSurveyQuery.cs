@@ -5,7 +5,7 @@ namespace TRRCMS.Application.Surveys.Queries.GetDraftSurvey;
 
 /// <summary>
 /// Query to retrieve a draft survey for resuming work
-/// Corresponds to UC-002: Resume draft survey
+/// Retrieves a draft survey for resuming work
 /// </summary>
 public class GetDraftSurveyQuery : IRequest<SurveyDto>
 {

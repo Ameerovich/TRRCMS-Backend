@@ -16,8 +16,6 @@ namespace TRRCMS.Infrastructure.Services;
 /// for the actual comparison logic, then creates <see cref="ConflictResolution"/> entities
 /// for each detected duplicate pair.
 ///
-/// FSD: FR-D-5 (Person), FR-D-6 (Property), FR-D-7 (Conflict Resolution).
-/// UC-003 Stage 2 — S14.
 /// </summary>
 public class DuplicateDetectionService : IDuplicateDetectionService
 {
@@ -59,9 +57,7 @@ public class DuplicateDetectionService : IDuplicateDetectionService
         _logger.LogInformation(
             "Starting duplicate detection for package {PackageId}", importPackageId);
 
-        // ============================================================
         // Load staging data (only Valid and Warning records are candidates)
-        // ============================================================
         var stagingPersons = await LoadCommittablePersonsAsync(importPackageId, cancellationToken);
         var stagingBuildings = await LoadCommittableBuildingsAsync(importPackageId, cancellationToken);
         var stagingUnits = await LoadCommittableUnitsAsync(importPackageId, cancellationToken);
@@ -69,9 +65,7 @@ public class DuplicateDetectionService : IDuplicateDetectionService
         result.PersonsScanned = stagingPersons.Count;
         result.BuildingsScanned = stagingBuildings.Count;
 
-        // ============================================================
         // Person duplicate detection
-        // ============================================================
         var personMatches = await _personMatcher.DetectDuplicatesAsync(
             stagingPersons, cancellationToken);
 
@@ -80,9 +74,7 @@ public class DuplicateDetectionService : IDuplicateDetectionService
 
         result.PersonDuplicatesFound = personConflicts.Count;
 
-        // ============================================================
         // Property duplicate detection
-        // ============================================================
         var propertyMatches = await _propertyMatcher.DetectDuplicatesAsync(
             stagingBuildings, stagingUnits, cancellationToken);
 
@@ -91,9 +83,7 @@ public class DuplicateDetectionService : IDuplicateDetectionService
 
         result.PropertyDuplicatesFound = propertyConflicts.Count;
 
-        // ============================================================
         // Aggregate results
-        // ============================================================
         var allConflicts = personConflicts.Concat(propertyConflicts).ToList();
         result.TotalConflictsCreated = allConflicts.Count;
         result.ConflictIds = allConflicts.Select(c => c.Id).ToList();
@@ -108,8 +98,6 @@ public class DuplicateDetectionService : IDuplicateDetectionService
 
         return result;
     }
-
-    // ==================== STAGING DATA LOADING ====================
 
     /// <summary>
     /// Load staging persons that are candidates for duplicate checking.
@@ -148,8 +136,6 @@ public class DuplicateDetectionService : IDuplicateDetectionService
         return valid.Concat(warning).ToList();
     }
 
-    // ==================== CONFLICT CREATION ====================
-
     /// <summary>
     /// Create ConflictResolution entities for person duplicate matches.
     /// Checks for existing conflict pairs to avoid duplicate conflict records.
@@ -176,7 +162,7 @@ public class DuplicateDetectionService : IDuplicateDetectionService
                 continue;
             }
 
-            // UC-007/008: Check if a previous KeepSeparate decision exists for this pair.
+            // Check if a previous KeepSeparate decision exists for this pair.
             // If the operator already confirmed these are distinct records, do not re-flag.
             var wasKeptSeparate = await _conflictRepository.HasKeepSeparateDecisionAsync(
                 match.StagingOriginalEntityId, match.MatchedEntityId, ct);
@@ -248,7 +234,7 @@ public class DuplicateDetectionService : IDuplicateDetectionService
             if (existing != null)
                 continue;
 
-            // UC-007: Check if a previous KeepSeparate decision exists for this pair.
+            // Check if a previous KeepSeparate decision exists for this pair.
             var wasKeptSeparate = await _conflictRepository.HasKeepSeparateDecisionAsync(
                 match.StagingOriginalEntityId, match.MatchedEntityId, ct);
 

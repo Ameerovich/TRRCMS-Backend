@@ -6,14 +6,7 @@ using TRRCMS.Infrastructure.Persistence.Repositories;
 namespace TRRCMS.Infrastructure.Persistence;
 
 /// <summary>
-/// Unit of Work implementation using Entity Framework Core.
-/// Coordinates work of multiple repositories and manages transactions.
-/// 
-/// This class:
-/// - Provides access to all repositories through a single instance
-/// - Ensures all repositories share the same DbContext
-/// - Manages transaction lifetime
-/// - Provides atomic SaveChanges across all repositories
+/// Unit of Work implementation coordinating repositories and transactions.
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
@@ -43,16 +36,11 @@ private IClaimRepository? _claims;
     private ILandmarkRepository? _landmarks;
     private IStreetRepository? _streets;
 
-
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
-
-    // ==================== REPOSITORY PROPERTIES ====================
-    // Lazy initialization ensures repositories are only created when needed
-    // All repositories share the same DbContext instance
 
     public IBuildingRepository Buildings =>
         _buildings ??= new BuildingRepository(_context);
@@ -112,9 +100,6 @@ private IClaimRepository? _claims;
 
     public IStreetRepository Streets =>
         _streets ??= new StreetRepository(_context);
-
-
-    // ==================== TRANSACTION OPERATIONS ====================
 
     /// <summary>
     /// Save all pending changes to the database.
@@ -188,15 +173,11 @@ private IClaimRepository? _claims;
         });
     }
 
-    // ==================== CHANGE TRACKER ====================
-
     /// <inheritdoc />
     public void DetachAllEntities()
     {
         _context.ChangeTracker.Clear();
     }
-
-    // ==================== DISPOSAL ====================
 
     public void Dispose()
     {

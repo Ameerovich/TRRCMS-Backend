@@ -19,8 +19,6 @@ public class ClaimRepository : IClaimRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    // ==================== BASIC CRUD OPERATIONS ====================
-
     public async Task<Claim?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -57,8 +55,6 @@ public class ClaimRepository : IClaimRepository
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    // ==================== QUERY BY UNIQUE IDENTIFIERS ====================
-
     public async Task<Claim?> GetByClaimNumberAsync(string claimNumber, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -68,8 +64,6 @@ public class ClaimRepository : IClaimRepository
 
             .FirstOrDefaultAsync(c => c.ClaimNumber == claimNumber, cancellationToken);
     }
-
-    // ==================== QUERY BY RELATIONSHIPS ====================
 
     public async Task<Claim?> GetByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
     {
@@ -100,8 +94,6 @@ public class ClaimRepository : IClaimRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== QUERY BY WORKFLOW STATES ====================
-
     public async Task<IEnumerable<Claim>> GetByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -112,8 +104,6 @@ public class ClaimRepository : IClaimRepository
             .OrderByDescending(c => c.SubmittedDate)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== FILTERED QUERY ====================
 
     public async Task<List<Claim>> GetFilteredAsync(
         CaseStatus? caseStatus,
@@ -152,8 +142,6 @@ public class ClaimRepository : IClaimRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== EXISTENCE CHECKS ====================
-
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Claims.AnyAsync(c => c.Id == id, cancellationToken);
@@ -169,8 +157,6 @@ public class ClaimRepository : IClaimRepository
         return await _context.Claims.AnyAsync(c => c.PropertyUnitId == propertyUnitId, cancellationToken);
     }
 
-    // ==================== AGGREGATE QUERIES ====================
-
     public async Task<int> GetCountByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default)
     {
         return await _context.Claims
@@ -183,8 +169,6 @@ public class ClaimRepository : IClaimRepository
         return await _context.Claims.CountAsync(cancellationToken);
     }
 
-    // ==================== GROUPED COUNTS (Dashboard) ====================
-
     public async Task<Dictionary<CaseStatus, int>> GetCaseStatusCountsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -193,8 +177,6 @@ public class ClaimRepository : IClaimRepository
             .Select(g => new { CaseStatus = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.CaseStatus, x => x.Count, cancellationToken);
     }
-
-    // ==================== DASHBOARD EXTENDED QUERIES ====================
 
     public async Task<Dictionary<ClaimType, int>> GetClaimTypeCountsAsync(
         CancellationToken cancellationToken = default)

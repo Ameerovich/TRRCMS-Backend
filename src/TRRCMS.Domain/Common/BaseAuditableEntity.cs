@@ -16,7 +16,7 @@ public abstract class BaseAuditableEntity : BaseEntity
 
     protected BaseAuditableEntity() : base()
     {
-        IsDeleted = false;  // ✅ ADD THIS LINE
+        IsDeleted = false;
     }
 
     protected BaseAuditableEntity(Guid id) : base(id)

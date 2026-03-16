@@ -3,8 +3,7 @@ using MediatR;
 namespace TRRCMS.Application.BuildingAssignments.Commands.UnassignBuilding;
 
 /// <summary>
-/// Command to unassign/cancel a building assignment
-/// UC-012: Supports unassignment workflow
+/// Command to unassign/cancel a building assignment.
 /// </summary>
 public record UnassignBuildingCommand : IRequest<UnassignBuildingResult>
 {

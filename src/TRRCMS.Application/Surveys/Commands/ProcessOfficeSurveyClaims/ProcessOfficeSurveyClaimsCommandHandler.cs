@@ -59,9 +59,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
         var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(survey.PropertyUnitId.Value, cancellationToken);
         var households = (await _unitOfWork.Households.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
-        // ── CRITICAL: Only fetch relations created within THIS survey ──
-        // This ensures claims are scoped to the current survey only,
-        // not to all relations ever created for this property unit.
+        // Only fetch relations created within this survey
         var surveyRelations = (await _unitOfWork.PersonPropertyRelations.GetBySurveyIdWithEvidencesAsync(
             request.SurveyId, cancellationToken)).ToList();
 
@@ -93,7 +91,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
         if (!surveyRelations.Any()) warnings.Add("No person-property relations created in this survey.");
         if (!allEvidence.Any()) warnings.Add("No evidence uploaded for this survey.");
 
-        // ── Apply final notes / duration ──
         if (!string.IsNullOrWhiteSpace(request.FinalNotes) || request.DurationMinutes.HasValue)
         {
             var finalNotes = survey.Notes;
@@ -111,7 +108,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                 modifiedByUserId: currentUserId);
         }
 
-        // ── Create claims — one per qualifying relation ──
         var createdClaims = new List<CreatedClaimSummaryDto>();
         string? claimNotCreatedReason = null;
 
@@ -225,7 +221,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
         await _unitOfWork.Surveys.UpdateAsync(survey, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // ── Audit claim processing ──
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
             actionDescription: $"Processed claims for office survey {survey.ReferenceCode}",
@@ -251,7 +246,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
             changedFields: "Claims",
             cancellationToken: cancellationToken);
 
-        // ── Build response (same shape as before) ──
         var totalEvidenceSize = allEvidence.Sum(e => e.FileSizeBytes);
 
         var result = new OfficeSurveyFinalizationResultDto

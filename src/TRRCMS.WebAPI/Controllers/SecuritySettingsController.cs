@@ -9,7 +9,7 @@ using TRRCMS.Application.SecuritySettings.Queries.GetSecuritySettingsHistory;
 namespace TRRCMS.WebAPI.Controllers;
 
 /// <summary>
-/// Security Settings API — UC-011 (إعدادات الأمان)
+/// Security Settings API (إعدادات الأمان)
 /// </summary>
 /// <remarks>
 /// Manages system-wide security policy configuration including password rules,
@@ -18,9 +18,9 @@ namespace TRRCMS.WebAPI.Controllers;
 /// **Architecture:**
 /// - Security policies are versioned; each "Apply" creates a new immutable version.
 /// - Only one policy is active at any time; previous versions are preserved for audit.
-/// - All changes are logged per FSD Section 13: Security &amp; Audit requirements.
+/// - All changes are logged per security and audit requirements.
 ///
-/// **Workflow (UC-011 S01–S08):**
+/// **Workflow:**
 /// 1. Admin opens security settings → `GET /current` loads the active configuration.
 /// 2. Admin configures password, session/lockout, and access control sections.
 /// 3. Admin submits → `PUT /` validates and applies the new policy atomically.
@@ -50,7 +50,7 @@ public class SecuritySettingsController : ControllerBase
     // ==================== READ ENDPOINTS ====================
 
     /// <summary>
-    /// Get the currently active security policy (عرض إعدادات الأمان الحالية) — UC-011 S02
+    /// Get the currently active security policy (عرض إعدادات الأمان الحالية)
     /// </summary>
     /// <remarks>
     /// Returns the active security policy with all three sections:
@@ -117,7 +117,7 @@ public class SecuritySettingsController : ControllerBase
     /// <remarks>
     /// Returns all security policy versions ordered by version descending (newest first).
     /// Each version is a complete snapshot of the policy at that point in time.
-    /// Supports FSD Section 13.4: Legal Audit Trail for security configuration changes.
+    /// Supports legal audit trail for security configuration changes.
     ///
     /// **Required permission:** `CanManageSecuritySettings` (Security_Settings = 8300)
     /// </remarks>
@@ -142,7 +142,7 @@ public class SecuritySettingsController : ControllerBase
     // ==================== WRITE ENDPOINTS ====================
 
     /// <summary>
-    /// Validate and apply a new security policy (تطبيق سياسة أمان جديدة) — UC-011 S03–S08
+    /// Validate and apply a new security policy (تطبيق سياسة أمان جديدة)
     /// </summary>
     /// <remarks>
     /// Validates the submitted security configuration against safety constraints,
@@ -151,7 +151,7 @@ public class SecuritySettingsController : ControllerBase
     ///
     /// **Required permission:** `CanManageSecuritySettings` (Security_Settings = 8300)
     ///
-    /// **Validation rules (UC-011 S06):**
+    /// **Validation rules:**
     /// - Password min length: 8–128 characters
     /// - If no complexity requirements: min length must be ≥ 12
     /// - Password expiry: 0 (disabled) to 365 days
@@ -162,7 +162,7 @@ public class SecuritySettingsController : ControllerBase
     /// - At least one authentication method must remain enabled
     /// - IP allowlist cannot be empty when enforcement is enabled
     ///
-    /// **Alternative flow S06a:** If validation fails, a 400 response is returned
+    /// **Alternative flow:** If validation fails, a 400 response is returned
     /// with details on which parameters are invalid. The current policy remains in force.
     ///
     /// **Example request:**
@@ -194,7 +194,7 @@ public class SecuritySettingsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The newly applied security policy with version number and effective timestamp</returns>
     /// <response code="200">Security policy applied successfully — new version is now active</response>
-    /// <response code="400">Validation failed (UC-011 S06a) — see error details for specific issues</response>
+    /// <response code="400">Validation failed — see error details for specific issues</response>
     /// <response code="401">Not authenticated</response>
     /// <response code="403">Not authorized — requires CanManageSecuritySettings permission</response>
     [HttpPut]

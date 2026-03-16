@@ -16,7 +16,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations;
 /// - AssignedToUserId + Status — "show my pending conflict queue"
 /// - DetectedDate — chronological ordering
 /// 
-/// Referenced in UC-007 (Resolve Duplicate Properties) and UC-008 (Resolve Person Duplicates).
 /// </summary>
 public class ConflictResolutionConfiguration : IEntityTypeConfiguration<ConflictResolution>
 {
@@ -27,8 +26,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
         // Primary Key
         builder.HasKey(c => c.Id);
 
-        // ==================== CONFLICT IDENTIFICATION ====================
-
         builder.Property(c => c.ConflictNumber)
             .IsRequired()
             .HasMaxLength(20)
@@ -38,8 +35,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
             .IsRequired()
             .HasMaxLength(50)
             .HasComment("PersonDuplicate, PropertyDuplicate, ClaimConflict");
-
-        // ==================== ENTITY REFERENCES ====================
 
         builder.Property(c => c.EntityType)
             .IsRequired()
@@ -63,8 +58,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
         builder.Property(c => c.ImportPackageId)
             .HasComment("Import package that triggered this conflict (null for manual detections)");
 
-        // ==================== CONFLICT DETAILS ====================
-
         builder.Property(c => c.SimilarityScore)
             .IsRequired()
             .HasPrecision(5, 2)
@@ -85,8 +78,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
 
         builder.Property(c => c.DataComparison)
             .HasComment("JSON: side-by-side field comparison of conflicting entities");
-
-        // ==================== RESOLUTION STATUS ====================
 
         builder.Property(c => c.Status)
             .IsRequired()
@@ -109,8 +100,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
 
         builder.Property(c => c.ResolvedByUserId);
 
-        // ==================== RESOLUTION DETAILS ====================
-
         builder.Property(c => c.ResolutionReason)
             .HasMaxLength(2000);
 
@@ -126,8 +115,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
         builder.Property(c => c.MergeMapping)
             .HasComment("JSON: which fields came from which entity — audit trail");
 
-        // ==================== PRIORITY & SLA ====================
-
         builder.Property(c => c.Priority)
             .IsRequired()
             .HasMaxLength(20)
@@ -139,8 +126,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
         builder.Property(c => c.IsOverdue)
             .IsRequired()
             .HasDefaultValue(false);
-
-        // ==================== AUTOMATED VS MANUAL ====================
 
         builder.Property(c => c.IsAutoDetected)
             .IsRequired()
@@ -154,8 +139,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
             .HasMaxLength(500)
             .HasComment("Name of the auto-resolution rule applied (if automated)");
 
-        // ==================== ESCALATION ====================
-
         builder.Property(c => c.IsEscalated)
             .IsRequired()
             .HasDefaultValue(false);
@@ -167,8 +150,6 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
 
         builder.Property(c => c.EscalatedByUserId);
 
-        // ==================== REVIEW TRACKING ====================
-
         builder.Property(c => c.ReviewAttemptCount)
             .IsRequired()
             .HasDefaultValue(0);
@@ -176,25 +157,17 @@ public class ConflictResolutionConfiguration : IEntityTypeConfiguration<Conflict
         builder.Property(c => c.ReviewHistory)
             .HasComment("JSON array: [{\"AttemptNumber\":1, \"Date\":\"...\", \"Notes\":\"...\"}]");
 
-        // ==================== AUDIT FIELDS (from BaseAuditableEntity) ====================
-
         builder.Property(c => c.CreatedAtUtc).IsRequired();
         builder.Property(c => c.CreatedBy).IsRequired();
         builder.Property(c => c.IsDeleted).IsRequired().HasDefaultValue(false);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(c => c.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne(c => c.ImportPackage)
             .WithMany()
             .HasForeignKey(c => c.ImportPackageId)
             .OnDelete(DeleteBehavior.SetNull);
-
-        // ==================== INDEXES ====================
 
         // Primary query: "show pending person duplicates"
         builder.HasIndex(c => new { c.ConflictType, c.Status })

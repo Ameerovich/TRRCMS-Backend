@@ -108,3 +108,11 @@ Thumbs.db
 
 # Markdown files (force add when needed with: git add -f <file.md>)
 *.md
+
+# Internal development docs
+dev/
+
+# Test artifacts
+src/TRRCMS.WebAPI/wwwroot/uploads/
+src/TRRCMS.WebAPI/wwwroot/sync-quarantine/
+src/TRRCMS.WebAPI/archives/

@@ -8,7 +8,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Infrastructure.Services.Validators;
 
 /// <summary>لآ
-/// Level 1: Data Consistency Validator (FR-D-4).
+/// Level 1: Data Consistency Validator.
 /// Checks required fields, data type validity, string length constraints,
 /// and enum value ranges for all staging entities.
 /// </summary>
@@ -129,8 +129,6 @@ public class DataConsistencyValidator : IStagingValidator
 
         return (entities.Count, errors, warnings);
     }
-
-    // ==================== PER-ENTITY VALIDATION RULES ====================
 
     private (List<string>, List<string>) ValidateBuilding(StagingBuilding b)
     {

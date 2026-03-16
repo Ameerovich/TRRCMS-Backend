@@ -72,7 +72,6 @@ public class CreateHouseholdInSurveyCommandValidator : AbstractValidator<CreateH
             .LessThanOrEqualTo(20)
             .WithMessage("Female disabled count must not exceed 20");
 
-        // ==================== CROSS-FIELD: Demographics sum consistency ====================
         RuleFor(x => x)
             .Must(x =>
             {

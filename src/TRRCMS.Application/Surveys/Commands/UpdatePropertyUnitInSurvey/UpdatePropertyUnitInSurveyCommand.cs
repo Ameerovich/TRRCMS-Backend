@@ -6,7 +6,7 @@ namespace TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 /// <summary>
 /// Command to update a property unit in the context of a field survey
 /// Simplified to match frontend form fields
-/// Corresponds to UC-001 Stage 2: Property Unit Selection - Update Existing Unit
+/// Supports partial updates to property unit fields
 /// </summary>
 public class UpdatePropertyUnitInSurveyCommand : IRequest<PropertyUnitDto>
 {
@@ -19,9 +19,6 @@ public class UpdatePropertyUnitInSurveyCommand : IRequest<PropertyUnitDto>
     /// Property unit ID to update (required)
     /// </summary>
     public Guid PropertyUnitId { get; set; }
-
-    // ==================== UPDATABLE FIELDS ====================
-    // All fields are optional - only provided fields will be updated
 
     /// <summary>
     /// Unit identifier within building (رقم الوحدة)

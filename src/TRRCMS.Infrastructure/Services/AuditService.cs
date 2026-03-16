@@ -255,8 +255,6 @@ public class AuditService : IAuditService
         _correlationId = null;
     }
 
-    // ==================== PRIVATE HELPERS ====================
-
     /// <summary>
     /// Generate next sequential audit log number
     /// </summary>

@@ -24,7 +24,6 @@ public class GetBuildingsInPolygonQuery : IRequest<GetBuildingsInPolygonResponse
     /// </summary>
     public double[][]? Coordinates { get; set; }
 
-    // ==================== OPTIONAL FILTERS ====================
 
     /// <summary>
     /// Filter by building type (نوع البناء)
@@ -36,7 +35,6 @@ public class GetBuildingsInPolygonQuery : IRequest<GetBuildingsInPolygonResponse
     /// </summary>
     public BuildingStatus? Status { get; set; }
 
-    // ==================== PAGINATION ====================
 
     /// <summary>
     /// Page number (default: 1)
@@ -48,7 +46,6 @@ public class GetBuildingsInPolygonQuery : IRequest<GetBuildingsInPolygonResponse
     /// </summary>
     public int PageSize { get; set; } = 100;
 
-    // ==================== OPTIONS ====================
 
     /// <summary>
     /// Include full building details (default: false for performance)

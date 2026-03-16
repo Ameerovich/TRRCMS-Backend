@@ -5,8 +5,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Users.Commands.GrantPermissions;
 
 /// <summary>
-/// Grant multiple permissions to a user command
-/// UC-009: User & Role Management - Manage Roles and Permissions
+/// Grant multiple permissions to a user command.
 /// </summary>
 public class GrantPermissionsCommand : IRequest<UserDto>
 {

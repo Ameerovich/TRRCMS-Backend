@@ -6,20 +6,16 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// <summary>
 /// Staging entity for Survey records from .uhc packages.
 /// Mirrors the <see cref="Survey"/> production entity in an isolated staging area.
-/// Records are validated before commit to production (FSD FR-D-4).
+/// Records are validated before commit to production.
 /// 
 /// Original UUIDs from .uhc (not production FKs):
 /// - <see cref="OriginalBuildingId"/>: the surveyed building
 /// - <see cref="OriginalPropertyUnitId"/>: the surveyed property unit (optional)
 /// - <see cref="OriginalFieldCollectorId"/>: the field collector who conducted the survey
 /// - <see cref="OriginalClaimId"/>: the claim this survey is associated with (optional)
-/// 
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingSurvey : BaseStagingEntity
 {
-    // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
     /// <summary>Original Building UUID from .uhc — not a FK to production Buildings.</summary>
     public Guid OriginalBuildingId { get; private set; }
 
@@ -34,22 +30,13 @@ public class StagingSurvey : BaseStagingEntity
 
     /// <summary>Original Contact Person UUID from .uhc — not a FK to production Persons.</summary>
     public Guid? OriginalContactPersonId { get; private set; }
-
-    // ==================== SURVEY IDENTIFICATION ====================
-
     /// <summary>Survey reference code — optional in staging, auto-generated during commit.</summary>
     public string? ReferenceCode { get; private set; }
-
-    // ==================== SURVEY CLASSIFICATION ====================
-
     /// <summary>Survey type (Field or Office). Optional — auto-set during commit.</summary>
     public SurveyType? Type { get; private set; }
 
     /// <summary>How the survey data entered the system. Optional — auto-set during commit.</summary>
     public SurveySource? Source { get; private set; }
-
-    // ==================== SURVEY DETAILS ====================
-
     /// <summary>Date when the survey was conducted.</summary>
     public DateTime SurveyDate { get; private set; }
 
@@ -67,9 +54,6 @@ public class StagingSurvey : BaseStagingEntity
 
     /// <summary>Survey notes and observations.</summary>
     public string? Notes { get; private set; }
-
-    // ==================== OFFICE SURVEY SPECIFIC ====================
-
     /// <summary>Office location where the survey was conducted (office surveys only).</summary>
     public string? OfficeLocation { get; private set; }
 
@@ -84,16 +68,10 @@ public class StagingSurvey : BaseStagingEntity
 
     /// <summary>Contact email address.</summary>
     public string? ContactEmail { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>EF Core constructor.</summary>
     private StagingSurvey() : base()
     {
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new StagingSurvey record from .uhc package data.
     /// Required parameters match .uhc package survey fields.

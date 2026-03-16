@@ -69,8 +69,8 @@ public class HouseholdsController : ControllerBase
     /// Creates a new household record within a property unit.
     /// تسجيل الأسرة - تسجيل تفاصيل الإشغال
     /// 
-    /// **Use Case**: UC-001 Field Survey Stage 2 - Record household occupancy
-    /// 
+    /// **Use Case**: Record household occupancy during field survey
+    ///
     /// **Required Permission**: Surveys_EditAll (7006) - CanEditAllSurveys policy
     /// 
     /// **Note**: For field collectors working within a survey context, use:

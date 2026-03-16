@@ -3,20 +3,16 @@ using FluentValidation;
 namespace TRRCMS.Application.Persons.Commands.UpdatePerson;
 
 /// <summary>
-/// Validator for UpdatePersonCommand
-/// Enhanced with Syria-specific National ID validation (11 digits per FSD)
+/// Validator for UpdatePersonCommand.
 /// </summary>
 public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonCommand>
 {
     public UpdatePersonCommandValidator()
     {
-        // ==================== ID ====================
-
         RuleFor(x => x.Id)
             .NotEmpty()
             .WithMessage("معرف الشخص مطلوب");
 
-        // ==================== NAMES (if provided) ====================
 
         RuleFor(x => x.FamilyNameArabic)
             .MaximumLength(100)
@@ -38,9 +34,8 @@ public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonComman
             .WithMessage("الاسم الأم يجب ألا يتجاوز 100 حرف")
             .When(x => !string.IsNullOrEmpty(x.MotherNameArabic));
 
-        // ==================== IDENTIFICATION ====================
 
-        // Syria National ID: exactly 11 digits (per FSD)
+        // Syria National ID: exactly 11 digits
         RuleFor(x => x.NationalId)
             .Matches(@"^\d{11}$")
             .When(x => !string.IsNullOrEmpty(x.NationalId))
@@ -51,7 +46,6 @@ public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonComman
             .When(x => x.DateOfBirth.HasValue)
             .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
 
-        // ==================== CONTACT INFORMATION ====================
 
         RuleFor(x => x.Email)
             .MaximumLength(255)

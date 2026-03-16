@@ -10,8 +10,6 @@ namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
 /// </summary>
 public record CreateBuildingCommand : IRequest<BuildingDto>
 {
-    // ==================== ADMINISTRATIVE CODES (بيانات البناء) ====================
-
     /// <summary>
     /// Governorate code (محافظة) - 2 digits
     /// </summary>
@@ -48,7 +46,6 @@ public record CreateBuildingCommand : IRequest<BuildingDto>
     /// <example>00001</example>
     public string BuildingNumber { get; init; } = string.Empty;
 
-    // ==================== BUILDING ATTRIBUTES ====================
 
     /// <summary>
     /// Building type (نوع البناء)
@@ -81,7 +78,6 @@ public record CreateBuildingCommand : IRequest<BuildingDto>
     /// <example>2</example>
     public int NumberOfShops { get; init; }
 
-    // ==================== LOCATION (موقع البناء) ====================
 
     /// <summary>
     /// GPS latitude coordinate (optional)
@@ -100,7 +96,6 @@ public record CreateBuildingCommand : IRequest<BuildingDto>
     /// </summary>
     public string? BuildingGeometryWkt { get; init; }
 
-    // ==================== DESCRIPTIONS ====================
 
     /// <summary>
     /// General notes (الوصف العام) - optional

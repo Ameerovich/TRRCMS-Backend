@@ -1,4 +1,4 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
@@ -9,8 +9,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class UserPermission : BaseAuditableEntity
 {
-    // ==================== RELATIONSHIP KEYS ====================
-
     /// <summary>
     /// Foreign key to User
     /// </summary>
@@ -20,9 +18,6 @@ public class UserPermission : BaseAuditableEntity
     /// Permission granted to the user
     /// </summary>
     public Permission Permission { get; private set; }
-
-    // ==================== METADATA ====================
-
     /// <summary>
     /// Why this permission was granted
     /// </summary>
@@ -47,16 +42,10 @@ public class UserPermission : BaseAuditableEntity
     /// Whether this permission is currently active
     /// </summary>
     public bool IsActive { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// User who has this permission
     /// </summary>
     public virtual User User { get; private set; } = null!;
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -91,9 +80,6 @@ public class UserPermission : BaseAuditableEntity
 
         return userPermission;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Revoke this permission
     /// </summary>

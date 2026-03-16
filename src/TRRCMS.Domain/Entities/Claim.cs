@@ -9,8 +9,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Claim : BaseAuditableEntity
 {
-    // ==================== IDENTIFIERS ====================
-
     /// <summary>
     /// Unique claim identifier (17-digit Record ID)
     /// Format: CLM-YYYY-NNNNNNNNN
@@ -32,9 +30,6 @@ public class Claim : BaseAuditableEntity
     /// Set during office survey finalization or .uhc import commit.
     /// </summary>
     public Guid? OriginatingSurveyId { get; private set; }
-
-    // ==================== CLAIM CLASSIFICATION ====================
-
     /// <summary>
     /// Claim type classification: OwnershipClaim=1, OccupancyClaim=2 (نوع المطالبة)
     /// </summary>
@@ -44,9 +39,6 @@ public class Claim : BaseAuditableEntity
     /// Claim source - how the claim entered the system
     /// </summary>
     public ClaimSource ClaimSource { get; private set; }
-
-    // ==================== CASE STATUS ====================
-
     /// <summary>
     /// Case status — Open (non-owner claim) or Closed (ownership/heir claim).
     /// Determined by RelationType of the generating PersonPropertyRelation.
@@ -62,9 +54,6 @@ public class Claim : BaseAuditableEntity
     /// User who submitted the claim
     /// </summary>
     public Guid? SubmittedByUserId { get; private set; }
-
-    // ==================== TENURE DETAILS ====================
-
     /// <summary>
     /// Type of tenure contract
     /// </summary>
@@ -75,16 +64,10 @@ public class Claim : BaseAuditableEntity
     /// Format: fraction out of 2400 (e.g., 1200 = 50%)
     /// </summary>
     public int? OwnershipShare { get; private set; }
-
-    // ==================== CLAIM DETAILS ====================
-
     /// <summary>
     /// Detailed description of the claim
     /// </summary>
     public string? ClaimDescription { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Property unit this claim is for
     /// </summary>
@@ -99,9 +82,6 @@ public class Claim : BaseAuditableEntity
     /// Evidence supporting this claim
     /// </summary>
     public virtual ICollection<Evidence> Evidences { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -141,9 +121,6 @@ public class Claim : BaseAuditableEntity
 
         return claim;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Submit claim for processing (sets submission timestamp)
     /// </summary>

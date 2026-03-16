@@ -22,7 +22,6 @@ public interface IPersonPropertyRelationRepository
     Task DeleteAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
     /// <summary>
     /// Get total count of person-property relations (excluding soft-deleted).

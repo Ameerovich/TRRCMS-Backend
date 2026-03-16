@@ -4,9 +4,8 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Common.Interfaces;
 
 /// <summary>
-/// Service for comprehensive audit logging
-/// Tracks all system actions for compliance and security
-/// Referenced in FSD Section 13: Security & Compliance
+/// Service for comprehensive audit logging.
+/// Tracks all system actions for compliance and security.
 /// </summary>
 public interface IAuditService
 {
@@ -56,8 +55,7 @@ public interface IAuditService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get audit history for a specific entity
-    /// Supports UC-006: View claim history timeline
+    /// Get audit history for a specific entity.
     /// </summary>
     Task<List<AuditLog>> GetEntityHistoryAsync(
         string entityType,

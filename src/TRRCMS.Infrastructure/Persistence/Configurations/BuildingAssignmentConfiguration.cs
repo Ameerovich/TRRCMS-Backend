@@ -6,7 +6,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// EF Core configuration for BuildingAssignment entity
-/// UC-012: Assign Buildings to Field Collectors
 /// </summary>
 public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<BuildingAssignment>
 {
@@ -16,8 +15,6 @@ public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<Building
 
         // Primary Key
         builder.HasKey(ba => ba.Id);
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.Property(ba => ba.BuildingId)
             .IsRequired();
@@ -39,8 +36,6 @@ public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<Building
             .HasForeignKey(ba => ba.OriginalAssignmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ==================== ASSIGNMENT DETAILS ====================
-
         builder.Property(ba => ba.AssignedDate)
             .IsRequired()
             .HasComment("Date when building was assigned");
@@ -50,8 +45,6 @@ public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<Building
 
         builder.Property(ba => ba.ActualCompletionDate)
             .HasComment("Actual completion date");
-
-        // ==================== TRANSFER STATUS ====================
 
         builder.Property(ba => ba.TransferStatus)
             .IsRequired()
@@ -75,8 +68,6 @@ public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<Building
         builder.Property(ba => ba.LastTransferAttemptDate)
             .HasComment("Last transfer attempt date");
 
-        // ==================== REVISIT TRACKING ====================
-
         builder.Property(ba => ba.UnitsForRevisit)
             .HasColumnType("jsonb")
             .HasComment("JSON array of property unit IDs for revisit");
@@ -88,8 +79,6 @@ public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<Building
         builder.Property(ba => ba.IsRevisit)
             .HasDefaultValue(false)
             .HasComment("Indicates if this is a revisit assignment");
-
-        // ==================== ASSIGNMENT STATUS ====================
 
         builder.Property(ba => ba.Priority)
             .IsRequired()
@@ -112,8 +101,6 @@ public class BuildingAssignmentConfiguration : IEntityTypeConfiguration<Building
         builder.Property(ba => ba.CompletedPropertyUnits)
             .HasDefaultValue(0)
             .HasComment("Number of property units surveyed");
-
-        // ==================== INDEXES ====================
 
         // Index on FieldCollectorId (for getting collector's assignments)
         builder.HasIndex(ba => ba.FieldCollectorId)

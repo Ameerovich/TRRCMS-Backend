@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 
@@ -110,8 +110,6 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories
         {
             return await _context.SaveChangesAsync(cancellationToken);
         }
-
-        // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
         public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
         {

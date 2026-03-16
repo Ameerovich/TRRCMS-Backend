@@ -4,9 +4,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// Service interface for unpacking .uhc SQLite containers into staging tables
 /// and managing staging data lifecycle.
 ///
-/// UC-003 Stage 2 — S13 (Load to Staging).
-/// FSD: FR-D-4 (Staging & Validation).
-///
 /// The .uhc file is a renamed SQLite database containing data tables:
 ///   surveys, buildings, building_documents, property_units, persons, households,
 ///   person_property_relations, evidences, claims

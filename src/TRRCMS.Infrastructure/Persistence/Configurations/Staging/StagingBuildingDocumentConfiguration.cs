@@ -9,7 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingBuildingDocument entity.
 /// Mirrors the BuildingDocument production table in an isolated staging area.
-/// Subject to attachment deduplication by SHA-256 hash (FSD FR-D-9).
 /// </summary>
 public class StagingBuildingDocumentConfiguration : IEntityTypeConfiguration<StagingBuildingDocument>
 {
@@ -19,8 +18,6 @@ public class StagingBuildingDocumentConfiguration : IEntityTypeConfiguration<Sta
 
         // Primary Key
         builder.HasKey(d => d.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(d => d.ImportPackageId)
             .IsRequired();
@@ -50,13 +47,9 @@ public class StagingBuildingDocumentConfiguration : IEntityTypeConfiguration<Sta
         builder.Property(d => d.StagedAtUtc)
             .IsRequired();
 
-        // ==================== RELATIONSHIP (original UUID from .uhc) ====================
-
         builder.Property(d => d.OriginalBuildingId)
             .IsRequired()
             .HasComment("Original Building UUID from .uhc — not a FK to production Buildings");
-
-        // ==================== DOCUMENT METADATA ====================
 
         builder.Property(d => d.Description)
             .HasMaxLength(500);
@@ -79,24 +72,18 @@ public class StagingBuildingDocumentConfiguration : IEntityTypeConfiguration<Sta
 
         builder.Property(d => d.FileHash)
             .HasMaxLength(128)
-            .HasComment("SHA-256 hash for deduplication during commit (FR-D-9)");
+            .HasComment("SHA-256 hash for deduplication during commit");
 
         builder.Property(d => d.Notes)
             .HasMaxLength(2000);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(d => d.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(d => d.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(d => d.ImportPackageId)
             .HasDatabaseName("IX_StagingBuildingDocuments_ImportPackageId");
@@ -108,7 +95,7 @@ public class StagingBuildingDocumentConfiguration : IEntityTypeConfiguration<Sta
             .IsUnique()
             .HasDatabaseName("IX_StagingBuildingDocuments_ImportPackageId_OriginalEntityId");
 
-        // SHA-256 hash for deduplication lookups (FR-D-9)
+        // SHA-256 hash for deduplication lookups
         builder.HasIndex(d => d.FileHash)
             .HasDatabaseName("IX_StagingBuildingDocuments_FileHash");
 

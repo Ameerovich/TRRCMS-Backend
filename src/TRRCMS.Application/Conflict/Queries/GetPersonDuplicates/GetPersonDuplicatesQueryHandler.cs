@@ -32,13 +32,9 @@ public class GetPersonDuplicatesQueryHandler
         GetPersonDuplicatesQuery request,
         CancellationToken cancellationToken)
     {
-        // Include both "PersonDuplicate" and "PersonDuplicate_WithinBatch"
-        // by querying on the base type. The repository SearchAsync uses exact match,
-        // so we query the broader set via IQueryable for prefix matching.
         var query = _conflictRepository.GetQueryable()
             .Where(c => c.ConflictType.StartsWith("PersonDuplicate"));
 
-        // Apply filters
         if (!string.IsNullOrWhiteSpace(request.Status))
             query = query.Where(c => c.Status == request.Status);
 
@@ -57,10 +53,8 @@ public class GetPersonDuplicatesQueryHandler
         if (request.IsOverdue.HasValue)
             query = query.Where(c => c.IsOverdue == request.IsOverdue.Value);
 
-        // Total count before pagination
         var totalCount = query.Count();
 
-        // Sorting
         query = request.SortBy?.ToLower() switch
         {
             "similarityscore" => request.SortDescending
@@ -77,7 +71,6 @@ public class GetPersonDuplicatesQueryHandler
                 : query.OrderBy(c => c.DetectedDate)
         };
 
-        // Pagination
         var conflicts = query
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)

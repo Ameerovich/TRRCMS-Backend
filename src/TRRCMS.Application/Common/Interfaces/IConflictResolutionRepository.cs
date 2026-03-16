@@ -12,13 +12,9 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// - Entity-pair lookups (prevent duplicate conflict records)
 /// - Assignment and escalation tracking
 /// - Package-scoped conflict queries
-/// 
-/// Referenced in UC-003 Stage 3 (Conflict Detection) and UC-004 (Resolve Conflicts).
 /// </summary>
 public interface IConflictResolutionRepository
 {
-    // ==================== BASIC CRUD ====================
-
     /// <summary>
     /// Get conflict by surrogate ID.
     /// </summary>
@@ -56,7 +52,6 @@ public interface IConflictResolutionRepository
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY PACKAGE ====================
 
     /// <summary>
     /// Get all conflicts triggered by a specific import package.
@@ -100,7 +95,6 @@ public interface IConflictResolutionRepository
         CancellationToken cancellationToken = default);
 
 
-    // ==================== QUERY BY STATUS ====================
 
     /// <summary>
     /// Get conflicts by status string (PendingReview, Resolved, Ignored).
@@ -117,7 +111,6 @@ public interface IConflictResolutionRepository
     Task<List<ConflictResolution>> GetPendingAsync(
         CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY ENTITY PAIR ====================
 
     /// <summary>
     /// Get conflict by the pair of entity IDs (order-independent).
@@ -152,7 +145,6 @@ public interface IConflictResolutionRepository
         Guid entityId,
         CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY ASSIGNMENT ====================
 
     /// <summary>
     /// Get conflicts assigned to a specific user.
@@ -173,7 +165,6 @@ public interface IConflictResolutionRepository
     Task<List<ConflictResolution>> GetOverdueAsync(
         CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY TYPE ====================
 
     /// <summary>
     /// Get conflicts by conflict type (PersonDuplicate, PropertyDuplicate, ClaimConflict).
@@ -191,7 +182,6 @@ public interface IConflictResolutionRepository
         string status,
         CancellationToken cancellationToken = default);
 
-    // ==================== SEARCH WITH PAGINATION ====================
 
     /// <summary>
     /// Search conflicts with filters and pagination.
@@ -212,7 +202,6 @@ public interface IConflictResolutionRepository
         bool sortDescending = true,
         CancellationToken cancellationToken = default);
 
-    // ==================== AGGREGATE QUERIES ====================
 
     /// <summary>
     /// Get count of conflicts grouped by status.
@@ -236,7 +225,6 @@ public interface IConflictResolutionRepository
     /// </summary>
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
 
-    // ==================== QUERYABLE ACCESS ====================
 
     /// <summary>
     /// Get IQueryable for custom queries.

@@ -5,8 +5,6 @@ namespace TRRCMS.Domain.Enums;
 /// </summary>
 public enum AuditActionType
 {
-    // ==================== ENTITY CRUD OPERATIONS ====================
-
     /// <summary>
     /// Entity created (إنشاء)
     /// </summary>
@@ -30,9 +28,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("عرض")]
     View = 4,
-
-    // ==================== WORKFLOW ACTIONS ====================
-
     /// <summary>
     /// Status changed (تغيير الحالة)
     /// </summary>
@@ -74,9 +69,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("إحالة")]
     Refer = 16,
-
-    // ==================== NEW: ADDITIONAL WORKFLOW ACTIONS ====================
-
     /// <summary>
     /// Case assigned to user (تعيين)
     /// </summary>
@@ -88,9 +80,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("التحقق والمصادقة")]
     Verify = 18,
-
-    // ==================== DATA OPERATIONS ====================
-
     /// <summary>
     /// Data imported (.uhc container) (استيراد)
     /// </summary>
@@ -120,9 +109,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("مزامنة")]
     Synchronize = 24,
-
-    // ==================== DOCUMENT OPERATIONS ====================
-
     /// <summary>
     /// Document uploaded (رفع مستند)
     /// </summary>
@@ -146,9 +132,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("حذف مستند")]
     DocumentDelete = 33,
-
-    // ==================== AUTHENTICATION & AUTHORIZATION ====================
-
     /// <summary>
     /// User login (تسجيل دخول)
     /// </summary>
@@ -190,9 +173,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("رفض الوصول")]
     AccessDenied = 46,
-
-    // ==================== CONFIGURATION ====================
-
     /// <summary>
     /// System configuration changed (تغيير إعدادات النظام)
     /// </summary>
@@ -222,9 +202,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("تعيين دور")]
     RoleAssigned = 54,
-
-    // ==================== REPORTS ====================
-
     /// <summary>
     /// Report generated (إنشاء تقرير)
     /// </summary>
@@ -236,9 +213,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("تنزيل تقرير")]
     ReportDownloaded = 61,
-
-    // ==================== CERTIFICATE ====================
-
     /// <summary>
     /// Certificate issued (إصدار شهادة)
     /// </summary>
@@ -256,9 +230,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("إعادة إصدار شهادة")]
     CertificateReissued = 72,
-
-    // ==================== BACKUP & RECOVERY ====================
-
     /// <summary>
     /// Backup created (إنشاء نسخة احتياطية)
     /// </summary>
@@ -270,9 +241,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("استعادة بيانات")]
     DataRestored = 81,
-
-    // ==================== OTHER ====================
-
     /// <summary>
     /// Comment added (إضافة تعليق)
     /// </summary>
@@ -302,9 +270,6 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("انتقال حالة")]
     StateTransition = 94,
-
-    // ==================== NEW: CONFLICT MANAGEMENT ====================
-
     /// <summary>
     /// Conflict detected between claims (اكتشاف تعارض)
     /// </summary>

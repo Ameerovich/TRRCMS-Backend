@@ -20,8 +20,6 @@ namespace TRRCMS.Infrastructure.Services.Matching;
 ///   Phase 2 — Cross-batch:  a staging unit matches a production PropertyUnit
 ///             by the same composite key.
 ///
-/// UC-007 (Resolve Duplicate Properties).
-/// FSD: FR-D-6 (Property Matching), FR-D-7 (Conflict Resolution).
 /// </summary>
 public class PropertyMatchingService
 {
@@ -62,10 +60,7 @@ public class PropertyMatchingService
             .Where(b => !string.IsNullOrWhiteSpace(b.BuildingId))
             .ToDictionary(b => b.OriginalEntityId, b => b.BuildingId!);
 
-        // ============================================================
         // Phase 1: Within-batch duplicates
-        // Two staging units in the same import sharing the same composite key.
-        // ============================================================
         var withinBatchResults = DetectWithinBatchDuplicates(
             stagingUnits, buildingCodeByOriginalId);
         results.AddRange(withinBatchResults);
@@ -73,10 +68,7 @@ public class PropertyMatchingService
         _logger.LogDebug(
             "Within-batch property unit duplicates: {Count}", withinBatchResults.Count);
 
-        // ============================================================
         // Phase 2: Cross-batch duplicates (staging vs production)
-        // A staging unit matches a production PropertyUnit by composite key.
-        // ============================================================
         var crossBatchResults = await DetectCrossBatchDuplicatesAsync(
             stagingUnits, buildingCodeByOriginalId, cancellationToken);
         results.AddRange(crossBatchResults);
@@ -92,8 +84,6 @@ public class PropertyMatchingService
 
         return results;
     }
-
-    // ==================== WITHIN-BATCH DETECTION ====================
 
     /// <summary>
     /// Detect within-batch duplicates: two staging units sharing the same
@@ -158,8 +148,6 @@ public class PropertyMatchingService
 
         return results;
     }
-
-    // ==================== CROSS-BATCH DETECTION ====================
 
     /// <summary>
     /// Detect cross-batch duplicates: a staging unit matching a production PropertyUnit

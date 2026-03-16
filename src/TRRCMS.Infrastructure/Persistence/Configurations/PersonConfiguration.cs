@@ -18,8 +18,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         // Primary Key
         builder.HasKey(p => p.Id);
 
-        // ==================== ARABIC NAMES (NULLABLE FOR OFFICE SURVEY) ====================
-
         builder.Property(p => p.FamilyNameArabic)
             .IsRequired(false)
             .HasMaxLength(100)
@@ -39,8 +37,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasMaxLength(100)
             .HasComment("الاسم الأم - Mother's name in Arabic");
 
-        // ==================== IDENTIFICATION ====================
-
         builder.Property(p => p.NationalId)
             .HasMaxLength(50)
             .HasComment("الرقم الوطني - National ID or identification number");
@@ -49,8 +45,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasColumnType("timestamp with time zone")
             .IsRequired(false)
             .HasComment("تاريخ الميلاد - Date of birth (full date or year-only)");
-
-        // ==================== CONTACT INFORMATION ====================
 
         builder.Property(p => p.Email)
             .HasMaxLength(255)
@@ -63,8 +57,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         builder.Property(p => p.PhoneNumber)
             .HasMaxLength(20)
             .HasComment("رقم الهاتف - Landline phone number");
-
-        // ==================== DEMOGRAPHICS ====================
 
         builder.Property(p => p.Gender)
             .IsRequired(false)
@@ -79,16 +71,12 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasDefaultValue(false)
             .HasComment("Indicates if this person is the main contact");
 
-        // ==================== HOUSEHOLD RELATIONSHIP ====================
-
         builder.Property(p => p.HouseholdId)
             .HasComment("Foreign key to household (nullable)");
 
         builder.Property(p => p.RelationshipToHead)
             .IsRequired(false)
             .HasComment("صلة القرابة برب الأسرة - Relationship to head of household enum stored as integer");
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(p => p.CreatedAtUtc)
             .IsRequired()
@@ -119,8 +107,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .IsRowVersion()
             .HasComment("Concurrency token");
 
-        // ==================== INDEXES ====================
-
         // Index for NationalId searches
         builder.HasIndex(p => p.NationalId)
             .HasDatabaseName("IX_Person_NationalId");
@@ -144,8 +130,6 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
         // Index for soft delete queries
         builder.HasIndex(p => p.IsDeleted)
             .HasDatabaseName("IX_Person_IsDeleted");
-
-        // ==================== RELATIONSHIPS ====================
 
         // Relationship to PersonPropertyRelation (one-to-many)
         builder.HasMany(p => p.PropertyRelations)

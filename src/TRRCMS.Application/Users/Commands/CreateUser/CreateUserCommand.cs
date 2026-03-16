@@ -4,8 +4,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Users.Commands.CreateUser;
 
 /// <summary>
-/// Create new user command
-/// UC-009: User & Role Management
+/// Create new user command.
 /// </summary>
 public class CreateUserCommand : IRequest<UserDto>
 {

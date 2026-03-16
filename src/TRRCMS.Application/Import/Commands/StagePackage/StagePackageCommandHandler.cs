@@ -18,8 +18,6 @@ namespace TRRCMS.Application.Import.Commands.StagePackage;
 ///   4. Run 8-level validation pipeline (IValidationPipeline)
 ///   5. Update ImportPackage with validation results
 ///   6. Return StagingSummaryDto
-///
-/// UC-003 Stage 2 — S13/S14.
 /// </summary>
 public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, StagingSummaryDto>
 {
@@ -188,7 +186,6 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
 
             // ============================================================
             // STEP 6a: Auto-run duplicate detection if validation passed
-            // UC-003 S14 — detect anomalies and potential duplicates
             // Only runs when validation has no blocking errors (status == Staging)
             // ============================================================
             DuplicateDetectionResult? dupeResult = null;

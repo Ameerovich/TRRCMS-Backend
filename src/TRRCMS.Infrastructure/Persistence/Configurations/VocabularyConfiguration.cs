@@ -14,10 +14,7 @@ public class VocabularyConfiguration : IEntityTypeConfiguration<Vocabulary>
     {
         builder.ToTable("Vocabularies");
 
-        // ==================== PRIMARY KEY ====================
         builder.HasKey(v => v.Id);
-
-        // ==================== VOCABULARY IDENTIFICATION ====================
 
         builder.Property(v => v.VocabularyName)
             .IsRequired()
@@ -36,8 +33,6 @@ public class VocabularyConfiguration : IEntityTypeConfiguration<Vocabulary>
         builder.Property(v => v.Description)
             .HasMaxLength(1000)
             .HasComment("Description of this vocabulary");
-
-        // ==================== VERSIONING ====================
 
         builder.Property(v => v.Version)
             .IsRequired()
@@ -67,8 +62,6 @@ public class VocabularyConfiguration : IEntityTypeConfiguration<Vocabulary>
         builder.Property(v => v.PreviousVersionId)
             .HasComment("Reference to previous version");
 
-        // ==================== VALUES (JSON) ====================
-
         builder.Property(v => v.ValuesJson)
             .IsRequired()
             .HasColumnType("jsonb")
@@ -77,8 +70,6 @@ public class VocabularyConfiguration : IEntityTypeConfiguration<Vocabulary>
         builder.Property(v => v.ValueCount)
             .IsRequired()
             .HasComment("Number of values in this vocabulary");
-
-        // ==================== METADATA ====================
 
         builder.Property(v => v.Category)
             .HasMaxLength(100)
@@ -100,8 +91,6 @@ public class VocabularyConfiguration : IEntityTypeConfiguration<Vocabulary>
             .IsRequired()
             .HasComment("Whether this vocabulary is active");
 
-        // ==================== IMPORT COMPATIBILITY ====================
-
         builder.Property(v => v.MinimumCompatibleVersion)
             .HasMaxLength(20)
             .HasComment("Minimum compatible version for imports");
@@ -110,16 +99,12 @@ public class VocabularyConfiguration : IEntityTypeConfiguration<Vocabulary>
             .HasMaxLength(2000)
             .HasComment("Changelog for this version");
 
-        // ==================== USAGE TRACKING ====================
-
         builder.Property(v => v.LastUsedDate)
             .HasComment("Date when vocabulary was last used");
 
         builder.Property(v => v.UsageCount)
             .IsRequired()
             .HasComment("How many times this vocabulary has been used");
-
-        // ==================== INDEXES ====================
 
         // Filtered unique index: only one current version per vocabulary name
         builder.HasIndex(v => v.VocabularyName)
@@ -135,15 +120,11 @@ public class VocabularyConfiguration : IEntityTypeConfiguration<Vocabulary>
         builder.HasIndex(v => new { v.VocabularyName, v.IsCurrentVersion })
             .HasDatabaseName("IX_Vocabularies_Name_IsCurrent");
 
-        // ==================== RELATIONSHIPS ====================
-
         // Self-referencing: previous version
         builder.HasOne(v => v.PreviousVersion)
             .WithMany()
             .HasForeignKey(v => v.PreviousVersionId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // ==================== AUDIT FIELDS (from BaseAuditableEntity) ====================
 
         builder.Property(v => v.CreatedAtUtc)
             .IsRequired();

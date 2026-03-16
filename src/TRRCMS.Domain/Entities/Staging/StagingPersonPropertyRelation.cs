@@ -6,18 +6,14 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// <summary>
 /// Staging entity for PersonPropertyRelation records from .uhc packages.
 /// Mirrors the <see cref="PersonPropertyRelation"/> production entity in an isolated staging area.
-/// Subject to cross-entity relation validation (FR-D-4 Level 2) and
-/// ownership evidence validation (FR-D-4 Level 3):
+/// Subject to cross-entity relation validation and
+/// ownership evidence validation:
 /// - OriginalPersonId must exist in StagingPersons for the same package
 /// - OriginalPropertyUnitId must exist in StagingPropertyUnits for the same package
 /// - Ownership relations should have supporting StagingEvidence records
-/// 
-/// Referenced in UC-003 Stage 2 (S13).
-/// </summary>
+///</summary>
 public class StagingPersonPropertyRelation : BaseStagingEntity
 {
-    // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
     /// <summary>
     /// Original Person UUID from .uhc — not a FK to production Persons.
     /// Must exist in StagingPersons for the same ImportPackageId.
@@ -29,9 +25,6 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
     /// Must exist in StagingPropertyUnits for the same ImportPackageId.
     /// </summary>
     public Guid OriginalPropertyUnitId { get; private set; }
-
-    // ==================== RELATION DETAILS ====================
-
     /// <summary>Type of person-property relation (Owner, Tenant, Occupant, etc.).</summary>
     public RelationType RelationType { get; private set; }
 
@@ -46,17 +39,11 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
 
     /// <summary>Whether this relation is currently active.</summary>
     public bool IsActive { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>EF Core constructor.</summary>
     private StagingPersonPropertyRelation() : base()
     {
         IsActive = true;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new StagingPersonPropertyRelation record from .uhc package data.
     /// </summary>

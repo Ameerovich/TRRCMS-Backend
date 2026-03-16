@@ -22,9 +22,6 @@ public class PersonPropertyRelation : BaseAuditableEntity
     /// Relation type (نوع العلاقة) - Owner, Occupant, Tenant, Guest, Heir, Other
     /// </summary>
     public RelationType RelationType { get; private set; }
-
-    // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
-
     /// <summary>
     /// Occupancy type (نوع الإشغال) - OwnerOccupied, TenantOccupied, FamilyOccupied, etc.
     /// </summary>
@@ -34,9 +31,6 @@ public class PersonPropertyRelation : BaseAuditableEntity
     /// Indicates if evidence documents are available/attached (هل يوجد دليل؟)
     /// </summary>
     public bool HasEvidence { get; private set; }
-
-    // ==================== OTHER FIELDS ====================
-
     public decimal? OwnershipShare { get; private set; }
     public string? ContractDetails { get; private set; }
     public string? Notes { get; private set; }

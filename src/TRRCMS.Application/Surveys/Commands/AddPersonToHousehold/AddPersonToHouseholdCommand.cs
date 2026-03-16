@@ -19,8 +19,6 @@ public class AddPersonToHouseholdCommand : IRequest<PersonDto>
     /// </summary>
     public Guid HouseholdId { get; set; }
 
-    // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
-
     /// <summary>
     /// الكنية - Family/Last name in Arabic (optional)
     /// </summary>
@@ -61,8 +59,6 @@ public class AddPersonToHouseholdCommand : IRequest<PersonDto>
     /// </summary>
     public DateTime? DateOfBirth { get; set; }
 
-    // ==================== CONTACT INFORMATION (Step 2) ====================
-
     /// <summary>
     /// البريد الالكتروني - Email address (optional)
     /// </summary>
@@ -78,14 +74,10 @@ public class AddPersonToHouseholdCommand : IRequest<PersonDto>
     /// </summary>
     public string? PhoneNumber { get; set; }
 
-    // ==================== HOUSEHOLD RELATIONSHIP ====================
-
     /// <summary>
     /// Relationship to head of household (optional)
     /// </summary>
     public int? RelationshipToHead { get; set; }
-
-    // ==================== CONTACT PERSON ====================
 
     /// <summary>
     /// Whether this person is the contact person for the survey (default false)

@@ -72,7 +72,6 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
         }
 
         // Create household with full composition
-        // Note: HeadOfHouseholdName is not set here - use SetHouseholdHead endpoint to link a Person as head
         var household = Household.Create(
             propertyUnitId: propertyUnitId.Value,
             headOfHouseholdName: null,

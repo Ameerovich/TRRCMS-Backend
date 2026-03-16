@@ -3,8 +3,8 @@ using FluentValidation;
 namespace TRRCMS.Application.Auth.Commands.ChangePassword;
 
 /// <summary>
-/// Validator for ChangePasswordCommand
-/// Enforces strong password policy (FSD Section 11: Security Settings)
+/// Validator for ChangePasswordCommand.
+/// Enforces strong password policy.
 /// </summary>
 public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommand>
 {

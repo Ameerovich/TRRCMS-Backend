@@ -1,9 +1,8 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
 /// Transfer status for building assignments to field collectors
 /// Used when assigning buildings to tablets
-/// Referenced in FSD section 6.2.3
 /// </summary>
 public enum TransferStatus
 {

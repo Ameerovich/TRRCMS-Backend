@@ -4,26 +4,20 @@ namespace TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
 
 /// <summary>
 /// Validator for UpdateOfficeSurveyCommand
-/// UC-004/UC-005: Office Survey update validation rules
+/// Office survey update validation rules
 /// </summary>
 public class UpdateOfficeSurveyCommandValidator : AbstractValidator<UpdateOfficeSurveyCommand>
 {
     public UpdateOfficeSurveyCommandValidator()
     {
-        // ==================== REQUIRED FIELDS ====================
-
         RuleFor(x => x.SurveyId)
             .NotEmpty()
             .WithMessage("Survey ID is required");
-
-        // ==================== SURVEY DATE ====================
 
         RuleFor(x => x.SurveyDate)
             .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
             .When(x => x.SurveyDate.HasValue)
             .WithMessage("Survey date cannot be in the future");
-
-        // ==================== OPTIONAL FIELDS ====================
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
@@ -37,8 +31,6 @@ public class UpdateOfficeSurveyCommandValidator : AbstractValidator<UpdateOffice
             .LessThanOrEqualTo(1440) // Max 24 hours
             .When(x => x.DurationMinutes.HasValue)
             .WithMessage("Duration cannot exceed 1440 minutes (24 hours)");
-
-        // ==================== OFFICE SPECIFIC FIELDS ====================
 
         RuleFor(x => x.OfficeLocation)
             .MaximumLength(200)
@@ -54,8 +46,6 @@ public class UpdateOfficeSurveyCommandValidator : AbstractValidator<UpdateOffice
             .MaximumLength(50)
             .When(x => !string.IsNullOrWhiteSpace(x.AppointmentReference))
             .WithMessage("Appointment reference cannot exceed 50 characters");
-
-        // ==================== CONTACT DETAILS ====================
 
         RuleFor(x => x.ContactPhone)
             .MaximumLength(20)

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
@@ -17,8 +17,6 @@ public class SurveyRepository : ISurveyRepository
     {
         _context = context;
     }
-
-    // ==================== COMMON METHODS ====================
 
     public async Task<Survey?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -84,8 +82,6 @@ public class SurveyRepository : ISurveyRepository
             .Select(g => g.OrderByDescending(s => s.SurveyDate).First())
             .ToDictionaryAsync(s => s.ClaimId!.Value, cancellationToken);
     }
-
-    // ==================== OFFICE SURVEY METHODS ====================
 
     public async Task<(List<Survey> Surveys, int TotalCount)> GetOfficeSurveysAsync(
         string? status = null,
@@ -215,7 +211,6 @@ public class SurveyRepository : ISurveyRepository
             .OrderBy(s => s.SurveyDate)
             .ToListAsync(cancellationToken);
     }
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
     public async Task<Dictionary<SurveyStatus, int>> GetStatusCountsAsync(
         CancellationToken cancellationToken = default)
@@ -253,8 +248,6 @@ public class SurveyRepository : ISurveyRepository
             .Select(g => new { Type = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Type, x => x.Count, cancellationToken);
     }
-
-    // ==================== DASHBOARD TREND QUERIES ====================
 
     public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
         DateTime? from = null, DateTime? to = null,

@@ -10,14 +10,7 @@ namespace TRRCMS.Application.SecuritySettings.Commands.UpdateSecuritySettings;
 
 /// <summary>
 /// Handler for UpdateSecuritySettingsCommand.
-/// UC-011 S06–S08: Validate, apply, and enforce security policy.
-///
-/// Transactional flow:
-///   1. Validate combined policy (done by FluentValidation pipeline + domain invariants).
-///   2. Deactivate the current active policy.
-///   3. Create a new versioned SecurityPolicy record as active.
-///   4. Commit both changes atomically via IUnitOfWork.
-///   5. Log the administrative action to the audit trail.
+/// Validates, deactivates the current policy, creates a new versioned record, and logs the action.
 /// </summary>
 public class UpdateSecuritySettingsCommandHandler : IRequestHandler<UpdateSecuritySettingsCommand, SecurityPolicyDto>
 {
@@ -97,7 +90,7 @@ public class UpdateSecuritySettingsCommandHandler : IRequestHandler<UpdateSecuri
                 await _securityPolicyRepository.UpdateAsync(currentPolicy, cancellationToken);
             }
 
-            // Create new versioned policy (UC-011 S07: Apply)
+            // Create new versioned policy
             SecurityPolicy newPolicy;
             try
             {
@@ -111,7 +104,7 @@ public class UpdateSecuritySettingsCommandHandler : IRequestHandler<UpdateSecuri
             }
             catch (InvalidOperationException ex)
             {
-                // UC-011 S06a: Cross-cutting validation failure
+                // Cross-cutting validation failure
                 throw new ValidationException(ex.Message);
             }
 
@@ -120,7 +113,7 @@ public class UpdateSecuritySettingsCommandHandler : IRequestHandler<UpdateSecuri
             // Commit both deactivation and creation atomically
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // UC-011 S08: Log administrative action
+            // Log administrative action
             var resultDto = MapToDto(newPolicy);
             await _auditService.LogSecurityActionAsync(
                 actionType: AuditActionType.ConfigurationChange,
@@ -142,8 +135,6 @@ public class UpdateSecuritySettingsCommandHandler : IRequestHandler<UpdateSecuri
             return resultDto;
         }, cancellationToken);
     }
-
-    // ==================== PRIVATE HELPERS ====================
 
     private static SecurityPolicyDto MapToDto(SecurityPolicy entity)
     {

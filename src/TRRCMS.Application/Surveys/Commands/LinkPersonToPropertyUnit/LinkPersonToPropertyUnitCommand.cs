@@ -17,8 +17,6 @@ public class LinkPersonToPropertyUnitCommand : IRequest<PersonPropertyRelationDt
     /// </summary>
     public int RelationType { get; set; }
 
-    // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
-
     /// <summary>
     /// نوع الإشغال - OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
     /// </summary>
@@ -28,8 +26,6 @@ public class LinkPersonToPropertyUnitCommand : IRequest<PersonPropertyRelationDt
     /// هل يوجد دليل؟ - Indicates if evidence documents are available
     /// </summary>
     public bool HasEvidence { get; set; }
-
-    // ==================== OTHER FIELDS ====================
 
     /// <summary>
     /// حصة الملكية - 0.0 to 1.0

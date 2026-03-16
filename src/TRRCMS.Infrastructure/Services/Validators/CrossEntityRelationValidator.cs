@@ -7,7 +7,7 @@ using TRRCMS.Domain.Entities.Staging;
 namespace TRRCMS.Infrastructure.Services.Validators;
 
 /// <summary>
-/// Level 2: Cross-Entity Relation Validator (FR-D-4).
+/// Level 2: Cross-Entity Relation Validator.
 /// Checks that intra-batch FK references are valid:
 ///   - PropertyUnit.OriginalBuildingId → exists in StagingBuilding
 ///   - Household.OriginalPropertyUnitId → exists in StagingPropertyUnit

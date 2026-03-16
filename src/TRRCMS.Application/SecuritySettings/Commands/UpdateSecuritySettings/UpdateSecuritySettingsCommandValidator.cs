@@ -5,14 +5,13 @@ namespace TRRCMS.Application.SecuritySettings.Commands.UpdateSecuritySettings;
 
 /// <summary>
 /// Validator for UpdateSecuritySettingsCommand.
-/// Implements UC-011 S06: Validate Security Policy Configuration.
 /// Prevents configurations that violate hard safety constraints or would make the system unusable.
 /// </summary>
 public class UpdateSecuritySettingsCommandValidator : AbstractValidator<UpdateSecuritySettingsCommand>
 {
     public UpdateSecuritySettingsCommandValidator()
     {
-        // ==================== PASSWORD POLICY VALIDATION (UC-011 S03) ====================
+        // Password policy validation
 
         RuleFor(x => x.PasswordMinLength)
             .InclusiveBetween(PasswordPolicy.AbsoluteMinLength, PasswordPolicy.AbsoluteMaxLength)
@@ -35,7 +34,7 @@ public class UpdateSecuritySettingsCommandValidator : AbstractValidator<UpdateSe
                     && !x.PasswordRequireSpecialCharacter)
             .WithMessage("When no complexity requirements are set, minimum password length must be at least 12 characters.");
 
-        // ==================== SESSION & LOCKOUT VALIDATION (UC-011 S04) ====================
+        // Session and lockout validation
 
         RuleFor(x => x.SessionTimeoutMinutes)
             .InclusiveBetween(SessionLockoutPolicy.MinSessionTimeout, SessionLockoutPolicy.MaxSessionTimeout)
@@ -49,7 +48,7 @@ public class UpdateSecuritySettingsCommandValidator : AbstractValidator<UpdateSe
             .InclusiveBetween(SessionLockoutPolicy.MinLockoutDuration, SessionLockoutPolicy.MaxLockoutDuration)
             .WithMessage($"Lockout duration must be between {SessionLockoutPolicy.MinLockoutDuration} and {SessionLockoutPolicy.MaxLockoutDuration} minutes.");
 
-        // ==================== ACCESS CONTROL VALIDATION (UC-011 S05) ====================
+        // Access control validation
 
         // At least one authentication method must remain enabled (S06 safety constraint)
         RuleFor(x => x)
@@ -80,7 +79,7 @@ public class UpdateSecuritySettingsCommandValidator : AbstractValidator<UpdateSe
             .When(x => x.RestrictByEnvironment)
             .WithMessage("Allowed environments cannot be empty when restriction is enabled.");
 
-        // ==================== METADATA ====================
+        // Metadata
 
         RuleFor(x => x.ChangeDescription)
             .MaximumLength(1000)

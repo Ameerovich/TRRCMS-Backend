@@ -4,8 +4,7 @@ namespace TRRCMS.Application.Common.Interfaces;
 
 /// <summary>
 /// Repository interface for SecurityPolicy aggregate.
-/// UC-011: Security Settings.
-/// 
+///
 /// SecurityPolicy uses a versioned singleton pattern:
 ///   - Only one policy is active at any time.
 ///   - Previous versions are preserved for audit trail.
@@ -31,7 +30,6 @@ public interface ISecurityPolicyRepository
 
     /// <summary>
     /// Get all policy versions ordered by version descending (newest first).
-    /// Used for UC-011 audit: view full history of security policy changes.
     /// </summary>
     Task<List<SecurityPolicy>> GetVersionHistoryAsync(CancellationToken cancellationToken = default);
 

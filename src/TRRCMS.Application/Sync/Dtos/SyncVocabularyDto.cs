@@ -11,8 +11,6 @@ namespace TRRCMS.Application.Sync.DTOs;
 ///   <item>MAJOR mismatch → quarantine; sync blocked until app is updated.</item>
 ///   <item>MINOR/PATCH mismatch → advisory warning; sync can proceed.</item>
 /// </list>
-///
-/// FSD: FR-V-1 through FR-V-4 (Vocabulary Versioning).
 /// </summary>
 public sealed record SyncVocabularyDto
 {

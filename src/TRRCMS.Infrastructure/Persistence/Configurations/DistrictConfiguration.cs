@@ -13,10 +13,7 @@ public class DistrictConfiguration : IEntityTypeConfiguration<District>
     {
         builder.ToTable("Districts");
 
-        // ==================== PRIMARY KEY ====================
         builder.HasKey(d => d.Id);
-
-        // ==================== CODES ====================
 
         builder.Property(d => d.Code)
             .IsRequired()
@@ -38,8 +35,6 @@ public class DistrictConfiguration : IEntityTypeConfiguration<District>
         builder.HasIndex(d => d.GovernorateCode)
             .HasDatabaseName("IX_Districts_GovernorateCode");
 
-        // ==================== NAMES ====================
-
         builder.Property(d => d.NameArabic)
             .IsRequired()
             .HasMaxLength(200)
@@ -50,22 +45,16 @@ public class DistrictConfiguration : IEntityTypeConfiguration<District>
             .HasMaxLength(200)
             .HasComment("English name");
 
-        // ==================== STATUS ====================
-
         builder.Property(d => d.IsActive)
             .IsRequired()
             .HasDefaultValue(true)
             .HasComment("Whether this district is active");
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne(d => d.Governorate)
             .WithMany()
             .HasForeignKey(d => d.GovernorateCode)
             .HasPrincipalKey(g => g.Code)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(d => d.CreatedAtUtc)
             .IsRequired();

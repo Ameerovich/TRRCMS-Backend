@@ -9,9 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingClaim entity.
 /// Mirrors the Claim production table in an isolated staging area.
-/// Subject to claim lifecycle validation (FR-D-4 Level 6).
-/// Claims from tablets are mapped to "Submitted" lifecycle stage on commit (FR-D-2).
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
 {
@@ -21,8 +18,6 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
 
         // Primary Key
         builder.HasKey(c => c.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(c => c.ImportPackageId)
             .IsRequired();
@@ -52,8 +47,6 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.StagedAtUtc)
             .IsRequired();
 
-        // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
         builder.Property(c => c.OriginalPropertyUnitId)
             .IsRequired()
             .HasComment("Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits");
@@ -61,13 +54,9 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.OriginalPrimaryClaimantId)
             .HasComment("Original primary claimant Person UUID from .uhc");
 
-        // ==================== CLAIM IDENTIFICATION ====================
-
         builder.Property(c => c.ClaimNumber)
             .HasMaxLength(30)
-            .HasComment("Optional in staging — auto-generated during commit (FR-D-8)");
-
-        // ==================== CLAIM CLASSIFICATION ====================
+            .HasComment("Optional in staging — auto-generated during commit");
 
         builder.Property(c => c.ClaimType)
             .IsRequired()
@@ -79,31 +68,21 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.CaseStatus)
             .HasComment("Optional — auto-set to Open during commit");
 
-        // ==================== TENURE DETAILS ====================
-
         builder.Property(c => c.TenureContractType);
 
         builder.Property(c => c.OwnershipShare)
             .HasComment("Ownership percentage (0-100)");
 
-        // ==================== NARRATIVE ====================
-
         builder.Property(c => c.ClaimDescription)
             .HasMaxLength(4000);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(c => c.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(c => c.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(c => c.ImportPackageId)
             .HasDatabaseName("IX_StagingClaims_ImportPackageId");

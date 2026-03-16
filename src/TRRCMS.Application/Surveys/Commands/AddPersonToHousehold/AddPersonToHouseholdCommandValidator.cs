@@ -5,14 +5,12 @@ namespace TRRCMS.Application.Surveys.Commands.AddPersonToHousehold;
 
 /// <summary>
 /// Validator for AddPersonToHouseholdCommand
-/// Enhanced with Syria-specific National ID validation (11 digits per FSD)
+/// Includes Syria-specific National ID validation (11 digits)
 /// </summary>
 public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonToHouseholdCommand>
 {
     public AddPersonToHouseholdCommandValidator(IVocabularyValidationService vocabService)
     {
-        // ==================== IDs ====================
-
         RuleFor(x => x.SurveyId)
             .NotEmpty()
             .WithMessage("معرف المسح مطلوب");
@@ -20,8 +18,6 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
         RuleFor(x => x.HouseholdId)
             .NotEmpty()
             .WithMessage("معرف الأسرة مطلوب");
-
-        // ==================== NAMES (ALL OPTIONAL FOR OFFICE SURVEY) ====================
 
         RuleFor(x => x.FamilyNameArabic)
             .MaximumLength(100)
@@ -38,16 +34,12 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
             .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف")
             .When(x => !string.IsNullOrEmpty(x.FatherNameArabic));
 
-        // ==================== OPTIONAL NAMES ====================
-
         RuleFor(x => x.MotherNameArabic)
             .MaximumLength(100)
             .WithMessage("الاسم الأم يجب ألا يتجاوز 100 حرف")
             .When(x => !string.IsNullOrEmpty(x.MotherNameArabic));
 
-        // ==================== IDENTIFICATION ====================
-
-        // Syria National ID: exactly 11 digits (per FSD)
+        // Syria National ID: exactly 11 digits
         RuleFor(x => x.NationalId)
             .Matches(@"^\d{11}$")
             .When(x => !string.IsNullOrEmpty(x.NationalId))
@@ -57,8 +49,6 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
             .Must(date => date <= DateTime.UtcNow)
             .When(x => x.DateOfBirth.HasValue)
             .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
-
-        // ==================== CONTACT INFORMATION ====================
 
         RuleFor(x => x.Email)
             .MaximumLength(255)
@@ -80,8 +70,6 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
             .Matches(@"^[\+]?[0-9\s\-]*$")
             .WithMessage("رقم الهاتف غير صحيح")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
-
-        // ==================== HOUSEHOLD RELATIONSHIP ====================
 
         RuleFor(x => x.RelationshipToHead)
             .Must(v => vocabService.IsValidCode("relationship_to_head", v!.Value))

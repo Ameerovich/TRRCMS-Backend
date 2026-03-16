@@ -6,8 +6,6 @@ namespace TRRCMS.Application.Dashboard.Dtos;
 /// </summary>
 public sealed class RegistrationCoverageDashboardDto
 {
-    // ==================== PERSON DEMOGRAPHICS ====================
-
     public int TotalPersons { get; set; }
     public int TotalHouseholds { get; set; }
 
@@ -18,8 +16,6 @@ public sealed class RegistrationCoverageDashboardDto
 
     public int PersonsWithNationalId { get; set; }
 
-    // ==================== PERSON-PROPERTY RELATIONS ====================
-
     public int TotalPersonPropertyRelations { get; set; }
 
     /// <summary>
@@ -29,8 +25,6 @@ public sealed class RegistrationCoverageDashboardDto
 
     public int RelationsWithEvidence { get; set; }
 
-    // ==================== CLAIMS ====================
-
     public int ClaimsOpen { get; set; }
     public int ClaimsClosed { get; set; }
 
@@ -38,8 +32,6 @@ public sealed class RegistrationCoverageDashboardDto
     /// Count per ClaimType enum name (e.g. "OwnershipClaim": 60, "OccupancyClaim": 30).
     /// </summary>
     public Dictionary<string, int> ClaimsByType { get; set; } = new();
-
-    // ==================== EVIDENCE ====================
 
     public int TotalEvidenceItems { get; set; }
 

@@ -203,8 +203,6 @@ public class EvidenceRepository : IEvidenceRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
-
     public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Evidences.Where(e => !e.IsDeleted).CountAsync(cancellationToken);

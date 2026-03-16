@@ -1,9 +1,8 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
 /// Occupancy nature classification (طبيعة الإشغال)
 /// Describes the nature/basis of the occupancy
-/// Referenced in FSD section 6.1.6
 /// </summary>
 public enum OccupancyNature
 {

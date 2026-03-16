@@ -17,8 +17,6 @@ namespace TRRCMS.Application.Import.Commands.DetectDuplicates;
 ///   4. Update ImportPackage with conflict results
 ///      (transitions to ReviewingConflicts or ReadyToCommit)
 ///   5. Return DuplicateDetectionResultDto
-///
-/// UC-003 Stage 2 — S14 (Detect Anomalies and Potential Duplicates).
 /// </summary>
 public class DetectDuplicatesCommandHandler
     : IRequestHandler<DetectDuplicatesCommand, DuplicateDetectionResultDto>

@@ -20,7 +20,7 @@ public interface IPropertyUnitRepository
 
     /// <summary>
     /// Get property unit by building code (17-digit) and unit identifier.
-    /// Used for cross-batch duplicate detection (UC-007): composite key match
+    /// Used for cross-batch duplicate detection: composite key match
     /// where the building is identified by its string code, not its Guid.
     /// Joins PropertyUnit → Building to match on Building.BuildingId (string).
     /// </summary>

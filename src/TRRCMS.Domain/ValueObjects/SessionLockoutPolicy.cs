@@ -2,16 +2,9 @@ namespace TRRCMS.Domain.ValueObjects;
 
 /// <summary>
 /// Value object encapsulating session timeout and account lockout parameters.
-/// UC-011 S04: Configure Session Timeout and Lockout Settings.
-/// 
-/// Safety constraints prevent configurations that would make the system unusable:
-///   - SessionTimeoutMinutes ∈ [5, 1440] (5 min to 24 hours)
-///   - MaxFailedLoginAttempts ∈ [3, 20]
-///   - LockoutDurationMinutes ∈ [1, 1440]
 /// </summary>
 public sealed class SessionLockoutPolicy : IEquatable<SessionLockoutPolicy>
 {
-    // ==================== SAFETY BOUNDS ====================
     public const int MinSessionTimeout = 5;
     public const int MaxSessionTimeout = 1440; // 24 hours
     public const int MinFailedAttempts = 3;
@@ -69,14 +62,12 @@ public sealed class SessionLockoutPolicy : IEquatable<SessionLockoutPolicy>
     }
 
     /// <summary>
-    /// Returns the default session/lockout policy matching FSD Section 13 recommendations.
+    /// Returns the default session/lockout policy.
     /// </summary>
     public static SessionLockoutPolicy Default() => new(
         sessionTimeoutMinutes: 30,
         maxFailedLoginAttempts: 5,
         lockoutDurationMinutes: 15);
-
-    // ==================== EQUALITY ====================
 
     public bool Equals(SessionLockoutPolicy? other)
     {

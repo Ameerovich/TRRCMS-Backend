@@ -10,8 +10,6 @@ namespace TRRCMS.Application.Persons.Commands.CreatePerson;
 /// </summary>
 public class CreatePersonCommand : IRequest<PersonDto>
 {
-    // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
-
     /// <summary>
     /// الكنية - Family/Last name in Arabic (optional)
     /// </summary>
@@ -52,7 +50,6 @@ public class CreatePersonCommand : IRequest<PersonDto>
     /// </summary>
     public DateTime? DateOfBirth { get; set; }
 
-    // ==================== CONTACT INFORMATION (Step 2) ====================
 
     /// <summary>
     /// البريد الالكتروني - Email address (optional)

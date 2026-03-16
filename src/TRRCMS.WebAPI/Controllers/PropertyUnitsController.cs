@@ -93,8 +93,8 @@ public class PropertyUnitsController : ControllerBase
     /// Creates a new property unit within a building.
     /// إضافة وحدة عقارية جديدة
     /// 
-    /// **Use Case**: UC-001 Field Survey - Register property units in a building
-    /// 
+    /// **Use Case**: Register property units in a building during field survey
+    ///
     /// **Required Permission**: PropertyUnits_Create (6001) - CanCreatePropertyUnits policy
     /// 
     /// **Required Fields:**

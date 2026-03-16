@@ -1,4 +1,4 @@
-﻿using NetTopologySuite.Geometries;
+using NetTopologySuite.Geometries;
 using TRRCMS.Domain.Common;
 
 namespace TRRCMS.Domain.Entities;
@@ -10,8 +10,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Neighborhood : BaseAuditableEntity
 {
-    // ==================== ADMINISTRATIVE HIERARCHY ====================
-
     /// <summary>
     /// Governorate code (محافظة) — 2 digits
     /// </summary>
@@ -42,9 +40,6 @@ public class Neighborhood : BaseAuditableEntity
     /// Used for fast lookups matching the Building.BuildingId prefix.
     /// </summary>
     public string FullCode { get; private set; }
-
-    // ==================== NAMES ====================
-
     /// <summary>
     /// Neighborhood name in Arabic (الاسم بالعربية)
     /// </summary>
@@ -54,9 +49,6 @@ public class Neighborhood : BaseAuditableEntity
     /// Neighborhood name in English
     /// </summary>
     public string? NameEnglish { get; private set; }
-
-    // ==================== SPATIAL DATA (PostGIS) ====================
-
     /// <summary>
     /// Center point for "fly-to" map navigation (PostGIS POINT, SRID 4326)
     /// </summary>
@@ -91,16 +83,10 @@ public class Neighborhood : BaseAuditableEntity
     /// Suggested map zoom level when navigating to this neighborhood
     /// </summary>
     public int ZoomLevel { get; private set; }
-
-    // ==================== STATUS ====================
-
     /// <summary>
     /// Whether this neighborhood is active in the system
     /// </summary>
     public bool IsActive { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -114,9 +100,6 @@ public class Neighborhood : BaseAuditableEntity
         FullCode = string.Empty;
         NameArabic = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new Neighborhood reference entry
     /// </summary>
@@ -167,9 +150,6 @@ public class Neighborhood : BaseAuditableEntity
         neighborhood.MarkAsCreated(createdByUserId);
         return neighborhood;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update boundary polygon
     /// </summary>

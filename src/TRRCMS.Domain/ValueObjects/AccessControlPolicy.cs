@@ -2,10 +2,6 @@ namespace TRRCMS.Domain.ValueObjects;
 
 /// <summary>
 /// Value object encapsulating access control policy parameters.
-/// UC-011 S05: Configure Access Control Policies.
-/// 
-/// Manages authentication methods and optional IP/network restrictions.
-/// Safety constraint: at least one authentication method must be enabled.
 /// </summary>
 public sealed class AccessControlPolicy : IEquatable<AccessControlPolicy>
 {
@@ -81,7 +77,6 @@ public sealed class AccessControlPolicy : IEquatable<AccessControlPolicy>
         bool restrictByEnvironment,
         string? allowedEnvironments)
     {
-        // UC-011 S05/S06: Ensure at least one auth method is enabled
         if (!allowPasswordAuthentication && !allowSsoAuthentication && !allowTokenAuthentication)
             throw new ArgumentException(
                 "At least one authentication method must be enabled. " +
@@ -118,8 +113,6 @@ public sealed class AccessControlPolicy : IEquatable<AccessControlPolicy>
         ipDenylist: null,
         restrictByEnvironment: false,
         allowedEnvironments: null);
-
-    // ==================== EQUALITY ====================
 
     public bool Equals(AccessControlPolicy? other)
     {

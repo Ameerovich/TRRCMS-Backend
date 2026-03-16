@@ -11,7 +11,7 @@ namespace TRRCMS.Infrastructure.Services.Matching;
 /// Compares staging persons against production persons and within-batch staging persons
 /// to detect duplicates.
 ///
-/// Scoring algorithm (FR-D-5):
+/// Scoring algorithm:
 ///   - National ID exact match:       100 points (deterministic — short-circuit)
 ///   - Phone number exact match:       +30 points
 ///   - Arabic name Levenshtein:         0–40 points (weighted composite of 3 name parts)
@@ -24,7 +24,6 @@ namespace TRRCMS.Infrastructure.Services.Matching;
 ///   70–89 → Medium confidence
 ///   &lt; 70 → below threshold (not flagged)
 ///
-/// UC-008 (Resolve Person Duplicates).
 /// </summary>
 public class PersonMatchingService
 {
@@ -62,9 +61,7 @@ public class PersonMatchingService
         if (stagingPersons.Count == 0)
             return results;
 
-        // ============================================================
         // Phase 1: National ID exact matches (production)
-        // ============================================================
         var stagingWithNationalId = stagingPersons
             .Where(p => !string.IsNullOrWhiteSpace(p.NationalId))
             .ToList();
@@ -83,12 +80,8 @@ public class PersonMatchingService
             }
         }
 
-        // ============================================================
         // Phase 2: Composite matching — production persons
-        // ============================================================
-        // For persons without a National ID match, search production by name similarity.
-        // This is an expensive operation — we limit by searching only persons with
-        // matching family name prefix (first 3 chars) to reduce the comparison space.
+        // Search production by name similarity for persons without a National ID match.
         var alreadyMatchedStagingIds = results
             .Select(r => r.StagingPersonId)
             .ToHashSet();
@@ -119,9 +112,7 @@ public class PersonMatchingService
             }
         }
 
-        // ============================================================
         // Phase 3: Within-batch duplicates
-        // ============================================================
         var withinBatchResults = DetectWithinBatchDuplicates(stagingPersons);
         results.AddRange(withinBatchResults);
 
@@ -182,8 +173,6 @@ public class PersonMatchingService
 
         return results;
     }
-
-    // ==================== SCORING ====================
 
     /// <summary>
     /// Compute composite score between a staging person and a production person.
@@ -269,8 +258,6 @@ public class PersonMatchingService
         return Math.Min(score, MaxCompositeScore);
     }
 
-    // ==================== HELPER BUILDERS ====================
-
     private static PersonMatchResult BuildResult(
         StagingPerson staging, Person production, bool isWithinBatch)
     {
@@ -324,8 +311,6 @@ public class PersonMatchingService
                             a.Gender.Value == b.Gender.Value
         };
     }
-
-    // ==================== NORMALIZATION HELPERS ====================
 
     /// <summary>
     /// Normalize and compare phone numbers.

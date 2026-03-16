@@ -11,9 +11,6 @@ namespace TRRCMS.Application.Conflicts.Queries.GetConflictDocumentComparison;
 ///
 /// Loads evidence for both entities in a conflict pair,
 /// enabling side-by-side comparison in the review UI.
-///
-/// UC-008 S04: Person duplicate — loads Evidence by PersonId.
-/// UC-007: Property duplicate — loads Evidence via PersonPropertyRelations.
 /// </summary>
 public class GetConflictDocumentComparisonQueryHandler
     : IRequestHandler<GetConflictDocumentComparisonQuery, DocumentComparisonDto?>
@@ -31,14 +28,12 @@ public class GetConflictDocumentComparisonQueryHandler
         GetConflictDocumentComparisonQuery request,
         CancellationToken cancellationToken)
     {
-        // ── 1. Load the conflict ────────────────────────────────────────────────
         var conflict = await _uow.ConflictResolutions.GetByIdAsync(
             request.ConflictId, cancellationToken);
 
         if (conflict is null)
             return null;
 
-        // ── 2. Load evidence for both entities ──────────────────────────────────
         var firstEntity = await LoadEntityEvidenceAsync(
             conflict.EntityType, conflict.FirstEntityId,
             conflict.FirstEntityIdentifier, cancellationToken);
@@ -47,7 +42,6 @@ public class GetConflictDocumentComparisonQueryHandler
             conflict.EntityType, conflict.SecondEntityId,
             conflict.SecondEntityIdentifier, cancellationToken);
 
-        // ── 3. Build result ─────────────────────────────────────────────────────
         return new DocumentComparisonDto(
             ConflictId: conflict.Id,
             ConflictType: conflict.ConflictType,
@@ -65,13 +59,11 @@ public class GetConflictDocumentComparisonQueryHandler
 
         if (entityType == "Person")
         {
-            // Person: load evidence directly by PersonId
             var evidences = await _uow.Evidences.GetByPersonIdAsync(entityId, ct);
             evidenceDtos = _mapper.Map<List<EvidenceDto>>(evidences);
         }
         else // PropertyUnit
         {
-            // PropertyUnit: evidence is linked via PersonPropertyRelations
             var relations = await _uow.PersonPropertyRelations
                 .GetByPropertyUnitIdAsync(entityId, ct);
 
@@ -82,7 +74,6 @@ public class GetConflictDocumentComparisonQueryHandler
                 allEvidences.AddRange(_mapper.Map<List<EvidenceDto>>(relEvidences));
             }
 
-            // Deduplicate by evidence ID (same evidence may be linked via multiple relations)
             evidenceDtos = allEvidences
                 .GroupBy(e => e.Id)
                 .Select(g => g.First())

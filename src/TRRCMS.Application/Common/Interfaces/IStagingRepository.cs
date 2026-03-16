@@ -10,14 +10,10 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// 
 /// Staging repositories are scoped to ImportPackage — most queries filter by ImportPackageId
 /// since staging data is meaningful only within its parent package context.
-/// 
-/// Referenced in UC-003 (Import .uhc Package) Stages 2–4.
 /// </summary>
 /// <typeparam name="T">A concrete staging entity inheriting from <see cref="BaseStagingEntity"/>.</typeparam>
 public interface IStagingRepository<T> where T : BaseStagingEntity
 {
-    // ==================== BASIC CRUD ====================
-
     /// <summary>
     /// Get a staging record by its surrogate ID.
     /// </summary>
@@ -49,7 +45,6 @@ public interface IStagingRepository<T> where T : BaseStagingEntity
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY PACKAGE ====================
 
     /// <summary>
     /// Get all staging records belonging to a specific import package.
@@ -72,7 +67,6 @@ public interface IStagingRepository<T> where T : BaseStagingEntity
     /// </summary>
     Task<int> GetCountByPackageIdAsync(Guid importPackageId, CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY VALIDATION STATUS ====================
 
     /// <summary>
     /// Get staging records by validation status within a package.
@@ -93,7 +87,6 @@ public interface IStagingRepository<T> where T : BaseStagingEntity
         Guid importPackageId,
         CancellationToken cancellationToken = default);
 
-    // ==================== COMMIT QUERIES ====================
 
     /// <summary>
     /// Get all records approved for commit within a package.
@@ -111,7 +104,6 @@ public interface IStagingRepository<T> where T : BaseStagingEntity
         Guid importPackageId,
         CancellationToken cancellationToken = default);
 
-    // ==================== BULK OPERATIONS ====================
 
     /// <summary>
     /// Delete all staging records for a package.
@@ -121,7 +113,6 @@ public interface IStagingRepository<T> where T : BaseStagingEntity
     /// </summary>
     Task<int> DeleteByPackageIdAsync(Guid importPackageId, CancellationToken cancellationToken = default);
 
-    // ==================== QUERYABLE ACCESS ====================
 
     /// <summary>
     /// Get IQueryable for custom queries (pagination, sorting, complex filters).

@@ -7,7 +7,7 @@ using TRRCMS.Domain.Entities.Staging;
 namespace TRRCMS.Infrastructure.Services.Merge;
 
 /// <summary>
-/// Merges duplicate PropertyUnit records as part of conflict resolution (UC-007 S06–S07).
+/// Merges duplicate PropertyUnit records as part of conflict resolution.
 ///
 /// Handles both cross-batch (staging vs production) and within-batch (staging vs staging):
 ///
@@ -21,7 +21,6 @@ namespace TRRCMS.Infrastructure.Services.Merge;
 ///   - The master staging entity proceeds to commit normally.
 ///   - CommitService handles FK redirect via merge mapping.
 ///
-/// FSD Reference: FR-D-7 (Conflict Resolution), FR-D-6 (Property Matching).
 /// </summary>
 public class PropertyMergeService : IMergeService
 {
@@ -88,9 +87,7 @@ public class PropertyMergeService : IMergeService
                 ["Household"] = 0
             };
 
-            // ============================================================
-            // Case 1: Both in production (standard merge — rare in import flow)
-            // ============================================================
+            // Case 1: Both in production (standard merge)
             if (masterProd != null && discardedProd != null)
             {
                 MergePropertyUnitFields(masterProd, discardedProd, mergeMapping, conflicts);
@@ -105,9 +102,7 @@ public class PropertyMergeService : IMergeService
                 result.MasterEntityId = masterProd.Id;
                 result.DiscardedEntityId = discardedProd.Id;
             }
-            // ============================================================
             // Case 2: Cross-batch — master is production, discarded is staging
-            // ============================================================
             else if (masterProd != null && discardedStaging != null)
             {
                 FillProductionGapsFromStaging(masterProd, discardedStaging, mergeMapping, conflicts);
@@ -123,9 +118,7 @@ public class PropertyMergeService : IMergeService
                 result.MasterEntityId = masterProd.Id;
                 result.DiscardedEntityId = discardedEntityId;
             }
-            // ============================================================
             // Case 3: Cross-batch — master is staging, discarded is production
-            // ============================================================
             else if (masterStaging != null && discardedProd != null)
             {
                 UpdateProductionFromStaging(discardedProd, masterStaging, mergeMapping, conflicts);
@@ -141,9 +134,7 @@ public class PropertyMergeService : IMergeService
                 result.MasterEntityId = discardedProd.Id;
                 result.DiscardedEntityId = masterEntityId;
             }
-            // ============================================================
             // Case 4: Within-batch — both are staging
-            // ============================================================
             else if (masterStaging != null && discardedStaging != null)
             {
                 discardedStaging.MarkAsSkipped("Within-batch duplicate — merged into master staging record");
@@ -176,8 +167,6 @@ public class PropertyMergeService : IMergeService
         return result;
     }
 
-    // ==================== ENTITY RESOLUTION ====================
-
     private async Task<(PropertyUnit? Production, StagingPropertyUnit? Staging)> ResolveEntityAsync(
         Guid entityId, Guid? importPackageId, CancellationToken ct)
     {
@@ -195,8 +184,6 @@ public class PropertyMergeService : IMergeService
 
         return (null, null);
     }
-
-    // ==================== PRODUCTION ↔ PRODUCTION MERGE ====================
 
     private static void MergePropertyUnitFields(
         PropertyUnit master, PropertyUnit discarded, Dictionary<string, string> mapping,
@@ -290,8 +277,6 @@ public class PropertyMergeService : IMergeService
         }
     }
 
-    // ==================== CROSS-BATCH: PRODUCTION ← STAGING GAP FILL ====================
-
     private static void FillProductionGapsFromStaging(
         PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping,
         Dictionary<string, FieldConflictInfo> conflicts)
@@ -350,8 +335,6 @@ public class PropertyMergeService : IMergeService
                 production.Description, staging.Description, "production");
         }
     }
-
-    // ==================== CROSS-BATCH: STAGING → PRODUCTION OVERWRITE ====================
 
     private static void UpdateProductionFromStaging(
         PropertyUnit production, StagingPropertyUnit staging, Dictionary<string, string> mapping,
@@ -419,8 +402,6 @@ public class PropertyMergeService : IMergeService
         mapping["_data_source"] = "staging_priority";
     }
 
-    // ==================== PRODUCTION FK RE-POINTING ====================
-
     private async Task<(int Total, Dictionary<string, int> ByType)> RePointProductionReferencesAsync(
         Guid masterUnitId, Guid discardedUnitId, CancellationToken ct)
     {
@@ -485,8 +466,6 @@ public class PropertyMergeService : IMergeService
 
         return (total, byType);
     }
-
-    // ==================== FIELD CONFLICT DETECTION ====================
 
     /// <summary>
     /// Records a field conflict when both string values are non-null/non-empty and differ.

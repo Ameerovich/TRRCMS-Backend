@@ -5,7 +5,7 @@ namespace TRRCMS.Application.Surveys.Queries.GetOfficeSurveys;
 
 /// <summary>
 /// Query to get office surveys with filtering and pagination
-/// Corresponds to UC-004/UC-005: Office Survey listing
+/// Gets office surveys with filtering and pagination
 /// </summary>
 public class GetOfficeSurveysQuery : IRequest<GetOfficeSurveysResponse>
 {

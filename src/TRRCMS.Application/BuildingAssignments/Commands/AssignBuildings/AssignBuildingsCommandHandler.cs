@@ -10,8 +10,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.BuildingAssignments.Commands.AssignBuildings;
 
 /// <summary>
-/// Handler for AssignBuildingsCommand
-/// UC-012: Assign Buildings to Field Collectors
+/// Handler for AssignBuildingsCommand.
 /// </summary>
 public class AssignBuildingsCommandHandler : IRequestHandler<AssignBuildingsCommand, AssignBuildingsResult>
 {
@@ -113,11 +112,7 @@ public class AssignBuildingsCommandHandler : IRequestHandler<AssignBuildingsComm
                         .OrderByDescending(a => a.ActualCompletionDate ?? a.CreatedAtUtc)
                         .FirstOrDefault();
 
-                    // =====================================================
-                    // FIX: Use null instead of Guid.Empty when no original 
-                    // assignment exists. Guid.Empty violates FK constraint!
-                    // =====================================================
-                    Guid? originalAssignmentId = originalAssignment?.Id;  // Can be null - that's OK!
+                    Guid? originalAssignmentId = originalAssignment?.Id;
 
                     // Serialize unit IDs for storage
                     var unitsForRevisit = System.Text.Json.JsonSerializer.Serialize(
@@ -127,7 +122,7 @@ public class AssignBuildingsCommandHandler : IRequestHandler<AssignBuildingsComm
                     assignment = BuildingAssignment.CreateRevisit(
                         buildingId: buildingItem.BuildingId,
                         fieldCollectorId: request.FieldCollectorId,
-                        originalAssignmentId: originalAssignmentId,  // Nullable - OK if null
+                        originalAssignmentId: originalAssignmentId,
                         unitsForRevisit: unitsForRevisit,
                         revisitReason: buildingItem.RevisitReason!,
                         totalPropertyUnits: buildingItem.PropertyUnitIdsForRevisit!.Count,

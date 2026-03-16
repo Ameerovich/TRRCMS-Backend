@@ -9,8 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingSurvey entity.
 /// Mirrors the Survey production table in an isolated staging area.
-/// Records are validated before commit to production (FSD FR-D-4).
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey>
 {
@@ -20,8 +18,6 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
 
         // Primary Key
         builder.HasKey(s => s.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(s => s.ImportPackageId)
             .IsRequired();
@@ -51,8 +47,6 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         builder.Property(s => s.StagedAtUtc)
             .IsRequired();
 
-        // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
         builder.Property(s => s.OriginalBuildingId)
             .IsRequired()
             .HasComment("Original Building UUID from .uhc — not a FK to production Buildings");
@@ -69,21 +63,15 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         builder.Property(s => s.OriginalContactPersonId)
             .HasComment("Original Contact Person UUID from .uhc — not a FK to production Persons");
 
-        // ==================== SURVEY IDENTIFICATION ====================
-
         builder.Property(s => s.ReferenceCode)
             .HasMaxLength(50)
             .HasComment("Optional — auto-generated during commit");
-
-        // ==================== SURVEY CLASSIFICATION ====================
 
         builder.Property(s => s.Type)
             .HasComment("Optional — auto-set (Field/Office) during commit");
 
         builder.Property(s => s.Source)
             .HasComment("Optional — auto-set during commit");
-
-        // ==================== SURVEY DETAILS ====================
 
         builder.Property(s => s.SurveyDate)
             .IsRequired();
@@ -103,8 +91,6 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         builder.Property(s => s.Notes)
             .HasMaxLength(4000);
 
-        // ==================== OFFICE SURVEY SPECIFIC ====================
-
         builder.Property(s => s.OfficeLocation)
             .HasMaxLength(200);
 
@@ -120,19 +106,13 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         builder.Property(s => s.ContactEmail)
             .HasMaxLength(256);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(s => s.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(s => s.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(s => s.ImportPackageId)
             .HasDatabaseName("IX_StagingSurveys_ImportPackageId");

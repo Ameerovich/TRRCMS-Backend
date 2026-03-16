@@ -18,8 +18,6 @@ public class ImportPackageRepository : IImportPackageRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    // ==================== BASIC CRUD ====================
-
     public async Task<ImportPackage?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.ImportPackages
@@ -50,8 +48,6 @@ public class ImportPackageRepository : IImportPackageRepository
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    // ==================== IDEMPOTENCY ====================
-
     public async Task<ImportPackage?> GetByPackageIdAsync(
         Guid packageId,
         CancellationToken cancellationToken = default)
@@ -67,8 +63,6 @@ public class ImportPackageRepository : IImportPackageRepository
         return await _context.ImportPackages
             .AnyAsync(p => p.PackageId == packageId, cancellationToken);
     }
-
-    // ==================== STATUS WORKFLOW ====================
 
     public async Task<List<ImportPackage>> GetByStatusAsync(
         ImportStatus status,
@@ -101,8 +95,6 @@ public class ImportPackageRepository : IImportPackageRepository
             .ToDictionaryAsync(x => x.Status, x => x.Count, cancellationToken);
     }
 
-    // ==================== QUERY BY USER ====================
-
     public async Task<List<ImportPackage>> GetByExportedByUserAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -123,8 +115,6 @@ public class ImportPackageRepository : IImportPackageRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== QUERY BY DATE ====================
-
     public async Task<List<ImportPackage>> GetByImportedDateRangeAsync(
         DateTime startDate,
         DateTime endDate,
@@ -138,8 +128,6 @@ public class ImportPackageRepository : IImportPackageRepository
             .OrderBy(p => p.ImportedDate)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== SEARCH WITH PAGINATION ====================
 
     public async Task<(List<ImportPackage> Packages, int TotalCount)> SearchAsync(
         ImportStatus? status = null,
@@ -218,8 +206,6 @@ public class ImportPackageRepository : IImportPackageRepository
         return (packages, totalCount);
     }
 
-    // ==================== CONFLICT TRACKING ====================
-
     public async Task<List<ImportPackage>> GetWithUnresolvedConflictsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -230,8 +216,6 @@ public class ImportPackageRepository : IImportPackageRepository
             .OrderByDescending(p => p.ConflictCount)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== AGGREGATE QUERIES ====================
 
     public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
     {
@@ -263,16 +247,12 @@ public class ImportPackageRepository : IImportPackageRepository
         return (totals?.Surveys ?? 0, totals?.Buildings ?? 0, totals?.Persons ?? 0);
     }
 
-    // ==================== QUERYABLE ACCESS ====================
-
     public IQueryable<ImportPackage> GetQueryable()
     {
         return _context.ImportPackages
             .Where(p => !p.IsDeleted)
             .AsQueryable();
     }
-
-    // ==================== DASHBOARD TREND QUERIES ====================
 
     public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
         DateTime? from = null, DateTime? to = null,

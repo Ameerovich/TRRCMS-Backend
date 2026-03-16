@@ -6,8 +6,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetAvailableFieldCollectors;
 
 /// <summary>
-/// Handler for GetAvailableFieldCollectorsQuery
-/// UC-012: Select field collector for assignment
+/// Handler for GetAvailableFieldCollectorsQuery.
 /// </summary>
 public class GetAvailableFieldCollectorsQueryHandler 
     : IRequestHandler<GetAvailableFieldCollectorsQuery, List<AvailableFieldCollectorDto>>

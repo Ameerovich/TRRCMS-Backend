@@ -104,7 +104,6 @@ public class BuildingInPolygonDto
     /// </summary>
     public string CommunityName { get; set; } = string.Empty;
 
-    // ==================== FULL DETAILS (when requested) ====================
 
     /// <summary>
     /// Full building details (only populated when IncludeFullDetails=true)

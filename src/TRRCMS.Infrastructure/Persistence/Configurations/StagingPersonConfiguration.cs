@@ -9,8 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingPerson entity.
 /// Mirrors the Person production table in an isolated staging area.
-/// Central to duplicate detection per FSD FR-D-5 (Person Matching).
-/// Referenced in UC-003 Stage 2 and UC-008 (Resolve Person Duplicates).
 /// </summary>
 public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson>
 {
@@ -20,8 +18,6 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
 
         // Primary Key
         builder.HasKey(p => p.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(p => p.ImportPackageId)
             .IsRequired();
@@ -51,8 +47,6 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
         builder.Property(p => p.StagedAtUtc)
             .IsRequired();
 
-        // ==================== NAME COMPONENTS ====================
-
         builder.Property(p => p.FamilyNameArabic)
             .IsRequired()
             .HasMaxLength(100);
@@ -68,18 +62,14 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
         builder.Property(p => p.MotherNameArabic)
             .HasMaxLength(100);
 
-        // ==================== IDENTIFICATION ====================
-
         builder.Property(p => p.NationalId)
             .HasMaxLength(50)
-            .HasComment("Primary key for duplicate detection (FR-D-5, §12.2.4)");
+            .HasComment("Primary key for duplicate detection");
 
         builder.Property(p => p.DateOfBirth)
             .HasColumnType("timestamp with time zone")
             .IsRequired(false)
             .HasComment("Date of birth — used in duplicate detection composite with name+gender");
-
-        // ==================== CONTACT ====================
 
         builder.Property(p => p.Email)
             .HasMaxLength(256);
@@ -90,8 +80,6 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
         builder.Property(p => p.PhoneNumber)
             .HasMaxLength(20);
 
-        // ==================== DEMOGRAPHICS ====================
-
         builder.Property(p => p.Gender)
             .IsRequired(false)
             .HasComment("الجنس - Gender enum stored as integer");
@@ -100,8 +88,6 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
             .IsRequired(false)
             .HasComment("الجنسية - Nationality enum stored as integer");
 
-        // ==================== HOUSEHOLD LINK ====================
-
         builder.Property(p => p.OriginalHouseholdId)
             .HasComment("Original Household UUID from .uhc — not a FK to production Households");
 
@@ -109,25 +95,17 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
             .IsRequired(false)
             .HasComment("صلة القرابة برب الأسرة - Relationship to head of household enum stored as integer");
 
-        // ==================== CONTACT PERSON ====================
-
         builder.Property(p => p.IsContactPerson)
             .IsRequired()
             .HasDefaultValue(false);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(p => p.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(p => p.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(p => p.ImportPackageId)
             .HasDatabaseName("IX_StagingPersons_ImportPackageId");
@@ -139,7 +117,7 @@ public class StagingPersonConfiguration : IEntityTypeConfiguration<StagingPerson
             .IsUnique()
             .HasDatabaseName("IX_StagingPersons_ImportPackageId_OriginalEntityId");
 
-        // NationalId for intra-batch duplicate detection (§12.2.4) and cross-production matching (FR-D-5)
+        // NationalId for intra-batch duplicate detection
         builder.HasIndex(p => p.NationalId)
             .HasDatabaseName("IX_StagingPersons_NationalId");
 

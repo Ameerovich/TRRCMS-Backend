@@ -45,7 +45,6 @@ public class GetDraftSurveyQueryHandler : IRequestHandler<GetDraftSurveyQuery, S
         // For now, enforce strict ownership for field collectors
         if (survey.FieldCollectorId != currentUserId)
         {
-            // TODO: Add role-based check to allow supervisors/admins to view all surveys
             throw new UnauthorizedAccessException("You can only view your own surveys");
         }
 

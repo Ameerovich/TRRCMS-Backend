@@ -5,7 +5,6 @@ namespace TRRCMS.Application.Users.Queries.GetUserAuditLog
 {
     /// <summary>
     /// Query to retrieve recent audit activity for a specific user.
-    /// Used by UC-009 (User Management) to show user history / activity trail.
     /// </summary>
     public class GetUserAuditLogQuery : IRequest<List<AuditLogDto>>
     {

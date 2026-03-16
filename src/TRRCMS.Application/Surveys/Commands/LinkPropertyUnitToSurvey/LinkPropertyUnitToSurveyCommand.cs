@@ -5,7 +5,7 @@ namespace TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 
 /// <summary>
 /// Command to link an existing property unit to a survey
-/// Corresponds to UC-001 Stage 2: Property Unit Selection - Select Existing Unit
+/// Links an existing property unit to a survey
 /// </summary>
 public class LinkPropertyUnitToSurveyCommand : IRequest<SurveyDto>
 {

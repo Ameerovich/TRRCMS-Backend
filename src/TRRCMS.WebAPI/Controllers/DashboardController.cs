@@ -17,8 +17,6 @@ namespace TRRCMS.WebAPI.Controllers;
 /// Provides aggregated data for the desktop application's dashboard page.
 /// All endpoints are read-only GET requests returning pre-aggregated statistics.
 ///
-/// FR-D-12: Dashboard Statistics.
-///
 /// **Permission:** Dashboard_View (8500) - CanViewDashboard
 ///
 /// **Authorized roles:** Administrator, DataManager, FieldSupervisor, Analyst

@@ -1,9 +1,8 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
 /// Tenure/Contract type classification (نوع وثيقة الإشغال/العقد)
 /// Type of contract or tenure for occupants/tenants
-/// Referenced in FSD section 6.1.4
 /// </summary>
 public enum TenureContractType
 {

@@ -7,8 +7,8 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// Implementations handle entity-specific merge logic for both cross-batch
 /// (staging vs production) and within-batch (staging vs staging) conflicts.
 ///
-///   - PersonMergeService: merges Person records (UC-008 S06–S07).
-///   - PropertyMergeService: merges PropertyUnit records (UC-007 S06–S07).
+///   - PersonMergeService: merges Person records.
+///   - PropertyMergeService: merges PropertyUnit records.
 ///
 /// Each implementation is registered in DI and distinguished by <see cref="EntityType"/>.
 /// The MergeConflictCommandHandler / ResolveConflictCommandHandler resolves the correct

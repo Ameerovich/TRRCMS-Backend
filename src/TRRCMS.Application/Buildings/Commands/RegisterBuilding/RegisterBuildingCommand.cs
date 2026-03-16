@@ -11,8 +11,6 @@ namespace TRRCMS.Application.Buildings.Commands.RegisterBuilding;
 /// </summary>
 public record RegisterBuildingCommand : IRequest<BuildingDto>
 {
-    // ==================== ADMINISTRATIVE CODES (required) ====================
-
     /// <summary>Governorate code (2 digits, محافظة)</summary>
     /// <example>01</example>
     public string GovernorateCode { get; init; } = string.Empty;
@@ -37,7 +35,6 @@ public record RegisterBuildingCommand : IRequest<BuildingDto>
     /// <example>00001</example>
     public string BuildingNumber { get; init; } = string.Empty;
 
-    // ==================== GEOMETRY (required) ====================
 
     /// <summary>
     /// Building polygon geometry in WKT format (from QGIS digitization).
@@ -46,7 +43,6 @@ public record RegisterBuildingCommand : IRequest<BuildingDto>
     /// <example>POLYGON((37.1340 36.2018, 37.1346 36.2018, 37.1346 36.2024, 37.1340 36.2024, 37.1340 36.2018))</example>
     public string BuildingGeometryWkt { get; init; } = string.Empty;
 
-    // ==================== OPTIONAL ====================
 
     /// <summary>General notes (الوصف العام) - optional</summary>
     public string? Notes { get; init; }

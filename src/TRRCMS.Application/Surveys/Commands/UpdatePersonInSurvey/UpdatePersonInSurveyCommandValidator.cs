@@ -11,8 +11,6 @@ public class UpdatePersonInSurveyCommandValidator : AbstractValidator<UpdatePers
 {
     public UpdatePersonInSurveyCommandValidator(IVocabularyValidationService vocabService)
     {
-        // ==================== IDs ====================
-
         RuleFor(x => x.SurveyId)
             .NotEmpty()
             .WithMessage("معرف المسح مطلوب");
@@ -24,8 +22,6 @@ public class UpdatePersonInSurveyCommandValidator : AbstractValidator<UpdatePers
         RuleFor(x => x.PersonId)
             .NotEmpty()
             .WithMessage("معرف الشخص مطلوب");
-
-        // ==================== NAMES ====================
 
         RuleFor(x => x.FamilyNameArabic)
             .MaximumLength(100)
@@ -47,8 +43,6 @@ public class UpdatePersonInSurveyCommandValidator : AbstractValidator<UpdatePers
             .WithMessage("الاسم الأم يجب ألا يتجاوز 100 حرف")
             .When(x => !string.IsNullOrEmpty(x.MotherNameArabic));
 
-        // ==================== IDENTIFICATION ====================
-
         RuleFor(x => x.NationalId)
             .Matches(@"^\d{11}$")
             .When(x => !string.IsNullOrEmpty(x.NationalId))
@@ -58,8 +52,6 @@ public class UpdatePersonInSurveyCommandValidator : AbstractValidator<UpdatePers
             .Must(date => date <= DateTime.UtcNow)
             .When(x => x.DateOfBirth.HasValue)
             .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
-
-        // ==================== CONTACT INFORMATION ====================
 
         RuleFor(x => x.Email)
             .MaximumLength(255)
@@ -81,8 +73,6 @@ public class UpdatePersonInSurveyCommandValidator : AbstractValidator<UpdatePers
             .Matches(@"^[\+]?[0-9\s\-]*$")
             .WithMessage("رقم الهاتف غير صحيح")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
-
-        // ==================== HOUSEHOLD RELATIONSHIP ====================
 
         RuleFor(x => x.RelationshipToHead)
             .Must(v => vocabService.IsValidCode("relationship_to_head", v!.Value))

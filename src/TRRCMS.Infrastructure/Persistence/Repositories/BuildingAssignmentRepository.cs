@@ -7,7 +7,6 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories;
 
 /// <summary>
 /// Repository implementation for BuildingAssignment operations
-/// UC-012: Assign Buildings to Field Collectors
 /// </summary>
 public class BuildingAssignmentRepository : IBuildingAssignmentRepository
 {
@@ -17,8 +16,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
-
-    // ==================== BASIC CRUD ====================
 
     public async Task<BuildingAssignment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -55,8 +52,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
-
-    // ==================== FIELD COLLECTOR QUERIES ====================
 
     public async Task<List<BuildingAssignment>> GetByFieldCollectorAsync(
         Guid fieldCollectorId, 
@@ -122,8 +117,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== BUILDING QUERIES ====================
-
     public async Task<List<BuildingAssignment>> GetByBuildingIdAsync(
         Guid buildingId,
         CancellationToken cancellationToken = default)
@@ -151,8 +144,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
         return await _context.BuildingAssignments
             .AnyAsync(ba => ba.BuildingId == buildingId && ba.IsActive, cancellationToken);
     }
-
-    // ==================== STATUS QUERIES ====================
 
     public async Task<List<BuildingAssignment>> GetByTransferStatusAsync(
         TransferStatus status,
@@ -194,8 +185,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
             .OrderBy(ba => ba.TargetCompletionDate)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== SEARCH WITH FILTERS ====================
 
     public async Task<(List<BuildingAssignment> Assignments, int TotalCount)> SearchAssignmentsAsync(
         Guid? fieldCollectorId = null,
@@ -279,8 +268,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
         return (assignments, totalCount);
     }
 
-    // ==================== SYNC QUERIES ====================
-
     /// <inheritdoc />
     public async Task<List<BuildingAssignment>> GetPendingOrFailedByFieldCollectorAsync(
         Guid fieldCollectorId,
@@ -317,8 +304,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== REVISIT QUERIES ====================
-
     public async Task<List<BuildingAssignment>> GetRevisitAssignmentsAsync(
         Guid buildingId,
         CancellationToken cancellationToken = default)
@@ -342,8 +327,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
         return await _context.BuildingAssignments
             .FirstOrDefaultAsync(ba => ba.Id == revisit.OriginalAssignmentId.Value, cancellationToken);
     }
-
-    // ==================== STATISTICS ====================
 
     public async Task<FieldCollectorAssignmentStats> GetFieldCollectorStatsAsync(
         Guid fieldCollectorId,
@@ -398,8 +381,6 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
                 .Count()
         };
     }
-
-    // ==================== DASHBOARD PERSONNEL QUERIES ====================
 
     public async Task<List<(Guid UserId, int Assigned, int Completed)>> GetCountsByFieldCollectorAsync(
         DateTime? from = null, DateTime? to = null,

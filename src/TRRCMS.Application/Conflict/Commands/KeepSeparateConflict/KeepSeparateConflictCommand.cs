@@ -18,7 +18,6 @@ public class KeepSeparateConflictCommand : IRequest<ConflictDetailDto>
 
     /// <summary>
     /// Mandatory justification notes explaining why records are not duplicates.
-    /// Required by UC-007/UC-008 audit trail requirements.
     /// </summary>
     public string Reason { get; set; } = string.Empty;
 

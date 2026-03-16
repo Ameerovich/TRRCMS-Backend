@@ -11,8 +11,6 @@ public class RegisterBuildingCommandValidator : AbstractValidator<RegisterBuildi
 {
     public RegisterBuildingCommandValidator()
     {
-        // ==================== ADMINISTRATIVE CODES ====================
-
         RuleFor(x => x.GovernorateCode)
             .NotEmpty().WithMessage("Governorate code is required")
             .Length(2).WithMessage("Governorate code must be exactly 2 digits")
@@ -59,12 +57,10 @@ public class RegisterBuildingCommandValidator : AbstractValidator<RegisterBuildi
                        !string.IsNullOrEmpty(x.BuildingNumber))
             .WithMessage("Composite Building ID must form exactly 17 digits (2+2+2+3+3+5)");
 
-        // ==================== GEOMETRY (required for QGIS) ====================
 
         RuleFor(x => x.BuildingGeometryWkt)
             .NotEmpty().WithMessage("Building geometry (WKT polygon) is required for QGIS registration");
 
-        // ==================== OPTIONAL ====================
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000)

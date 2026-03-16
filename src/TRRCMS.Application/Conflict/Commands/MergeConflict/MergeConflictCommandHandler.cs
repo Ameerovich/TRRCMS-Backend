@@ -9,17 +9,9 @@ namespace TRRCMS.Application.Conflicts.Commands.MergeConflict;
 /// <summary>
 /// Handler for <see cref="MergeConflictCommand"/>.
 ///
-/// Orchestrates the duplicate merge workflow:
-/// 1. Validates conflict exists and is PendingReview.
-/// 2. Validates MasterEntityId is one of the two conflict entities.
-/// 3. Records the review attempt for audit trail.
-/// 4. Delegates to the appropriate IMergeService (Person or Property).
-/// 5. Updates the ConflictResolution entity with merge results.
-/// 6. If all conflicts for the import package are resolved, transitions package to ReadyToCommit.
-/// 7. Logs the merge action via IAuditService.
-///
-/// UC-007 S06–S07: Apply Property Merge Rules, Update Records and Log Resolution.
-/// UC-008 S06–S07: Apply Person Merge Rules, Update Linked Relationships and Log Resolution.
+/// Orchestrates the duplicate merge workflow: validates the conflict,
+/// delegates to the appropriate IMergeService, updates the conflict entity,
+/// and transitions the import package if all conflicts are resolved.
 /// </summary>
 public class MergeConflictCommandHandler
     : IRequestHandler<MergeConflictCommand, ConflictDetailDto>
@@ -57,7 +49,6 @@ public class MergeConflictCommandHandler
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated.");
 
-        // 1. Load and validate conflict
         var conflict = await _unitOfWork.ConflictResolutions
                 .GetByIdAsync(request.ConflictId, cancellationToken)
             ?? throw new NotFoundException(
@@ -70,7 +61,6 @@ public class MergeConflictCommandHandler
                 "and cannot be merged. Only PendingReview conflicts can be merged.");
         }
 
-        // 2. Determine master and discarded entities
         var masterEntityId = request.MasterEntityId ?? conflict.FirstEntityId;
 
         if (masterEntityId != conflict.FirstEntityId &&
@@ -85,12 +75,10 @@ public class MergeConflictCommandHandler
             ? conflict.SecondEntityId
             : conflict.FirstEntityId;
 
-        // 3. Record review attempt
         conflict.RecordReviewAttempt(
             $"Merge: master={masterEntityId}, discarded={discardedEntityId} — {request.Reason}",
             userId);
 
-        // 4. Execute merge via appropriate service
         var mergeService = conflict.EntityType switch
         {
             "Person" => _personMergeService,
@@ -108,7 +96,6 @@ public class MergeConflictCommandHandler
                 $"Merge failed for conflict {conflict.ConflictNumber}: {mergeResult.ErrorMessage}");
         }
 
-        // 5. Update conflict via domain method
         conflict.Resolve(
             action: ConflictResolutionAction.Merge,
             resolutionReason: request.Reason,
@@ -121,17 +108,14 @@ public class MergeConflictCommandHandler
 
         await _unitOfWork.ConflictResolutions.UpdateAsync(conflict, cancellationToken);
 
-        // 6. Check if all conflicts for package are resolved → transition package
         if (conflict.ImportPackageId.HasValue)
         {
             await TryTransitionPackageToReadyAsync(
                 conflict.ImportPackageId.Value, userId, cancellationToken);
         }
 
-        // Atomic save: conflict resolution + package transition + merge changes
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // 7. Audit log
         var entityTypeLabel = conflict.EntityType == "Person" ? "person" : "property unit";
         await _auditService.LogActionAsync(
             AuditActionType.Merge,

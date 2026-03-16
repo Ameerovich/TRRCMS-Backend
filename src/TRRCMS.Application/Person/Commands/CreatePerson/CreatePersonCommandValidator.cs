@@ -3,15 +3,12 @@ using FluentValidation;
 namespace TRRCMS.Application.Persons.Commands.CreatePerson;
 
 /// <summary>
-/// Validator for CreatePersonCommand
-/// Enhanced with Syria-specific National ID validation (11 digits per FSD)
+/// Validator for CreatePersonCommand.
 /// </summary>
 public class CreatePersonCommandValidator : AbstractValidator<CreatePersonCommand>
 {
     public CreatePersonCommandValidator()
     {
-        // ==================== NAMES (ALL OPTIONAL FOR OFFICE SURVEY) ====================
-
         RuleFor(x => x.FamilyNameArabic)
             .MaximumLength(100)
             .WithMessage("الكنية يجب ألا تتجاوز 100 حرف")
@@ -27,16 +24,14 @@ public class CreatePersonCommandValidator : AbstractValidator<CreatePersonComman
             .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف")
             .When(x => !string.IsNullOrEmpty(x.FatherNameArabic));
 
-        // ==================== OPTIONAL NAMES ====================
 
         RuleFor(x => x.MotherNameArabic)
             .MaximumLength(100)
             .WithMessage("الاسم الأم يجب ألا يتجاوز 100 حرف")
             .When(x => !string.IsNullOrEmpty(x.MotherNameArabic));
 
-        // ==================== IDENTIFICATION ====================
 
-        // Syria National ID: exactly 11 digits (per FSD)
+        // Syria National ID: exactly 11 digits
         RuleFor(x => x.NationalId)
             .Matches(@"^\d{11}$")
             .When(x => !string.IsNullOrEmpty(x.NationalId))
@@ -47,7 +42,6 @@ public class CreatePersonCommandValidator : AbstractValidator<CreatePersonComman
             .When(x => x.DateOfBirth.HasValue)
             .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
 
-        // ==================== CONTACT INFORMATION ====================
 
         RuleFor(x => x.Email)
             .MaximumLength(255)

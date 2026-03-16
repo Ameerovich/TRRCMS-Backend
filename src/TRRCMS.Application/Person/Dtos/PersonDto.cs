@@ -6,14 +6,11 @@
 /// </summary>
 public class PersonDto
 {
-    // ==================== IDENTIFIER ====================
-
     /// <summary>
     /// Person ID
     /// </summary>
     public Guid Id { get; set; }
 
-    // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
 
     /// <summary>
     /// الكنية - Family/Last name in Arabic
@@ -55,7 +52,6 @@ public class PersonDto
     /// </summary>
     public DateTime? DateOfBirth { get; set; }
 
-    // ==================== CONTACT INFORMATION (Step 2) ====================
 
     /// <summary>
     /// البريد الالكتروني - Email address
@@ -72,14 +68,12 @@ public class PersonDto
     /// </summary>
     public string? PhoneNumber { get; set; }
 
-    // ==================== CONTACT PERSON ====================
 
     /// <summary>
     /// Whether this person is the contact person for a survey
     /// </summary>
     public bool IsContactPerson { get; set; }
 
-    // ==================== HOUSEHOLD CONTEXT ====================
 
     /// <summary>
     /// Household ID (if person belongs to a household)
@@ -91,7 +85,6 @@ public class PersonDto
     /// </summary>
     public int? RelationshipToHead { get; set; }
 
-    // ==================== AUDIT FIELDS ====================
 
     /// <summary>
     /// Creation timestamp (UTC)
@@ -128,7 +121,6 @@ public class PersonDto
     /// </summary>
     public Guid? DeletedBy { get; set; }
 
-    // ==================== COMPUTED PROPERTIES ====================
 
     /// <summary>
     /// Full name in Arabic (computed: الاسم الأول + اسم الأب + الكنية)

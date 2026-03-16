@@ -7,9 +7,6 @@ namespace TRRCMS.Application.Import.Commands.UploadPackage;
 /// Command to upload a .uhc package for import.
 /// Triggers the full intake pipeline: save → parse manifest → integrity check →
 /// vocabulary compatibility → create ImportPackage entity.
-/// 
-/// UC-003 Stage 2 — S12 (Verify Package Integrity).
-/// FSD: FR-D-2 (Import Management), FR-D-3 (Validation & Verification).
 /// </summary>
 public record UploadPackageCommand : IRequest<UploadPackageResultDto>
 {

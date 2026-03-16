@@ -16,7 +16,7 @@ using TRRCMS.Application.Vocabularies.Queries.GetVocabularyVersionHistory;
 namespace TRRCMS.WebAPI.Controllers;
 
 /// <summary>
-/// Vocabulary Management API — UC-010 (ادارة المفردات)
+/// Vocabulary Management API (ادارة المفردات)
 /// </summary>
 /// <remarks>
 /// Manages controlled vocabularies (dropdown lists) used across the entire TRRCMS system.
@@ -198,7 +198,7 @@ public class VocabulariesController : ControllerBase
     // ==================== WRITE ENDPOINTS (Authorized) ====================
 
     /// <summary>
-    /// Create a new vocabulary (إنشاء مفردة جديدة) — UC-010 S03
+    /// Create a new vocabulary (إنشاء مفردة جديدة)
     /// </summary>
     /// <remarks>
     /// Creates a brand-new vocabulary with version "1.0.0". The vocabulary name must be
@@ -270,7 +270,7 @@ public class VocabulariesController : ControllerBase
     }
 
     /// <summary>
-    /// Update vocabulary metadata (تحديث بيانات المفردة الوصفية) — UC-010 S05
+    /// Update vocabulary metadata (تحديث بيانات المفردة الوصفية)
     /// </summary>
     /// <remarks>
     /// Updates **only metadata** (display names, description, category) without changing
@@ -328,7 +328,7 @@ public class VocabulariesController : ControllerBase
     }
 
     /// <summary>
-    /// Create a new version of a vocabulary (إنشاء إصدار جديد للمفردة) — UC-010 S06
+    /// Create a new version of a vocabulary (إنشاء إصدار جديد للمفردة)
     /// </summary>
     /// <remarks>
     /// Creates a new version of an existing vocabulary with updated values.
@@ -412,7 +412,7 @@ public class VocabulariesController : ControllerBase
     }
 
     /// <summary>
-    /// Activate a vocabulary (تفعيل المفردة) — UC-010 S08
+    /// Activate a vocabulary (تفعيل المفردة)
     /// </summary>
     /// <remarks>
     /// Re-activates a previously deactivated vocabulary. Active vocabularies
@@ -450,7 +450,7 @@ public class VocabulariesController : ControllerBase
     }
 
     /// <summary>
-    /// Deactivate a vocabulary (تعطيل المفردة) — UC-010 S09
+    /// Deactivate a vocabulary (تعطيل المفردة)
     /// </summary>
     /// <remarks>
     /// Deactivates a vocabulary so it is no longer returned by the public GET endpoint
@@ -493,7 +493,7 @@ public class VocabulariesController : ControllerBase
     // ==================== EXPORT/IMPORT ENDPOINTS (Disaster Recovery) ====================
 
     /// <summary>
-    /// Export all current vocabularies as a JSON snapshot (تصدير جميع المفردات) — UC-010 S10
+    /// Export all current vocabularies as a JSON snapshot (تصدير جميع المفردات)
     /// </summary>
     /// <remarks>
     /// Exports **all current-version vocabularies** as a complete JSON snapshot for backup
@@ -578,7 +578,7 @@ public class VocabulariesController : ControllerBase
     }
 
     /// <summary>
-    /// Import vocabularies from a JSON snapshot (استيراد المفردات من نسخة احتياطية) — UC-010 S11
+    /// Import vocabularies from a JSON snapshot (استيراد المفردات من نسخة احتياطية)
     /// </summary>
     /// <remarks>
     /// Restores vocabularies from a previously exported JSON snapshot. This is the counterpart

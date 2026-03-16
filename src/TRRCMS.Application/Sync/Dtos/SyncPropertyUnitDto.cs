@@ -9,7 +9,6 @@ namespace TRRCMS.Application.Sync.DTOs;
 /// display the unit in the field survey form and pre-populate known values.
 ///
 /// Part of <see cref="SyncBuildingDto.PropertyUnits"/> within the sync payload.
-/// FSD: FR-D-5 (Sync Package Contents).
 /// </summary>
 public sealed record SyncPropertyUnitDto
 {

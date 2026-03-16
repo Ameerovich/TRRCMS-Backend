@@ -5,8 +5,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Users.Commands.RevokePermission;
 
 /// <summary>
-/// Revoke a single permission from a user command
-/// UC-009: User & Role Management - Manage Roles and Permissions
+/// Revoke a single permission from a user command.
 /// </summary>
 public class RevokePermissionCommand : IRequest<UserDto>
 {

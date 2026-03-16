@@ -17,9 +17,6 @@ namespace TRRCMS.Application.Import.Commands.CommitPackage;
 ///   - On total failure: rollback + ImportPackage → Failed
 ///
 /// After commit, the original .uhc package is archived to immutable store.
-///
-/// UC-003 Stage 4 — S17 (Commit to Production).
-/// FSD: FR-D-8 (Record IDs), FR-D-9 (Attachment Dedup).
 /// </summary>
 public class CommitPackageCommand : IRequest<CommitReportDto>
 {

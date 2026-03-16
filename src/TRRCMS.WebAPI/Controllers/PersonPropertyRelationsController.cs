@@ -86,8 +86,8 @@ public class PersonPropertyRelationsController : ControllerBase
     /// Creates a link between a person and a property unit with specified relationship
     /// and contract type. This establishes the tenure rights record.
     /// 
-    /// **Use Case**: UC-001 Field Survey Stage 3 - Establish person-property relationship
-    /// 
+    /// **Use Case**: Establish person-property relationship during field survey
+    ///
     /// **Required Permission**: Surveys_EditAll (7006) or survey-specific edit permission
     /// 
     /// **Required Fields:**

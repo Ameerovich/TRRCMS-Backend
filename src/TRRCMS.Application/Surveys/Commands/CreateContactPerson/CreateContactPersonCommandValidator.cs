@@ -9,8 +9,6 @@ public class CreateContactPersonCommandValidator : AbstractValidator<CreateConta
 {
     public CreateContactPersonCommandValidator()
     {
-        // ==================== REQUIRED ====================
-
         RuleFor(x => x.SurveyId)
             .NotEmpty()
             .WithMessage("معرف المسح مطلوب");
@@ -38,8 +36,6 @@ public class CreateContactPersonCommandValidator : AbstractValidator<CreateConta
             .WithMessage("اسم الأم مطلوب")
             .MaximumLength(100)
             .WithMessage("اسم الأم يجب ألا يتجاوز 100 حرف");
-
-        // ==================== OPTIONAL ====================
 
         RuleFor(x => x.NationalId)
             .Matches(@"^\d{11}$")

@@ -8,8 +8,6 @@ namespace TRRCMS.Application.Import.Models;
 /// - MAJOR mismatch → Incompatible (quarantine the package)
 /// - MINOR addition → Compatible with warnings (new codes the server doesn't know)
 /// - PATCH change   → Fully compatible (label changes only)
-/// 
-/// Referenced in FR-D-3 (Validation & Verification).
 /// </summary>
 public class VocabularyCompatibilityResult
 {

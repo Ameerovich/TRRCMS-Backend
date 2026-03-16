@@ -7,7 +7,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations;
 
 /// <summary>
 /// EF Core configuration for Survey entity
-/// Supports both Field (UC-001) and Office (UC-004) surveys
 /// </summary>
 public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
 {
@@ -18,8 +17,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
         // Primary key
         builder.HasKey(s => s.Id);
 
-        // ==================== IDENTIFIERS ====================
-
         builder.Property(s => s.ReferenceCode)
             .IsRequired()
             .HasMaxLength(50);
@@ -27,8 +24,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
         builder.HasIndex(s => s.ReferenceCode)
             .IsUnique()
             .HasDatabaseName("IX_Surveys_ReferenceCode");
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.Property(s => s.BuildingId)
             .IsRequired();
@@ -53,8 +48,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
             .HasForeignKey(s => s.FieldCollectorId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ==================== SURVEY CLASSIFICATION ====================
-
         builder.Property(s => s.Type)
             .IsRequired()
             .HasDefaultValue(SurveyType.Field)
@@ -68,8 +61,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
         // Index for filtering by type
         builder.HasIndex(s => s.Type)
             .HasDatabaseName("IX_Surveys_Type");
-
-        // ==================== SURVEY DETAILS ====================
 
         builder.Property(s => s.SurveyDate)
             .IsRequired();
@@ -95,8 +86,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
 
         builder.Property(s => s.DurationMinutes);
 
-        // ==================== OFFICE SURVEY SPECIFIC ====================
-
         builder.Property(s => s.OfficeLocation)
             .HasMaxLength(200);
 
@@ -119,8 +108,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
 
         builder.Property(s => s.InPersonVisit);
 
-        // ==================== CONTACT PERSON ====================
-
         builder.Property(s => s.ContactPersonId)
             .HasComment("FK to Person who is the contact person for this survey");
 
@@ -136,8 +123,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
         builder.HasIndex(s => s.ContactPersonId)
             .HasDatabaseName("IX_Surveys_ContactPersonId");
 
-        // ==================== CLAIM LINKING ====================
-
         builder.Property(s => s.ClaimId);
 
         builder.HasOne(s => s.Claim)
@@ -146,8 +131,6 @@ public class SurveyConfiguration : IEntityTypeConfiguration<Survey>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(s => s.ClaimCreatedDate);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(s => s.CreatedAtUtc)
             .IsRequired();

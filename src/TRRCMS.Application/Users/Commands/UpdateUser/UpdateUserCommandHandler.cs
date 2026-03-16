@@ -89,7 +89,7 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserD
         if (request.Organization != null) changedFields.Add("Organization");
         if (request.JobTitle != null) changedFields.Add("JobTitle");
 
-        // Handle role change (requires permission sync) - ✅ Now using Application layer
+        // Handle role change (requires permission sync)
         if (request.Role.HasValue && request.Role.Value != user.Role)
         {
             var oldRole = user.Role;

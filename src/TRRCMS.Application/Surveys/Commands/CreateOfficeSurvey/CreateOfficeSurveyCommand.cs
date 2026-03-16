@@ -5,12 +5,10 @@ namespace TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 
 /// <summary>
 /// Command to create a new office survey
-/// Corresponds to UC-004: Office Survey
+/// Creates a new office survey with Draft status
 /// </summary>
 public class CreateOfficeSurveyCommand : IRequest<SurveyDto>
 {
-    // ==================== BUILDING CONTEXT ====================
-
     /// <summary>
     /// Building being surveyed (required)
     /// Must exist in the system
@@ -23,8 +21,6 @@ public class CreateOfficeSurveyCommand : IRequest<SurveyDto>
     /// </summary>
     public Guid? PropertyUnitId { get; set; }
 
-    // ==================== SURVEY METADATA ====================
-
     /// <summary>
     /// Date when survey is being conducted
     /// Typically today's date for walk-in claimants
@@ -35,8 +31,6 @@ public class CreateOfficeSurveyCommand : IRequest<SurveyDto>
     /// Initial survey notes
     /// </summary>
     public string? Notes { get; set; }
-
-    // ==================== OFFICE SPECIFIC ====================
 
     /// <summary>
     /// Office location where survey is being conducted

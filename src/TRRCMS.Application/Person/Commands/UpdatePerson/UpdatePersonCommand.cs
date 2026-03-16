@@ -15,7 +15,6 @@ public class UpdatePersonCommand : IRequest<PersonDto>
     /// </summary>
     public Guid Id { get; set; }
 
-    // ==================== PERSONAL IDENTIFICATION (Step 1) ====================
 
     /// <summary>
     /// الكنية - Family/Last name in Arabic
@@ -57,7 +56,6 @@ public class UpdatePersonCommand : IRequest<PersonDto>
     /// </summary>
     public DateTime? DateOfBirth { get; set; }
 
-    // ==================== CONTACT INFORMATION (Step 2) ====================
 
     /// <summary>
     /// البريد الالكتروني - Email address

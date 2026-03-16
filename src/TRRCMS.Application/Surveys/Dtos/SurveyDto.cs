@@ -14,8 +14,6 @@ public class SurveyDto
     /// </summary>
     public string ReferenceCode { get; set; } = string.Empty;
 
-    // ==================== RELATIONSHIPS ====================
-
     public Guid BuildingId { get; set; }
     public string? BuildingNumber { get; set; }
 
@@ -24,8 +22,6 @@ public class SurveyDto
 
     public Guid FieldCollectorId { get; set; }
     public string? FieldCollectorName { get; set; }
-
-    // ==================== SURVEY DETAILS ====================
 
     /// <summary>
     /// Date when survey was conducted
@@ -58,8 +54,6 @@ public class SurveyDto
     /// </summary>
     public int? DurationMinutes { get; set; }
 
-    // ==================== CONTACT PERSON ====================
-
     /// <summary>
     /// Contact person ID (FK to Person)
     /// </summary>
@@ -69,8 +63,6 @@ public class SurveyDto
     /// Contact person full name: "firstname fathername familyname (mothername)"
     /// </summary>
     public string? ContactPersonFullName { get; set; }
-
-    // ==================== AUDIT ====================
 
     public DateTime CreatedAtUtc { get; set; }
     public Guid CreatedBy { get; set; }

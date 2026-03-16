@@ -5,20 +5,16 @@ namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Aggregate root representing a versioned system security policy configuration.
-/// UC-011: Security Settings.
-/// FSD Section 13.1: Security Requirements.
 ///
 /// Design decisions:
-///   - Each "Apply" (UC-011 S07) creates a new SecurityPolicy record with an incremented version.
+///   - Each "Apply" creates a new SecurityPolicy record with an incremented version.
 ///   - Only one policy is active at a time (<see cref="IsActive"/> = true).
-///   - Previous versions are preserved for full audit trail (FSD 13.4: Legal Audit Trail).
+///   - Previous versions are preserved for full audit trail.
 ///   - Composed of three value objects: PasswordPolicy, SessionLockoutPolicy, AccessControlPolicy.
 ///   - Domain invariants are enforced in the value objects and in <see cref="Validate"/>.
 /// </summary>
 public class SecurityPolicy : BaseAuditableEntity
 {
-    // ==================== VERSIONING ====================
-
     /// <summary>Policy version number (auto-incremented on each apply)</summary>
     public int Version { get; private set; }
 
@@ -30,28 +26,19 @@ public class SecurityPolicy : BaseAuditableEntity
 
     /// <summary>UTC timestamp when this policy version was superseded (null if still active)</summary>
     public DateTime? EffectiveToUtc { get; private set; }
-
-    // ==================== POLICY COMPONENTS (Value Objects) ====================
-
-    /// <summary>Password complexity and expiry rules (UC-011 S03)</summary>
+    /// <summary>Password complexity and expiry rules</summary>
     public PasswordPolicy PasswordPolicy { get; private set; } = null!;
 
-    /// <summary>Session timeout and account lockout rules (UC-011 S04)</summary>
+    /// <summary>Session timeout and account lockout rules</summary>
     public SessionLockoutPolicy SessionLockoutPolicy { get; private set; } = null!;
 
-    /// <summary>Authentication methods and IP restrictions (UC-011 S05)</summary>
+    /// <summary>Authentication methods and IP restrictions</summary>
     public AccessControlPolicy AccessControlPolicy { get; private set; } = null!;
-
-    // ==================== METADATA ====================
-
     /// <summary>Human-readable description of changes in this version</summary>
     public string? ChangeDescription { get; private set; }
 
-    /// <summary>User ID who approved and applied this policy (UC-011 S07)</summary>
+    /// <summary>User ID who approved and applied this policy</summary>
     public Guid AppliedByUserId { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     // EF Core requires a parameterless constructor
     private SecurityPolicy() : base() { }
 
@@ -74,9 +61,6 @@ public class SecurityPolicy : BaseAuditableEntity
 
         MarkAsCreated(appliedByUserId);
     }
-
-    // ==================== FACTORY METHODS ====================
-
     /// <summary>
     /// Creates the initial (v1) security policy with default settings.
     /// Called once during system seeding.
@@ -94,7 +78,6 @@ public class SecurityPolicy : BaseAuditableEntity
 
     /// <summary>
     /// Creates a new policy version from updated settings.
-    /// UC-011 S07: Apply Security Policy.
     /// The caller is responsible for deactivating the previous version first.
     /// </summary>
     public static SecurityPolicy CreateNewVersion(
@@ -116,17 +99,14 @@ public class SecurityPolicy : BaseAuditableEntity
             changeDescription,
             appliedByUserId);
 
-        // UC-011 S06: Run combined validation
+        // Run combined validation
         policy.Validate();
 
         return policy;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Deactivates this policy version (called when a newer version is applied).
-    /// UC-011 S08: Previous policy superseded.
+    /// Previous policy superseded.
     /// </summary>
     public void Deactivate(Guid modifiedByUserId)
     {
@@ -139,7 +119,7 @@ public class SecurityPolicy : BaseAuditableEntity
     }
 
     /// <summary>
-    /// UC-011 S06: Validate that the combined security policy is internally consistent
+    /// Validate that the combined security policy is internally consistent
     /// and does not violate hard safety constraints.
     /// Throws <see cref="InvalidOperationException"/> on validation failure.
     /// </summary>
@@ -149,7 +129,7 @@ public class SecurityPolicy : BaseAuditableEntity
         // Cross-cutting validation goes here:
 
         // If password expiry is enabled but reuse history is 0, warn-level (not blocking).
-        // This is informational; the FSD does not mandate blocking this combination.
+        // This is informational; not a blocking combination.
 
         // If SSO is the only auth method but no SSO provider is configured,
         // the enforcement layer (not domain) should handle this.

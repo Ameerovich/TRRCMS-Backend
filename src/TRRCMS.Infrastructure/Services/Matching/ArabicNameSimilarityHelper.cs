@@ -11,7 +11,6 @@ namespace TRRCMS.Infrastructure.Services.Matching;
 /// Shadda, Tanwin are stripped before comparison because field collectors may
 /// or may not include them depending on their device/keyboard settings.
 ///
-/// FSD: FR-D-5 — Arabic name Levenshtein similarity (0–40 points).
 /// </summary>
 public static class ArabicNameSimilarityHelper
 {

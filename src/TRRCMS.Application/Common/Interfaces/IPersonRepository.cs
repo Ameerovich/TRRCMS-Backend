@@ -56,7 +56,6 @@ namespace TRRCMS.Application.Common.Interfaces
         /// </summary>
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-        // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
         /// <summary>
         /// Get total count of persons (excluding soft-deleted).

@@ -1,4 +1,4 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
@@ -9,8 +9,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Person : BaseAuditableEntity
 {
-    // ==================== PERSONAL IDENTIFICATION ====================
-
     /// <summary>
     /// Family/Last name in Arabic (الكنية)
     /// </summary>
@@ -41,9 +39,6 @@ public class Person : BaseAuditableEntity
     /// Can store full date or year-only (stored as January 1st of that year)
     /// </summary>
     public DateTime? DateOfBirth { get; private set; }
-
-    // ==================== CONTACT INFORMATION ====================
-
     /// <summary>
     /// Email address (البريد الالكتروني)
     /// </summary>
@@ -58,9 +53,6 @@ public class Person : BaseAuditableEntity
     /// Landline phone number (رقم الهاتف)
     /// </summary>
     public string? PhoneNumber { get; private set; }
-
-    // ==================== DEMOGRAPHICS ====================
-
     /// <summary>
     /// Gender (الجنس)
     /// </summary>
@@ -75,9 +67,6 @@ public class Person : BaseAuditableEntity
     /// Indicates if this person is the main contact person
     /// </summary>
     public bool IsContactPerson { get; private set; }
-
-    // ==================== HOUSEHOLD RELATIONSHIP ====================
-
     /// <summary>
     /// Foreign key to household (nullable for non-household persons)
     /// </summary>
@@ -87,9 +76,6 @@ public class Person : BaseAuditableEntity
     /// Relationship to head of household (علاقة برب الأسرة)
     /// </summary>
     public RelationshipToHead? RelationshipToHead { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Household this person belongs to (if applicable)
     /// </summary>
@@ -104,9 +90,6 @@ public class Person : BaseAuditableEntity
     /// Evidence/documents attached to this person
     /// </summary>
     public virtual ICollection<Evidence> Evidences { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -180,9 +163,6 @@ public class Person : BaseAuditableEntity
 
         return person;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update basic info (simplified API)
     /// </summary>

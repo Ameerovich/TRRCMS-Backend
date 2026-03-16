@@ -10,10 +10,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 ///
 /// Creates <see cref="Domain.Entities.ConflictResolution"/> entities for each detected pair.
 /// Transitions the <see cref="Domain.Entities.ImportPackage"/> to ReviewingConflicts or ReadyToCommit.
-///
-/// FSD: FR-D-5 (Person Matching), FR-D-6 (Property Matching), FR-D-7 (Conflict Resolution).
-/// UC-003 Stage 2 — S14 (Detect Anomalies and Potential Duplicates).
-/// UC-007 (Resolve Duplicate Properties), UC-008 (Resolve Person Duplicates).
 /// </summary>
 public interface IDuplicateDetectionService
 {

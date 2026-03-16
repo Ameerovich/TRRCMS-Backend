@@ -1,4 +1,4 @@
-﻿using NetTopologySuite.Geometries;
+using NetTopologySuite.Geometries;
 using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
@@ -11,8 +11,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Building : BaseAuditableEntity
 {
-    // ==================== BUSINESS IDENTIFIER ====================
-
     /// <summary>
     /// Unique building identifier (رمز البناء)
     /// Stored format: GGDDSSCCNCNNBBBBB (17 digits, no dashes)
@@ -20,9 +18,6 @@ public class Building : BaseAuditableEntity
     /// Auto-generated from administrative codes
     /// </summary>
     public string BuildingId { get; private set; }
-
-    // ==================== ADMINISTRATIVE CODES ====================
-
     /// <summary>
     /// Governorate code (محافظة) - 2 digits
     /// </summary>
@@ -52,9 +47,6 @@ public class Building : BaseAuditableEntity
     /// Building number within neighborhood (رقم البناء) - 5 digits
     /// </summary>
     public string BuildingNumber { get; private set; }
-
-    // ==================== LOCATION NAMES (ARABIC) ====================
-
     /// <summary>
     /// Governorate name in Arabic
     /// </summary>
@@ -79,9 +71,6 @@ public class Building : BaseAuditableEntity
     /// Neighborhood name in Arabic
     /// </summary>
     public string NeighborhoodName { get; private set; }
-
-    // ==================== BUILDING ATTRIBUTES ====================
-
     /// <summary>
     /// Building type classification (نوع البناء)
     /// </summary>
@@ -106,9 +95,6 @@ public class Building : BaseAuditableEntity
     /// Number of commercial shops (عدد المحلات)
     /// </summary>
     public int NumberOfShops { get; private set; }
-
-    // ==================== SPATIAL DATA (PostGIS) ====================
-
     /// <summary>
     /// Building geometry stored as PostGIS native type
     /// Uses SRID 4326 (WGS84 - GPS coordinate system)
@@ -130,23 +116,14 @@ public class Building : BaseAuditableEntity
     /// GPS longitude coordinate (center point)
     /// </summary>
     public decimal? Longitude { get; private set; }
-
-    // ==================== ADDITIONAL INFORMATION ====================
-
     /// <summary>
     /// Additional notes / General description (الوصف العام)
     /// </summary>
     public string? Notes { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     public virtual ICollection<BuildingDocument> BuildingDocuments { get; private set; }
     public virtual ICollection<PropertyUnit> PropertyUnits { get; private set; }
     public virtual ICollection<BuildingAssignment> BuildingAssignments { get; private set; }
     public virtual ICollection<Survey> Surveys { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -170,9 +147,6 @@ public class Building : BaseAuditableEntity
         Surveys = new List<Survey>();
         Status = BuildingStatus.Unknown;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create new building (Factory Method - DDD pattern)
     /// </summary>
@@ -217,9 +191,6 @@ public class Building : BaseAuditableEntity
 
         return building;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update building status
     /// </summary>

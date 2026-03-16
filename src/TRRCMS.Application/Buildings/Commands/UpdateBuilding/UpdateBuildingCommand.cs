@@ -5,9 +5,8 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 
 /// <summary>
-/// Update building attributes and details
-/// UC-000: Manage Building Data
-/// Note: To update building code (17 digits), provide all 6 administrative codes.
+/// Update building attributes and details.
+/// To update building code (17 digits), provide all 6 administrative codes.
 /// Location names are optional - if not provided, existing names are preserved.
 /// </summary>
 public class UpdateBuildingCommand : IRequest<BuildingDto>
@@ -17,7 +16,6 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     /// </summary>
     public Guid BuildingId { get; set; }
 
-    // ==================== BUILDING CODE (17 DIGITS) - NEW FOR OFFICE SURVEY ====================
 
     /// <summary>
     /// Governorate code (محافظة) - 2 digits
@@ -74,7 +72,6 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     /// </summary>
     public string? NeighborhoodName { get; set; }
 
-    // ==================== BUILDING ATTRIBUTES ====================
 
     /// <summary>
     /// Building type (نوع البناء)
@@ -102,7 +99,6 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     /// </summary>
     public int? NumberOfShops { get; set; }
 
-    // ==================== LOCATION ====================
 
     /// <summary>
     /// GPS latitude coordinate
@@ -114,7 +110,6 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     /// </summary>
     public decimal? Longitude { get; set; }
 
-    // ==================== DESCRIPTIONS ====================
 
     /// <summary>
     /// General notes (الوصف العام)

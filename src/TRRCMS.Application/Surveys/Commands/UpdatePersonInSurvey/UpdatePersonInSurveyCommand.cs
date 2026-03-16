@@ -24,8 +24,6 @@ public class UpdatePersonInSurveyCommand : IRequest<PersonDto>
     /// </summary>
     public Guid PersonId { get; set; }
 
-    // ==================== PERSONAL IDENTIFICATION ====================
-
     /// <summary>
     /// الكنية - Family/Last name in Arabic
     /// </summary>
@@ -66,8 +64,6 @@ public class UpdatePersonInSurveyCommand : IRequest<PersonDto>
     /// </summary>
     public DateTime? DateOfBirth { get; set; }
 
-    // ==================== CONTACT INFORMATION ====================
-
     /// <summary>
     /// البريد الالكتروني - Email address
     /// </summary>
@@ -82,8 +78,6 @@ public class UpdatePersonInSurveyCommand : IRequest<PersonDto>
     /// رقم الهاتف - Landline phone number
     /// </summary>
     public string? PhoneNumber { get; set; }
-
-    // ==================== HOUSEHOLD RELATIONSHIP ====================
 
     /// <summary>
     /// Relationship to head of household

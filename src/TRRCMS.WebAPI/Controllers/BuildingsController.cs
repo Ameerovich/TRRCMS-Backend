@@ -21,7 +21,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// </summary>
 /// <remarks>
 /// Provides endpoints for building CRUD and search operations.
-/// إدارة المباني - UC-007 Building Management
+/// إدارة المباني
 /// 
 /// **Building Code Format (رمز البناء):**
 /// - Stored: GGDDSSCCNCNNBBBBB (17 digits, no dashes)
@@ -100,8 +100,6 @@ public class BuildingsController : ControllerBase
     /// <remarks>
     /// Creates a new building record with administrative codes and details.
     /// إنشاء مبنى جديد
-    /// 
-    /// **Use Case**: UC-007 Building Management - Create Building
     /// 
     /// **Required Permission**: Buildings_Create (4001) - CanCreateBuildings policy
     /// 
@@ -229,8 +227,6 @@ public class BuildingsController : ControllerBase
     /// Returns complete building details including all codes, attributes, and location data.
     /// عرض تفاصيل المبنى
     /// 
-    /// **Use Case**: UC-007 - View Building Details
-    /// 
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **Example Response:**
@@ -297,8 +293,6 @@ public class BuildingsController : ControllerBase
     /// Returns list of all buildings. For large datasets, use search endpoint with pagination.
     /// عرض جميع المباني
     /// 
-    /// **Use Case**: UC-007 - List Buildings
-    /// 
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **Note**: For production use with large datasets, use `POST /search` with pagination.
@@ -326,8 +320,6 @@ public class BuildingsController : ControllerBase
     /// <remarks>
     /// Search buildings with advanced filters and pagination support.
     /// البحث عن المباني
-    /// 
-    /// **Use Case**: UC-007 - Search Buildings
     /// 
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
@@ -430,8 +422,6 @@ public class BuildingsController : ControllerBase
     /// Updates building attributes. Administrative codes cannot be changed after creation.
     /// تحديث بيانات المبنى
     /// 
-    /// **Use Case**: UC-007 - Update Building
-    /// 
     /// **Required Permission**: Buildings_Update (4002) - CanEditBuildings policy
     /// 
     /// **Updatable Fields:**
@@ -492,8 +482,6 @@ public class BuildingsController : ControllerBase
     /// <remarks>
     /// Updates GPS coordinates and/or polygon geometry for the building.
     /// تحديث إحداثيات المبنى
-    /// 
-    /// **Use Case**: UC-007 - Update Building Location
     /// 
     /// **Required Permission**: Buildings_Update (4002) - CanEditBuildings policy
     /// 
@@ -571,8 +559,6 @@ public class BuildingsController : ControllerBase
     /// Soft deletes a building - marks as deleted but retains data for audit.
     /// حذف المبنى (حذف ناعم)
     /// 
-    /// **Use Case**: UC-007 - Delete Building
-    /// 
     /// **Required Permission**: Buildings_Delete (4003) - CanDeleteBuildings policy
     /// 
     /// **What happens:**
@@ -644,8 +630,6 @@ public class BuildingsController : ControllerBase
     /// Use bounding box coordinates to limit results to visible area.
     /// عرض المباني على الخريطة
     /// 
-    /// **Use Case**: UC-007 - Map View
-    /// 
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **Example Request:**
@@ -712,8 +696,6 @@ public class BuildingsController : ControllerBase
     /// <remarks>
     /// Search for buildings that fall within a specified polygon using PostGIS ST_Within.
     /// البحث عن المباني داخل مضلع جغرافي
-    /// 
-    /// **Use Case**: UC-007 - Spatial Search / Map Selection
     /// 
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 

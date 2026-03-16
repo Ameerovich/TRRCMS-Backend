@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
@@ -13,8 +13,6 @@ public class UserRepository : IUserRepository
     {
         _context = context;
     }
-
-    // ==================== BASIC CRUD ====================
 
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -59,8 +57,6 @@ public class UserRepository : IUserRepository
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    // ==================== AUTHENTICATION QUERIES ====================
-
     public async Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         return await _context.Users
@@ -90,8 +86,6 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .AnyAsync(u => u.Email == email && !u.IsDeleted, cancellationToken);
     }
-
-    // ==================== ROLE-BASED QUERIES ====================
 
     public async Task<List<User>> GetByRoleAsync(UserRole role, CancellationToken cancellationToken = default)
     {
@@ -124,8 +118,6 @@ public class UserRepository : IUserRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== SUPERVISOR/TEAM QUERIES ====================
-
     public async Task<List<User>> GetSuperviseesByIdAsync(Guid supervisorId, CancellationToken cancellationToken = default)
     {
         return await _context.Users
@@ -141,8 +133,6 @@ public class UserRepository : IUserRepository
             .OrderBy(u => u.FullNameArabic)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== TABLET ASSIGNMENT QUERIES ====================
 
     public async Task<User?> GetByTabletIdAsync(string tabletId, CancellationToken cancellationToken = default)
     {
@@ -164,8 +154,6 @@ public class UserRepository : IUserRepository
             .OrderBy(u => u.FullNameArabic)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== PERMISSION MANAGEMENT ====================
 
     public async Task<UserPermission?> GetUserPermissionAsync(Guid userId, Permission permission, CancellationToken cancellationToken = default)
     {

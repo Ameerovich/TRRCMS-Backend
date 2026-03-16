@@ -9,14 +9,8 @@ namespace TRRCMS.Application.Conflicts.Commands.KeepSeparateConflict;
 /// <summary>
 /// Handler for <see cref="KeepSeparateConflictCommand"/>.
 ///
-/// Marks a conflict as reviewed with a "keep separate" decision:
-/// 1. Validates conflict exists and is PendingReview.
-/// 2. Records the review attempt for audit trail.
-/// 3. Resolves via domain method with KeepBoth action (no merge, no entity changes).
-/// 4. If all conflicts for the import package are resolved, transitions package to ReadyToCommit.
-/// 5. Logs the decision via IAuditService.
-///
-/// Per UC rules: keep-separate decisions prevent the same group from being
+/// Marks a conflict as reviewed with a "keep separate" decision.
+/// Keep-separate decisions prevent the same group from being
 /// re-surfaced as a duplicate unless detection rules or keys change.
 /// </summary>
 public class KeepSeparateConflictCommandHandler
@@ -46,7 +40,6 @@ public class KeepSeparateConflictCommandHandler
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated.");
 
-        // 1. Load and validate conflict
         var conflict = await _unitOfWork.ConflictResolutions
                 .GetByIdAsync(request.ConflictId, cancellationToken)
             ?? throw new NotFoundException(
@@ -59,11 +52,9 @@ public class KeepSeparateConflictCommandHandler
                 "and cannot be updated. Only PendingReview conflicts can be resolved.");
         }
 
-        // 2. Record review attempt
         conflict.RecordReviewAttempt(
             $"Keep-Separate: {request.Reason}", userId);
 
-        // 3. Resolve as KeepBoth — no merge, no entity changes
         conflict.Resolve(
             action: ConflictResolutionAction.KeepBoth,
             resolutionReason: request.Reason,
@@ -76,7 +67,6 @@ public class KeepSeparateConflictCommandHandler
 
         await _unitOfWork.ConflictResolutions.UpdateAsync(conflict, cancellationToken);
 
-        // 4. Check if all conflicts for package are resolved → transition package
         if (conflict.ImportPackageId.HasValue)
         {
             await TryTransitionPackageToReadyAsync(
@@ -85,7 +75,6 @@ public class KeepSeparateConflictCommandHandler
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // 5. Audit log
         await _auditService.LogActionAsync(
             AuditActionType.ConflictResolved,
             $"Conflict {conflict.ConflictNumber} resolved as keep-separate. " +

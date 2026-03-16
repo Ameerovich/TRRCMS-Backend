@@ -5,8 +5,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Users.Commands.UpdateUser;
 
 /// <summary>
-/// Update existing user command
-/// UC-009: User & Role Management
+/// Update existing user command.
 /// </summary>
 public class UpdateUserCommand : IRequest<UserDto>
 {

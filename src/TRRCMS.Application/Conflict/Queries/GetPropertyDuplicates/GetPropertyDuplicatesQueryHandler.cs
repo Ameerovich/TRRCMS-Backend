@@ -8,12 +8,8 @@ namespace TRRCMS.Application.Conflicts.Queries.GetPropertyDuplicates;
 /// <summary>
 /// Handler for <see cref="GetPropertyDuplicatesQuery"/>.
 /// Delegates to <see cref="IConflictResolutionRepository.SearchAsync"/> with
-/// EntityType locked to "PropertyUnit" — catches both "PropertyDuplicate"
+/// EntityType locked to "PropertyUnit" -- catches both "PropertyDuplicate"
 /// and "PropertyDuplicate_WithinBatch" conflict types.
-///
-/// UC-007 S01–S02: Display Potential Duplicate PropertyUnit Groups.
-/// Returns property unit records flagged as potential duplicates during import,
-/// keyed by composite key (BuildingCode 17-digit + UnitIdentifier).
 /// </summary>
 public class GetPropertyDuplicatesQueryHandler
     : IRequestHandler<GetPropertyDuplicatesQuery, GetConflictQueueResponse>

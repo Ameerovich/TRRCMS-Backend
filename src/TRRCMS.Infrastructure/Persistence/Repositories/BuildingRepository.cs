@@ -16,12 +16,10 @@ public class BuildingRepository : IBuildingRepository
     private readonly GeometryFactory _geometryFactory;
     private readonly WKTReader _wktReader;
 
-    // =====================================================
     // SPATIAL CONVERSION CONSTANTS
     // For SRID 4326 (WGS84), distances are in DEGREES, not meters!
     // 1 degree latitude ≈ 111,320 meters (constant)
     // 1 degree longitude ≈ 111,320 * cos(latitude) meters (varies)
-    // =====================================================
     private const double MetersPerDegree = 111320.0;
 
     public BuildingRepository(ApplicationDbContext context)
@@ -31,8 +29,6 @@ public class BuildingRepository : IBuildingRepository
         _geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
         _wktReader = new WKTReader(_geometryFactory);
     }
-
-    // ==================== CRUD OPERATIONS ====================
 
     public async Task<Building?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
@@ -79,8 +75,6 @@ public class BuildingRepository : IBuildingRepository
             .AsQueryable();
     }
 
-    // ==================== REFERENTIAL INTEGRITY CHECKS ====================
-
     public async Task<bool> HasPropertyUnitsAsync(Guid buildingId, CancellationToken cancellationToken = default)
     {
         return await _context.PropertyUnits
@@ -96,8 +90,6 @@ public class BuildingRepository : IBuildingRepository
                        && s.Status == SurveyStatus.Draft,
                        cancellationToken);
     }
-
-    // ==================== SEARCH WITH FILTERS ====================
 
     public async Task<(List<Building> Buildings, int TotalCount)> SearchBuildingsAsync(
         string? governorateCode = null,
@@ -138,11 +130,9 @@ public class BuildingRepository : IBuildingRepository
         if (!string.IsNullOrWhiteSpace(neighborhoodCode))
             query = query.Where(b => b.NeighborhoodCode == neighborhoodCode);
 
-        // ============================================================
         // PARTIAL MATCH: Apply buildingId filter with dash normalization
         // Supports both formatted (01-01-01-001-001-00001) and 
         // unformatted (01010100100100001) input
-        // ============================================================
         if (!string.IsNullOrWhiteSpace(buildingId))
         {
             var normalizedBuildingId = buildingId.Replace("-", "");
@@ -152,12 +142,10 @@ public class BuildingRepository : IBuildingRepository
         if (!string.IsNullOrWhiteSpace(buildingNumber))
             query = query.Where(b => b.BuildingNumber == buildingNumber);
 
-        // ============================================================
         // FIX: Apply spatial filter with PROPER meter-to-degree conversion
         // SRID 4326 uses DEGREES, not meters!
         // Also handles buildings added BEFORE PostGIS was enabled
         // (they have BuildingGeometry = null but may have Latitude/Longitude)
-        // ============================================================
         if (latitude.HasValue && longitude.HasValue && radiusMeters.HasValue)
         {
             // Convert meters to approximate degrees
@@ -224,8 +212,6 @@ public class BuildingRepository : IBuildingRepository
 
         return (buildings, totalCount);
     }
-
-    // ==================== SPATIAL QUERIES (PostGIS) ====================
 
     /// <summary>
     /// Get buildings within radius of a point (in METERS)
@@ -423,8 +409,6 @@ public class BuildingRepository : IBuildingRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
-
     public async Task<Dictionary<BuildingStatus, int>> GetStatusCountsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -448,8 +432,6 @@ public class BuildingRepository : IBuildingRepository
 
         return (totalBuildings, totalPropertyUnits);
     }
-
-    // ==================== DASHBOARD TREND QUERIES ====================
 
     public async Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(
         DateTime? from = null, DateTime? to = null,

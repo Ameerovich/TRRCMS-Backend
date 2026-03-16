@@ -3,8 +3,7 @@
 namespace TRRCMS.Application.Users.Dtos;
 
 /// <summary>
-/// Detailed DTO for single user view
-/// Includes full permissions list for UC-009 User Management requirements
+/// Detailed DTO for single user view.
 /// </summary>
 public class UserDetailDto : UserDto
 {

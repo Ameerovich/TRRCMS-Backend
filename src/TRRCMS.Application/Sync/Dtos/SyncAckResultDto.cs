@@ -8,8 +8,6 @@ namespace TRRCMS.Application.Sync.DTOs;
 /// stored locally.  The server transitions each acknowledged assignment's
 /// <c>TransferStatus</c> from <c>Pending/Failed</c> to <c>Transferred</c>
 /// and updates the <c>SyncSession</c> counters.
-///
-/// FSD: FR-D-6 (Transfer Acknowledgement).
 /// </summary>
 public sealed record SyncAckResultDto(
     /// <summary>

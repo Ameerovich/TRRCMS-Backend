@@ -6,20 +6,16 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// <summary>
 /// Staging entity for Building records from .uhc packages.
 /// Mirrors the <see cref="Building"/> production entity in an isolated staging area.
-/// Records are validated before commit to production (FSD FR-D-4).
+/// Records are validated before commit to production.
 /// 
 /// Key differences from production Building:
 /// - Uses WKT string (<see cref="BuildingGeometryWkt"/>) instead of PostGIS Geometry
 ///   (converted to native geometry on commit).
 /// - No navigation properties (staging records are self-contained).
 /// - Inherits <see cref="BaseStagingEntity"/> instead of <see cref="BaseAuditableEntity"/>.
-/// 
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingBuilding : BaseStagingEntity
 {
-    // ==================== BUILDING IDENTIFICATION ====================
-
     /// <summary>
     /// Composite building identifier (رمز البناء).
     /// Format: GGDDSSCCNCNNBBBBB (17 digits).
@@ -27,9 +23,6 @@ public class StagingBuilding : BaseStagingEntity
     /// Used for duplicate detection against production Buildings when present.
     /// </summary>
     public string? BuildingId { get; private set; }
-
-    // ==================== ADMINISTRATIVE CODES ====================
-
     /// <summary>Governorate code (محافظة) — 2 digits.</summary>
     public string GovernorateCode { get; private set; }
 
@@ -47,9 +40,6 @@ public class StagingBuilding : BaseStagingEntity
 
     /// <summary>Building number within neighborhood — 5 digits.</summary>
     public string BuildingNumber { get; private set; }
-
-    // ==================== LOCATION NAMES ====================
-
     /// <summary>Governorate name in Arabic (from lookup — optional in staging).</summary>
     public string? GovernorateName { get; private set; }
 
@@ -64,17 +54,11 @@ public class StagingBuilding : BaseStagingEntity
 
     /// <summary>Neighborhood name in Arabic (from lookup — optional in staging).</summary>
     public string? NeighborhoodName { get; private set; }
-
-    // ==================== BUILDING ATTRIBUTES ====================
-
     /// <summary>Building type classification (نوع البناء).</summary>
     public BuildingType BuildingType { get; private set; }
 
     /// <summary>Building status — physical condition (حالة البناء).</summary>
     public BuildingStatus Status { get; private set; }
-
-    // ==================== UNIT COUNTS (from command — required) ====================
-
     /// <summary>Total number of property units (عدد الوحدات).</summary>
     public int NumberOfPropertyUnits { get; private set; }
 
@@ -83,9 +67,6 @@ public class StagingBuilding : BaseStagingEntity
 
     /// <summary>Number of commercial shops (عدد المحلات).</summary>
     public int NumberOfShops { get; private set; }
-
-    // ==================== SPATIAL DATA ====================
-
     /// <summary>
     /// WKT representation of building geometry.
     /// Stored as string in staging; converted to PostGIS Geometry on commit.
@@ -97,14 +78,8 @@ public class StagingBuilding : BaseStagingEntity
 
     /// <summary>GPS longitude coordinate (center point).</summary>
     public decimal? Longitude { get; private set; }
-
-    // ==================== OPTIONAL FIELDS ====================
-
     /// <summary>Additional notes (الوصف العام).</summary>
     public string? Notes { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>EF Core constructor.</summary>
     private StagingBuilding() : base()
     {
@@ -115,9 +90,6 @@ public class StagingBuilding : BaseStagingEntity
         NeighborhoodCode = string.Empty;
         BuildingNumber = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new StagingBuilding record from .uhc package data.
     /// Required parameters match CreateBuildingCommand fields.

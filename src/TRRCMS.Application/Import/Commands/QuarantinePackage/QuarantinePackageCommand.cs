@@ -5,7 +5,6 @@ namespace TRRCMS.Application.Import.Commands.QuarantinePackage;
 
 /// <summary>
 /// Command to quarantine a suspicious import package.
-/// UC-003 S12b — Invalid Signature or Hash.
 /// </summary>
 public class QuarantinePackageCommand : IRequest<ImportPackageDto>
 {

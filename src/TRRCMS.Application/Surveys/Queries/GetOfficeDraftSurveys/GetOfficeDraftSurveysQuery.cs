@@ -5,7 +5,7 @@ namespace TRRCMS.Application.Surveys.Queries.GetOfficeDraftSurveys;
 
 /// <summary>
 /// Query to get draft office surveys for the current clerk
-/// Corresponds to UC-005: Resume draft office survey
+/// Gets draft office surveys for the current clerk
 /// </summary>
 public class GetOfficeDraftSurveysQuery : IRequest<List<SurveyDto>>
 {

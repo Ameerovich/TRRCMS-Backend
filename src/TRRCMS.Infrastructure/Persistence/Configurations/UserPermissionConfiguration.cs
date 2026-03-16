@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TRRCMS.Domain.Entities;
 
@@ -13,15 +13,11 @@ public class UserPermissionConfiguration : IEntityTypeConfiguration<UserPermissi
         // Primary Key
         builder.HasKey(up => up.Id);
 
-        // ==================== FOREIGN KEYS ====================
-
         // UserId - REQUIRED and INDEXED
         builder.Property(up => up.UserId)
             .IsRequired();
 
         builder.HasIndex(up => up.UserId);
-
-        // ==================== PERMISSION ====================
 
         // Store Permission as int (enum value)
         builder.Property(up => up.Permission)
@@ -31,15 +27,11 @@ public class UserPermissionConfiguration : IEntityTypeConfiguration<UserPermissi
         // Index on Permission for filtering
         builder.HasIndex(up => up.Permission);
 
-        // ==================== COMPOSITE UNIQUE INDEX ====================
-
         // Ensure one user can only have ONE active grant of each permission
         // (User + Permission + IsActive) must be unique
         builder.HasIndex(up => new { up.UserId, up.Permission, up.IsActive })
      .IsUnique()
      .HasFilter("\"IsActive\" = true");
-
-        // ==================== METADATA ====================
 
         builder.Property(up => up.GrantReason)
             .HasMaxLength(500);
@@ -55,8 +47,6 @@ public class UserPermissionConfiguration : IEntityTypeConfiguration<UserPermissi
         builder.Property(up => up.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(up => up.CreatedAtUtc)
             .IsRequired();
@@ -76,15 +66,11 @@ public class UserPermissionConfiguration : IEntityTypeConfiguration<UserPermissi
             .IsRequired()
             .HasDefaultValue(false);
 
-        // ==================== RELATIONSHIPS ====================
-
         // Many UserPermissions belong to one User
         builder.HasOne(up => up.User)
             .WithMany(u => u.Permissions)
             .HasForeignKey(up => up.UserId)
             .OnDelete(DeleteBehavior.Cascade); // If user is deleted, delete their permissions
-
-        // ==================== INDEXES FOR PERFORMANCE ====================
 
         // Composite index for finding active permissions by user
         builder.HasIndex(up => new { up.UserId, up.IsActive });
@@ -94,8 +80,6 @@ public class UserPermissionConfiguration : IEntityTypeConfiguration<UserPermissi
 
         // Index for audit queries (who granted what when)
         builder.HasIndex(up => up.GrantedBy);
-
-        // ==================== COLUMN COMMENTS ====================
 
         builder.Property(up => up.UserId)
             .HasComment("Foreign key to User");

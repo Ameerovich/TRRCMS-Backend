@@ -17,8 +17,6 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
         // Primary key
         builder.HasKey(p => p.Id);
 
-        // ==================== IDENTIFIERS ====================
-
         builder.Property(p => p.BuildingId)
             .IsRequired();
 
@@ -30,8 +28,6 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
         builder.HasIndex(p => new { p.BuildingId, p.UnitIdentifier })
             .IsUnique()
             .HasDatabaseName("IX_PropertyUnits_BuildingId_UnitIdentifier");
-
-        // ==================== UNIT ATTRIBUTES ====================
 
         builder.Property(p => p.FloorNumber)
             .IsRequired(false);
@@ -49,13 +45,9 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
         builder.Property(p => p.NumberOfRooms)
             .IsRequired(false);
 
-        // ==================== ADDITIONAL INFORMATION ====================
-
         builder.Property(p => p.Description)
             .IsRequired(false)
             .HasMaxLength(2000);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(p => p.CreatedAtUtc)
             .IsRequired();
@@ -82,8 +74,6 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
         builder.Property(p => p.RowVersion)
             .IsRowVersion();
 
-        // ==================== RELATIONSHIPS ====================
-
         // Relationship to Building (Many-to-One)
         builder.HasOne(p => p.Building)
             .WithMany(b => b.PropertyUnits)
@@ -96,13 +86,11 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
             .HasForeignKey(h => h.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ✅ ADDED: Relationship to PersonRelations (One-to-Many)
         builder.HasMany(p => p.PersonRelations)
             .WithOne(ppr => ppr.PropertyUnit)
             .HasForeignKey(ppr => ppr.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ✅ ADDED: Relationship to Claims (One-to-Many)
         builder.HasMany(p => p.Claims)
             .WithOne(c => c.PropertyUnit)
             .HasForeignKey(c => c.PropertyUnitId)

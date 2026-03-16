@@ -1,24 +1,19 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
-/// Survey entity - tracks field and office survey visits and generates reference codes
-/// Supports both UC-001 (Field Survey) and UC-004 (Office Survey) workflows
+/// Survey entity - tracks field and office survey visits and generates reference codes.
+/// Supports both field and office survey workflows.
 /// </summary>
 public class Survey : BaseAuditableEntity
 {
-    // ==================== IDENTIFIERS ====================
-
     /// <summary>
     /// Survey reference code - unique code given to interviewee (رمز المرجع)
     /// Format: ALG-YYYY-NNNNN for Field, OFC-YYYY-NNNNN for Office
     /// </summary>
     public string ReferenceCode { get; private set; }
-
-    // ==================== RELATIONSHIPS ====================
-
     /// <summary>
     /// Foreign key to Building being surveyed
     /// </summary>
@@ -34,9 +29,6 @@ public class Survey : BaseAuditableEntity
     /// Named FieldCollectorId for backward compatibility but applies to office clerks too
     /// </summary>
     public Guid FieldCollectorId { get; private set; }
-
-    // ==================== SURVEY CLASSIFICATION ====================
-
     /// <summary>
     /// Survey type enum (Field or Office)
     /// </summary>
@@ -46,9 +38,6 @@ public class Survey : BaseAuditableEntity
     /// Survey source - how the survey data entered the system
     /// </summary>
     public SurveySource Source { get; private set; }
-
-    // ==================== SURVEY DETAILS ====================
-
     /// <summary>
     /// Date when survey was conducted (تاريخ الاستطلاع)
     /// </summary>
@@ -75,9 +64,6 @@ public class Survey : BaseAuditableEntity
     /// Duration of survey in minutes
     /// </summary>
     public int? DurationMinutes { get; private set; }
-
-    // ==================== OFFICE SURVEY SPECIFIC ====================
-
     /// <summary>
     /// Office location where survey was conducted (for office surveys)
     /// e.g., "UN-Habitat Aleppo Office", "Municipality Building"
@@ -109,9 +95,6 @@ public class Survey : BaseAuditableEntity
     /// Indicates if claimant visited in person (true) or submitted remotely (false)
     /// </summary>
     public bool? InPersonVisit { get; private set; }
-
-    // ==================== CLAIM LINKING ====================
-
     /// <summary>
     /// Foreign key to Claim created from this survey (if any)
     /// Set when survey is finalized and claim is auto-generated
@@ -122,9 +105,6 @@ public class Survey : BaseAuditableEntity
     /// Date when claim was created from this survey
     /// </summary>
     public DateTime? ClaimCreatedDate { get; private set; }
-
-    // ==================== CONTACT PERSON ====================
-
     /// <summary>
     /// Foreign key to Person who is the contact person for this survey
     /// </summary>
@@ -134,9 +114,6 @@ public class Survey : BaseAuditableEntity
     /// Denormalized contact person full name: "firstname fathername familyname (mothername)"
     /// </summary>
     public string? ContactPersonFullName { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Building being surveyed
     /// </summary>
@@ -161,9 +138,6 @@ public class Survey : BaseAuditableEntity
     /// Contact person for this survey
     /// </summary>
     public virtual Person? ContactPerson { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -173,7 +147,7 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Create new office survey (UC-004)
+    /// Create new office survey
     /// </summary>
     public static Survey CreateOfficeSurvey(
         Guid buildingId,
@@ -238,8 +212,6 @@ public class Survey : BaseAuditableEntity
 
         return survey;
     }
-
-    // ==================== DOMAIN METHODS ====================
     /// <summary>
     /// Re-point this survey to a different building (used during building merge).
     /// Preserves all survey details; only changes the building FK.
@@ -277,7 +249,7 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Update office survey specific details (UC-004)
+    /// Update office survey specific details
     /// </summary>
     public void UpdateOfficeDetails(
         string? officeLocation,
@@ -362,7 +334,7 @@ public class Survey : BaseAuditableEntity
     public bool IsOfficeSurvey => Type == Enums.SurveyType.Office;
 
     /// <summary>
-    /// Link to property unit (UC-001 Stage 2, UC-004)
+    /// Link to property unit
     /// </summary>
     public void LinkToPropertyUnit(Guid propertyUnitId, Guid modifiedByUserId)
     {

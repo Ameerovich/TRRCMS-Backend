@@ -1,4 +1,4 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
@@ -8,8 +8,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class User : BaseAuditableEntity
 {
-    // ==================== USER IDENTIFICATION ====================
-
     /// <summary>
     /// Username for login (unique) (اسم المستخدم)
     /// </summary>
@@ -29,9 +27,6 @@ public class User : BaseAuditableEntity
     /// Salt used for password hashing
     /// </summary>
     public string PasswordSalt { get; private set; }
-
-    // ==================== PERSONAL INFORMATION ====================
-
     /// <summary>
     /// Full name in Arabic (الاسم الكامل)
     /// </summary>
@@ -61,9 +56,6 @@ public class User : BaseAuditableEntity
     /// Job title (e.g., "Field Collector", "Data Manager")
     /// </summary>
     public string? JobTitle { get; private set; }
-
-    // ==================== ROLE & PERMISSIONS ====================
-
     /// <summary>
     /// Primary user role (FieldCollector, DataManager, Administrator, etc.)
     /// </summary>
@@ -84,9 +76,6 @@ public class User : BaseAuditableEntity
     /// Indicates if user has desktop app access
     /// </summary>
     public bool HasDesktopAccess { get; private set; }
-
-    // ==================== ACCOUNT STATUS ====================
-
     /// <summary>
     /// Indicates if user account is active
     /// </summary>
@@ -111,9 +100,6 @@ public class User : BaseAuditableEntity
     /// Date of last failed login attempt
     /// </summary>
     public DateTime? LastFailedLoginDate { get; private set; }
-
-    // ==================== LOGIN TRACKING ====================
-
     /// <summary>
     /// Date of last successful login
     /// </summary>
@@ -133,9 +119,6 @@ public class User : BaseAuditableEntity
     /// Password expiry date (if password expiration is enforced)
     /// </summary>
     public DateTime? PasswordExpiryDate { get; private set; }
-
-    // ==================== TABLET ASSIGNMENT (for Field Collectors) ====================
-
     /// <summary>
     /// Tablet device ID assigned to this user (for field collectors)
     /// </summary>
@@ -148,12 +131,8 @@ public class User : BaseAuditableEntity
 
     /// <summary>
     /// Indicates if user is available for new assignments (متاح للتعيين)
-    /// UC-012: Used to filter available field collectors
     /// </summary>
     public bool IsAvailable { get; private set; }
-
-    // ==================== SUPERVISION (for Field Teams) ====================
-
     /// <summary>
     /// Supervisor user ID (if this user reports to someone)
     /// </summary>
@@ -163,9 +142,6 @@ public class User : BaseAuditableEntity
     /// Team name or identifier
     /// </summary>
     public string? TeamName { get; private set; }
-
-    // ==================== PREFERENCES ====================
-
     /// <summary>
     /// Preferred language (ar, en)
     /// </summary>
@@ -175,9 +151,6 @@ public class User : BaseAuditableEntity
     /// User preferences stored as JSON
     /// </summary>
     public string? Preferences { get; private set; }
-
-    // ==================== SECURITY ====================
-
     /// <summary>
     /// Security stamp - changes when password or security settings change
     /// </summary>
@@ -197,16 +170,10 @@ public class User : BaseAuditableEntity
     /// Refresh token expiry date
     /// </summary>
     public DateTime? RefreshTokenExpiryDate { get; private set; }
-
-    // ==================== NOTES ====================
-
     /// <summary>
     /// Administrative notes about this user
     /// </summary>
     public string? Notes { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Supervisor (if applicable)
     /// </summary>
@@ -221,9 +188,6 @@ public class User : BaseAuditableEntity
     /// Permissions granted to this user
     /// </summary>
     public virtual ICollection<UserPermission> Permissions { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -286,9 +250,6 @@ public class User : BaseAuditableEntity
 
         return user;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update user profile information
     /// </summary>
@@ -523,8 +484,6 @@ public class User : BaseAuditableEntity
 
         return DateTime.UtcNow > PasswordExpiryDate.Value;
     }
-    // ==================== PERMISSION HELPER METHODS ====================
-
     /// <summary>
     /// Check if user has a specific permission
     /// </summary>

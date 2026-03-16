@@ -1,9 +1,8 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
 /// Nationality classification (الجنسية)
 /// Common nationalities for the Syrian context
-/// Referenced in FSD section 6.1.3
 /// </summary>
 public enum Nationality
 {

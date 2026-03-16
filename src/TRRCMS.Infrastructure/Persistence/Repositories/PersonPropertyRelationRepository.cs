@@ -129,8 +129,6 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
-
     public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.PersonPropertyRelations.Where(r => !r.IsDeleted).CountAsync(cancellationToken);

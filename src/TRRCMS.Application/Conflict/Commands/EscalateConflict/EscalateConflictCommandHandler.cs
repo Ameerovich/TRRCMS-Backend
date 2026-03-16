@@ -58,10 +58,8 @@ public class EscalateConflictCommandHandler
                 $"Conflict {conflict.ConflictNumber} has already been escalated.");
         }
 
-        // Record review attempt before escalation
         conflict.RecordReviewAttempt($"Escalated: {request.Reason}", userId);
 
-        // Escalate via domain method
         conflict.Escalate(
             escalationReason: request.Reason,
             escalatedByUserId: userId,
@@ -70,7 +68,6 @@ public class EscalateConflictCommandHandler
         await _conflictRepository.UpdateAsync(conflict, cancellationToken);
         await _conflictRepository.SaveChangesAsync(cancellationToken);
 
-        // Audit log
         await _auditService.LogActionAsync(
             AuditActionType.Update,
             $"Conflict {conflict.ConflictNumber} escalated to senior review. Reason: {request.Reason}",

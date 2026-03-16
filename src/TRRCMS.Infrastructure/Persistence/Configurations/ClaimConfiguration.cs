@@ -13,15 +13,10 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
 {
     public void Configure(EntityTypeBuilder<Claim> builder)
     {
-        // ==================== TABLE CONFIGURATION ====================
 
         builder.ToTable("Claims");
 
-        // ==================== PRIMARY KEY ====================
-
         builder.HasKey(c => c.Id);
-
-        // ==================== IDENTIFIERS ====================
 
         builder.Property(c => c.ClaimNumber)
             .IsRequired()
@@ -39,8 +34,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.Property(c => c.OriginatingSurveyId)
             .HasComment("Foreign key to Survey that originated this claim (معرف الزيارة المنشئة)");
 
-        // ==================== CLAIM CLASSIFICATION ====================
-
         builder.Property(c => c.ClaimType)
             .IsRequired()
             .HasConversion<int>()
@@ -50,8 +43,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .IsRequired()
             .HasConversion<int>()
             .HasComment("Claim source - How claim entered system: 1=FieldCollection, 2=OfficeSubmission, 3=SystemImport, 4=Migration, 5=OnlinePortal, 6=ApiIntegration, 7=ManualEntry (مصدر المطالبة)");
-
-        // ==================== LIFECYCLE MANAGEMENT ====================
 
         builder.Property(c => c.CaseStatus)
             .IsRequired()
@@ -65,8 +56,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.Property(c => c.SubmittedByUserId)
             .HasComment("User who submitted the claim (معرف المستخدم المقدم)");
 
-        // ==================== TENURE DETAILS ====================
-
         builder.Property(c => c.TenureContractType)
             .HasConversion<int?>()
             .HasComment("Type of tenure contract: 1=Freehold, 2=Leasehold, 3=SharedOwnership, 4=Rental, 5=Informal, 6=Customary, 7=Usufruct, 99=Other (نوع عقد الحيازة)");
@@ -74,13 +63,9 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.Property(c => c.OwnershipShare)
             .HasComment("Ownership share - Fraction out of 2400 (e.g., 1200 = 50%) (نصيب الملكية)");
 
-        // ==================== CLAIM DETAILS ====================
-
         builder.Property(c => c.ClaimDescription)
             .HasMaxLength(5000)
             .HasComment("Detailed description of the claim (وصف المطالبة)");
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(c => c.CreatedAtUtc)
             .IsRequired()
@@ -110,18 +95,14 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         builder.Property(c => c.DeletedBy)
             .HasComment("User ID who soft deleted this record (معرف المستخدم الحاذف)");
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(c => c.RowVersion)
             .IsRowVersion()
             .IsConcurrencyToken()
             .HasComment("Concurrency token for optimistic locking (رمز التزامن)");
 
-        // ==================== RELATIONSHIPS ====================
-
         // PropertyUnit relationship (required)
         builder.HasOne(c => c.PropertyUnit)
-            .WithMany(p => p.Claims)  // ✅ FIXED: Explicit navigation property
+            .WithMany(p => p.Claims)
             .HasForeignKey(c => c.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired();
@@ -143,8 +124,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
             .WithOne(e => e.Claim)
             .HasForeignKey(e => e.ClaimId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // ==================== INDEXES ====================
 
         // Unique index on ClaimNumber
         builder.HasIndex(c => c.ClaimNumber)
@@ -174,8 +153,6 @@ public class ClaimConfiguration : IEntityTypeConfiguration<Claim>
         // Index on SubmittedDate (for date-based queries)
         builder.HasIndex(c => c.SubmittedDate)
             .HasDatabaseName("IX_Claims_SubmittedDate");
-
-        // ==================== COMPOSITE INDEXES ====================
 
         // Composite index on PropertyUnitId + IsDeleted (for conflict detection with soft delete filter)
         builder.HasIndex(c => new { c.PropertyUnitId, c.IsDeleted })

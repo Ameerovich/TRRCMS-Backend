@@ -9,8 +9,6 @@ namespace TRRCMS.Application.Import.Queries.GetCommitReport;
 ///
 /// The report is reconstructed from the ImportPackage entity and its
 /// staging data traceability links (CommittedEntityId mappings).
-///
-/// UC-003 Stage 4 — S11 (Archive / Review Results).
 /// </summary>
 public class GetCommitReportQuery : IRequest<CommitReportDto>
 {

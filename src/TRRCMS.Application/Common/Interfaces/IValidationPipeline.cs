@@ -3,7 +3,7 @@ using TRRCMS.Domain.Common;
 namespace TRRCMS.Application.Common.Interfaces;
 
 /// <summary>
-/// Orchestrates the 8-level validation pipeline for staged import data (FR-D-4).
+/// Orchestrates the 8-level validation pipeline for staged import data.
 /// Each level runs independently and writes results to the staging entities
 /// via <see cref="BaseStagingEntity.MarkAsValid"/> / <see cref="BaseStagingEntity.MarkAsInvalid"/>.
 ///
@@ -16,8 +16,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 ///   6. ClaimLifecycleValidator        — valid status transitions, correct lifecycle stage
 ///   7. VocabularyVersionValidator     — all enum/code values exist in active vocabulary
 ///   8. BuildingUnitCodeValidator      — 17-digit building_id pattern, unique unit codes
-///
-/// UC-003 Stage 2 — S14 (Detect Anomalies).
 /// </summary>
 public interface IValidationPipeline
 {

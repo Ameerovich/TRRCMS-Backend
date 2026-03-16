@@ -18,8 +18,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
         _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
-    // ==================== BASIC CRUD ====================
-
     public async Task<ConflictResolution?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.ConflictResolutions
@@ -62,8 +60,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
-
-    // ==================== QUERY BY PACKAGE ====================
 
     public async Task<List<ConflictResolution>> GetByPackageIdAsync(
         Guid importPackageId,
@@ -124,9 +120,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
             .ToListAsync(cancellationToken);
     }
 
-
-    // ==================== QUERY BY STATUS ====================
-
     public async Task<List<ConflictResolution>> GetByStatusAsync(
         string status,
         CancellationToken cancellationToken = default)
@@ -147,8 +140,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
             .ThenBy(c => c.DetectedDate)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== QUERY BY ENTITY PAIR ====================
 
     public async Task<ConflictResolution?> GetByEntityPairAsync(
         Guid firstEntityId,
@@ -193,8 +184,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== QUERY BY ASSIGNMENT ====================
-
     public async Task<List<ConflictResolution>> GetByAssignedUserAsync(
         Guid userId,
         CancellationToken cancellationToken = default)
@@ -224,8 +213,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== QUERY BY TYPE ====================
-
     public async Task<List<ConflictResolution>> GetByConflictTypeAsync(
         string conflictType,
         CancellationToken cancellationToken = default)
@@ -248,8 +235,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
             .OrderByDescending(c => c.SimilarityScore)
             .ToListAsync(cancellationToken);
     }
-
-    // ==================== SEARCH WITH PAGINATION ====================
 
     public async Task<(List<ConflictResolution> Conflicts, int TotalCount)> SearchAsync(
         Guid? importPackageId = null,
@@ -330,8 +315,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
         return (conflicts, totalCount);
     }
 
-    // ==================== AGGREGATE QUERIES ====================
-
     public async Task<Dictionary<string, int>> GetStatusCountsAsync(
         CancellationToken cancellationToken = default)
     {
@@ -364,8 +347,6 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
         return await _context.ConflictResolutions
             .AnyAsync(c => c.Id == id && !c.IsDeleted, cancellationToken);
     }
-
-    // ==================== QUERYABLE ACCESS ====================
 
     public IQueryable<ConflictResolution> GetQueryable()
     {

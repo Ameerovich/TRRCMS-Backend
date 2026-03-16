@@ -15,7 +15,6 @@ namespace TRRCMS.Infrastructure.Services;
 /// Attachment blobs (evidence files) are extracted from the SQLite 'attachments'
 /// table and saved to the file system via IFileStorageService.
 ///
-/// UC-003 Stage 2 — S13 (Load to Staging).
 /// </summary>
 public class StagingService : IStagingService
 {
@@ -121,8 +120,6 @@ public class StagingService : IStagingService
 
         _logger.LogInformation("Staging cleanup complete for package {PackageId}", importPackageId);
     }
-
-    // ==================== ENTITY STAGING METHODS ====================
 
     private async Task<int> StageBuildingsAsync(
         SqliteConnection connection, Guid packageId, CancellationToken ct)
@@ -557,8 +554,6 @@ public class StagingService : IStagingService
         return (entities.Count, fileCount, totalBytes);
     }
 
-    // ==================== ATTACHMENT EXTRACTION ====================
-
     private static async Task<bool> HasAttachmentBlobAsync(
         SqliteConnection connection, Guid evidenceId, CancellationToken ct)
     {
@@ -600,8 +595,6 @@ public class StagingService : IStagingService
             return null;
         }
     }
-
-    // ==================== BUILDING DOCUMENT BLOB EXTRACTION ====================
 
     private static async Task<bool> HasBuildingDocumentBlobAsync(
         SqliteConnection connection, Guid buildingDocumentId, CancellationToken ct)
@@ -645,8 +638,6 @@ public class StagingService : IStagingService
             return null;
         }
     }
-
-    // ==================== SQLite HELPER METHODS ====================
 
     private static async Task<bool> TableExistsAsync(
         SqliteConnection connection, string tableName, CancellationToken ct)
