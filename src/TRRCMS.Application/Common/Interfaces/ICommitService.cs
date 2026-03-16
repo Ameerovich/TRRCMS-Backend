@@ -8,8 +8,8 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// Orchestrates the atomic commit pipeline:
 ///   1. Verify all pre-conditions (status, conflicts resolved, records approved)
 ///   2. Map staging entities → production entities (resolve Original*Id → production FK)
-///   3. Deduplicate attachment files by SHA-256 hash (FR-D-9)
-///   4. Generate Record IDs for new production entities (FR-D-8)
+///   3. Deduplicate attachment files by SHA-256 hash
+///   4. Generate Record IDs for new production entities
 ///   5. Insert production entities within a single DB transaction
 ///   6. Update staging records with CommittedEntityId for traceability
 ///   7. Archive the original .uhc package to immutable store
@@ -20,9 +20,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 ///   - Partial failure → PartiallyCompleted (some entities committed)
 ///   - Total failure → Failed + rollback
 ///
-/// FSD: FR-D-8 (Record ID Generation), FR-D-9 (Attachment Deduplication).
-/// UC-003 Stage 4 — S16 (Approve), S17 (Commit), S11 (Archive).
-/// Delivery Plan Task: TRRCMS-IMP-05.
 /// </summary>
 public interface ICommitService
 {

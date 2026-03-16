@@ -1,4 +1,4 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
@@ -9,15 +9,10 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Household : BaseAuditableEntity
 {
-    // ==================== IDENTIFIERS ====================
-
     /// <summary>
     /// Foreign key to property unit
     /// </summary>
     public Guid PropertyUnitId { get; private set; }
-
-    // ==================== HOUSEHOLD BASIC INFO ====================
-
     /// <summary>
     /// Household size (total number of members) - عدد الأفراد
     /// </summary>
@@ -32,9 +27,6 @@ public class Household : BaseAuditableEntity
     /// Foreign key to Person who is head of household (if registered) - nullable for office survey
     /// </summary>
     public Guid? HeadOfHouseholdPersonId { get; private set; }
-
-    // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
-
     /// <summary>
     /// Occupancy type (نوع الإشغال) - OwnerOccupied, TenantOccupied, FamilyOccupied, etc.
     /// </summary>
@@ -44,9 +36,6 @@ public class Household : BaseAuditableEntity
     /// Occupancy nature (طبيعة الإشغال) - LegalFormal, Informal, Customary, etc.
     /// </summary>
     public OccupancyNature? OccupancyNature { get; private set; }
-
-    // ==================== ADULTS BY GENDER ====================
-
     /// <summary>
     /// Number of adult males - عدد البالغين الذكور
     /// </summary>
@@ -56,9 +45,6 @@ public class Household : BaseAuditableEntity
     /// Number of adult females - عدد البالغين الإناث
     /// </summary>
     public int FemaleCount { get; private set; }
-
-    // ==================== CHILDREN BY GENDER (NEW) ====================
-
     /// <summary>
     /// Number of male children under 18 - عدد الأطفال الذكور (أقل من 18)
     /// </summary>
@@ -68,9 +54,6 @@ public class Household : BaseAuditableEntity
     /// Number of female children under 18 - عدد الأطفال الإناث (أقل من 18)
     /// </summary>
     public int FemaleChildCount { get; private set; }
-
-    // ==================== ELDERLY BY GENDER (NEW) ====================
-
     /// <summary>
     /// Number of male elderly over 65 - عدد كبار السن الذكور (أكثر من 65)
     /// </summary>
@@ -80,9 +63,6 @@ public class Household : BaseAuditableEntity
     /// Number of female elderly over 65 - عدد كبار السن الإناث (أكثر من 65)
     /// </summary>
     public int FemaleElderlyCount { get; private set; }
-
-    // ==================== DISABLED BY GENDER (NEW) ====================
-
     /// <summary>
     /// Number of male persons with disabilities - عدد المعاقين الذكور
     /// </summary>
@@ -92,28 +72,16 @@ public class Household : BaseAuditableEntity
     /// Number of female persons with disabilities - عدد المعاقين الإناث
     /// </summary>
     public int FemaleDisabledCount { get; private set; }
-
-    // ==================== NOTES ====================
-
     /// <summary>
     /// Household notes - ملاحظات
     /// </summary>
     public string? Notes { get; private set; }
-
-    // ==================== COMPUTED TOTALS ====================
-
     public int ChildCount { get; private set; }
     public int ElderlyCount { get; private set; }
     public int PersonsWithDisabilitiesCount { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
     public virtual Person? HeadOfHouseholdPerson { get; private set; }
     public virtual ICollection<Person> Members { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     private Household() : base()
     {
         Members = new List<Person>();
@@ -184,9 +152,6 @@ public class Household : BaseAuditableEntity
         household.MarkAsCreated(createdByUserId);
         return household;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update the property unit this household belongs to
     /// </summary>

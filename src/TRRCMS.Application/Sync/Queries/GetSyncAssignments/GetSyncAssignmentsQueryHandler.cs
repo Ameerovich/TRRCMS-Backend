@@ -114,7 +114,7 @@ public sealed class GetSyncAssignmentsQueryHandler
         await _uow.SyncSessions.UpdateAsync(session, ct);
         await _uow.SaveChangesAsync(ct);
 
-        // ── 8b. Audit log: record the download event (UC-012 S09) ─────────────────
+        // ── 8b. Audit log: record the download event ─────────────────
         if (assignments.Count > 0)
         {
             await _auditService.LogActionAsync(

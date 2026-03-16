@@ -11,8 +11,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Street : BaseAuditableEntity
 {
-    // ==================== IDENTIFICATION ====================
-
     /// <summary>
     /// Sequential integer identifier (managed by QGIS operator)
     /// </summary>
@@ -22,9 +20,6 @@ public class Street : BaseAuditableEntity
     /// Street name (اسم الشارع)
     /// </summary>
     public string Name { get; private set; }
-
-    // ==================== SPATIAL DATA (PostGIS) ====================
-
     /// <summary>
     /// Line geometry representing the street path (PostGIS LINESTRING, SRID 4326)
     /// </summary>
@@ -34,9 +29,6 @@ public class Street : BaseAuditableEntity
     /// Geometry as WKT string (computed, not stored)
     /// </summary>
     public string? GeometryWkt => Geometry?.AsText();
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -44,9 +36,6 @@ public class Street : BaseAuditableEntity
     {
         Name = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new Street
     /// </summary>
@@ -68,9 +57,6 @@ public class Street : BaseAuditableEntity
         street.MarkAsCreated(createdByUserId);
         return street;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update street name
     /// </summary>

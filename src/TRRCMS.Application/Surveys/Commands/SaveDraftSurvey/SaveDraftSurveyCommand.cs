@@ -5,7 +5,7 @@ namespace TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 
 /// <summary>
 /// Command to save survey progress as draft
-/// Corresponds to UC-002: Save draft and resume later
+/// Persists current survey state for later resumption
 /// </summary>
 public class SaveDraftSurveyCommand : IRequest<SurveyDto>
 {
@@ -13,8 +13,6 @@ public class SaveDraftSurveyCommand : IRequest<SurveyDto>
     /// Survey ID to update
     /// </summary>
     public Guid SurveyId { get; set; }
-
-    // ==================== OPTIONAL UPDATES ====================
 
     /// <summary>
     /// Update property unit selection (optional)

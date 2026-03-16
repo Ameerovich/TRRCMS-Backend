@@ -4,8 +4,6 @@ namespace TRRCMS.Application.Import.Models;
 /// Represents the parsed manifest from a .uhc SQLite container.
 /// The manifest table in the .uhc file contains package metadata,
 /// content counts, vocabulary versions, and security checksums.
-/// 
-/// Referenced in UC-003 Stage 2 — S12 (Verify Package Integrity).
 /// </summary>
 public class ManifestData
 {
@@ -55,7 +53,7 @@ public class ManifestData
     /// <summary>
     /// Dictionary of vocabulary domain → semver version.
     /// Example: { "ownership_type": "1.2.0", "document_type": "2.1.3" }
-    /// Used for vocabulary compatibility checking (FR-D-3).
+    /// Used for vocabulary compatibility checking.
     /// </summary>
     public Dictionary<string, string> VocabVersions { get; set; } = new();
 

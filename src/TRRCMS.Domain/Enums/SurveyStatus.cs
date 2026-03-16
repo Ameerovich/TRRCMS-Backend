@@ -1,9 +1,8 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
 /// Survey status classification
 /// Status of field surveys conducted by field collectors
-/// Referenced in FSD section 6.2.2
 /// </summary>
 public enum SurveyStatus
 {
@@ -15,7 +14,7 @@ public enum SurveyStatus
 
     /// <summary>
     /// Finalized - Survey finalized and ready for claim creation (نهائي)
-    /// Per UC-004 S21: "mark as finalized"
+    /// Per"mark as finalized"
     /// </summary>
     [ArabicLabel("نهائي")]
     Finalized = 3,

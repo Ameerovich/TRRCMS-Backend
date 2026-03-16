@@ -13,10 +13,7 @@ public class GovernorateConfiguration : IEntityTypeConfiguration<Governorate>
     {
         builder.ToTable("Governorates");
 
-        // ==================== PRIMARY KEY ====================
         builder.HasKey(g => g.Id);
-
-        // ==================== CODE ====================
 
         builder.Property(g => g.Code)
             .IsRequired()
@@ -29,8 +26,6 @@ public class GovernorateConfiguration : IEntityTypeConfiguration<Governorate>
             .HasFilter("\"IsDeleted\" = false")
             .HasDatabaseName("IX_Governorates_Code");
 
-        // ==================== NAMES ====================
-
         builder.Property(g => g.NameArabic)
             .IsRequired()
             .HasMaxLength(200)
@@ -41,14 +36,10 @@ public class GovernorateConfiguration : IEntityTypeConfiguration<Governorate>
             .HasMaxLength(200)
             .HasComment("English name");
 
-        // ==================== STATUS ====================
-
         builder.Property(g => g.IsActive)
             .IsRequired()
             .HasDefaultValue(true)
             .HasComment("Whether this governorate is active");
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(g => g.CreatedAtUtc)
             .IsRequired();

@@ -26,8 +26,6 @@ public class StagingRepository<T> : IStagingRepository<T> where T : BaseStagingE
         _dbSet = context.Set<T>();
     }
 
-    // ==================== BASIC CRUD ====================
-
     public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
@@ -60,8 +58,6 @@ public class StagingRepository<T> : IStagingRepository<T> where T : BaseStagingE
         return await _context.SaveChangesAsync(cancellationToken);
     }
 
-    // ==================== QUERY BY PACKAGE ====================
-
     public async Task<List<T>> GetByPackageIdAsync(
         Guid importPackageId,
         CancellationToken cancellationToken = default)
@@ -93,8 +89,6 @@ public class StagingRepository<T> : IStagingRepository<T> where T : BaseStagingE
             .CountAsync(cancellationToken);
     }
 
-    // ==================== QUERY BY VALIDATION STATUS ====================
-
     public async Task<List<T>> GetByPackageAndStatusAsync(
         Guid importPackageId,
         StagingValidationStatus status,
@@ -117,8 +111,6 @@ public class StagingRepository<T> : IStagingRepository<T> where T : BaseStagingE
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Status, x => x.Count, cancellationToken);
     }
-
-    // ==================== COMMIT QUERIES ====================
 
     public async Task<List<T>> GetApprovedForCommitAsync(
         Guid importPackageId,
@@ -143,8 +135,6 @@ public class StagingRepository<T> : IStagingRepository<T> where T : BaseStagingE
             .ToListAsync(cancellationToken);
     }
 
-    // ==================== BULK OPERATIONS ====================
-
     public async Task<int> DeleteByPackageIdAsync(
         Guid importPackageId,
         CancellationToken cancellationToken = default)
@@ -154,8 +144,6 @@ public class StagingRepository<T> : IStagingRepository<T> where T : BaseStagingE
             .Where(e => e.ImportPackageId == importPackageId)
             .ExecuteDeleteAsync(cancellationToken);
     }
-
-    // ==================== QUERYABLE ACCESS ====================
 
     public IQueryable<T> GetQueryable()
     {

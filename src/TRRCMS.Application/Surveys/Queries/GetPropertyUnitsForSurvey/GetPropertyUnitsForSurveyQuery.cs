@@ -5,7 +5,7 @@ namespace TRRCMS.Application.Surveys.Queries.GetPropertyUnitsForSurvey;
 
 /// <summary>
 /// Query to get all property units for a survey's building
-/// Corresponds to UC-001 Stage 2: Property Unit Selection - View Available Units
+/// Gets all property units for a survey's building
 /// </summary>
 public class GetPropertyUnitsForSurveyQuery : IRequest<List<PropertyUnitDto>>
 {

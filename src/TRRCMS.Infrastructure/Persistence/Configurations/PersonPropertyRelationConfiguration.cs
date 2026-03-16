@@ -29,8 +29,6 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
             .HasConversion<int>()
             .HasComment("نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99");
 
-        // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
-
         // OccupancyType stored as integer (nullable enum)
         builder.Property(ppr => ppr.OccupancyType)
             .IsRequired(false)
@@ -40,8 +38,6 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
             .IsRequired()
             .HasDefaultValue(false)
             .HasComment("هل يوجد دليل؟ - Indicates if evidence documents are available/attached");
-
-        // ==================== OTHER FIELDS ====================
 
         builder.Property(ppr => ppr.OwnershipShare)
             .HasPrecision(18, 4)

@@ -13,10 +13,7 @@ public class SubDistrictConfiguration : IEntityTypeConfiguration<SubDistrict>
     {
         builder.ToTable("SubDistricts");
 
-        // ==================== PRIMARY KEY ====================
         builder.HasKey(s => s.Id);
-
-        // ==================== CODES ====================
 
         builder.Property(s => s.Code)
             .IsRequired()
@@ -43,8 +40,6 @@ public class SubDistrictConfiguration : IEntityTypeConfiguration<SubDistrict>
         builder.HasIndex(s => new { s.GovernorateCode, s.DistrictCode })
             .HasDatabaseName("IX_SubDistricts_GovernorateCode_DistrictCode");
 
-        // ==================== NAMES ====================
-
         builder.Property(s => s.NameArabic)
             .IsRequired()
             .HasMaxLength(200)
@@ -55,22 +50,16 @@ public class SubDistrictConfiguration : IEntityTypeConfiguration<SubDistrict>
             .HasMaxLength(200)
             .HasComment("English name");
 
-        // ==================== STATUS ====================
-
         builder.Property(s => s.IsActive)
             .IsRequired()
             .HasDefaultValue(true)
             .HasComment("Whether this sub-district is active");
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne(s => s.District)
             .WithMany()
             .HasForeignKey(s => new { s.GovernorateCode, s.DistrictCode })
             .HasPrincipalKey(d => new { d.GovernorateCode, d.Code })
             .OnDelete(DeleteBehavior.Restrict);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(s => s.CreatedAtUtc)
             .IsRequired();

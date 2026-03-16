@@ -17,8 +17,6 @@ namespace TRRCMS.Application.Import.Commands.ApproveForCommit;
 ///   3. Approve staging records (all valid, or specific IDs)
 ///   4. Transition package status → ReadyToCommit
 ///   5. Return updated ImportPackageDto
-///
-/// UC-003 Stage 4 — S16 (Approve for Commit).
 /// </summary>
 public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCommand, ImportPackageDto>
 {

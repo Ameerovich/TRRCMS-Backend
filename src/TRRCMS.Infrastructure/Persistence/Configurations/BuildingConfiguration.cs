@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TRRCMS.Domain.Entities;
 
@@ -17,7 +17,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         // Primary Key
         builder.HasKey(b => b.Id);
 
-        // ==================== BUSINESS IDENTIFIER ====================
         builder.Property(b => b.BuildingId)
             .IsRequired()
             .HasMaxLength(17);
@@ -25,7 +24,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         builder.HasIndex(b => b.BuildingId)
             .IsUnique();
 
-        // ==================== ADMINISTRATIVE CODES ====================
         builder.Property(b => b.GovernorateCode)
             .IsRequired()
             .HasMaxLength(2);
@@ -55,7 +53,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .HasDatabaseName("IX_Buildings_AdminHierarchy")
             .HasFilter("\"IsDeleted\" = false");
 
-        // ==================== LOCATION NAMES (ARABIC) ====================
         builder.Property(b => b.GovernorateName)
             .IsRequired()
             .HasMaxLength(100);
@@ -76,18 +73,15 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
             .IsRequired()
             .HasMaxLength(100);
 
-        // ==================== BUILDING ATTRIBUTES ====================
         builder.Property(b => b.BuildingType)
             .IsRequired();
 
         builder.Property(b => b.Status)
             .IsRequired();
 
-        // ==================== OPTIONAL FIELDS ====================
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);
 
-        // ==================== SPATIAL DATA (PostGIS) ====================
         // Geometry column using PostGIS native type
         // SRID 4326 = WGS84 (GPS coordinate system)
         builder.Property(b => b.BuildingGeometry)
@@ -109,7 +103,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         builder.Property(b => b.Longitude)
             .HasPrecision(10, 7);
 
-        // ==================== AUDIT FIELDS ====================
         builder.Property(b => b.CreatedAtUtc)
             .IsRequired();
 
@@ -130,7 +123,6 @@ public class BuildingConfiguration : IEntityTypeConfiguration<Building>
         builder.Property(b => b.RowVersion)
             .IsRowVersion();
 
-        // ==================== RELATIONSHIPS ====================
         builder.Ignore(b => b.BuildingAssignments);
         builder.Ignore(b => b.Surveys);
     }

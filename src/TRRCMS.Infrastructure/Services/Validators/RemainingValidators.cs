@@ -7,12 +7,8 @@ using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Infrastructure.Services.Validators;
 
-// ============================================================================
-// LEVEL 3: Ownership Evidence Validator
-// ============================================================================
-
 /// <summary>
-/// Level 3: Ownership Evidence Validator (FR-D-4).
+/// Level 3: Ownership Evidence Validator.
 /// Checks that ownership-type relations have supporting evidence,
 /// and that evidence records have valid file references.
 /// </summary>
@@ -96,12 +92,8 @@ public class OwnershipEvidenceValidator : IStagingValidator
     }
 }
 
-// ============================================================================
-// LEVEL 4: Household Structure Validator
-// ============================================================================
-
 /// <summary>
-/// Level 4: Household Structure Validator (FR-D-4).
+/// Level 4: Household Structure Validator.
 /// Checks: male+female counts = total, household size > 0,
 /// head of household exists, gender breakdown consistency.
 /// </summary>
@@ -209,12 +201,8 @@ public class HouseholdStructureValidator : IStagingValidator
     }
 }
 
-// ============================================================================
-// LEVEL 5: Spatial Geometry Validator
-// ============================================================================
-
 /// <summary>
-/// Level 5: Spatial Geometry Validator (FR-D-4).
+/// Level 5: Spatial Geometry Validator.
 /// Checks coordinates within Syria bounds and WKT geometry validity.
 /// Syria bounds: Lat 32.0°N–37.5°N, Lng 35.5°E–42.5°E.
 /// </summary>
@@ -303,14 +291,10 @@ public class SpatialGeometryValidator : IStagingValidator
     }
 }
 
-// ============================================================================
-// LEVEL 6: Claim Lifecycle Validator
-// ============================================================================
-
 /// <summary>
-/// Level 6: Claim Lifecycle Validator (FR-D-4).
+/// Level 6: Claim Lifecycle Validator.
 /// Checks that imported claims have valid status transitions and map
-/// to the correct lifecycle stage (imported claims → Submitted per FR-D-2).
+/// to the correct lifecycle stage (imported claims are set to Submitted).
 /// </summary>
 public class ClaimLifecycleValidator : IStagingValidator
 {
@@ -369,12 +353,8 @@ public class ClaimLifecycleValidator : IStagingValidator
     }
 }
 
-// ============================================================================
-// LEVEL 7: Vocabulary Version Validator
-// ============================================================================
-
 /// <summary>
-/// Level 7: Vocabulary Version Validator (FR-D-4).
+/// Level 7: Vocabulary Version Validator.
 /// Checks that all enum/code values in staging records exist in the
 /// active vocabulary definitions. Invalid codes → warning (soft fail).
 /// </summary>
@@ -459,12 +439,8 @@ public class VocabularyVersionValidator : IStagingValidator
     }
 }
 
-// ============================================================================
-// LEVEL 8: Building/Unit Code Validator
-// ============================================================================
-
 /// <summary>
-/// Level 8: Building & Unit Code Validator (FR-D-4, FR-D-8).
+/// Level 8: Building & Unit Code Validator.
 /// Checks:
 ///   - building_id follows 17-digit composite pattern (2+2+2+3+3+5)
 ///   - No duplicate building_id within the batch

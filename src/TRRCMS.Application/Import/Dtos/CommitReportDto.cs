@@ -6,14 +6,6 @@ namespace TRRCMS.Application.Import.Dtos;
 ///
 /// Contains per-entity-type counts, deduplication savings, conflict
 /// resolutions applied, and any errors.
-///
-/// Record IDs per FSD Section 7:
-///   - Buildings: 17-digit geographic code composed by Building.Create()
-///   - PropertyUnits: BuildingId + UnitIdentifier composed by PropertyUnit.Create()
-///   - Claims: CL-YYYY-NNNNNN via IClaimNumberGenerator
-///   - Other entities: UUID primary key only (no additional Record ID)
-///
-/// Referenced in UC-003 Stage 4 — S17 (Commit) and S11 (Archive).
 /// </summary>
 public class CommitReportDto
 {
@@ -53,7 +45,7 @@ public class CommitReportDto
     public CommitEntityTypeSummary Claims { get; set; } = new();
     public CommitEntityTypeSummary Surveys { get; set; } = new();
 
-    // ==================== ATTACHMENT DEDUP (FR-D-9) ====================
+    // ==================== ATTACHMENT DEDUP ====================
 
     /// <summary>Number of attachment files that matched existing blobs by SHA-256 hash.</summary>
     public int DuplicateAttachmentsFound { get; set; }

@@ -7,26 +7,18 @@ namespace TRRCMS.Application.Conflicts.Dtos;
 /// </summary>
 public class ConflictSummaryDto
 {
-    // ==================== TOTALS ====================
-
     public int TotalConflicts { get; set; }
     public int PendingReviewCount { get; set; }
     public int ResolvedCount { get; set; }
     public int IgnoredCount { get; set; }
 
-    // ==================== BY TYPE ====================
-
     public int PersonDuplicateCount { get; set; }
     public int PropertyDuplicateCount { get; set; }
     public int ClaimConflictCount { get; set; }
 
-    // ==================== PENDING BY TYPE ====================
-
     public int PendingPersonDuplicates { get; set; }
     public int PendingPropertyDuplicates { get; set; }
     public int PendingClaimConflicts { get; set; }
-
-    // ==================== PRIORITY & FLAGS ====================
 
     public int EscalatedCount { get; set; }
     public int OverdueCount { get; set; }

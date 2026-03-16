@@ -37,7 +37,7 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage("Invalid user role");
 
-        // Strong password policy (FSD Section 11: Security Settings)
+        // Strong password policy
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Password is required")
             .MinimumLength(8).WithMessage("Password must be at least 8 characters")

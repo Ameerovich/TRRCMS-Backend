@@ -17,8 +17,6 @@ public class LandmarkConfiguration : IEntityTypeConfiguration<Landmark>
         // Primary Key
         builder.HasKey(l => l.Id);
 
-        // ==================== IDENTIFICATION ====================
-
         builder.Property(l => l.Identifier)
             .IsRequired();
 
@@ -42,8 +40,6 @@ public class LandmarkConfiguration : IEntityTypeConfiguration<Landmark>
         builder.HasIndex(l => l.Type)
             .HasDatabaseName("IX_Landmarks_Type");
 
-        // ==================== SPATIAL DATA (PostGIS) ====================
-
         builder.Property(l => l.Location)
             .HasColumnType("geometry(Point, 4326)");
 
@@ -57,8 +53,6 @@ public class LandmarkConfiguration : IEntityTypeConfiguration<Landmark>
 
         builder.Property(l => l.Longitude)
             .HasPrecision(10, 7);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(l => l.CreatedAtUtc)
             .IsRequired();

@@ -6,8 +6,6 @@
 /// </summary>
 public class BuildingDto
 {
-    // ==================== IDENTIFIERS ====================
-
     /// <summary>
     /// Database ID (GUID)
     /// </summary>
@@ -35,7 +33,6 @@ public class BuildingDto
                $"{buildingId[6..9]}-{buildingId[9..12]}-{buildingId[12..17]}";
     }
 
-    // ==================== ADMINISTRATIVE CODES ====================
 
     /// <summary>
     /// Governorate code (محافظة)
@@ -67,7 +64,6 @@ public class BuildingDto
     /// </summary>
     public string BuildingNumber { get; set; } = string.Empty;
 
-    // ==================== LOCATION NAMES (ARABIC) ====================
 
     /// <summary>
     /// Governorate name in Arabic
@@ -94,7 +90,6 @@ public class BuildingDto
     /// </summary>
     public string NeighborhoodName { get; set; } = string.Empty;
 
-    // ==================== BUILDING ATTRIBUTES ====================
 
     /// <summary>
     /// Building type (نوع البناء)
@@ -122,7 +117,6 @@ public class BuildingDto
     /// </summary>
     public int NumberOfShops { get; set; }
 
-    // ==================== SPATIAL DATA ====================
 
     /// <summary>
     /// GPS latitude coordinate
@@ -139,7 +133,6 @@ public class BuildingDto
     /// </summary>
     public string? BuildingGeometryWkt { get; set; }
 
-    // ==================== BUILDING DOCUMENTS ====================
 
     /// <summary>
     /// IDs of building documents (photos/PDFs) attached to this building (وثائق البناء)
@@ -147,14 +140,12 @@ public class BuildingDto
     /// </summary>
     public List<Guid> BuildingDocumentIds { get; set; } = new();
 
-    // ==================== ADDITIONAL INFORMATION ====================
 
     /// <summary>
     /// General notes (الوصف العام)
     /// </summary>
     public string? Notes { get; set; }
 
-    // ==================== AUDIT ====================
 
     /// <summary>
     /// Created timestamp

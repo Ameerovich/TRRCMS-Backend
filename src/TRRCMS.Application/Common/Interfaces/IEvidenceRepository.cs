@@ -33,12 +33,11 @@ public interface IEvidenceRepository
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     /// <summary>
     /// Find an existing current-version Evidence by its SHA-256 file hash.
-    /// Used during import commit for attachment deduplication (FR-D-9).
+    /// Used during import commit for attachment deduplication.
     /// Returns null if no matching evidence exists.
     /// </summary>
     Task<Evidence?> GetByFileHashAsync(string fileHash, CancellationToken cancellationToken = default);
 
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
     /// <summary>
     /// Get total count of evidence items (excluding soft-deleted).

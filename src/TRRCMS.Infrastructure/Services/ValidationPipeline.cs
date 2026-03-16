@@ -14,7 +14,6 @@ namespace TRRCMS.Infrastructure.Services;
 /// After all validators run, this class aggregates the final status
 /// counts across all entity types.
 ///
-/// FSD: FR-D-4 (Staging & Validation).
 /// </summary>
 public class ValidationPipeline : IValidationPipeline
 {

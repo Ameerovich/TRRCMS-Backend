@@ -7,8 +7,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetPropertyUnitsForRevisit;
 
 /// <summary>
-/// Handler for GetPropertyUnitsForRevisitQuery
-/// UC-012: S04-S05 - Review property units and select for revisit
+/// Handler for GetPropertyUnitsForRevisitQuery.
 /// </summary>
 public class GetPropertyUnitsForRevisitQueryHandler 
     : IRequestHandler<GetPropertyUnitsForRevisitQuery, List<PropertyUnitForRevisitDto>>

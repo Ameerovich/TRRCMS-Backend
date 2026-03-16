@@ -17,7 +17,6 @@ public class LoginRequest
 
     /// <summary>
     /// Optional device identifier for audit trail (tablet ID, device name, etc.)
-    /// Required by FSD for tracking which device initiated the login
     /// </summary>
     public string? DeviceId { get; set; }
 }

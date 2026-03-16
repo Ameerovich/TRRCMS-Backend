@@ -10,9 +10,8 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Users.Commands.GrantPermissions;
 
 /// <summary>
-/// Handler for GrantPermissionsCommand
+/// Handler for GrantPermissionsCommand.
 /// Grants multiple permissions to a user with audit trail.
-/// Uses explicit repository persistence for UserPermission to avoid EF tracking/concurrency issues.
 /// </summary>
 public class GrantPermissionsCommandHandler : IRequestHandler<GrantPermissionsCommand, UserDto>
 {

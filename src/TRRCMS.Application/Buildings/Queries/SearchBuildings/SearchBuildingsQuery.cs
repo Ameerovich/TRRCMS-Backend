@@ -9,8 +9,6 @@ namespace TRRCMS.Application.Buildings.Queries.SearchBuildings;
 /// </summary>
 public class SearchBuildingsQuery : IRequest<SearchBuildingsResponse>
 {
-    // ==================== ADMINISTRATIVE HIERARCHY FILTERS ====================
-
     /// <summary>
     /// Filter by governorate code (محافظة)
     /// </summary>
@@ -36,7 +34,6 @@ public class SearchBuildingsQuery : IRequest<SearchBuildingsResponse>
     /// </summary>
     public string? NeighborhoodCode { get; set; }
 
-    // ==================== DIRECT IDENTIFIERS ====================
 
     /// <summary>
     /// Search by building ID (رمز البناء) - partial match
@@ -48,7 +45,6 @@ public class SearchBuildingsQuery : IRequest<SearchBuildingsResponse>
     /// </summary>
     public string? BuildingNumber { get; set; }
 
-    // ==================== ATTRIBUTE FILTERS ====================
 
     /// <summary>
     /// Filter by building status (حالة البناء)
@@ -60,7 +56,6 @@ public class SearchBuildingsQuery : IRequest<SearchBuildingsResponse>
     /// </summary>
     public BuildingType? BuildingType { get; set; }
 
-    // ==================== PAGINATION ====================
 
     /// <summary>
     /// Page number (default: 1)
@@ -72,7 +67,6 @@ public class SearchBuildingsQuery : IRequest<SearchBuildingsResponse>
     /// </summary>
     public int PageSize { get; set; } = 20;
 
-    // ==================== SORTING ====================
 
     /// <summary>
     /// Sort field: "buildingId", "createdDate", "status", "buildingType"

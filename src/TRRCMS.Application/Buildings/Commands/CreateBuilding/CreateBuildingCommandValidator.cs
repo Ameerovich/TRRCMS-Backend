@@ -4,18 +4,12 @@ using TRRCMS.Application.Common.Interfaces;
 namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
 
 /// <summary>
-/// Validator for CreateBuildingCommand
-/// Enhanced with FSD-compliant validations:
-/// - Composite BuildingId 17-digit pattern
-/// - Syria geographic bounds for coordinates
-/// - Upper limits for unit counts
+/// Validator for CreateBuildingCommand.
 /// </summary>
 public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCommand>
 {
     public CreateBuildingCommandValidator(IVocabularyValidationService vocabService)
     {
-        // ==================== ADMINISTRATIVE CODES ====================
-
         RuleFor(x => x.GovernorateCode)
             .NotEmpty().WithMessage("Governorate code (محافظة) is required")
             .Length(2).WithMessage("Governorate code must be 2 digits")
@@ -46,7 +40,6 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
             .Length(5).WithMessage("Building number must be 5 digits")
             .Matches(@"^\d{5}$").WithMessage("Building number must contain only digits");
 
-        // ==================== COMPOSITE BUILDING ID (17 digits) ====================
         // BuildingId = GovernorateCode(2) + DistrictCode(2) + SubDistrictCode(2)
         //            + CommunityCode(3) + NeighborhoodCode(3) + BuildingNumber(5) = 17 digits
         RuleFor(x => x)
@@ -64,7 +57,6 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
                         !string.IsNullOrEmpty(x.BuildingNumber))
             .WithMessage("Composite Building ID must form exactly 17 digits (2+2+2+3+3+5)");
 
-        // ==================== BUILDING ATTRIBUTES ====================
 
         RuleFor(x => x.BuildingType)
             .Must(v => vocabService.IsValidCode("building_type", (int)v))
@@ -92,7 +84,6 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
             .When(x => x.NumberOfPropertyUnits > 0)
             .WithMessage("Sum of apartments and shops cannot exceed total number of property units");
 
-        // ==================== LOCATION (Syria bounds) ====================
         // FIX: Use decimal suffix (m) to match decimal? property type
         // Syria approximate bounds: Lat 32.0°N - 37.5°N, Lng 35.5°E - 42.5°E
 
@@ -112,7 +103,6 @@ public class CreateBuildingCommandValidator : AbstractValidator<CreateBuildingCo
                        (!x.Latitude.HasValue && !x.Longitude.HasValue))
             .WithMessage("Both latitude and longitude must be provided together");
 
-        // ==================== DESCRIPTIONS ====================
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000)

@@ -21,8 +21,6 @@ public class SecurityPolicyConfiguration : IEntityTypeConfiguration<SecurityPoli
         // Primary Key
         builder.HasKey(sp => sp.Id);
 
-        // ==================== VERSIONING ====================
-
         builder.Property(sp => sp.Version)
             .IsRequired()
             .HasComment("Policy version number, auto-incremented on each apply");
@@ -48,8 +46,6 @@ public class SecurityPolicyConfiguration : IEntityTypeConfiguration<SecurityPoli
 
         builder.Property(sp => sp.EffectiveToUtc)
             .HasComment("When this policy was superseded (null if still active)");
-
-        // ==================== PASSWORD POLICY (Owned Value Object) ====================
 
         builder.OwnsOne(sp => sp.PasswordPolicy, pwd =>
         {
@@ -92,8 +88,6 @@ public class SecurityPolicyConfiguration : IEntityTypeConfiguration<SecurityPoli
                 .HasComment("Number of previous passwords blocked (0 = none)");
         });
 
-        // ==================== SESSION & LOCKOUT POLICY (Owned Value Object) ====================
-
         builder.OwnsOne(sp => sp.SessionLockoutPolicy, sl =>
         {
             sl.Property(s => s.SessionTimeoutMinutes)
@@ -114,8 +108,6 @@ public class SecurityPolicyConfiguration : IEntityTypeConfiguration<SecurityPoli
                 .HasDefaultValue(15)
                 .HasComment("Lockout duration in minutes (1–1440)");
         });
-
-        // ==================== ACCESS CONTROL POLICY (Owned Value Object) ====================
 
         builder.OwnsOne(sp => sp.AccessControlPolicy, ac =>
         {
@@ -160,8 +152,6 @@ public class SecurityPolicyConfiguration : IEntityTypeConfiguration<SecurityPoli
                 .HasComment("Comma-separated allowed environments");
         });
 
-        // ==================== METADATA ====================
-
         builder.Property(sp => sp.ChangeDescription)
             .HasMaxLength(1000)
             .HasComment("Description of changes in this version");
@@ -169,8 +159,6 @@ public class SecurityPolicyConfiguration : IEntityTypeConfiguration<SecurityPoli
         builder.Property(sp => sp.AppliedByUserId)
             .IsRequired()
             .HasComment("User who approved and applied this policy");
-
-        // ==================== AUDIT FIELDS (from BaseAuditableEntity) ====================
 
         builder.Property(sp => sp.CreatedAtUtc).IsRequired();
         builder.Property(sp => sp.CreatedBy).IsRequired();

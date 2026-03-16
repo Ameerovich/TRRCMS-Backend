@@ -7,12 +7,10 @@ namespace TRRCMS.Application.Surveys.Dtos;
 
 /// <summary>
 /// Detailed DTO for office survey with all related data
-/// Used for UC-004/UC-005: View full office survey details
+/// Used for viewing full office survey details
 /// </summary>
 public class OfficeSurveyDetailDto : SurveyDto
 {
-    // ==================== OFFICE SPECIFIC FIELDS ====================
-
     /// <summary>
     /// Office location where survey was conducted
     /// </summary>
@@ -43,8 +41,6 @@ public class OfficeSurveyDetailDto : SurveyDto
     /// </summary>
     public bool? InPersonVisit { get; set; }
 
-    // ==================== CLAIM LINKING ====================
-
     /// <summary>
     /// Linked claim ID (if any)
     /// </summary>
@@ -59,8 +55,6 @@ public class OfficeSurveyDetailDto : SurveyDto
     /// Date when claim was created from this survey
     /// </summary>
     public DateTime? ClaimCreatedDate { get; set; }
-
-    // ==================== RELATED DATA ====================
 
     /// <summary>
     /// All claims originating from this survey (ownership + occupancy)
@@ -81,8 +75,6 @@ public class OfficeSurveyDetailDto : SurveyDto
     /// Evidence uploaded for this survey
     /// </summary>
     public List<EvidenceDto> Evidence { get; set; } = new();
-
-    // ==================== SUMMARY ====================
 
     /// <summary>
     /// Summary of captured data

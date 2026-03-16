@@ -19,22 +19,18 @@ public sealed class GetRegistrationCoverageQueryHandler
         GetRegistrationCoverageQuery request,
         CancellationToken cancellationToken)
     {
-        // Person demographics
         var totalPersons = await _uow.Persons.GetTotalCountAsync(cancellationToken);
         var totalHouseholds = await _uow.Households.GetTotalCountAsync(cancellationToken);
         var genderCounts = await _uow.Persons.GetGenderCountsAsync(cancellationToken);
         var withNationalId = await _uow.Persons.GetCountWithNationalIdAsync(cancellationToken);
 
-        // Person-property relations
         var totalRelations = await _uow.PersonPropertyRelations.GetTotalCountAsync(cancellationToken);
         var relationTypeCounts = await _uow.PersonPropertyRelations.GetRelationTypeCountsAsync(cancellationToken);
         var relationsWithEvidence = await _uow.PersonPropertyRelations.GetCountWithEvidenceAsync(cancellationToken);
 
-        // Claims
         var caseStatusCounts = await _uow.Claims.GetCaseStatusCountsAsync(cancellationToken);
         var claimTypeCounts = await _uow.Claims.GetClaimTypeCountsAsync(cancellationToken);
 
-        // Evidence
         var totalEvidence = await _uow.Evidences.GetTotalCountAsync(cancellationToken);
 
         return new RegistrationCoverageDashboardDto

@@ -60,14 +60,6 @@ namespace TRRCMS.WebAPI.Controllers;
 ///   <item>Attachments BLOB table: Documents and photos</item>
 /// </list>
 ///
-/// <b>FSD References:</b>
-/// FR-D-1 through FR-D-6 (Tablet LAN Synchronisation Protocol)
-///
-/// <b>Use Cases:</b>
-/// <list type="bullet">
-///   <item>UC-003: Export Surveys (tablet exports to server)</item>
-///   <item>UC-012: Assign Buildings to Field Collectors (server assigns to tablets)</item>
-/// </list>
 /// </remarks>
 [ApiController]
 [Route("api/v1/sync")]
@@ -130,7 +122,6 @@ public class SyncController : ControllerBase
     /// - Track acknowledgements (Step 4)
     /// - Audit and report sync outcomes
     ///
-    /// **FSD:** FR-D-1 (Open Sync Session)
     /// </remarks>
     /// <param name="data">Sync session initialization data:
     ///   - <c>fieldCollectorId</c>: The user ID of the field collector (must match authenticated user).
@@ -213,7 +204,6 @@ public class SyncController : ControllerBase
     ///
     /// **Required Permission:** System_Sync (9010) - CanSyncData policy
     ///
-    /// **FSD:** FR-D-2 (Upload Package), FR-D-3 (Package Integrity)
     /// </remarks>
     /// <param name="file">The <c>.uhc</c> binary package file (multipart, renamed SQLite database). Must have <c>.uhc</c> extension.</param>
     /// <param name="manifest">Sync session ID and optional client-side checksum.</param>
@@ -321,7 +311,6 @@ public class SyncController : ControllerBase
     ///
     /// **Required Permission:** System_Sync (9010) - CanSyncData policy
     ///
-    /// **FSD:** FR-D-5 (Download Assignments), FR-D-4 (Vocabulary Distribution)
     /// </remarks>
     /// <param name="sessionId">The active sync session ID returned by Step 1. Required.</param>
     /// <param name="modifiedSinceUtc">
@@ -417,7 +406,6 @@ public class SyncController : ControllerBase
     ///
     /// **Required Permission:** System_Sync (9010) - CanSyncData policy
     ///
-    /// **FSD:** FR-D-6 (Transfer Acknowledgement)
     /// </remarks>
     /// <param name="request">
     /// Command containing:

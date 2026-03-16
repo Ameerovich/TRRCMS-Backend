@@ -3,19 +3,6 @@ namespace TRRCMS.Domain.ValueObjects;
 /// <summary>
 /// Value object representing the result of comparing a staging person
 /// against a production or staging person for duplicate detection.
-///
-/// Scoring (FR-D-5, §12.2.4):
-///   - National ID exact match:       100 points (auto-flag as high confidence)
-///   - Phone number exact match:       +30 points
-///   - Arabic name Levenshtein:         0–40 points
-///   - Year of birth exact match:      +15 points
-///   - Gender exact match:             +15 points
-///   Maximum composite score:          100 (capped)
-///
-/// Thresholds:
-///   - Score ≥ 90 → High confidence   → auto-flag for review
-///   - Score 70–89 → Medium confidence → manual review
-///   - Score &lt; 70 → below threshold  → not a duplicate
 /// </summary>
 public class PersonMatchResult
 {
@@ -47,8 +34,6 @@ public class PersonMatchResult
     public string ConfidenceLevel => SimilarityScore >= 90 ? "High"
                                    : SimilarityScore >= 70 ? "Medium"
                                    : "Low";
-
-    // ==================== INDIVIDUAL CRITERIA ====================
 
     public bool NationalIdMatched { get; init; }
     public bool PhoneMatched { get; init; }

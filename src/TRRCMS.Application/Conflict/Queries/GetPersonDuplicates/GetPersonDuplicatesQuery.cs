@@ -12,8 +12,6 @@ namespace TRRCMS.Application.Conflicts.Queries.GetPersonDuplicates;
 /// </summary>
 public class GetPersonDuplicatesQuery : IRequest<GetConflictQueueResponse>
 {
-    // ==================== FILTERS ====================
-
     /// <summary>
     /// Filter by status: PendingReview, Resolved, Ignored.
     /// Defaults to PendingReview for the active queue.
@@ -45,12 +43,8 @@ public class GetPersonDuplicatesQuery : IRequest<GetConflictQueueResponse>
     /// </summary>
     public bool? IsOverdue { get; set; }
 
-    // ==================== PAGINATION ====================
-
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
-
-    // ==================== SORTING ====================
 
     /// <summary>
     /// Sort field: DetectedDate, SimilarityScore, Priority (default: DetectedDate).

@@ -106,7 +106,7 @@ public sealed class AcknowledgeSyncAssignmentsCommandHandler
         // ── 5. Persist all changes atomically ─────────────────────────────────────
         await _uow.SaveChangesAsync(ct);
 
-        // ── 5b. Audit log: record the acknowledgement event (UC-012 S10) ─────────
+        // ── 5b. Audit log: record the acknowledgement event ─────────
         if (acknowledgedCount > 0)
         {
             await _auditService.LogActionAsync(

@@ -6,18 +6,14 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// <summary>
 /// Staging entity for Person records from .uhc packages.
 /// Mirrors the <see cref="Person"/> production entity in an isolated staging area.
-/// Central to duplicate detection per FSD FR-D-5 (Person Matching):
+/// Central to duplicate detection (person matching):
 /// - NationalId exact match
 /// - Arabic name Levenshtein similarity
 /// - Phone number match
 /// - Year of birth + gender composite
-/// 
-/// Referenced in UC-003 Stage 2 and UC-008 (Resolve Person Duplicates).
-/// </summary>
+///</summary>
 public class StagingPerson : BaseStagingEntity
 {
-    // ==================== NAME COMPONENTS ====================
-
     /// <summary>Family name in Arabic (اسم العائلة).</summary>
     public string FamilyNameArabic { get; private set; }
 
@@ -29,20 +25,14 @@ public class StagingPerson : BaseStagingEntity
 
     /// <summary>Mother's name in Arabic (اسم الأم).</summary>
     public string? MotherNameArabic { get; private set; }
-
-    // ==================== IDENTIFICATION ====================
-
     /// <summary>
-    /// National ID number — primary key for duplicate detection (FR-D-5, §12.2.4).
+    /// National ID number — primary key for duplicate detection.
     /// Exact match on this field produces a high-confidence duplicate.
     /// </summary>
     public string? NationalId { get; private set; }
 
     /// <summary>Date of birth (تاريخ الميلاد) — from command, optional. Used in duplicate detection composite.</summary>
     public DateTime? DateOfBirth { get; private set; }
-
-    // ==================== CONTACT ====================
-
     /// <summary>Email address.</summary>
     public string? Email { get; private set; }
 
@@ -51,17 +41,11 @@ public class StagingPerson : BaseStagingEntity
 
     /// <summary>Landline phone number.</summary>
     public string? PhoneNumber { get; private set; }
-
-    // ==================== DEMOGRAPHICS ====================
-
     /// <summary>Gender (الجنس).</summary>
     public Gender? Gender { get; private set; }
 
     /// <summary>Nationality (الجنسية).</summary>
     public Nationality? Nationality { get; private set; }
-
-    // ==================== HOUSEHOLD LINK ====================
-
     /// <summary>
     /// Original Household UUID from .uhc — not a FK to production Households.
     /// Used for intra-batch household structure validation.
@@ -73,9 +57,6 @@ public class StagingPerson : BaseStagingEntity
 
     /// <summary>Whether this person is the contact person for the survey.</summary>
     public bool IsContactPerson { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>EF Core constructor.</summary>
     private StagingPerson() : base()
     {
@@ -83,9 +64,6 @@ public class StagingPerson : BaseStagingEntity
         FirstNameArabic = string.Empty;
         FatherNameArabic = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new StagingPerson record from .uhc package data.
     /// </summary>

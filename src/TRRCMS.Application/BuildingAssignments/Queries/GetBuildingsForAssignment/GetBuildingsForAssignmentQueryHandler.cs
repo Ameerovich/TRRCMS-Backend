@@ -7,9 +7,8 @@ using TRRCMS.Domain.Entities;
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetBuildingsForAssignment;
 
 /// <summary>
-/// Handler for GetBuildingsForAssignmentQuery
-/// UC-012: S01-S03 - Search and select buildings for assignment
-/// Supports: Text search, administrative hierarchy, radius search, AND polygon search
+/// Handler for GetBuildingsForAssignmentQuery.
+/// Supports text search, administrative hierarchy, radius search, and polygon search.
 /// </summary>
 public class GetBuildingsForAssignmentQueryHandler 
     : IRequestHandler<GetBuildingsForAssignmentQuery, BuildingsForAssignmentPagedResult>
@@ -36,9 +35,6 @@ public class GetBuildingsForAssignmentQueryHandler
 
         if (usePolygonSearch)
         {
-            // ============================================================
-            // POLYGON SEARCH MODE
-            // ============================================================
             polygonWkt = ParsePolygonInput(request.PolygonWkt, request.Coordinates);
             polygonArea = CalculateApproximateArea(polygonWkt);
 
@@ -84,9 +80,6 @@ public class GetBuildingsForAssignmentQueryHandler
         }
         else
         {
-            // ============================================================
-            // REGULAR SEARCH MODE (with optional radius)
-            // ============================================================
             var (searchBuildings, searchTotalCount) = await _unitOfWork.Buildings.SearchBuildingsAsync(
                 governorateCode: request.GovernorateCode,
                 districtCode: request.DistrictCode,
@@ -110,9 +103,6 @@ public class GetBuildingsForAssignmentQueryHandler
             totalCount = searchTotalCount;
         }
 
-        // ============================================================
-        // GET ASSIGNMENT STATUS FOR BUILDINGS
-        // ============================================================
         var buildingIds = buildings.Select(b => b.Id).ToList();
         var activeAssignments = new Dictionary<Guid, (Guid AssignmentId, Guid CollectorId, string CollectorName)>();
         
@@ -132,9 +122,6 @@ public class GetBuildingsForAssignmentQueryHandler
             }
         }
 
-        // ============================================================
-        // FILTER BY ASSIGNMENT STATUS (if requested)
-        // ============================================================
         if (request.HasActiveAssignment.HasValue)
         {
             if (request.HasActiveAssignment.Value)
@@ -151,9 +138,6 @@ public class GetBuildingsForAssignmentQueryHandler
             totalCount = buildings.Count;
         }
 
-        // ============================================================
-        // MAP TO DTOs
-        // ============================================================
         var items = buildings.Select(b =>
         {
             var hasAssignment = activeAssignments.TryGetValue(b.Id, out var assignmentInfo);

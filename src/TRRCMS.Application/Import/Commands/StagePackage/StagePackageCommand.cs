@@ -7,8 +7,6 @@ namespace TRRCMS.Application.Import.Commands.StagePackage;
 /// Command to trigger staging (unpack .uhc → staging tables) and validation
 /// for an already-uploaded import package.
 ///
-/// UC-003 Stage 2 — S13 (Load to Staging), S14 (Detect Anomalies).
-///
 /// Prerequisites:
 ///   - Package must exist (created by UploadPackageCommand)
 ///   - Package status must be Validating (integrity checks passed)

@@ -2,7 +2,6 @@ namespace TRRCMS.Application.Dashboard.Dtos;
 
 /// <summary>
 /// Top-level dashboard statistics DTO.
-/// FR-D-12: Aggregated data for desktop dashboard widgets.
 /// Returned by GET /api/v1/dashboard/summary.
 /// </summary>
 public sealed class DashboardSummaryDto

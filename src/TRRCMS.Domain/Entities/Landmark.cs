@@ -12,8 +12,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Landmark : BaseAuditableEntity
 {
-    // ==================== IDENTIFICATION ====================
-
     /// <summary>
     /// Sequential integer identifier (managed by QGIS operator)
     /// </summary>
@@ -28,9 +26,6 @@ public class Landmark : BaseAuditableEntity
     /// Landmark type classification (نوع المعلم)
     /// </summary>
     public LandmarkType Type { get; private set; }
-
-    // ==================== SPATIAL DATA (PostGIS) ====================
-
     /// <summary>
     /// Point location (PostGIS POINT, SRID 4326)
     /// </summary>
@@ -45,9 +40,6 @@ public class Landmark : BaseAuditableEntity
     /// Longitude (convenience — matches Location.X)
     /// </summary>
     public decimal Longitude { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -55,9 +47,6 @@ public class Landmark : BaseAuditableEntity
     {
         Name = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new Landmark
     /// </summary>
@@ -83,9 +72,6 @@ public class Landmark : BaseAuditableEntity
         landmark.MarkAsCreated(createdByUserId);
         return landmark;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update landmark details
     /// </summary>

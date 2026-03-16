@@ -11,7 +11,6 @@ public class GetBuildingsInPolygonQueryValidator : AbstractValidator<GetBuilding
 {
     public GetBuildingsInPolygonQueryValidator(IVocabularyValidationService vocabService)
     {
-        // ==================== POLYGON INPUT ====================
         // Either PolygonWkt or Coordinates must be provided
 
         RuleFor(x => x)
@@ -51,7 +50,6 @@ public class GetBuildingsInPolygonQueryValidator : AbstractValidator<GetBuilding
             .When(x => x.Coordinates != null && x.Coordinates.All(c => c != null && c.Length == 2))
             .WithMessage("Coordinates must be within valid ranges (longitude: 35.0-43.0, latitude: 32.0-37.5 for Syria)");
 
-        // ==================== ENUM FILTERS ====================
 
         RuleFor(x => x.BuildingType)
             .Must(v => vocabService.IsValidCode("building_type", (int)v!.Value))
@@ -63,7 +61,6 @@ public class GetBuildingsInPolygonQueryValidator : AbstractValidator<GetBuilding
             .When(x => x.Status.HasValue)
             .WithMessage("Invalid building status value");
 
-        // ==================== PAGINATION ====================
 
         RuleFor(x => x.Page)
             .GreaterThanOrEqualTo(1).WithMessage("Page must be at least 1");

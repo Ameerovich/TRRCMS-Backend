@@ -7,7 +7,7 @@ using TRRCMS.Domain.Entities.Staging;
 namespace TRRCMS.Infrastructure.Services.Merge;
 
 /// <summary>
-/// Merges duplicate Person records as part of conflict resolution (UC-008 S06–S07).
+/// Merges duplicate Person records as part of conflict resolution.
 ///
 /// Handles both cross-batch (staging vs production) and within-batch (staging vs staging):
 ///
@@ -22,7 +22,6 @@ namespace TRRCMS.Infrastructure.Services.Merge;
 ///   - The master staging entity proceeds to commit normally.
 ///   - CommitService handles FK redirect via merge mapping.
 ///
-/// FSD Reference: FR-D-7 (Conflict Resolution), FR-D-5 (Person Matching).
 /// </summary>
 public class PersonMergeService : IMergeService
 {
@@ -81,9 +80,7 @@ public class PersonMergeService : IMergeService
             var relCount = 0;
             var claimCount = 0;
 
-            // ============================================================
-            // Case 1: Both in production (standard merge — rare in import flow)
-            // ============================================================
+            // Case 1: Both in production (standard merge)
             if (masterProd != null && discardedProd != null)
             {
                 MergePersonFields(masterProd, discardedProd, mergeMapping, conflicts);
@@ -99,9 +96,7 @@ public class PersonMergeService : IMergeService
                 result.MasterEntityId = masterProd.Id;
                 result.DiscardedEntityId = discardedProd.Id;
             }
-            // ============================================================
             // Case 2: Cross-batch — master is production, discarded is staging
-            // ============================================================
             else if (masterProd != null && discardedStaging != null)
             {
                 FillProductionGapsFromStaging(masterProd, discardedStaging, mergeMapping, conflicts);
@@ -118,9 +113,7 @@ public class PersonMergeService : IMergeService
                 result.MasterEntityId = masterProd.Id;
                 result.DiscardedEntityId = discardedEntityId; // staging OriginalEntityId
             }
-            // ============================================================
             // Case 3: Cross-batch — master is staging, discarded is production
-            // ============================================================
             else if (masterStaging != null && discardedProd != null)
             {
                 UpdateProductionFromStaging(discardedProd, masterStaging, mergeMapping, conflicts);
@@ -138,9 +131,7 @@ public class PersonMergeService : IMergeService
                 result.MasterEntityId = discardedProd.Id;
                 result.DiscardedEntityId = masterEntityId; // staging OriginalEntityId
             }
-            // ============================================================
             // Case 4: Within-batch — both are staging
-            // ============================================================
             else if (masterStaging != null && discardedStaging != null)
             {
                 discardedStaging.MarkAsSkipped("Within-batch duplicate — merged into master staging record");
@@ -177,8 +168,6 @@ public class PersonMergeService : IMergeService
         return result;
     }
 
-    // ==================== ENTITY RESOLUTION ====================
-
     /// <summary>
     /// Try to load an entity from production, then from staging.
     /// Returns (productionEntity, stagingEntity) — exactly one will be non-null.
@@ -202,8 +191,6 @@ public class PersonMergeService : IMergeService
 
         return (null, null);
     }
-
-    // ==================== PRODUCTION ↔ PRODUCTION MERGE ====================
 
     private static void MergePersonFields(
         Person master, Person discarded, Dictionary<string, string> mapping,
@@ -297,8 +284,6 @@ public class PersonMergeService : IMergeService
             master.FamilyNameArabic, discarded.FamilyNameArabic, "master");
     }
 
-    // ==================== CROSS-BATCH: PRODUCTION ← STAGING GAP FILL ====================
-
     private static void FillProductionGapsFromStaging(
         Person production, StagingPerson staging, Dictionary<string, string> mapping,
         Dictionary<string, FieldConflictInfo> conflicts)
@@ -362,8 +347,6 @@ public class PersonMergeService : IMergeService
         mapping["Names"] = "production";
     }
 
-    // ==================== CROSS-BATCH: STAGING → PRODUCTION OVERWRITE ====================
-
     private static void UpdateProductionFromStaging(
         Person production, StagingPerson staging, Dictionary<string, string> mapping,
         Dictionary<string, FieldConflictInfo> conflicts)
@@ -416,8 +399,6 @@ public class PersonMergeService : IMergeService
         }
     }
 
-    // ==================== PRODUCTION FK RE-POINTING ====================
-
     private async Task<(int RelationCount, int ClaimCount)> RePointProductionReferencesAsync(
         Guid masterPersonId, Guid discardedPersonId, CancellationToken ct)
     {
@@ -453,8 +434,6 @@ public class PersonMergeService : IMergeService
 
         return (relCount, claimCount);
     }
-
-    // ==================== FIELD CONFLICT DETECTION ====================
 
     /// <summary>
     /// Records a field conflict when both values are non-null/non-empty and differ.

@@ -7,8 +7,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetFieldCollectorAssignments;
 
 /// <summary>
-/// Handler for GetFieldCollectorAssignmentsQuery
-/// UC-012: View collector's current tasks
+/// Handler for GetFieldCollectorAssignmentsQuery.
 /// </summary>
 public class GetFieldCollectorAssignmentsQueryHandler 
     : IRequestHandler<GetFieldCollectorAssignmentsQuery, FieldCollectorTasksDto>

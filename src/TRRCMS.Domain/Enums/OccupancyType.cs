@@ -1,9 +1,8 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
 /// Occupancy type classification (نوع الإشغال)
 /// Describes the type of occupancy arrangement
-/// Referenced in FSD section 6.1.6
 /// </summary>
 public enum OccupancyType
 {

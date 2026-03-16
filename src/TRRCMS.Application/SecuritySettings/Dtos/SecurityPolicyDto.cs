@@ -27,15 +27,11 @@ public class SecurityPolicyDto
     /// <summary>User ID who applied this policy</summary>
     public Guid AppliedByUserId { get; set; }
 
-    // ==================== NESTED POLICY SECTIONS ====================
-
     public PasswordPolicyDto PasswordPolicy { get; set; } = null!;
 
     public SessionLockoutPolicyDto SessionLockoutPolicy { get; set; } = null!;
 
     public AccessControlPolicyDto AccessControlPolicy { get; set; } = null!;
-
-    // ==================== AUDIT ====================
 
     public DateTime CreatedAtUtc { get; set; }
 
@@ -43,7 +39,7 @@ public class SecurityPolicyDto
 }
 
 /// <summary>
-/// DTO for password policy section (UC-011 S03).
+/// DTO for password policy section.
 /// </summary>
 public class PasswordPolicyDto
 {
@@ -63,7 +59,7 @@ public class PasswordPolicyDto
 }
 
 /// <summary>
-/// DTO for session and lockout policy section (UC-011 S04).
+/// DTO for session and lockout policy section.
 /// </summary>
 public class SessionLockoutPolicyDto
 {
@@ -78,7 +74,7 @@ public class SessionLockoutPolicyDto
 }
 
 /// <summary>
-/// DTO for access control policy section (UC-011 S05).
+/// DTO for access control policy section.
 /// </summary>
 public class AccessControlPolicyDto
 {

@@ -1,17 +1,14 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
-/// Audit Log entity - comprehensive audit trail for all system actions
-/// Referenced in FSD section 13: Security & Compliance - Audit Trail Requirements
-/// Tracks all changes with 10+ year retention requirement
+/// Audit Log entity - comprehensive audit trail for all system actions.
+/// Tracks all changes with 10+ year retention requirement.
 /// </summary>
 public class AuditLog : BaseEntity
 {
-    // ==================== AUDIT IDENTIFICATION ====================
-
     /// <summary>
     /// Audit log entry number (sequential)
     /// </summary>
@@ -21,9 +18,6 @@ public class AuditLog : BaseEntity
     /// Timestamp when action occurred (UTC)
     /// </summary>
     public DateTime Timestamp { get; private set; }
-
-    // ==================== ACTION DETAILS ====================
-
     /// <summary>
     /// Type of action performed (Create, Update, Delete, Login, etc.)
     /// </summary>
@@ -38,9 +32,6 @@ public class AuditLog : BaseEntity
     /// Result of the action (Success, Failed, Partial)
     /// </summary>
     public string ActionResult { get; private set; }
-
-    // ==================== USER INFORMATION ====================
-
     /// <summary>
     /// User who performed the action
     /// </summary>
@@ -60,9 +51,6 @@ public class AuditLog : BaseEntity
     /// Full name of user (for historical record)
     /// </summary>
     public string UserFullName { get; private set; }
-
-    // ==================== ENTITY INFORMATION ====================
-
     /// <summary>
     /// Type of entity affected (e.g., "Claim", "Building", "Person")
     /// </summary>
@@ -77,9 +65,6 @@ public class AuditLog : BaseEntity
     /// Human-readable identifier of entity (e.g., Claim Number, Building ID)
     /// </summary>
     public string? EntityIdentifier { get; private set; }
-
-    // ==================== CHANGE TRACKING ====================
-
     /// <summary>
     /// Previous state/value (before change) stored as JSON
     /// For Update actions
@@ -96,9 +81,6 @@ public class AuditLog : BaseEntity
     /// Specific fields that were changed (comma-separated)
     /// </summary>
     public string? ChangedFields { get; private set; }
-
-    // ==================== REQUEST CONTEXT ====================
-
     /// <summary>
     /// IP address from which action was performed
     /// </summary>
@@ -123,9 +105,6 @@ public class AuditLog : BaseEntity
     /// Session ID
     /// </summary>
     public string? SessionId { get; private set; }
-
-    // ==================== ADDITIONAL CONTEXT ====================
-
     /// <summary>
     /// Additional contextual information stored as JSON
     /// E.g., import package details, export parameters, etc.
@@ -141,9 +120,6 @@ public class AuditLog : BaseEntity
     /// Stack trace if action failed (for debugging)
     /// </summary>
     public string? StackTrace { get; private set; }
-
-    // ==================== CORRELATION ====================
-
     /// <summary>
     /// Correlation ID to group related actions
     /// E.g., all changes in a single import operation
@@ -154,9 +130,6 @@ public class AuditLog : BaseEntity
     /// Parent audit log ID (for nested/related actions)
     /// </summary>
     public Guid? ParentAuditLogId { get; private set; }
-
-    // ==================== COMPLIANCE ====================
-
     /// <summary>
     /// Indicates if this is a security-sensitive action
     /// </summary>
@@ -169,12 +142,9 @@ public class AuditLog : BaseEntity
 
     /// <summary>
     /// Retention end date (for legal hold requirements)
-    /// Minimum 10 years from claim closure per FSD
+    /// Minimum 10 years from claim closure
     /// </summary>
     public DateTime? RetentionEndDate { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Parent audit log (if applicable)
     /// </summary>
@@ -182,9 +152,6 @@ public class AuditLog : BaseEntity
 
     // Note: User would be from User entity
     // public virtual User User { get; private set; } = null!;
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -246,9 +213,6 @@ public class AuditLog : BaseEntity
 
         return auditLog;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Set request context information
     /// </summary>
@@ -303,9 +267,6 @@ public class AuditLog : BaseEntity
             RetentionEndDate = newRetentionEndDate;
         }
     }
-
-    // ==================== HELPER METHODS ====================
-
     /// <summary>
     /// Check if action type is security-sensitive
     /// </summary>

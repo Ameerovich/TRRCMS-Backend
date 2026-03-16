@@ -1,17 +1,13 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Conflict Resolution entity - tracks duplicate detection and resolution workflow
-/// Referenced in UC-007 (Resolve Duplicate Properties) and UC-008 (Resolve Person Duplicates)
-/// Supports FSD section FR-D-7: Conflict Resolution
 /// </summary>
 public class ConflictResolution : BaseAuditableEntity
 {
-    // ==================== CONFLICT IDENTIFICATION ====================
-
     /// <summary>
     /// Conflict resolution number for tracking
     /// Format: CNF-YYYY-NNNN
@@ -22,9 +18,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// Type of conflict (PersonDuplicate, PropertyDuplicate, ClaimConflict)
     /// </summary>
     public string ConflictType { get; private set; }
-
-    // ==================== ENTITY REFERENCES ====================
-
     /// <summary>
     /// Type of entities in conflict (Person, PropertyUnit, Building)
     /// </summary>
@@ -54,9 +47,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// Import package that triggered this conflict (if applicable)
     /// </summary>
     public Guid? ImportPackageId { get; private set; }
-
-    // ==================== CONFLICT DETAILS ====================
-
     /// <summary>
     /// Similarity score (0-100%)
     /// Higher score means more similar/likely duplicate
@@ -84,9 +74,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// Side-by-side comparison of field values
     /// </summary>
     public string? DataComparison { get; private set; }
-
-    // ==================== RESOLUTION STATUS ====================
-
     /// <summary>
     /// Current resolution status (PendingReview, Resolved, Ignored)
     /// </summary>
@@ -126,9 +113,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// User who resolved the conflict
     /// </summary>
     public Guid? ResolvedByUserId { get; private set; }
-
-    // ==================== RESOLUTION DETAILS ====================
-
     /// <summary>
     /// Reason for the chosen resolution action
     /// </summary>
@@ -154,9 +138,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// Stored as JSON for audit trail
     /// </summary>
     public string? MergeMapping { get; private set; }
-
-    // ==================== PRIORITY & SLA ====================
-
     /// <summary>
     /// Priority level (Low, Normal, High, Critical)
     /// </summary>
@@ -171,9 +152,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// Indicates if resolution is overdue
     /// </summary>
     public bool IsOverdue { get; private set; }
-
-    // ==================== AUTOMATED VS MANUAL ====================
-
     /// <summary>
     /// Indicates if conflict was auto-detected by system
     /// </summary>
@@ -188,9 +166,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// Auto-resolution rule that was applied (if automated)
     /// </summary>
     public string? AutoResolutionRule { get; private set; }
-
-    // ==================== ESCALATION ====================
-
     /// <summary>
     /// Indicates if conflict has been escalated
     /// </summary>
@@ -210,9 +185,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// User who escalated
     /// </summary>
     public Guid? EscalatedByUserId { get; private set; }
-
-    // ==================== REVIEW TRACKING ====================
-
     /// <summary>
     /// Number of review attempts
     /// </summary>
@@ -223,9 +195,6 @@ public class ConflictResolution : BaseAuditableEntity
     /// Tracks all review attempts and decisions
     /// </summary>
     public string? ReviewHistory { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Import package that triggered this conflict
     /// </summary>
@@ -236,9 +205,6 @@ public class ConflictResolution : BaseAuditableEntity
     // public virtual User? AssignedToUser { get; private set; }
     // public virtual User? ResolvedByUser { get; private set; }
     // public virtual User? EscalatedByUser { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -306,9 +272,6 @@ public class ConflictResolution : BaseAuditableEntity
 
         return conflict;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Assign conflict to user for resolution
     /// </summary>
@@ -451,9 +414,6 @@ public class ConflictResolution : BaseAuditableEntity
         var endDate = ResolvedDate ?? DateTime.UtcNow;
         return endDate - DetectedDate;
     }
-
-    // ==================== HELPER METHODS ====================
-
     /// <summary>
     /// Generate conflict number
     /// Format: CNF-YYYY-NNNN

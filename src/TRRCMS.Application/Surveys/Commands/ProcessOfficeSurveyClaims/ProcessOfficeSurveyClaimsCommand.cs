@@ -26,7 +26,7 @@ public class ProcessOfficeSurveyClaimsCommand : IRequest<OfficeSurveyFinalizatio
 
     /// <summary>
     /// Whether to automatically create a claim if ownership relations exist
-    /// Default is true per FSD requirements
+    /// Default is true
     /// </summary>
     public bool AutoCreateClaim { get; set; } = true;
 }

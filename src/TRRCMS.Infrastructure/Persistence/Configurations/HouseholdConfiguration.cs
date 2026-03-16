@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TRRCMS.Domain.Entities;
 
@@ -18,8 +18,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         // Primary key
         builder.HasKey(h => h.Id);
 
-        // ==================== IDENTIFIERS ====================
-
         builder.Property(h => h.PropertyUnitId)
             .IsRequired()
             .HasComment("Foreign key to PropertyUnit");
@@ -27,8 +25,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.Property(h => h.HeadOfHouseholdPersonId)
             .IsRequired(false)
             .HasComment("Foreign key to Person (head of household)");
-
-        // ==================== BASIC INFORMATION ====================
 
         builder.Property(h => h.HeadOfHouseholdName)
             .IsRequired(false)
@@ -40,8 +36,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasDefaultValue(0)
             .HasComment("عدد الأفراد - Total household size");
 
-        // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
-
         builder.Property(h => h.OccupancyType)
             .IsRequired(false)
             .HasComment("نوع الإشغال - Occupancy type enum stored as integer");
@@ -49,8 +43,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.Property(h => h.OccupancyNature)
             .IsRequired(false)
             .HasComment("طبيعة الإشغال - Occupancy nature enum stored as integer");
-
-        // ==================== ADULTS BY GENDER ====================
 
         builder.Property(h => h.MaleCount)
             .IsRequired()
@@ -62,8 +54,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasDefaultValue(0)
             .HasComment("عدد البالغين الإناث - Number of adult females");
 
-        // ==================== CHILDREN BY GENDER (NEW) ====================
-
         builder.Property(h => h.MaleChildCount)
             .IsRequired()
             .HasDefaultValue(0)
@@ -73,8 +63,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .IsRequired()
             .HasDefaultValue(0)
             .HasComment("عدد الأطفال الإناث (أقل من 18) - Number of female children under 18");
-
-        // ==================== ELDERLY BY GENDER (NEW) ====================
 
         builder.Property(h => h.MaleElderlyCount)
             .IsRequired()
@@ -86,8 +74,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasDefaultValue(0)
             .HasComment("عدد كبار السن الإناث (أكثر من 65) - Number of female elderly over 65");
 
-        // ==================== DISABLED BY GENDER (NEW) ====================
-
         builder.Property(h => h.MaleDisabledCount)
             .IsRequired()
             .HasDefaultValue(0)
@@ -98,14 +84,10 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasDefaultValue(0)
             .HasComment("عدد المعاقين الإناث - Number of female persons with disabilities");
 
-        // ==================== NOTES ====================
-
         builder.Property(h => h.Notes)
             .IsRequired(false)
             .HasMaxLength(2000)
             .HasComment("ملاحظات - Household notes");
-
-        // ==================== COMPUTED TOTALS ====================
 
         builder.Property(h => h.ChildCount)
             .IsRequired()
@@ -121,8 +103,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .IsRequired()
             .HasDefaultValue(0)
             .HasComment("Total persons with disabilities - legacy total");
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(h => h.CreatedAtUtc)
             .IsRequired()
@@ -157,8 +137,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .IsRowVersion()
             .HasComment("Concurrency token");
 
-        // ==================== INDEXES ====================
-
         // Index for property unit lookups
         builder.HasIndex(h => h.PropertyUnitId)
             .HasDatabaseName("IX_Household_PropertyUnitId");
@@ -170,8 +148,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         // Index for soft delete queries
         builder.HasIndex(h => h.IsDeleted)
             .HasDatabaseName("IX_Household_IsDeleted");
-
-        // ==================== RELATIONSHIPS ====================
 
         // Relationship to PropertyUnit (Many-to-One)
         builder.HasOne(h => h.PropertyUnit)

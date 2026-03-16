@@ -9,8 +9,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// </summary>
 public interface ISurveyRepository
 {
-    // ==================== COMMON METHODS ====================
-
     /// <summary>
     /// Get survey by ID
     /// </summary>
@@ -52,11 +50,9 @@ public interface ISurveyRepository
     /// </summary>
     Task<Dictionary<Guid, Survey>> GetByClaimIdsAsync(IEnumerable<Guid> claimIds, CancellationToken cancellationToken = default);
 
-    // ==================== OFFICE SURVEY METHODS ====================
 
     /// <summary>
-    /// Get office surveys with filtering and pagination
-    /// UC-004/UC-005: Office survey listing
+    /// Get office surveys with filtering and pagination.
     /// </summary>
     Task<(List<Survey> Surveys, int TotalCount)> GetOfficeSurveysAsync(
         string? status = null,
@@ -73,8 +69,7 @@ public interface ISurveyRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get draft office surveys for an office clerk (for resuming)
-    /// UC-005: Resume draft office survey
+    /// Get draft office surveys for an office clerk (for resuming).
     /// </summary>
     Task<List<Survey>> GetOfficeDraftsByClerkAsync(Guid clerkId, CancellationToken cancellationToken = default);
 
@@ -87,7 +82,6 @@ public interface ISurveyRepository
     /// Get finalized office surveys (for reporting)
     /// </summary>
     Task<List<Survey>> GetFinalizedOfficeSurveysAsync(DateTime? fromDate = null, CancellationToken cancellationToken = default);
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
     /// <summary>
     /// Get count of surveys grouped by status.
@@ -112,7 +106,6 @@ public interface ISurveyRepository
     /// </summary>
     Task<Dictionary<SurveyType, int>> GetTypeCountsAsync(CancellationToken cancellationToken = default);
 
-    // ==================== DASHBOARD TREND QUERIES ====================
 
     /// <summary>
     /// Get monthly creation counts for time-series trends.

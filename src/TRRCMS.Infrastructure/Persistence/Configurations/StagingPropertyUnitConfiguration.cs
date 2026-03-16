@@ -9,8 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingPropertyUnit entity.
 /// Mirrors the PropertyUnit production table in an isolated staging area.
-/// Records are validated before commit to production (FSD FR-D-4).
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<StagingPropertyUnit>
 {
@@ -20,8 +18,6 @@ public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<Staging
 
         // Primary Key
         builder.HasKey(u => u.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(u => u.ImportPackageId)
             .IsRequired();
@@ -51,19 +47,13 @@ public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<Staging
         builder.Property(u => u.StagedAtUtc)
             .IsRequired();
 
-        // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
         builder.Property(u => u.OriginalBuildingId)
             .IsRequired()
             .HasComment("Original Building UUID from .uhc — not a FK to production Buildings");
 
-        // ==================== UNIT IDENTIFICATION ====================
-
         builder.Property(u => u.UnitIdentifier)
             .IsRequired()
             .HasMaxLength(50);
-
-        // ==================== UNIT ATTRIBUTES ====================
 
         builder.Property(u => u.UnitType)
             .IsRequired();
@@ -80,24 +70,16 @@ public class StagingPropertyUnitConfiguration : IEntityTypeConfiguration<Staging
         builder.Property(u => u.AreaSquareMeters)
             .HasPrecision(10, 2);
 
-        // ==================== DESCRIPTION ====================
-
         builder.Property(u => u.Description)
             .HasMaxLength(2000);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(u => u.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(u => u.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(u => u.ImportPackageId)
             .HasDatabaseName("IX_StagingPropertyUnits_ImportPackageId");

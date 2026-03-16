@@ -20,8 +20,6 @@ namespace TRRCMS.Application.Sync.Queries.GetSyncAssignments;
 /// by <see cref="GetSyncAssignmentsQueryHandler"/>.
 ///
 /// Sync Protocol Step 3 – GET /api/v1/sync/assignments.
-/// FSD: FR-D-5 (Sync Package Contents), FR-V-1 (Vocabulary Delivery).
-/// UC-012: Assign Buildings to Field Collectors.
 /// </summary>
 /// <param name="SyncSessionId">
 /// ID of the active <c>SyncSession</c> opened in Step 1.

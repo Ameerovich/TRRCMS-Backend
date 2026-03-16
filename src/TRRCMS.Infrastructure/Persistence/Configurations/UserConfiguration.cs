@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TRRCMS.Domain.Entities;
 
@@ -12,8 +12,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         // Primary Key
         builder.HasKey(u => u.Id);
-
-        // ==================== UNIQUE CONSTRAINTS ====================
 
         // Username - UNIQUE and INDEXED
         builder.Property(u => u.Username)
@@ -29,8 +27,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasIndex(u => u.Email)
             .IsUnique();
-
-        // ==================== AUTHENTICATION ====================
 
         builder.Property(u => u.PasswordHash)
             .IsRequired()
@@ -48,8 +44,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(500);
 
         builder.Property(u => u.RefreshTokenExpiryDate);
-
-        // ==================== PERSONAL INFORMATION ====================
 
         builder.Property(u => u.FullNameArabic)
             .IsRequired()
@@ -70,8 +64,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.JobTitle)
             .HasMaxLength(100);
 
-        // ==================== ROLE & PERMISSIONS ====================
-
         builder.Property(u => u.Role)
             .IsRequired()
             .HasConversion<int>(); // Store enum as int
@@ -84,8 +76,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.HasDesktopAccess)
             .IsRequired();
-
-        // ==================== ACCOUNT STATUS ====================
 
         builder.Property(u => u.IsActive)
             .IsRequired()
@@ -103,8 +93,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.LastFailedLoginDate);
 
-        // ==================== LOGIN TRACKING ====================
-
         builder.Property(u => u.LastLoginDate);
 
         builder.Property(u => u.LastPasswordChangeDate);
@@ -114,8 +102,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasDefaultValue(false);
 
         builder.Property(u => u.PasswordExpiryDate);
-
-        // ==================== TABLET ASSIGNMENT ====================
 
         builder.Property(u => u.AssignedTabletId)
             .HasMaxLength(50);
@@ -127,14 +113,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .HasDefaultValue(true)
             .HasComment("Indicates if field collector is available for new assignments");
 
-        // ==================== SUPERVISION ====================
-
         builder.Property(u => u.SupervisorUserId);
 
         builder.Property(u => u.TeamName)
             .HasMaxLength(100);
-
-        // ==================== PREFERENCES ====================
 
         builder.Property(u => u.PreferredLanguage)
             .IsRequired()
@@ -144,18 +126,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Preferences)
             .HasMaxLength(2000);
 
-        // ==================== SECURITY ====================
-
         builder.Property(u => u.TwoFactorEnabled)
             .IsRequired()
             .HasDefaultValue(false);
 
-        // ==================== NOTES ====================
-
         builder.Property(u => u.Notes)
             .HasMaxLength(1000);
-
-        // ==================== AUDIT FIELDS (from BaseAuditableEntity) ====================
 
         builder.Property(u => u.CreatedAtUtc)
             .IsRequired();
@@ -175,8 +151,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasDefaultValue(false);
 
-        // ==================== RELATIONSHIPS ====================
-
         // Self-referencing relationship: Supervisor
         builder.HasOne(u => u.Supervisor)
             .WithMany(u => u.Supervisees)
@@ -188,8 +162,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .WithOne(up => up.User)
             .HasForeignKey(up => up.UserId)
             .OnDelete(DeleteBehavior.Cascade); // If user deleted, delete their permissions
-
-        // ==================== INDEXES FOR PERFORMANCE ====================
 
         // Index on Role for filtering users by role
         builder.HasIndex(u => u.Role);
@@ -205,8 +177,6 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         // Composite index on IsDeleted and IsActive for common queries
         builder.HasIndex(u => new { u.IsDeleted, u.IsActive });
-
-        // ==================== COLUMN COMMENTS ====================
 
         builder.Property(u => u.Username)
             .HasComment("Unique username for login");

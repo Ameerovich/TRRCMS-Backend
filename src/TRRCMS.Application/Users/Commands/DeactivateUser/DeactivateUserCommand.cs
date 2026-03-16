@@ -4,8 +4,7 @@ using TRRCMS.Application.Users.Dtos;
 namespace TRRCMS.Application.Users.Commands.DeactivateUser;
 
 /// <summary>
-/// Deactivate user account command
-/// UC-009: User & Role Management
+/// Deactivate user account command.
 /// </summary>
 public class DeactivateUserCommand : IRequest<UserDto>
 {

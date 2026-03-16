@@ -7,8 +7,6 @@ namespace TRRCMS.Application.Surveys.Dtos;
 /// </summary>
 public class CreatedClaimSummaryDto
 {
-    // ==================== CLAIM IDENTIFIERS ====================
-
     /// <summary>
     /// Created claim ID
     /// </summary>
@@ -19,8 +17,6 @@ public class CreatedClaimSummaryDto
     /// Maps to UI: معرف المطالب
     /// </summary>
     public string ClaimNumber { get; set; } = string.Empty;
-
-    // ==================== UI-REQUIRED FIELDS ====================
 
     /// <summary>
     /// The unit identifier (number) of the property unit whose relationship generated the claim.
@@ -72,8 +68,6 @@ public class CreatedClaimSummaryDto
     /// Maps to UI: الأدلة متوفرة (green indicator)
     /// </summary>
     public bool HasEvidence { get; set; }
-
-    // ==================== ADDITIONAL CONTEXT ====================
 
     /// <summary>
     /// The person-property relation ID that generated this claim

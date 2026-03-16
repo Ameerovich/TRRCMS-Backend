@@ -17,8 +17,6 @@ public class NeighborhoodConfiguration : IEntityTypeConfiguration<Neighborhood>
         // Primary Key
         builder.HasKey(n => n.Id);
 
-        // ==================== ADMINISTRATIVE CODES ====================
-
         builder.Property(n => n.GovernorateCode)
             .IsRequired()
             .HasMaxLength(2);
@@ -52,16 +50,12 @@ public class NeighborhoodConfiguration : IEntityTypeConfiguration<Neighborhood>
         builder.HasIndex(n => new { n.GovernorateCode, n.DistrictCode, n.SubDistrictCode, n.CommunityCode })
             .HasDatabaseName("IX_Neighborhoods_AdminHierarchy");
 
-        // ==================== NAMES ====================
-
         builder.Property(n => n.NameArabic)
             .IsRequired()
             .HasMaxLength(200);
 
         builder.Property(n => n.NameEnglish)
             .HasMaxLength(200);
-
-        // ==================== SPATIAL DATA (PostGIS) ====================
 
         builder.Property(n => n.CenterPoint)
             .HasColumnType("geometry(Point, 4326)");
@@ -90,13 +84,9 @@ public class NeighborhoodConfiguration : IEntityTypeConfiguration<Neighborhood>
             .IsRequired()
             .HasDefaultValue(15);
 
-        // ==================== STATUS ====================
-
         builder.Property(n => n.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(n => n.CreatedAtUtc)
             .IsRequired();

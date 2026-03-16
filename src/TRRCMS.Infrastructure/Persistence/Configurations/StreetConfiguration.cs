@@ -17,8 +17,6 @@ public class StreetConfiguration : IEntityTypeConfiguration<Street>
         // Primary Key
         builder.HasKey(s => s.Id);
 
-        // ==================== IDENTIFICATION ====================
-
         builder.Property(s => s.Identifier)
             .IsRequired();
 
@@ -31,8 +29,6 @@ public class StreetConfiguration : IEntityTypeConfiguration<Street>
             .IsRequired()
             .HasMaxLength(500);
 
-        // ==================== SPATIAL DATA (PostGIS) ====================
-
         builder.Property(s => s.Geometry)
             .HasColumnType("geometry(LineString, 4326)");
 
@@ -43,8 +39,6 @@ public class StreetConfiguration : IEntityTypeConfiguration<Street>
 
         // Ignore computed WKT property (not stored)
         builder.Ignore(s => s.GeometryWkt);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(s => s.CreatedAtUtc)
             .IsRequired();

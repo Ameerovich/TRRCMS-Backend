@@ -9,8 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingHousehold entity.
 /// Mirrors the Household production table in an isolated staging area.
-/// Subject to household structure validation (FR-D-4 Level 4).
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHousehold>
 {
@@ -20,8 +18,6 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
 
         // Primary Key
         builder.HasKey(h => h.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(h => h.ImportPackageId)
             .IsRequired();
@@ -51,8 +47,6 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
         builder.Property(h => h.StagedAtUtc)
             .IsRequired();
 
-        // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
         builder.Property(h => h.OriginalPropertyUnitId)
             .IsRequired()
             .HasComment("Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits");
@@ -60,16 +54,12 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
         builder.Property(h => h.OriginalHeadOfHouseholdPersonId)
             .HasComment("Original head-of-household Person UUID from .uhc");
 
-        // ==================== HOUSEHOLD CORE ====================
-
         builder.Property(h => h.HeadOfHouseholdName)
             .IsRequired()
             .HasMaxLength(200);
 
         builder.Property(h => h.HouseholdSize)
             .IsRequired();
-
-        // ==================== GENDER COMPOSITION ====================
 
         builder.Property(h => h.MaleCount)
             .IsRequired()
@@ -103,8 +93,6 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
             .IsRequired()
             .HasDefaultValue(0);
 
-        // ==================== COMPUTED TOTALS ====================
-
         builder.Property(h => h.ChildCount)
             .IsRequired()
             .HasDefaultValue(0);
@@ -117,24 +105,16 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
             .IsRequired()
             .HasDefaultValue(0);
 
-        // ==================== ADDITIONAL ====================
-
         builder.Property(h => h.Notes)
             .HasMaxLength(2000);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(h => h.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(h => h.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(h => h.ImportPackageId)
             .HasDatabaseName("IX_StagingHouseholds_ImportPackageId");

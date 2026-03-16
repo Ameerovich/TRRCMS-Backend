@@ -1,4 +1,4 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
@@ -9,8 +9,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class ImportPackage : BaseAuditableEntity
 {
-    // ==================== PACKAGE IDENTIFICATION ====================
-
     /// <summary>
     /// Unique package identifier (from .uhc manifest)
     /// </summary>
@@ -31,9 +29,6 @@ public class ImportPackage : BaseAuditableEntity
     /// File size in bytes
     /// </summary>
     public long FileSizeBytes { get; private set; }
-
-    // ==================== PACKAGE METADATA ====================
-
     /// <summary>
     /// Date when package was created on tablet
     /// </summary>
@@ -53,9 +48,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Tablet/device ID that created the package
     /// </summary>
     public string? DeviceId { get; private set; }
-
-    // ==================== IMPORT STATUS ====================
-
     /// <summary>
     /// Current import status
     /// </summary>
@@ -90,9 +82,6 @@ public class ImportPackage : BaseAuditableEntity
     /// User who committed the data
     /// </summary>
     public Guid? CommittedByUserId { get; private set; }
-
-    // ==================== SECURITY & VALIDATION ====================
-
     /// <summary>
     /// SHA-256 checksum of the package file
     /// </summary>
@@ -112,9 +101,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Indicates if checksum is valid
     /// </summary>
     public bool IsChecksumValid { get; private set; }
-
-    // ==================== CONTENT SUMMARY ====================
-
     /// <summary>
     /// Number of surveys in the package
     /// </summary>
@@ -149,9 +135,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Total attachment size in bytes
     /// </summary>
     public long TotalAttachmentSizeBytes { get; private set; }
-
-    // ==================== VOCABULARY COMPATIBILITY ====================
-
     /// <summary>
     /// Vocabulary versions used in this package (stored as JSON)
     /// Format: {"ownership_type": "1.2.0", "document_type": "2.1.3", ...}
@@ -167,9 +150,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Vocabulary compatibility issues (if any)
     /// </summary>
     public string? VocabularyCompatibilityIssues { get; private set; }
-
-    // ==================== VALIDATION RESULTS ====================
-
     /// <summary>
     /// Schema version of the package
     /// </summary>
@@ -199,9 +179,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Number of validation warnings
     /// </summary>
     public int ValidationWarningCount { get; private set; }
-
-    // ==================== CONFLICT DETECTION ====================
-
     /// <summary>
     /// Number of person duplicates detected
     /// </summary>
@@ -221,9 +198,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Indicates if conflicts have been resolved
     /// </summary>
     public bool AreConflictsResolved { get; private set; }
-
-    // ==================== IMPORT RESULTS ====================
-
     /// <summary>
     /// Number of records successfully imported
     /// </summary>
@@ -243,18 +217,12 @@ public class ImportPackage : BaseAuditableEntity
     /// Import summary/notes
     /// </summary>
     public string? ImportSummary { get; private set; }
-
-    // ==================== COMMIT REPORT ====================
-
     /// <summary>
     /// Serialized JSON snapshot of the full commit report (entity breakdowns, idMappings, errors).
     /// Written once during commit; used by GET /commit-report to return the report after staging
     /// data has been cleaned up.
     /// </summary>
     public string? CommitReportJson { get; private set; }
-
-    // ==================== ERROR TRACKING ====================
-
     /// <summary>
     /// Error message if import failed
     /// </summary>
@@ -264,12 +232,9 @@ public class ImportPackage : BaseAuditableEntity
     /// Detailed error log (stored as JSON)
     /// </summary>
     public string? ErrorLog { get; private set; }
-
-    // ==================== ARCHIVAL ====================
-
     /// <summary>
     /// File path where original .uhc package is archived
-    /// Per FSD: archives/YYYY/MM/[package_id].uhc
+    ///
     /// </summary>
     public string? ArchivePath { get; private set; }
 
@@ -282,9 +247,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Date when package was archived
     /// </summary>
     public DateTime? ArchivedDate { get; private set; }
-
-    // ==================== FILE STORAGE ====================
-
     /// <summary>
     /// File system path where the uploaded .uhc file is stored during processing.
     /// Set by UploadPackageCommandHandler after saving via IImportService.SavePackageFileAsync().
@@ -292,9 +254,6 @@ public class ImportPackage : BaseAuditableEntity
     /// Cleared after archival to avoid stale references.
     /// </summary>
     public string? UploadedFilePath { get; private set; }
-
-    // ==================== PROCESSING METADATA ====================
-
     /// <summary>
     /// Processing notes from data manager
     /// </summary>
@@ -304,16 +263,10 @@ public class ImportPackage : BaseAuditableEntity
     /// Import method (Manual, NetworkSync, WatchedFolder)
     /// </summary>
     public string? ImportMethod { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     // Note: ExportedByUser, ImportedByUser, CommittedByUser would be User entities
     // public virtual User ExportedByUser { get; private set; } = null!;
     // public virtual User? ImportedByUser { get; private set; }
     // public virtual User? CommittedByUser { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -393,9 +346,6 @@ public class ImportPackage : BaseAuditableEntity
 
         return package;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Mark package as imported
     /// </summary>
@@ -693,9 +643,6 @@ public class ImportPackage : BaseAuditableEntity
             : $"{ProcessingNotes}\n{notes}";
         MarkAsModified(modifiedByUserId);
     }
-
-    // ==================== HELPER METHODS ====================
-
     private static string GeneratePackageNumber()
     {
         var year = DateTime.UtcNow.Year;

@@ -17,8 +17,6 @@ namespace TRRCMS.Application.Sync.DTOs;
 /// </list>
 ///
 /// Sync Protocol Step 3 – GET /api/v1/sync/assignments.
-/// FSD: FR-D-5 (Sync Package Contents), FR-V-1 (Vocabulary Delivery).
-/// UC-012: Assign Buildings to Field Collectors.
 /// </summary>
 public sealed record SyncAssignmentPayloadDto
 {

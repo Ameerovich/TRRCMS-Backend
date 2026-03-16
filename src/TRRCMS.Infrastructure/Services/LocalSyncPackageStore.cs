@@ -24,8 +24,6 @@ namespace TRRCMS.Infrastructure.Services;
 /// This implementation is intentionally simple and suitable for single-server
 /// deployments.  Replace with a distributed store (Azure Blob, S3) for
 /// multi-node environments.
-///
-/// FSD: FR-D-4 (Package Storage); FR-D-5 (Import Pipeline Integration).
 /// </summary>
 public sealed class LocalSyncPackageStore : ISyncPackageStore
 {
@@ -61,8 +59,6 @@ public sealed class LocalSyncPackageStore : ISyncPackageStore
                 "Created sync package quarantine directory at '{Path}'.", _quarantinePath);
         }
     }
-
-    // ==================== PUBLIC API ====================
 
     /// <inheritdoc />
     /// <remarks>
@@ -145,8 +141,6 @@ public sealed class LocalSyncPackageStore : ISyncPackageStore
         var exists = File.Exists(BuildPackagePath(packageId));
         return Task.FromResult(exists);
     }
-
-    // ==================== PRIVATE HELPERS ====================
 
     /// <summary>
     /// Builds the full file-system path for a package's <c>.uhc</c> blob.

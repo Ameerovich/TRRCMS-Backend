@@ -36,8 +36,6 @@ public class GetRelationsForPropertyUnitInSurveyQueryHandler
         GetRelationsForPropertyUnitInSurveyQuery request,
         CancellationToken cancellationToken)
     {
-        // ==================== AUTHORIZATION ====================
-
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
@@ -49,8 +47,6 @@ public class GetRelationsForPropertyUnitInSurveyQueryHandler
             throw new UnauthorizedAccessException("You can only view relations for your own surveys");
         }
 
-        // ==================== VALIDATE PROPERTY UNIT ====================
-
         var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId, cancellationToken)
             ?? throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
 
@@ -59,13 +55,9 @@ public class GetRelationsForPropertyUnitInSurveyQueryHandler
             throw new ValidationException("Property unit does not belong to the survey's building");
         }
 
-        // ==================== FETCH RELATIONS ====================
-
         // Use WithEvidences variant so EvidenceCount is populated correctly
         var relations = await _relationRepository.GetByPropertyUnitIdWithEvidencesAsync(
             request.PropertyUnitId, cancellationToken);
-
-        // ==================== MAP TO DTOs ====================
 
         return relations.Select(MapToDto).ToList();
     }

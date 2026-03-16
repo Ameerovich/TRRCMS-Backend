@@ -15,8 +15,6 @@ public class BuildingDocumentConfiguration : IEntityTypeConfiguration<BuildingDo
         builder.ToTable("BuildingDocuments");
         builder.HasKey(d => d.Id);
 
-        // ==================== RELATIONSHIP ====================
-
         builder.Property(d => d.BuildingId)
             .IsRequired();
 
@@ -28,14 +26,10 @@ public class BuildingDocumentConfiguration : IEntityTypeConfiguration<BuildingDo
         builder.HasIndex(d => d.BuildingId)
             .HasDatabaseName("IX_BuildingDocuments_BuildingId");
 
-        // ==================== DOCUMENT METADATA ====================
-
         builder.Property(d => d.Description)
             .IsRequired(false)
             .HasMaxLength(500)
             .HasComment("Optional description of the document");
-
-        // ==================== FILE INFORMATION ====================
 
         builder.Property(d => d.OriginalFileName)
             .IsRequired()
@@ -66,8 +60,6 @@ public class BuildingDocumentConfiguration : IEntityTypeConfiguration<BuildingDo
             .HasMaxLength(2000)
             .HasComment("Additional notes");
 
-        // ==================== AUDIT FIELDS ====================
-
         builder.Property(d => d.CreatedAtUtc).IsRequired();
         builder.Property(d => d.CreatedBy).IsRequired();
         builder.Property(d => d.LastModifiedAtUtc);
@@ -76,8 +68,6 @@ public class BuildingDocumentConfiguration : IEntityTypeConfiguration<BuildingDo
         builder.Property(d => d.DeletedAtUtc);
         builder.Property(d => d.DeletedBy);
         builder.Property(d => d.RowVersion).IsRowVersion();
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(d => d.FileHash)
             .HasDatabaseName("IX_BuildingDocuments_FileHash");

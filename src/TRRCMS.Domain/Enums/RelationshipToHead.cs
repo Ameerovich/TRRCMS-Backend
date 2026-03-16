@@ -1,9 +1,8 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
 /// Relationship to head of household classification
 /// Used for household composition and family structure
-/// Referenced in Person entity and household profiling
 /// </summary>
 public enum RelationshipToHead
 {

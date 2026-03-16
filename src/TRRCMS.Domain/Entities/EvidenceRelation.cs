@@ -9,8 +9,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class EvidenceRelation : BaseAuditableEntity
 {
-    // ==================== RELATIONSHIP KEYS ====================
-
     /// <summary>
     /// Foreign key to Evidence
     /// </summary>
@@ -20,9 +18,6 @@ public class EvidenceRelation : BaseAuditableEntity
     /// Foreign key to PersonPropertyRelation
     /// </summary>
     public Guid PersonPropertyRelationId { get; private set; }
-
-    // ==================== METADATA ====================
-
     /// <summary>
     /// Why this evidence was linked to this relation
     /// </summary>
@@ -42,9 +37,6 @@ public class EvidenceRelation : BaseAuditableEntity
     /// Whether this link is currently active
     /// </summary>
     public bool IsActive { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Evidence being linked
     /// </summary>
@@ -54,9 +46,6 @@ public class EvidenceRelation : BaseAuditableEntity
     /// Person-property relation being linked
     /// </summary>
     public virtual PersonPropertyRelation PersonPropertyRelation { get; private set; } = null!;
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -89,9 +78,6 @@ public class EvidenceRelation : BaseAuditableEntity
 
         return evidenceRelation;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Deactivate this link
     /// </summary>

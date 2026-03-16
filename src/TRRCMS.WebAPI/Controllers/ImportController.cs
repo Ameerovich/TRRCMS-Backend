@@ -25,9 +25,6 @@ namespace TRRCMS.WebAPI.Controllers;
 /// detect duplicates → approve → commit → archive.
 ///
 /// All endpoints require the CanImportData policy (System_Import permission).
-///
-/// UC-003 (Import .uhc Package) — Stages 1–4.
-/// FSD: FR-D-2, FR-D-3, FR-D-8, FR-D-9.
 /// </summary>
 [ApiController]
 [Route("api/v1/import")]
@@ -228,7 +225,7 @@ public class ImportController : ControllerBase
 
     /// <summary>
     /// Commit approved staging records to production tables.
-    /// Generates Record IDs (FR-D-8) and deduplicates attachments (FR-D-9).
+    /// Generates Record IDs and deduplicates attachments.
     /// </summary>
     /// <param name="id">ImportPackage surrogate ID.</param>
     /// <param name="command">Commit options.</param>
@@ -301,7 +298,7 @@ public class ImportController : ControllerBase
     }
 
     /// <summary>
-    /// Quarantine a suspicious import package (UC-003 S12b).
+    /// Quarantine a suspicious import package.
     /// </summary>
     /// <param name="id">ImportPackage surrogate ID.</param>
     /// <param name="command">Quarantine details with mandatory reason.</param>

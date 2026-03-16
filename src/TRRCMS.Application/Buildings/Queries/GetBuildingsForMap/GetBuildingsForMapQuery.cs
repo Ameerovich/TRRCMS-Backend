@@ -5,9 +5,8 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Buildings.Queries.GetBuildingsForMap;
 
 /// <summary>
-/// Query to get buildings within a bounding box for map display
-/// Returns lightweight DTOs optimized for performance
-/// UC-000: Manage Building Data - Map View
+/// Query to get buildings within a bounding box for map display.
+/// Returns lightweight DTOs optimized for performance.
 /// </summary>
 public class GetBuildingsForMapQuery : IRequest<List<BuildingMapDto>>
 {

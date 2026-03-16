@@ -4,8 +4,7 @@ using TRRCMS.Application.BuildingAssignments.Dtos;
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetAvailableFieldCollectors;
 
 /// <summary>
-/// Query to get available field collectors for building assignment
-/// UC-012: Select field collector for assignment
+/// Query to get available field collectors for building assignment.
 /// </summary>
 public record GetAvailableFieldCollectorsQuery : IRequest<List<AvailableFieldCollectorDto>>
 {

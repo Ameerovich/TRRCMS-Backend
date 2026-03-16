@@ -9,7 +9,6 @@ namespace TRRCMS.Application.Sync.DTOs;
 /// fields the Flutter tablet application needs for offline field operation.
 ///
 /// Sync Protocol Step 3 – GET /api/v1/sync/assignments.
-/// FSD: FR-D-5 (Sync Package Contents).
 /// </summary>
 public sealed record SyncBuildingDto
 {

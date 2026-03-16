@@ -28,8 +28,6 @@ namespace TRRCMS.Application.Sync.Commands.UploadSyncPackage;
 /// matching the simplicity of the Import upload endpoint.
 ///
 /// Security: only the field collector who owns the session may upload packages.
-/// FSD: FR-D-3 (Package Integrity), FR-D-4 (Package Storage).
-/// UC-003 Stage 2: S12 (Verify Package Integrity and Compatibility).
 /// </summary>
 public sealed class UploadSyncPackageCommandHandler
     : IRequestHandler<UploadSyncPackageCommand, UploadSyncPackageResultDto>

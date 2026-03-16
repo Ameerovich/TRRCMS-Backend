@@ -48,7 +48,6 @@ public sealed class GetPersonnelDashboardQueryHandler
             };
         }).ToList();
 
-        // Build office clerk workloads
         var officeClerkWorkloads = officeClerks.Select(user =>
         {
             var hasSurveys = surveyCountsByUser.TryGetValue(user.Id, out var surveyCounts);

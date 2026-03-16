@@ -6,7 +6,7 @@ namespace TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 /// <summary>
 /// Command to create a new property unit in the context of a field survey
 /// Simplified to match frontend form fields
-/// Corresponds to UC-001 Stage 2: Property Unit Selection - Create New Unit
+/// Creates a new property unit and links it to a survey
 /// </summary>
 public class CreatePropertyUnitInSurveyCommand : IRequest<PropertyUnitDto>
 {

@@ -3,7 +3,6 @@ namespace TRRCMS.Domain.Enums;
 /// <summary>
 /// Validation status for staging records during .uhc import pipeline.
 /// Tracks each record through the validation lifecycle before commit to production.
-/// Referenced in all Staging*Configuration files and UC-003 Stage 2 (S13).
 /// </summary>
 public enum StagingValidationStatus
 {

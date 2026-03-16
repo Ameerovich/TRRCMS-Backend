@@ -11,13 +11,9 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// - Idempotency enforcement (unique PackageId from manifest)
 /// - Status-based workflow queries (Pending → Validating → ... → Completed)
 /// - Package search and filtering for the import management UI
-/// 
-/// Referenced in UC-003 (Import .uhc Package) all stages.
 /// </summary>
 public interface IImportPackageRepository
 {
-    // ==================== BASIC CRUD ====================
-
     /// <summary>
     /// Get package by surrogate ID.
     /// </summary>
@@ -43,7 +39,6 @@ public interface IImportPackageRepository
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== IDEMPOTENCY ====================
 
     /// <summary>
     /// Get package by its manifest PackageId (the GUID from the .uhc manifest).
@@ -59,7 +54,6 @@ public interface IImportPackageRepository
     /// </summary>
     Task<bool> ExistsByPackageIdAsync(Guid packageId, CancellationToken cancellationToken = default);
 
-    // ==================== STATUS WORKFLOW ====================
 
     /// <summary>
     /// Get all packages with a specific import status.
@@ -84,7 +78,6 @@ public interface IImportPackageRepository
     Task<Dictionary<ImportStatus, int>> GetStatusCountsAsync(
         CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY USER ====================
 
     /// <summary>
     /// Get packages exported by a specific field collector.
@@ -100,7 +93,6 @@ public interface IImportPackageRepository
         Guid userId,
         CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY DATE ====================
 
     /// <summary>
     /// Get packages imported within a date range.
@@ -110,7 +102,6 @@ public interface IImportPackageRepository
         DateTime endDate,
         CancellationToken cancellationToken = default);
 
-    // ==================== SEARCH WITH PAGINATION ====================
 
     /// <summary>
     /// Search packages with filters and pagination.
@@ -129,7 +120,6 @@ public interface IImportPackageRepository
         bool sortDescending = true,
         CancellationToken cancellationToken = default);
 
-    // ==================== CONFLICT TRACKING ====================
 
     /// <summary>
     /// Get packages that have unresolved conflicts.
@@ -138,7 +128,6 @@ public interface IImportPackageRepository
     Task<List<ImportPackage>> GetWithUnresolvedConflictsAsync(
         CancellationToken cancellationToken = default);
 
-    // ==================== AGGREGATE QUERIES ====================
 
     /// <summary>
     /// Get total count of packages (excluding soft-deleted).
@@ -156,14 +145,12 @@ public interface IImportPackageRepository
     /// </summary>
     Task<(int Surveys, int Buildings, int Persons)> GetCompletedContentTotalsAsync(CancellationToken cancellationToken = default);
 
-    // ==================== QUERYABLE ACCESS ====================
 
     /// <summary>
     /// Get IQueryable for custom queries.
     /// </summary>
     IQueryable<ImportPackage> GetQueryable();
 
-    // ==================== DASHBOARD TREND QUERIES ====================
 
     /// <summary>
     /// Get monthly creation counts for time-series trends.

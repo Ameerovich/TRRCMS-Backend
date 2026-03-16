@@ -4,12 +4,10 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Common.Interfaces;
 
 /// <summary>
-/// Repository interface for BuildingAssignment operations
-/// Supports UC-012: Assign Buildings to Field Collectors
+/// Repository interface for BuildingAssignment operations.
 /// </summary>
 public interface IBuildingAssignmentRepository
 {
-    // ==================== BASIC CRUD ====================
     
     Task<BuildingAssignment?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     
@@ -23,7 +21,6 @@ public interface IBuildingAssignmentRepository
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== FIELD COLLECTOR QUERIES ====================
     
     /// <summary>
     /// Get all active assignments for a specific field collector
@@ -57,7 +54,6 @@ public interface IBuildingAssignmentRepository
         TransferStatus status,
         CancellationToken cancellationToken = default);
 
-    // ==================== BUILDING QUERIES ====================
     
     /// <summary>
     /// Get all assignments for a specific building
@@ -80,7 +76,6 @@ public interface IBuildingAssignmentRepository
         Guid buildingId,
         CancellationToken cancellationToken = default);
 
-    // ==================== STATUS QUERIES ====================
     
     /// <summary>
     /// Get assignments by transfer status
@@ -102,7 +97,6 @@ public interface IBuildingAssignmentRepository
     Task<List<BuildingAssignment>> GetOverdueAssignmentsAsync(
         CancellationToken cancellationToken = default);
 
-    // ==================== SEARCH WITH FILTERS ====================
     
     /// <summary>
     /// Search assignments with filters and pagination
@@ -121,7 +115,6 @@ public interface IBuildingAssignmentRepository
         bool sortDescending = false,
         CancellationToken cancellationToken = default);
 
-    // ==================== SYNC QUERIES ====================
 
     /// <summary>
     /// Get all active assignments for a field collector whose transfer status is
@@ -135,15 +128,13 @@ public interface IBuildingAssignmentRepository
     /// enabling incremental sync (tablet sends its last-synced-at timestamp).
     /// Pass <c>null</c> to retrieve all downloadable assignments.
     ///
-    /// Used by: <c>GetSyncAssignmentsQueryHandler</c> — Sync Step 3.
-    /// UC-012: Assign Buildings to Field Collectors.
+    /// Used by: <c>GetSyncAssignmentsQueryHandler</c>.
     /// </summary>
     Task<List<BuildingAssignment>> GetPendingOrFailedByFieldCollectorAsync(
         Guid fieldCollectorId,
         DateTime? modifiedSinceUtc = null,
         CancellationToken cancellationToken = default);
 
-    // ==================== REVISIT QUERIES ====================
 
     /// <summary>
     /// Get revisit assignments for a building
@@ -159,7 +150,6 @@ public interface IBuildingAssignmentRepository
         Guid revisitAssignmentId,
         CancellationToken cancellationToken = default);
 
-    // ==================== STATISTICS ====================
     
     /// <summary>
     /// Get assignment statistics for a field collector

@@ -47,7 +47,6 @@ public class StagingSummaryDto
     public long AttachmentBytesExtracted { get; set; }
 
     // ==================== DUPLICATE DETECTION SUMMARY ====================
-    // Populated when auto-duplicate detection runs during staging (UC-003 S14).
     // Null/zero if detection was not triggered (e.g. validation errors present).
 
     /// <summary>Number of person duplicate conflicts detected.</summary>

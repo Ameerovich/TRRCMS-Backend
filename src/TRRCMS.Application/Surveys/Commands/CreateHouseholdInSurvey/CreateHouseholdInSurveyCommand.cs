@@ -19,10 +19,6 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// </summary>
     public Guid? PropertyUnitId { get; set; }
 
-    // ==================== BASIC INFORMATION ====================
-    // Note: HeadOfHouseholdName is NOT set here.
-    // Use PUT {surveyId}/households/{householdId}/head/{personId} to designate the head.
-
     /// <summary>
     /// Total household size (عدد الأفراد) - required
     /// </summary>
@@ -32,8 +28,6 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// Notes/observations (ملاحظات)
     /// </summary>
     public string? Notes { get; set; }
-
-    // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
 
     /// <summary>
     /// Occupancy type (نوع الإشغال) - Enum: 1=OwnerOccupied, 2=TenantOccupied, etc.
@@ -45,8 +39,6 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// </summary>
     public int? OccupancyNature { get; set; }
 
-    // ==================== ADULTS COMPOSITION ====================
-
     /// <summary>
     /// Number of adult males (عدد البالغين الذكور)
     /// </summary>
@@ -56,8 +48,6 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// Number of adult females (عدد البالغين الإناث)
     /// </summary>
     public int FemaleCount { get; set; }
-
-    // ==================== CHILDREN COMPOSITION ====================
 
     /// <summary>
     /// Number of male children under 18 (عدد الأطفال الذكور - أقل من 18)
@@ -69,8 +59,6 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// </summary>
     public int FemaleChildCount { get; set; }
 
-    // ==================== ELDERLY COMPOSITION ====================
-
     /// <summary>
     /// Number of male elderly over 65 (عدد كبار السن الذكور - أكثر من 65)
     /// </summary>
@@ -80,8 +68,6 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// Number of female elderly over 65 (عدد كبار السن الإناث - أكثر من 65)
     /// </summary>
     public int FemaleElderlyCount { get; set; }
-
-    // ==================== DISABLED COMPOSITION ====================
 
     /// <summary>
     /// Number of male persons with disabilities (عدد المعاقين الذكور)

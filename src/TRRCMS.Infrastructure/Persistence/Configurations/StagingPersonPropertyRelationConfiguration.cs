@@ -9,9 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingPersonPropertyRelation entity.
 /// Mirrors the PersonPropertyRelation production table in an isolated staging area.
-/// Subject to cross-entity relation validation (FR-D-4 Level 2) and
-/// ownership evidence validation (FR-D-4 Level 3).
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfiguration<StagingPersonPropertyRelation>
 {
@@ -21,8 +18,6 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
 
         // Primary Key
         builder.HasKey(r => r.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(r => r.ImportPackageId)
             .IsRequired();
@@ -52,8 +47,6 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
         builder.Property(r => r.StagedAtUtc)
             .IsRequired();
 
-        // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
         builder.Property(r => r.OriginalPersonId)
             .IsRequired()
             .HasComment("Original Person UUID from .uhc — not a FK to production Persons");
@@ -61,8 +54,6 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
         builder.Property(r => r.OriginalPropertyUnitId)
             .IsRequired()
             .HasComment("Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits");
-
-        // ==================== RELATION DETAILS ====================
 
         builder.Property(r => r.RelationType)
             .IsRequired();
@@ -80,19 +71,13 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
             .IsRequired()
             .HasDefaultValue(true);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(r => r.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(r => r.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         builder.HasIndex(r => r.ImportPackageId)
             .HasDatabaseName("IX_StagingPersonPropertyRelations_ImportPackageId");

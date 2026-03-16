@@ -3,21 +3,9 @@ namespace TRRCMS.Domain.ValueObjects;
 /// <summary>
 /// Value object representing the result of comparing a staging PropertyUnit
 /// against production or within-batch data for duplicate detection.
-///
-/// Detection criterion (UC-007, FR-D-6):
-///   PropertyUnit duplicate = same BuildingCode (17-digit) + same UnitIdentifier.
-///   Both fields must match exactly (case-insensitive for UnitIdentifier).
-///
-/// No building-level duplicate detection is applied — the same building may
-/// legitimately appear across multiple surveys and claims.
-///
-/// Confidence: always High (exact composite key match).
-/// Score: always 100 (deterministic key-based match, no fuzzy scoring).
 /// </summary>
 public class PropertyMatchResult
 {
-    // ==================== STAGING UNIT ====================
-
     /// <summary>Surrogate ID of the staging property unit.</summary>
     public Guid StagingUnitId { get; init; }
 
@@ -26,8 +14,6 @@ public class PropertyMatchResult
 
     /// <summary>Human-readable composite key for the staging unit: "BuildingCode|UnitIdentifier".</summary>
     public string StagingUnitIdentifier { get; init; } = string.Empty;
-
-    // ==================== MATCHED UNIT ====================
 
     /// <summary>
     /// ID of the matched entity.
@@ -38,8 +24,6 @@ public class PropertyMatchResult
 
     /// <summary>Human-readable composite key for the matched unit: "BuildingCode|UnitIdentifier".</summary>
     public string MatchedUnitIdentifier { get; init; } = string.Empty;
-
-    // ==================== MATCH DETAILS ====================
 
     /// <summary>The 17-digit building code shared by both units.</summary>
     public string BuildingCode { get; init; } = string.Empty;

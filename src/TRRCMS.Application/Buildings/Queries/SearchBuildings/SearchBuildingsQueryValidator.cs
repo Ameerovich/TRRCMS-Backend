@@ -14,8 +14,6 @@ public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQu
 
     public SearchBuildingsQueryValidator(IVocabularyValidationService vocabService)
     {
-        // ==================== ADMINISTRATIVE CODES ====================
-
         RuleFor(x => x.GovernorateCode)
             .Matches(@"^\d{2}$").WithMessage("Governorate code must be exactly 2 digits")
             .When(x => !string.IsNullOrWhiteSpace(x.GovernorateCode));
@@ -36,7 +34,6 @@ public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQu
             .Matches(@"^\d{3}$").WithMessage("Neighborhood code must be exactly 3 digits")
             .When(x => !string.IsNullOrWhiteSpace(x.NeighborhoodCode));
 
-        // ==================== DIRECT IDENTIFIERS ====================
 
         RuleFor(x => x.BuildingId)
             .Matches(@"^\d+$").WithMessage("Building ID must contain only digits")
@@ -48,7 +45,6 @@ public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQu
             .MaximumLength(5).WithMessage("Building number cannot exceed 5 digits")
             .When(x => !string.IsNullOrWhiteSpace(x.BuildingNumber));
 
-        // ==================== ENUM FILTERS ====================
 
         RuleFor(x => x.Status)
             .Must(v => vocabService.IsValidCode("building_status", (int)v!.Value))
@@ -60,7 +56,6 @@ public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQu
             .When(x => x.BuildingType.HasValue)
             .WithMessage("Invalid building type value");
 
-        // ==================== PAGINATION ====================
 
         RuleFor(x => x.Page)
             .GreaterThanOrEqualTo(1).WithMessage("Page must be at least 1");
@@ -68,14 +63,12 @@ public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQu
         RuleFor(x => x.PageSize)
             .InclusiveBetween(1, 100).WithMessage("Page size must be between 1 and 100");
 
-        // ==================== SORTING ====================
 
         RuleFor(x => x.SortBy)
             .Must(sortBy => AllowedSortFields.Contains(sortBy!.ToLowerInvariant()))
             .When(x => !string.IsNullOrWhiteSpace(x.SortBy))
             .WithMessage("Sort field must be one of: buildingId, createdDate, status, buildingType");
 
-        // ==================== HIERARCHY CONSISTENCY ====================
         // District requires Governorate, SubDistrict requires District, etc.
 
         RuleFor(x => x)

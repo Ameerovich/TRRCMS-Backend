@@ -12,7 +12,7 @@ namespace TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 /// <summary>
 /// Handler for CreateOfficeSurveyCommand
 /// Creates new office survey with Draft status and generates reference code
-/// UC-004: Office Survey
+/// Creates new office survey with Draft status and generates reference code
 /// </summary>
 public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurveyCommand, SurveyDto>
 {

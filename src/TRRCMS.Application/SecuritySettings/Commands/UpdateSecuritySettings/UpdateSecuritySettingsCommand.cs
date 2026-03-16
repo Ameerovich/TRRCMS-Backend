@@ -5,17 +5,11 @@ namespace TRRCMS.Application.SecuritySettings.Commands.UpdateSecuritySettings;
 
 /// <summary>
 /// Command to validate and apply a new security policy configuration.
-/// UC-011: Security Settings (steps S03–S07).
-///
-/// Workflow:
-///   1. Admin configures password, session/lockout, and access control settings (S03–S05).
-///   2. System validates the combined configuration (S06).
-///   3. Admin applies the policy (S07) → creates a new versioned SecurityPolicy record.
-///   4. Previous active policy is deactivated; audit log entry is created (S08).
+/// Creates a new versioned SecurityPolicy record, deactivates the previous active policy, and logs the change.
 /// </summary>
 public class UpdateSecuritySettingsCommand : IRequest<SecurityPolicyDto>
 {
-    // ==================== PASSWORD POLICY (UC-011 S03) ====================
+    // Password policy
 
     /// <summary>Minimum password length (default: 8, range: 8–128)</summary>
     public int PasswordMinLength { get; set; } = 8;
@@ -38,7 +32,7 @@ public class UpdateSecuritySettingsCommand : IRequest<SecurityPolicyDto>
     /// <summary>Number of previous passwords blocked from reuse (0 = no restriction)</summary>
     public int PasswordReuseHistory { get; set; } = 5;
 
-    // ==================== SESSION & LOCKOUT POLICY (UC-011 S04) ====================
+    // Session and lockout policy
 
     /// <summary>Session inactivity timeout in minutes (range: 5–1440)</summary>
     public int SessionTimeoutMinutes { get; set; } = 30;
@@ -49,7 +43,7 @@ public class UpdateSecuritySettingsCommand : IRequest<SecurityPolicyDto>
     /// <summary>Account lockout duration in minutes (range: 1–1440)</summary>
     public int LockoutDurationMinutes { get; set; } = 15;
 
-    // ==================== ACCESS CONTROL POLICY (UC-011 S05) ====================
+    // Access control policy
 
     /// <summary>Allow username/password authentication</summary>
     public bool AllowPasswordAuthentication { get; set; } = true;
@@ -75,7 +69,7 @@ public class UpdateSecuritySettingsCommand : IRequest<SecurityPolicyDto>
     /// <summary>Comma-separated allowed environments (e.g., "Desktop,Mobile")</summary>
     public string? AllowedEnvironments { get; set; }
 
-    // ==================== METADATA ====================
+    // Metadata
 
     /// <summary>Human-readable description of what changed and why</summary>
     public string? ChangeDescription { get; set; }

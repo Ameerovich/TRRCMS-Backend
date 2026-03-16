@@ -28,9 +28,7 @@ public class GetBuildingsInPolygonQueryHandler
         GetBuildingsInPolygonQuery request,
         CancellationToken cancellationToken)
     {
-        // ============================================================
         // PARSE/VALIDATE POLYGON INPUT
-        // ============================================================
         
         string polygonWkt;
 
@@ -70,9 +68,7 @@ public class GetBuildingsInPolygonQueryHandler
             throw new ValidationException("Either PolygonWkt or Coordinates (minimum 3 points) must be provided.");
         }
 
-        // ============================================================
         // QUERY VIA REPOSITORY
-        // ============================================================
 
         var page = request.Page < 1 ? 1 : request.Page;
         var pageSize = request.PageSize < 1 ? 100 : (request.PageSize > 1000 ? 1000 : request.PageSize);
@@ -87,9 +83,7 @@ public class GetBuildingsInPolygonQueryHandler
                 pageSize: pageSize,
                 cancellationToken: cancellationToken);
 
-            // ============================================================
             // MAP RESULTS
-            // ============================================================
 
             var buildingDtos = buildings.Select(b => new BuildingInPolygonDto
             {

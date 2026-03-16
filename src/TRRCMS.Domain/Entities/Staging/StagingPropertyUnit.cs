@@ -1,37 +1,26 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities.Staging;
 
-
 /// <summary>
 /// Staging entity for PropertyUnit records from .uhc packages.
 /// Mirrors the <see cref="PropertyUnit"/> production entity in an isolated staging area.
-/// Records are validated before commit to production (FSD FR-D-4).
+/// Records are validated before commit to production.
 /// 
 /// Key staging-specific field:
 /// - <see cref="OriginalBuildingId"/>: UUID of the parent building in the .uhc package
 ///   (not a FK to production Buildings — resolved during commit via staging cross-references).
-/// 
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingPropertyUnit : BaseStagingEntity
 {
-    // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
     /// <summary>
     /// Original Building UUID from .uhc — not a FK to production Buildings.
     /// Used for intra-batch referential integrity validation.
     /// </summary>
     public Guid OriginalBuildingId { get; private set; }
-
-    // ==================== UNIT IDENTIFICATION ====================
-
     /// <summary>Unit identifier within the building.</summary>
     public string UnitIdentifier { get; private set; }
-
-    // ==================== UNIT ATTRIBUTES ====================
-
     /// <summary>Property unit type classification.</summary>
     public PropertyUnitType UnitType { get; private set; }
 
@@ -44,26 +33,15 @@ public class StagingPropertyUnit : BaseStagingEntity
     /// <summary>Number of rooms (عدد الغرف) — from command, optional.</summary>
     public int? NumberOfRooms { get; private set; }
 
-
     /// <summary>Measured area in square meters.</summary>
     public decimal? AreaSquareMeters { get; private set; }
-
-    // ==================== DESCRIPTION ====================
-
     /// <summary>General description of the property unit.</summary>
     public string? Description { get; private set; }
-
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>EF Core constructor.</summary>
     private StagingPropertyUnit() : base()
     {
         UnitIdentifier = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new StagingPropertyUnit record from .uhc package data.
     /// </summary>

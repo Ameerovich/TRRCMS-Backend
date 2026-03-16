@@ -18,8 +18,6 @@ namespace TRRCMS.Application.Import.Commands.UploadPackage;
 ///   6. Check vocabulary compatibility
 ///   7. Create ImportPackage entity with status=Pending
 ///   8. On failure → Quarantine
-/// 
-/// UC-003 Stage 2 — S12 (Verify Package Integrity).
 /// </summary>
 public class UploadPackageCommandHandler : IRequestHandler<UploadPackageCommand, UploadPackageResultDto>
 {

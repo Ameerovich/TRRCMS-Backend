@@ -13,10 +13,7 @@ public class CommunityConfiguration : IEntityTypeConfiguration<Community>
     {
         builder.ToTable("Communities");
 
-        // ==================== PRIMARY KEY ====================
         builder.HasKey(c => c.Id);
-
-        // ==================== CODES ====================
 
         builder.Property(c => c.Code)
             .IsRequired()
@@ -48,8 +45,6 @@ public class CommunityConfiguration : IEntityTypeConfiguration<Community>
         builder.HasIndex(c => new { c.GovernorateCode, c.DistrictCode, c.SubDistrictCode })
             .HasDatabaseName("IX_Communities_GovernorateCode_DistrictCode_SubDistrictCode");
 
-        // ==================== NAMES ====================
-
         builder.Property(c => c.NameArabic)
             .IsRequired()
             .HasMaxLength(200)
@@ -60,22 +55,16 @@ public class CommunityConfiguration : IEntityTypeConfiguration<Community>
             .HasMaxLength(200)
             .HasComment("English name");
 
-        // ==================== STATUS ====================
-
         builder.Property(c => c.IsActive)
             .IsRequired()
             .HasDefaultValue(true)
             .HasComment("Whether this community is active");
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne(c => c.SubDistrict)
             .WithMany()
             .HasForeignKey(c => new { c.GovernorateCode, c.DistrictCode, c.SubDistrictCode })
             .HasPrincipalKey(s => new { s.GovernorateCode, s.DistrictCode, s.Code })
             .OnDelete(DeleteBehavior.Restrict);
-
-        // ==================== AUDIT FIELDS ====================
 
         builder.Property(c => c.CreatedAtUtc)
             .IsRequired();

@@ -5,17 +5,14 @@ namespace TRRCMS.Domain.Entities.Staging;
 /// <summary>
 /// Staging entity for Household records from .uhc packages.
 /// Mirrors the <see cref="Household"/> production entity in an isolated staging area.
-/// Subject to household structure validation (FR-D-4 Level 4):
+/// Subject to household structure validation:
 /// - MaleCount + FemaleCount must be consistent with HouseholdSize
 /// - Head of household must exist in StagingPersons
 /// - Gender composition totals must be internally consistent
 ///
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingHousehold : BaseStagingEntity
 {
-    // ==================== RELATIONSHIPS (original UUIDs from .uhc) ====================
-
     /// <summary>
     /// Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits.
     /// </summary>
@@ -26,17 +23,11 @@ public class StagingHousehold : BaseStagingEntity
     /// Used for cross-entity validation (head must exist in StagingPersons).
     /// </summary>
     public Guid? OriginalHeadOfHouseholdPersonId { get; private set; }
-
-    // ==================== HOUSEHOLD CORE ====================
-
     /// <summary>Full name of the head of household.</summary>
     public string HeadOfHouseholdName { get; private set; }
 
     /// <summary>Total number of persons in the household.</summary>
     public int HouseholdSize { get; private set; }
-
-    // ==================== GENDER COMPOSITION ====================
-
     /// <summary>Number of adult males.</summary>
     public int MaleCount { get; private set; }
 
@@ -60,9 +51,6 @@ public class StagingHousehold : BaseStagingEntity
 
     /// <summary>Number of females with disabilities.</summary>
     public int FemaleDisabledCount { get; private set; }
-
-    // ==================== COMPUTED TOTALS ====================
-
     /// <summary>Total number of children (MaleChildCount + FemaleChildCount).</summary>
     public int ChildCount { get; private set; }
 
@@ -71,22 +59,13 @@ public class StagingHousehold : BaseStagingEntity
 
     /// <summary>Total number of persons with disabilities (MaleDisabledCount + FemaleDisabledCount).</summary>
     public int PersonsWithDisabilitiesCount { get; private set; }
-
-    // ==================== ADDITIONAL ====================
-
     /// <summary>Additional notes.</summary>
     public string? Notes { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>EF Core constructor.</summary>
     private StagingHousehold() : base()
     {
         HeadOfHouseholdName = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new StagingHousehold record from .uhc package data.
     /// </summary>

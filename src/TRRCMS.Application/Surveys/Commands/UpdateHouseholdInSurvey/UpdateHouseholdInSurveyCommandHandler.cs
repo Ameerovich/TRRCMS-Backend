@@ -100,7 +100,6 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         });
 
         // Update basic info if provided
-        // Note: HeadOfHouseholdName is managed via SetHouseholdHead endpoint, not here
         if (request.HouseholdSize.HasValue ||
             request.Notes != null ||
             request.OccupancyType.HasValue ||

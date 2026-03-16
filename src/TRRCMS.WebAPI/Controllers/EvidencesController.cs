@@ -71,9 +71,7 @@ public class EvidencesController : ControllerBase
     /// <remarks>
     /// Creates a new evidence record with file metadata and optional links to
     /// persons, claims, or property relations.
-    /// 
-    /// **Use Case**: UC-001 Field Survey - Upload supporting documents
-    /// 
+    ///
     /// **Required Permission**: Evidence_Upload (2001)
     /// 
     /// **Required Fields:**

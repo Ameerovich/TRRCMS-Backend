@@ -14,8 +14,6 @@ public class CreateContactPersonCommand : IRequest<PersonDto>
     /// </summary>
     public Guid SurveyId { get; set; }
 
-    // ==================== PERSONAL IDENTIFICATION (REQUIRED) ====================
-
     /// <summary>
     /// الاسم الأول - First name in Arabic (required)
     /// </summary>
@@ -35,8 +33,6 @@ public class CreateContactPersonCommand : IRequest<PersonDto>
     /// اسم الأم - Mother's name in Arabic (required)
     /// </summary>
     public string MotherNameArabic { get; set; } = string.Empty;
-
-    // ==================== OPTIONAL FIELDS ====================
 
     /// <summary>
     /// الرقم الوطني - National ID number (optional)

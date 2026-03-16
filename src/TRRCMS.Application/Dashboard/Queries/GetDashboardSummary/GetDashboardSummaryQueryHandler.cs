@@ -9,8 +9,6 @@ namespace TRRCMS.Application.Dashboard.Queries.GetDashboardSummary;
 /// Handler for <see cref="GetDashboardSummaryQuery"/>.
 /// Aggregates statistics from Claims, Surveys, ImportPackages, and Buildings
 /// to populate the desktop dashboard.
-///
-/// FR-D-12: Dashboard Statistics.
 /// </summary>
 public sealed class GetDashboardSummaryQueryHandler
     : IRequestHandler<GetDashboardSummaryQuery, DashboardSummaryDto>
@@ -36,8 +34,6 @@ public sealed class GetDashboardSummaryQueryHandler
         };
     }
 
-    // ── Claims ───────────────────────────────────────────────────────────────
-
     private async Task<ClaimStatisticsDto> BuildClaimStatisticsAsync(CancellationToken ct)
     {
         var statusCounts = await _uow.Claims.GetCaseStatusCountsAsync(ct);
@@ -49,8 +45,6 @@ public sealed class GetDashboardSummaryQueryHandler
                 kvp => kvp.Key.ToString(), kvp => kvp.Value)
         };
     }
-
-    // ── Surveys ──────────────────────────────────────────────────────────────
 
     private async Task<SurveyStatisticsDto> BuildSurveyStatisticsAsync(CancellationToken ct)
     {
@@ -72,14 +66,11 @@ public sealed class GetDashboardSummaryQueryHandler
         };
     }
 
-    // ── Imports ──────────────────────────────────────────────────────────────
-
     private async Task<ImportStatisticsDto> BuildImportStatisticsAsync(CancellationToken ct)
     {
         var statusCounts = await _uow.ImportPackages.GetStatusCountsAsync(ct);
         var unresolvedConflicts = await _uow.ImportPackages.GetWithUnresolvedConflictsAsync(ct);
 
-        // Active = in-flight pipeline statuses
         var activeStatuses = new[]
         {
             ImportStatus.Pending, ImportStatus.Validating, ImportStatus.Staging,
@@ -88,7 +79,6 @@ public sealed class GetDashboardSummaryQueryHandler
         var activeCount = activeStatuses
             .Sum(s => statusCounts.GetValueOrDefault(s, 0));
 
-        // Content totals from completed packages
         var contentTotals = await _uow.ImportPackages.GetCompletedContentTotalsAsync(ct);
 
         return new ImportStatisticsDto
@@ -103,8 +93,6 @@ public sealed class GetDashboardSummaryQueryHandler
             TotalPersonsImported = contentTotals.Persons
         };
     }
-
-    // ── Buildings ────────────────────────────────────────────────────────────
 
     private async Task<BuildingStatisticsDto> BuildBuildingStatisticsAsync(CancellationToken ct)
     {

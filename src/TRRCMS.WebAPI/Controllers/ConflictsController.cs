@@ -22,9 +22,6 @@ namespace TRRCMS.WebAPI.Controllers;
 /// detected during the import pipeline.
 ///
 /// All endpoints require the CanImportData policy (System_Import permission).
-///
-/// UC-007 (Resolve Duplicate Properties), UC-008 (Resolve Duplicate Persons).
-/// FSD: FR-D-5, FR-D-6, FR-D-7.
 /// </summary>
 [ApiController]
 [Route("api/v1/conflicts")]
@@ -92,12 +89,12 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // UC-007: PROPERTY DUPLICATE REVIEW QUEUE
+    // PROPERTY DUPLICATE REVIEW QUEUE
     // ====================================================================
 
     /// <summary>
     /// List the property duplicate review queue with filtering and pagination.
-    /// UC-007 S01�S02: Returns building/unit records flagged as potential duplicates
+    /// Returns building/unit records flagged as potential duplicates
     /// based on building_id or composite key (building_id + unit_code) matches.
     /// </summary>
     /// <response code="200">Paginated property duplicate queue.</response>
@@ -133,12 +130,12 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // UC-008: PERSON DUPLICATE REVIEW QUEUE
+    // PERSON DUPLICATE REVIEW QUEUE
     // ====================================================================
 
     /// <summary>
     /// List the person duplicate review queue with filtering and pagination.
-    /// UC-008 S01�S02: Returns person records sharing the same national_id value,
+    /// Returns person records sharing the same national_id value,
     /// including within-batch duplicates.
     /// </summary>
     /// <response code="200">Paginated person duplicate queue.</response>
@@ -174,12 +171,12 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // ESCALATED — SENIOR REVIEW QUEUE (UC-007 S05a, UC-008 S05a)
+    // ESCALATED — SENIOR REVIEW QUEUE
     // ====================================================================
 
     /// <summary>
     /// List the senior review queue — only escalated conflicts still pending resolution.
-    /// UC-007 S05a / UC-008 S05a: Complex cases escalated to supervisor for investigation.
+    /// Complex cases escalated to supervisor for investigation.
     /// Default sort: EscalatedDate descending (most recent escalations first).
     /// </summary>
     /// <response code="200">Paginated escalated conflict queue.</response>
@@ -216,8 +213,8 @@ public class ConflictsController : ControllerBase
 
     /// <summary>
     /// Get full conflict details for side-by-side review.
-    /// UC-007 S03�S04: Property detail comparison with codes, location, geometry.
-    /// UC-008 S03�S04: Person detail comparison with names, IDs, documents.
+    /// Property detail comparison with codes, location, geometry.
+    /// Person detail comparison with names, IDs, documents.
     /// </summary>
     /// <param name="id">ConflictResolution surrogate ID.</param>
     /// <response code="200">Conflict details returned.</response>
@@ -255,14 +252,14 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // DOCUMENT COMPARISON (UC-008 S04)
+    // DOCUMENT COMPARISON
     // ====================================================================
 
     /// <summary>
     /// Get side-by-side document/evidence comparison for a conflict pair.
-    /// UC-008 S04: Loads all evidence files and document records for both entities
+    /// Loads all evidence files and document records for both entities
     /// to enable the document viewer in the duplicate review screen.
-    /// Also supports UC-007 for property unit document comparison.
+    /// Also supports property unit document comparison.
     /// </summary>
     /// <param name="id">ConflictResolution surrogate ID.</param>
     /// <response code="200">Document comparison data returned.</response>
@@ -281,13 +278,13 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // MERGE (UC-007 S05a/S06, UC-008 S05a/S06)
+    // MERGE
     // ====================================================================
 
     /// <summary>
     /// Execute merge with selected master record.
-    /// UC-007 S06: Apply Property Merge Rules � consolidate property records.
-    /// UC-008 S06: Apply Person Merge Rules � consolidate person records.
+    /// Applies property merge rules to consolidate property records,
+    /// or person merge rules to consolidate person records.
     ///
     /// Invokes PersonMergeService or PropertyMergeService based on entity type.
     /// Propagates FK changes across related entities and builds audit trail.
@@ -311,13 +308,12 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // KEEP SEPARATE (UC-007 S05b, UC-008 S05b)
+    // KEEP SEPARATE
     // ====================================================================
 
     /// <summary>
-    /// Mark as reviewed, not duplicate � keep records separate.
-    /// UC-007 S05(b)/S06: Records are distinct properties, not duplicates.
-    /// UC-008 S05(b)/S06: Records are different individuals, not duplicates.
+    /// Mark as reviewed, not duplicate — keep records separate.
+    /// Records are distinct properties or different individuals, not duplicates.
     ///
     /// Prevents the same group from being re-surfaced unless detection rules change.
     /// </summary>
@@ -346,7 +342,7 @@ public class ConflictsController : ControllerBase
     /// <summary>
     /// Resolve a conflict with any action (merge, keep-both, keep-first, keep-second, ignore).
     /// This is the general-purpose resolution endpoint.
-    /// For UC-007/UC-008, prefer the dedicated /merge and /keep-separate endpoints.
+    /// Prefer the dedicated /merge and /keep-separate endpoints for duplicate resolution.
     /// </summary>
     /// <param name="id">ConflictResolution surrogate ID.</param>
     /// <param name="command">Resolution action and mandatory reason.</param>
@@ -365,13 +361,12 @@ public class ConflictsController : ControllerBase
     }
 
     // ====================================================================
-    // ESCALATION (UC-007 S05a, UC-008 S05a)
+    // ESCALATION
     // ====================================================================
 
     /// <summary>
     /// Escalate a conflict to senior/supervisor review.
-    /// UC-007 S05a: Complex property case requiring investigation.
-    /// UC-008 S05a: Complex person case requiring investigation (partial IDs, conflicting docs).
+    /// Complex property or person case requiring investigation (partial IDs, conflicting docs).
     ///
     /// Sets IsEscalated=true and Priority=High.
     /// Creates escalation record and adds to senior review queue.

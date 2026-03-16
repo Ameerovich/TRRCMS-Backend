@@ -74,8 +74,8 @@ public class PersonsController : ControllerBase
     /// Creates a new person record with identity and contact information.
     /// إضافة شخص جديد
     /// 
-    /// **Use Case**: UC-001 Field Survey - Register individuals for tenure documentation
-    /// 
+    /// **Use Case**: Register individuals for tenure documentation
+    ///
     /// **Required Permission**: Surveys_EditAll (7006) - CanEditAllSurveys policy
     /// 
     /// **Form Steps (matching mobile/desktop UI):**

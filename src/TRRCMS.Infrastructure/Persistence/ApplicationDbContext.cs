@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Entities;
@@ -27,21 +27,17 @@ public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
     public DbSet<Survey> Surveys => Set<Survey>();
 
-    // ==================== BUILDING ASSIGNMENTS ====================
     /// <summary>
     /// Building assignments for field collectors
-    /// UC-012: Assign Buildings to Field Collectors
     /// </summary>
     public DbSet<BuildingAssignment> BuildingAssignments => Set<BuildingAssignment>();
 
-    // ==================== NEIGHBORHOODS (Reference Data) ====================
     /// <summary>
     /// Neighborhood reference data with PostGIS boundary polygons.
     /// Used for map navigation and building location validation.
     /// </summary>
     public DbSet<Neighborhood> Neighborhoods => Set<Neighborhood>();
 
-    // ==================== ADMINISTRATIVE HIERARCHY (Reference Data) ====================
     /// <summary>
     /// Governorate (محافظة) - Top-level administrative division
     /// </summary>
@@ -62,35 +58,26 @@ public DbSet<Claim> Claims => Set<Claim>();
     /// </summary>
     public DbSet<Community> Communities => Set<Community>();
 
-    // ==================== NEW: AUDIT LOG ====================
     /// <summary>
     /// Audit logs for comprehensive system action tracking
-    /// Supports 10+ year retention requirement per FSD Section 13
     /// </summary>
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
-    // ==================== VOCABULARIES ====================
     /// <summary>
     /// Controlled vocabularies with semantic versioning.
     /// Provides bilingual labels for enum-backed dropdowns.
     /// </summary>
     public DbSet<Vocabulary> Vocabularies => Set<Vocabulary>();
 
-    // ==================== IMPORT PIPELINE ====================
-
     /// <summary>
     /// Import packages tracking the full .uhc import lifecycle.
-    /// Referenced in UC-003 and FSD FR-D-2 through FR-D-4.
     /// </summary>
     public DbSet<ImportPackage> ImportPackages => Set<ImportPackage>();
 
     /// <summary>
     /// Conflict resolution records for duplicate detection and merge decisions.
-    /// Referenced in UC-007, UC-008, and FSD FR-D-7.
     /// </summary>
     public DbSet<ConflictResolution> ConflictResolutions => Set<ConflictResolution>();
-
-    // ==================== STAGING ENTITIES (Import Pipeline) ====================
 
     /// <summary>
     /// Staging area for Building records from .uhc packages.
@@ -110,13 +97,11 @@ public DbSet<Claim> Claims => Set<Claim>();
 
     /// <summary>
     /// Staging area for Person records from .uhc packages.
-    /// Central to duplicate detection per FSD FR-D-5.
     /// </summary>
     public DbSet<StagingPerson> StagingPersons => Set<StagingPerson>();
 
     /// <summary>
     /// Staging area for Household records from .uhc packages.
-    /// Subject to household structure validation (FR-D-4 Level 4).
     /// </summary>
     public DbSet<StagingHousehold> StagingHouseholds => Set<StagingHousehold>();
 
@@ -128,13 +113,11 @@ public DbSet<Claim> Claims => Set<Claim>();
 
     /// <summary>
     /// Staging area for Evidence records from .uhc packages.
-    /// Subject to attachment deduplication by SHA-256 hash (FR-D-9).
     /// </summary>
     public DbSet<StagingEvidence> StagingEvidences => Set<StagingEvidence>();
 
     /// <summary>
     /// Staging area for Claim records from .uhc packages.
-    /// Subject to claim lifecycle validation (FR-D-4 Level 6).
     /// </summary>
     public DbSet<StagingClaim> StagingClaims => Set<StagingClaim>();
 
@@ -148,13 +131,10 @@ public DbSet<Claim> Claims => Set<Claim>();
     /// </summary>
     public DbSet<SyncSession> SyncSessions => Set<SyncSession>();
 
-
     /// <summary>
     /// Security Policy
     /// </summary>
     public DbSet<SecurityPolicy> SecurityPolicies => Set<SecurityPolicy>();
-
-    // ==================== MAP REFERENCE LAYERS ====================
 
     /// <summary>
     /// Landmarks — point features for map reference (mosques, schools, etc.)
@@ -167,7 +147,6 @@ public DbSet<Claim> Claims => Set<Claim>();
     /// Managed via QGIS plugin through the API.
     /// </summary>
     public DbSet<Street> Streets => Set<Street>();
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

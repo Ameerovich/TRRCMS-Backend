@@ -55,8 +55,8 @@ namespace TRRCMS.WebAPI.Controllers;
 /// Surveys controller for field and office survey operations
 /// </summary>
 /// <remarks>
-/// Supports UC-001 (Field Survey), UC-004 (Office Survey), and UC-005 (Draft Survey Management)
-/// 
+/// Supports field surveys, office surveys, and draft survey management.
+///
 /// **Permissions:**
 /// - Surveys_Create (7000) - CanCreateSurveys
 /// - Surveys_ViewOwn (7001) - CanViewOwnSurveys
@@ -77,13 +77,13 @@ public class SurveysController : ControllerBase
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
     }
 
-    // ==================== OFFICE SURVEY MANAGEMENT (UC-004/UC-005) ====================
+    // ==================== OFFICE SURVEY MANAGEMENT ====================
 
     /// <summary>
     /// Create a new office survey
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 - Office Survey for Walk-in Claimants
+    /// **Use Case**: Office Survey for Walk-in Claimants
     /// 
     /// **Purpose**: Initiates a new office survey when a claimant visits the office to submit a claim. This is the desktop alternative to field surveys.
     /// 
@@ -151,7 +151,7 @@ public class SurveysController : ControllerBase
     /// Get all office surveys with filtering and pagination
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004/UC-005 - List and search office surveys
+    /// **Use Case**: List and search office surveys
     /// 
     /// **Purpose**: Lists office surveys with flexible filtering options for clerks and supervisors.
     /// 
@@ -237,7 +237,7 @@ public class SurveysController : ControllerBase
     /// Get current clerk's draft office surveys
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-005 - Resume draft office survey
+    /// **Use Case**: Resume draft office survey
     /// 
     /// **Purpose**: Retrieves all draft office surveys created by the current user, allowing them to resume incomplete work.
     /// 
@@ -273,7 +273,7 @@ public class SurveysController : ControllerBase
     /// Get office survey details by ID
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004/UC-005 - View full office survey details
+    /// **Use Case**: View full office survey details
     /// 
     /// **Purpose**: Retrieves complete office survey with all related data.
     /// 
@@ -307,7 +307,7 @@ public class SurveysController : ControllerBase
     /// Update office survey details
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004/UC-005 - Update office survey details
+    /// **Use Case**: Update office survey details
     ///
     /// **Purpose**: Updates office survey fields. Only for Draft surveys. Only provided fields will be updated.
     ///
@@ -379,7 +379,7 @@ public class SurveysController : ControllerBase
     /// Process office survey claims from all person-property relations
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 S21 / UC-005 - Process office survey data and create claims
+    /// **Use Case**: Process office survey data and create claims
     ///
     /// **Purpose**: Validates survey data, collects summary, and creates one claim per
     /// person-property relation — WITHOUT changing the survey status.
@@ -454,7 +454,7 @@ public class SurveysController : ControllerBase
     /// إنهاء المسح المكتبي
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 S21 - Mark office survey as finalized
+    /// **Use Case**: Mark office survey as finalized
     ///
     /// **Purpose**: Transitions the survey status from Draft to Finalized.
     /// Does NOT create claims — use the `POST /api/v1/surveys/office/{id}/process-claims` endpoint for that.
@@ -547,7 +547,7 @@ public class SurveysController : ControllerBase
     /// حفظ مسودة المسح
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-002/UC-005 - Save draft and exit safely
+    /// **Use Case**: Save draft and exit safely
     ///
     /// **Purpose**: Saves current survey progress without finalizing. Use this to preserve
     /// work-in-progress before navigating away or closing the application.
@@ -611,7 +611,7 @@ public class SurveysController : ControllerBase
     /// عرض تفاصيل المسح
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-002 - Resume draft survey
+    /// **Use Case**: Resume draft survey
     ///
     /// **Purpose**: Retrieves complete survey details to resume work or view progress.
     /// Works for both field and office surveys.
@@ -658,14 +658,12 @@ public class SurveysController : ControllerBase
     }
 
     // ==================== PROPERTY UNIT MANAGEMENT ====================
-    // Add these endpoints to your existing SurveysController.cs
-    // Replace the old property unit endpoints with these updated versions
 
     /// <summary>
     /// Get all property units for survey's building
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 2 - View available property units
+    /// **Use Case**: View available property units
     /// 
     /// **Purpose**: Lists all property units in the building being surveyed.
     /// Field collectors can see existing units to select or create new ones.
@@ -734,7 +732,7 @@ public class SurveysController : ControllerBase
     /// Create new property unit in survey context
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 2 - Create new property unit during field survey
+    /// **Use Case**: Create new property unit during field survey
     /// 
     /// **Purpose**: Creates a new property unit and automatically links it to the survey.
     /// Use this when the unit doesn't exist in the system yet.
@@ -844,7 +842,7 @@ public class SurveysController : ControllerBase
     /// Update property unit in survey context
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 2 - Update property unit details during field survey
+    /// **Use Case**: Update property unit details during field survey
     /// 
     /// **Purpose**: Updates existing property unit details. Only provided fields will be updated.
     /// 
@@ -937,7 +935,7 @@ public class SurveysController : ControllerBase
     /// Link existing property unit to survey
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 2 - Select existing property unit
+    /// **Use Case**: Select existing property unit
     /// 
     /// **Purpose**: Links an existing property unit to the survey without creating a new one.
     /// Use this when the unit already exists in the system.
@@ -1005,7 +1003,7 @@ public class SurveysController : ControllerBase
     /// عرض جميع الأسر في المسح
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - View all households during survey
+    /// **Use Case**: View all households during survey
     ///
     /// **Purpose**: Retrieves all households linked to the survey's property unit(s).
     ///
@@ -1066,7 +1064,7 @@ public class SurveysController : ControllerBase
     /// تسجيل الأسرة - تسجيل تفاصيل الإشغال
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Household Registration
+    /// **Use Case**: Household Registration
     ///
     /// **Purpose**: Creates a new household and links it to the survey's property unit.
     ///
@@ -1166,7 +1164,7 @@ public class SurveysController : ControllerBase
     /// عرض تفاصيل الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - View household information
+    /// **Use Case**: View household information
     ///
     /// **Purpose**: Retrieves complete household details including occupancy and demographic data.
     ///
@@ -1237,7 +1235,7 @@ public class SurveysController : ControllerBase
     /// تحديث بيانات الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Update household during survey
+    /// **Use Case**: Update household during survey
     ///
     /// **Purpose**: Updates existing household details. Only provided fields will be updated (PATCH-style).
     ///
@@ -1325,7 +1323,7 @@ public class SurveysController : ControllerBase
     /// حذف الأسرة مع جميع البيانات المرتبطة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Remove household and all related data
+    /// **Use Case**: Remove household and all related data
     ///
     /// **Purpose**: Cascade soft-deletes a household and all its descendants:
     /// - All persons in the household
@@ -1393,7 +1391,7 @@ public class SurveysController : ControllerBase
     /// إضافة شخص الاتصال للمسح
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 / UC-004 - Add contact person as soon as survey starts
+    /// **Use Case**: Add contact person as soon as survey starts
     ///
     /// **Purpose**: Creates a person marked as contact person and links them to the survey.
     /// No household is required — this is for recording who was contacted at the survey site.
@@ -1481,7 +1479,7 @@ public class SurveysController : ControllerBase
     /// Add person to household in survey context (Office Survey workflow)
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - Person Registration
+    /// **Use Case**: Person Registration
     /// إضافة شخص جديد
     ///
     /// **Purpose**: Creates a new person and assigns them to a household.
@@ -1573,7 +1571,7 @@ public class SurveysController : ControllerBase
     /// تحديث بيانات شخص في الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 - Office Survey - Update Person Details
+    /// **Use Case**: Office Survey - Update Person Details
     /// تحديث بيانات شخص مسجل
     ///
     /// **Purpose**: Updates an existing person's details within a household while the survey is in Draft status.
@@ -1658,7 +1656,7 @@ public class SurveysController : ControllerBase
     /// عرض أفراد الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - View household members and contact person
+    /// **Use Case**: View household members and contact person
     ///
     /// **Purpose**: Lists all registered persons in a household, plus the survey's contact person (if any).
     ///
@@ -1753,7 +1751,7 @@ public class SurveysController : ControllerBase
     /// تعيين رب الأسرة
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Designate household head
+    /// **Use Case**: Designate household head
     ///
     /// **Purpose**: Links a Person entity as the official head of household.
     ///
@@ -1835,7 +1833,7 @@ public class SurveysController : ControllerBase
     /// ربط شخص بوحدة عقارية
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Establish person-property relationship
+    /// **Use Case**: Establish person-property relationship
     ///
     /// **Purpose**: Creates relationship between person and property unit for ownership/tenancy tracking.
     ///
@@ -1937,7 +1935,7 @@ public class SurveysController : ControllerBase
     /// Get all person-property relations for a property unit in survey context
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 - View all person-property relations
+    /// **Use Case**: View all person-property relations
     /// عرض جميع العلاقات بين الأشخاص والوحدة العقارية
     /// 
     /// **Purpose**: Returns all person-property relations linked to a specific property unit
@@ -2054,7 +2052,7 @@ public class SurveysController : ControllerBase
     /// Upload property photo
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - Evidence Collection (Property Photos)
+    /// **Use Case**: Evidence Collection (Property Photos)
     /// 
     /// **Purpose**: Upload photos of property (exterior, interior, damage documentation).
     /// 
@@ -2122,7 +2120,7 @@ public class SurveysController : ControllerBase
     /// Upload identification document for person
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - Evidence Collection (ID Documents)
+    /// **Use Case**: Evidence Collection (ID Documents)
     /// 
     /// **Purpose**: Upload identification documents for registered persons (ID cards, passports, birth certificates).
     /// 
@@ -2198,7 +2196,7 @@ public class SurveysController : ControllerBase
     /// تحديث وثيقة الهوية
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 - Office Survey - Update Identification Document
+    /// **Use Case**: Office Survey - Update Identification Document
     /// تحديث وثيقة هوية مرفقة
     ///
     /// **Purpose**: Updates an existing identification document's metadata and optionally replaces the file.
@@ -2292,7 +2290,7 @@ public class SurveysController : ControllerBase
     /// Upload tenure/ownership document
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - Evidence Collection (Tenure Documents)
+    /// **Use Case**: Evidence Collection (Tenure Documents)
     /// 
     /// **Purpose**: Upload documents proving ownership, tenancy, or other property rights.
     /// 
@@ -2381,7 +2379,7 @@ public class SurveysController : ControllerBase
     /// ربط دليل موجود بعلاقة شخص-عقار
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 - Office Survey - Link Evidence to Relation (Many-to-Many)
+    /// **Use Case**: Office Survey - Link Evidence to Relation (Many-to-Many)
     /// ربط دليل موجود بعلاقة شخص-عقار أخرى
     ///
     /// **Purpose**: Links an existing evidence document to a person-property relation.
@@ -2426,7 +2424,7 @@ public class SurveysController : ControllerBase
     /// تحديث وثيقة الملكية/الإيجار
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-004 - Office Survey - Update Tenure Document
+    /// **Use Case**: Office Survey - Update Tenure Document
     /// تحديث وثيقة إثبات الملكية أو الإيجار
     ///
     /// **Purpose**: Updates an existing tenure/ownership document's metadata and optionally replaces the file.
@@ -2527,7 +2525,7 @@ public class SurveysController : ControllerBase
     /// Get all evidence for a survey
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - View survey evidence
+    /// **Use Case**: View survey evidence
     /// 
     /// **Purpose**: Retrieves all evidence (documents, photos) uploaded during survey.
     /// 
@@ -2590,7 +2588,7 @@ public class SurveysController : ControllerBase
     /// Get evidence details by ID
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - View evidence details
+    /// **Use Case**: View evidence details
     /// 
     /// **Purpose**: Retrieves complete metadata for a specific evidence file.
     /// 
@@ -2626,7 +2624,7 @@ public class SurveysController : ControllerBase
     /// Download evidence file
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - Download evidence file
+    /// **Use Case**: Download evidence file
     /// 
     /// **Purpose**: Downloads the actual file (photo or document).
     /// 
@@ -2660,7 +2658,7 @@ public class SurveysController : ControllerBase
     /// Delete evidence
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 - Remove evidence
+    /// **Use Case**: Remove evidence
     /// 
     /// **Purpose**: Deletes evidence record and physical file (soft delete).
     /// 
@@ -2712,7 +2710,7 @@ public class SurveysController : ControllerBase
     /// تحديث العلاقة بين الشخص والوحدة العقارية
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Update an existing person-property relationship
+    /// **Use Case**: Update an existing person-property relationship
     ///
     /// **Purpose**: Partially updates an existing person-property relation created by
     /// **LinkPersonToPropertyUnit** (POST). Only provided fields are updated; omitted fields
@@ -2846,7 +2844,7 @@ public class SurveysController : ControllerBase
     /// حذف العلاقة بين الشخص والوحدة العقارية
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 3 / UC-004 - Remove person-property relation
+    /// **Use Case**: Remove person-property relation
     ///
     /// **Purpose**: Soft-deletes a person-property relation and optionally deletes associated evidence files.
     ///
@@ -2899,7 +2897,7 @@ public class SurveysController : ControllerBase
     /// Get evidences for a person-property relation (صور المستندات)
     /// </summary>
     /// <remarks>
-    /// **Use Case**: UC-001 Stage 4 / UC-004 - View evidence for a specific relation
+    /// **Use Case**: View evidence for a specific relation
     ///
     /// **Purpose**: Retrieves all evidence documents linked to a person-property relation.
     /// Supports filtering by evidence type and version control.

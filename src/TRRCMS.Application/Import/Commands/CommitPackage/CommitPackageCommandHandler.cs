@@ -13,8 +13,8 @@ namespace TRRCMS.Application.Import.Commands.CommitPackage;
 ///
 /// Delegates actual commit work to <see cref="ICommitService"/> which handles:
 ///   - Staging → production entity mapping
-///   - Record ID generation (FR-D-8)
-///   - Attachment deduplication (FR-D-9)
+///   - Record ID generation
+///   - Attachment deduplication
 ///   - Transactional insert of production entities
 ///
 /// This handler is responsible for:
@@ -23,8 +23,6 @@ namespace TRRCMS.Application.Import.Commands.CommitPackage;
 ///   - Archiving the .uhc package after commit
 ///   - Optional staging data cleanup
 ///   - Error handling and reporting
-///
-/// UC-003 Stage 4 — S17 (Commit to Production), S11 (Archive).
 /// </summary>
 public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand, CommitReportDto>
 {

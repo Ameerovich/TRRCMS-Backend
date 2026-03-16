@@ -1,4 +1,4 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 
 namespace TRRCMS.Domain.Entities;
 
@@ -8,8 +8,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class Vocabulary : BaseAuditableEntity
 {
-    // ==================== VOCABULARY IDENTIFICATION ====================
-
     /// <summary>
     /// Vocabulary name/identifier (e.g., "ownership_type", "document_type")
     /// Unique identifier for the vocabulary category
@@ -30,9 +28,6 @@ public class Vocabulary : BaseAuditableEntity
     /// Description of this vocabulary category
     /// </summary>
     public string? Description { get; private set; }
-
-    // ==================== VERSIONING ====================
-
     /// <summary>
     /// Semantic version: MAJOR.MINOR.PATCH
     /// MAJOR: Breaking changes (incompatible)
@@ -70,9 +65,6 @@ public class Vocabulary : BaseAuditableEntity
     /// Reference to previous version (if this is an update)
     /// </summary>
     public Guid? PreviousVersionId { get; private set; }
-
-    // ==================== VOCABULARY VALUES ====================
-
     /// <summary>
     /// Vocabulary values stored as JSON
     /// Format: [{"code": "1", "labelAr": "مالك", "labelEn": "Owner", "description": "...", "displayOrder": 1}, ...]
@@ -83,9 +75,6 @@ public class Vocabulary : BaseAuditableEntity
     /// Number of values in this vocabulary
     /// </summary>
     public int ValueCount { get; private set; }
-
-    // ==================== METADATA ====================
-
     /// <summary>
     /// Category or grouping (e.g., "Demographics", "Property", "Legal")
     /// </summary>
@@ -110,9 +99,6 @@ public class Vocabulary : BaseAuditableEntity
     /// Indicates if this vocabulary is active/published
     /// </summary>
     public bool IsActive { get; private set; }
-
-    // ==================== IMPORT COMPATIBILITY ====================
-
     /// <summary>
     /// Minimum compatible version for imports
     /// Imports with earlier versions will be rejected
@@ -123,9 +109,6 @@ public class Vocabulary : BaseAuditableEntity
     /// Changelog describing changes in this version
     /// </summary>
     public string? ChangeLog { get; private set; }
-
-    // ==================== USAGE TRACKING ====================
-
     /// <summary>
     /// Date when vocabulary was last used
     /// </summary>
@@ -135,16 +118,10 @@ public class Vocabulary : BaseAuditableEntity
     /// Count of how many times this vocabulary has been used
     /// </summary>
     public int UsageCount { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Previous version of this vocabulary
     /// </summary>
     public virtual Vocabulary? PreviousVersion { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -205,9 +182,6 @@ public class Vocabulary : BaseAuditableEntity
 
         return vocabulary;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Create new version with added values (MINOR version bump)
     /// </summary>
@@ -409,9 +383,6 @@ public class Vocabulary : BaseAuditableEntity
         // Same major and minor version
         return checkPatch >= minPatch;
     }
-
-    // ==================== HELPER METHODS ====================
-
     /// <summary>
     /// Count number of values in JSON array
     /// Simple implementation - can be enhanced

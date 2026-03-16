@@ -5,7 +5,7 @@ namespace TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
 
 /// <summary>
 /// Command to update an existing office survey
-/// Corresponds to UC-004/UC-005: Office Survey update workflow
+/// Supports partial updates while survey is in Draft status
 /// </summary>
 public class UpdateOfficeSurveyCommand : IRequest<SurveyDto>
 {
@@ -14,22 +14,16 @@ public class UpdateOfficeSurveyCommand : IRequest<SurveyDto>
     /// </summary>
     public Guid SurveyId { get; set; }
 
-    // ==================== BUILDING CONTEXT ====================
-
     /// <summary>
     /// Property unit being surveyed (can be changed while in Draft)
     /// If provided, must belong to the survey's building
     /// </summary>
     public Guid? PropertyUnitId { get; set; }
 
-    // ==================== SURVEY DATE ====================
-
     /// <summary>
     /// Date when survey is being conducted
     /// </summary>
     public DateTime? SurveyDate { get; set; }
-
-    // ==================== SURVEY METADATA ====================
 
     /// <summary>
     /// Survey notes and observations
@@ -40,8 +34,6 @@ public class UpdateOfficeSurveyCommand : IRequest<SurveyDto>
     /// Duration of survey in minutes
     /// </summary>
     public int? DurationMinutes { get; set; }
-
-    // ==================== OFFICE SPECIFIC ====================
 
     /// <summary>
     /// Office location where survey is being conducted

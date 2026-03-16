@@ -41,7 +41,6 @@ public class ResolveConflictCommandHandler
         _auditService = auditService
             ?? throw new ArgumentNullException(nameof(auditService));
 
-        // Resolve named merge services from the DI collection
         var services = mergeServices.ToList();
         _personMergeService = services.FirstOrDefault(s => s.EntityType == "Person")
             ?? throw new InvalidOperationException("PersonMergeService not registered.");
@@ -56,7 +55,6 @@ public class ResolveConflictCommandHandler
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated.");
 
-        // 1. Load and validate conflict
         var conflict = await _unitOfWork.ConflictResolutions.GetByIdAsync(request.ConflictId, cancellationToken)
             ?? throw new NotFoundException(
                 $"Conflict with ID {request.ConflictId} not found.");
@@ -68,11 +66,9 @@ public class ResolveConflictCommandHandler
                 "and cannot be resolved. Only PendingReview conflicts can be resolved.");
         }
 
-        // 2. Record review attempt
         conflict.RecordReviewAttempt(
             $"Resolution: {request.Action} — {request.Reason}", userId);
 
-        // 3. Execute merge if applicable
         Guid? mergedEntityId = null;
         Guid? discardedEntityId = null;
         string? mergeMappingJson = null;
@@ -102,7 +98,6 @@ public class ResolveConflictCommandHandler
             discardedEntityId = conflict.FirstEntityId;
         }
 
-        // 4. Resolve via domain method
         if (request.Action == ConflictResolutionAction.Ignored)
         {
             conflict.Ignore(request.Reason, userId);
@@ -122,17 +117,14 @@ public class ResolveConflictCommandHandler
 
         await _unitOfWork.ConflictResolutions.UpdateAsync(conflict, cancellationToken);
 
-        // 5. Check if all conflicts for package are resolved → transition package
         if (conflict.ImportPackageId.HasValue)
         {
             await TryTransitionPackageToReadyAsync(
                 conflict.ImportPackageId.Value, userId, cancellationToken);
         }
 
-        // Single atomic save for both conflict resolution and package transition
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // 6. Audit log
         await _auditService.LogActionAsync(
             AuditActionType.ConflictResolved,
             $"Conflict {conflict.ConflictNumber} resolved with action '{request.Action}'.",
@@ -141,7 +133,6 @@ public class ResolveConflictCommandHandler
             entityIdentifier: conflict.ConflictNumber,
             cancellationToken: cancellationToken);
 
-        // 7. Return updated detail
         return MapToDetailDto(conflict);
     }
 

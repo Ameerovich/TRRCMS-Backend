@@ -3,15 +3,12 @@
 namespace TRRCMS.Application.Common.Services;
 
 /// <summary>
-/// Provides default permission assignments for user roles
-/// Moved from Infrastructure to Application (business logic, not infrastructure concern)
-/// Updated: January 25, 2026 - Added Survey permissions for UC-001, UC-002, UC-004, UC-005
+/// Provides default permission assignments for user roles.
 /// </summary>
 public static class PermissionSeeder
 {
     /// <summary>
-    /// Get default permissions for a given user role
-    /// Based on FSD Section 3: Stakeholders & Roles
+    /// Get default permissions for a given user role.
     /// </summary>
     public static IEnumerable<Permission> GetDefaultPermissionsForRole(UserRole role)
     {
@@ -35,7 +32,6 @@ public static class PermissionSeeder
     {
         return new List<Permission>
         {
-            // ==================== CLAIMS ====================
             Permission.Claims_ViewAll,
             Permission.Claims_ViewAssigned,
             Permission.Claims_Create,
@@ -51,46 +47,40 @@ public static class PermissionSeeder
             Permission.Claims_Export,
             Permission.Claims_ViewHistory,
 
-            // ==================== EVIDENCE ====================
             Permission.Evidence_View,
             Permission.Evidence_Upload,
             Permission.Evidence_Verify,
             Permission.Evidence_Delete,
 
-            // ==================== BUILDINGS ====================
             Permission.Buildings_View,
             Permission.Buildings_Create,
             Permission.Buildings_Update,
             Permission.Buildings_Assign,
             Permission.Buildings_Delete,
 
-            // ==================== PERSONS ====================
             Permission.Persons_View,
             Permission.Persons_Create,
             Permission.Persons_Update,
             Permission.Persons_Merge,
             Permission.Persons_Delete,
 
-            // ==================== PROPERTY UNITS ====================
             Permission.PropertyUnits_View,
             Permission.PropertyUnits_Create,
             Permission.PropertyUnits_Update,
             Permission.PropertyUnits_Merge,
             Permission.PropertyUnits_Delete,
 
-            // ==================== SURVEYS (FULL ACCESS) ====================
-            Permission.Surveys_Create,      // UC-001, UC-004: Create surveys
+            Permission.Surveys_Create,      // Create surveys
             Permission.Surveys_View,        // View all surveys
             Permission.Surveys_ViewAll,     // View all surveys (alias)
             Permission.Surveys_ViewOwn,     // View own surveys
-            Permission.Surveys_EditOwn,     // UC-002: Edit own surveys
+            Permission.Surveys_EditOwn,     // Edit own surveys
             Permission.Surveys_EditAll,     // Edit any survey
-            Permission.Surveys_Finalize,    // UC-002, UC-005: Finalize surveys
+            Permission.Surveys_Finalize,    // Finalize surveys
             Permission.Surveys_Export,      // Export to .uhc
-            Permission.Surveys_Import,      // UC-003: Import .uhc packages
+            Permission.Surveys_Import,      // Import .uhc packages
             Permission.Surveys_Delete,      // Delete surveys
 
-            // ==================== ADMIN ====================
             Permission.Users_View,
             Permission.Users_Create,
             Permission.Users_Update,
@@ -100,10 +90,8 @@ public static class PermissionSeeder
             Permission.Security_Settings,
             Permission.Audit_ViewAll,
 
-            // ==================== DASHBOARD ====================
             Permission.Dashboard_View,
 
-            // ==================== SYSTEM ====================
             Permission.System_Import,
             Permission.System_Export,
             Permission.System_Backup,
@@ -120,7 +108,6 @@ public static class PermissionSeeder
     {
         return new List<Permission>
         {
-            // ==================== CLAIMS ====================
             Permission.Claims_ViewAll,
             Permission.Claims_ViewAssigned,
             Permission.Claims_Create,
@@ -133,45 +120,38 @@ public static class PermissionSeeder
             Permission.Claims_Export,
             Permission.Claims_ViewHistory,
 
-            // ==================== EVIDENCE ====================
             Permission.Evidence_View,
             Permission.Evidence_Upload,
             Permission.Evidence_Verify,
 
-            // ==================== BUILDINGS ====================
             Permission.Buildings_View,
             Permission.Buildings_Create,
             Permission.Buildings_Update,
             Permission.Buildings_Assign,
 
-            // ==================== PERSONS ====================
             Permission.Persons_View,
             Permission.Persons_Create,
             Permission.Persons_Update,
             Permission.Persons_Merge,
 
-            // ==================== PROPERTY UNITS ====================
             Permission.PropertyUnits_View,
             Permission.PropertyUnits_Create,
             Permission.PropertyUnits_Update,
             Permission.PropertyUnits_Merge,
 
-            // ==================== SURVEYS (MOST ACCESS) ====================
-            Permission.Surveys_Create,      // UC-001, UC-004: Create surveys
+            Permission.Surveys_Create,      // Create surveys
             Permission.Surveys_View,        // View all surveys
             Permission.Surveys_ViewAll,     // View all surveys (alias)
             Permission.Surveys_ViewOwn,     // View own surveys
-            Permission.Surveys_EditOwn,     // UC-002: Edit own surveys
+            Permission.Surveys_EditOwn,     // Edit own surveys
             Permission.Surveys_EditAll,     // Edit any survey
-            Permission.Surveys_Finalize,    // UC-002, UC-005: Finalize surveys
+            Permission.Surveys_Finalize,    // Finalize surveys
             Permission.Surveys_Export,      // Export to .uhc
-            Permission.Surveys_Import,      // UC-003: Import .uhc packages
+            Permission.Surveys_Import,      // Import .uhc packages
             // No Surveys_Delete - Admin only
 
-            // ==================== DASHBOARD ====================
             Permission.Dashboard_View,
 
-            // ==================== SYSTEM ====================
             Permission.System_Import,
             Permission.System_Export,
             Permission.Audit_ViewAll
@@ -179,40 +159,32 @@ public static class PermissionSeeder
     }
 
     /// <summary>
-    /// Field Collector - Mobile field survey operations
-    /// Primary responsibility: UC-001 Create Field Survey, UC-002 Resume Draft Survey
-    /// Works primarily on tablet in the field
+    /// Field Collector - Mobile field survey operations.
+    /// Works primarily on tablet in the field.
     /// </summary>
     private static List<Permission> GetFieldCollectorPermissions()
     {
         return new List<Permission>
         {
-            // ==================== CLAIMS ====================
             // View only claims they created through surveys
             Permission.Claims_ViewAssigned,
 
-            // ==================== EVIDENCE ====================
             Permission.Evidence_View,
             Permission.Evidence_Upload,     // Upload photos, documents in field
 
-            // ==================== BUILDINGS ====================
             Permission.Buildings_View,      // View buildings for survey selection
 
-            // ==================== PERSONS ====================
             Permission.Persons_View,        // View persons in surveys
             Permission.Persons_Create,      // Create persons during survey
 
-            // ==================== PROPERTY UNITS ====================
             Permission.PropertyUnits_View,  // View property units
 
-            // ==================== SURVEYS (PRIMARY ROLE) ====================
-            Permission.Surveys_Create,      // UC-001: Create new field surveys
-            Permission.Surveys_ViewOwn,     // UC-002: View own surveys to resume
-            Permission.Surveys_EditOwn,     // UC-002: Edit/update own draft surveys
-            Permission.Surveys_Finalize,    // UC-002: Finalize completed surveys
+            Permission.Surveys_Create,      // Create new field surveys
+            Permission.Surveys_ViewOwn,     // View own surveys to resume
+            Permission.Surveys_EditOwn,     // Edit/update own draft surveys
+            Permission.Surveys_Finalize,    // Finalize completed surveys
             Permission.Surveys_Export,      // Export to .uhc for sync
 
-            // ==================== SYSTEM ====================
             Permission.System_Sync          // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
             // No Surveys_View/ViewAll - cannot see other collectors' surveys
             // No Surveys_EditAll - cannot edit others' surveys
@@ -229,34 +201,26 @@ public static class PermissionSeeder
     {
         return new List<Permission>
         {
-            // ==================== CLAIMS ====================
             Permission.Claims_ViewAll,      // View all claims for supervision
             Permission.Claims_Submit,       // Submit claims for processing
             Permission.Claims_Export,
             Permission.Claims_ViewHistory,
 
-            // ==================== EVIDENCE ====================
             Permission.Evidence_View,
 
-            // ==================== BUILDINGS ====================
             Permission.Buildings_View,
 
-            // ==================== PERSONS ====================
             Permission.Persons_View,
 
-            // ==================== PROPERTY UNITS ====================
             Permission.PropertyUnits_View,
 
-            // ==================== SURVEYS (SUPERVISORY) ====================
             Permission.Surveys_View,        // View all surveys for supervision
             Permission.Surveys_ViewAll,     // View all surveys (alias)
             Permission.Surveys_ViewOwn,     // View own if created any
             Permission.Surveys_Export,      // Export for reporting
 
-            // ==================== DASHBOARD ====================
             Permission.Dashboard_View,
 
-            // ==================== SYSTEM ====================
             Permission.System_Sync          // Tablet LAN sync — supervisor may trigger sync sessions
             // No Surveys_Create - supervisors don't create surveys
             // No Surveys_EditOwn/EditAll - supervisors review, not edit
@@ -266,41 +230,34 @@ public static class PermissionSeeder
     }
 
     /// <summary>
-    /// Office Clerk - Office-based data entry and survey operations
-    /// Primary responsibility: UC-004 Create Office Survey, UC-005 Finalize with Claim
-    /// Works at registration office on desktop
+    /// Office Clerk - Office-based data entry and survey operations.
+    /// Works at registration office on desktop.
     /// </summary>
     private static List<Permission> GetOfficeClerkPermissions()
     {
         return new List<Permission>
         {
-            // ==================== CLAIMS ====================
             Permission.Claims_ViewAssigned, // View claims they created
             Permission.Claims_Create,       // Create claims directly or via survey finalization
-            Permission.Claims_Update,       // UC-006: Update claim information
+            Permission.Claims_Update,       // Update claim information
             Permission.Claims_Submit,       // Submit claims for processing
 
-            // ==================== EVIDENCE ====================
             Permission.Evidence_View,
             Permission.Evidence_Upload,     // Upload supporting documents
 
-            // ==================== BUILDINGS ====================
             Permission.Buildings_View,
 
-            // ==================== PERSONS ====================
             Permission.Persons_View,
             Permission.Persons_Create,      // Create persons during office survey
             Permission.Persons_Update,      // Update person details
 
-            // ==================== PROPERTY UNITS ====================
             Permission.PropertyUnits_View,
             Permission.PropertyUnits_Create, // Create property units during survey
 
-            // ==================== SURVEYS (OFFICE OPERATIONS) ====================
-            Permission.Surveys_Create,      // UC-004: Create office surveys
+            Permission.Surveys_Create,      // Create office surveys
             Permission.Surveys_ViewOwn,     // View own surveys
             Permission.Surveys_EditOwn,     // Edit own draft surveys
-            Permission.Surveys_Finalize     // UC-005: Finalize with claim creation
+            Permission.Surveys_Finalize     // Finalize with claim creation
             // No Surveys_View/ViewAll - cannot see all surveys
             // No Surveys_EditAll - cannot edit others' surveys
             // No Surveys_Export - field collector responsibility
@@ -317,32 +274,24 @@ public static class PermissionSeeder
     {
         return new List<Permission>
         {
-            // ==================== CLAIMS (READ ONLY) ====================
             Permission.Claims_ViewAll,
             Permission.Claims_Export,
             Permission.Claims_ViewHistory,
 
-            // ==================== EVIDENCE (READ ONLY) ====================
             Permission.Evidence_View,
 
-            // ==================== BUILDINGS (READ ONLY) ====================
             Permission.Buildings_View,
 
-            // ==================== PERSONS (READ ONLY) ====================
             Permission.Persons_View,
 
-            // ==================== PROPERTY UNITS (READ ONLY) ====================
             Permission.PropertyUnits_View,
 
-            // ==================== SURVEYS (READ ONLY) ====================
             Permission.Surveys_View,        // View all surveys for analysis
             Permission.Surveys_ViewAll,     // View all surveys (alias)
             // No create, edit, finalize, export, import, delete
 
-            // ==================== DASHBOARD ====================
             Permission.Dashboard_View,
 
-            // ==================== SYSTEM (EXPORT ONLY) ====================
             Permission.System_Export,
             Permission.Audit_ViewAll
         };

@@ -19,7 +19,6 @@ namespace TRRCMS.Application.Sync.Commands.AcknowledgeSyncAssignments;
 /// <see cref="AcknowledgeSyncAssignmentsCommandHandler"/>.
 ///
 /// Sync Protocol Step 4 – POST /api/v1/sync/assignments/ack.
-/// FSD: FR-D-6 (Transfer Acknowledgement).
 /// </summary>
 /// <param name="SyncSessionId">
 /// ID of the <c>SyncSession</c> opened in Step 1.

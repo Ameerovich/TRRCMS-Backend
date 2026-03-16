@@ -27,7 +27,6 @@ public class GetConflictSummaryQueryHandler
         var statusCounts = await _conflictRepository.GetStatusCountsAsync(cancellationToken);
         var typeCounts = await _conflictRepository.GetTypeCountsAsync(cancellationToken);
 
-        // Cross-query: pending count per conflict type
         var pendingPersonDuplicates = await GetPendingCountByTypeAsync(
             "PersonDuplicate", cancellationToken);
         var pendingPropertyDuplicates = await GetPendingCountByTypeAsync(
@@ -35,7 +34,6 @@ public class GetConflictSummaryQueryHandler
         var pendingClaimConflicts = await GetPendingCountByTypeAsync(
             "ClaimConflict", cancellationToken);
 
-        // Flag-based counts via queryable
         var queryable = _conflictRepository.GetQueryable();
 
         var escalatedCount = queryable

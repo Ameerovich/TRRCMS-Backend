@@ -9,8 +9,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// </summary>
 public interface IClaimRepository
 {
-    // ==================== BASIC CRUD OPERATIONS ====================
-
     /// <summary>
     /// Get claim by ID
     /// </summary>
@@ -36,14 +34,10 @@ public interface IClaimRepository
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY UNIQUE IDENTIFIERS ====================
-
     /// <summary>
     /// Get claim by claim number
     /// </summary>
     Task<Claim?> GetByClaimNumberAsync(string claimNumber, CancellationToken cancellationToken = default);
-
-    // ==================== QUERY BY RELATIONSHIPS ====================
 
     /// <summary>
     /// Get claim by property unit ID
@@ -62,14 +56,10 @@ public interface IClaimRepository
     /// </summary>
     Task<IEnumerable<Claim>> GetByPrimaryClaimantIdAsync(Guid personId, CancellationToken cancellationToken = default);
 
-    // ==================== QUERY BY WORKFLOW STATES ====================
-
     /// <summary>
     /// Get all claims by case status
     /// </summary>
     Task<IEnumerable<Claim>> GetByCaseStatusAsync(CaseStatus caseStatus, CancellationToken cancellationToken = default);
-
-    // ==================== FILTERED QUERY ====================
 
     /// <summary>
     /// Get claims with combined server-side filtering.
@@ -86,8 +76,6 @@ public interface IClaimRepository
         Guid? originatingSurveyId = null,
         CancellationToken cancellationToken = default);
 
-    // ==================== EXISTENCE CHECKS ====================
-
     /// <summary>
     /// Check if claim exists by ID
     /// </summary>
@@ -103,8 +91,6 @@ public interface IClaimRepository
     /// </summary>
     Task<bool> HasClaimsAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
 
-    // ==================== AGGREGATE QUERIES ====================
-
     /// <summary>
     /// Get count of claims by case status
     /// </summary>
@@ -115,15 +101,11 @@ public interface IClaimRepository
     /// </summary>
     Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
 
-    // ==================== GROUPED COUNTS (Dashboard) ====================
-
     /// <summary>
     /// Get count of claims grouped by case status.
     /// Used for dashboard summary tiles.
     /// </summary>
     Task<Dictionary<CaseStatus, int>> GetCaseStatusCountsAsync(CancellationToken cancellationToken = default);
-
-    // ==================== DASHBOARD EXTENDED QUERIES ====================
 
     /// <summary>
     /// Get count of claims grouped by claim type (OwnershipClaim/OccupancyClaim).

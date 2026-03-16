@@ -19,9 +19,6 @@ public class BuildingDocument : BaseAuditableEntity
     /// Optional description of the document
     /// </summary>
     public string? Description { get; private set; }
-
-    // ==================== FILE INFORMATION ====================
-
     /// <summary>
     /// Original file name as uploaded
     /// </summary>
@@ -51,9 +48,6 @@ public class BuildingDocument : BaseAuditableEntity
     /// Additional notes
     /// </summary>
     public string? Notes { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -63,9 +57,6 @@ public class BuildingDocument : BaseAuditableEntity
         FilePath = string.Empty;
         MimeType = string.Empty;
     }
-
-    // ==================== FACTORY METHOD ====================
-
     /// <summary>
     /// Create a new building document (Factory Method — DDD pattern)
     /// </summary>
@@ -92,9 +83,6 @@ public class BuildingDocument : BaseAuditableEntity
         document.MarkAsCreated(createdByUserId);
         return document;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Update document description and notes
     /// </summary>

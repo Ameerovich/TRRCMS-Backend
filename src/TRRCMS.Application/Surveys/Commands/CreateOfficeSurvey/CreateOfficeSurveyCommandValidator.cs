@@ -4,14 +4,12 @@ namespace TRRCMS.Application.Surveys.Commands.CreateOfficeSurvey;
 
 /// <summary>
 /// Validator for CreateOfficeSurveyCommand
-/// UC-004: Office Survey validation rules
+/// Office survey creation validation rules
 /// </summary>
 public class CreateOfficeSurveyCommandValidator : AbstractValidator<CreateOfficeSurveyCommand>
 {
     public CreateOfficeSurveyCommandValidator()
     {
-        // ==================== REQUIRED FIELDS ====================
-
         RuleFor(x => x.BuildingId)
             .NotEmpty()
             .WithMessage("Building ID is required");
@@ -22,14 +20,10 @@ public class CreateOfficeSurveyCommandValidator : AbstractValidator<CreateOffice
             .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
             .WithMessage("Survey date cannot be in the future");
 
-        // ==================== OPTIONAL FIELDS ====================
-
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))
             .WithMessage("Notes cannot exceed 2000 characters");
-
-        // ==================== OFFICE SPECIFIC FIELDS ====================
 
         RuleFor(x => x.OfficeLocation)
             .MaximumLength(200)
@@ -45,8 +39,6 @@ public class CreateOfficeSurveyCommandValidator : AbstractValidator<CreateOffice
             .MaximumLength(50)
             .When(x => !string.IsNullOrWhiteSpace(x.AppointmentReference))
             .WithMessage("Appointment reference cannot exceed 50 characters");
-
-        // ==================== CONTACT DETAILS ====================
 
         RuleFor(x => x.ContactPhone)
             .MaximumLength(20)

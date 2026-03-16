@@ -9,8 +9,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// </summary>
 public interface IBuildingRepository
 {
-    // ==================== CRUD OPERATIONS ====================
-
     Task<Building?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<Building?> GetByBuildingIdAsync(string buildingId, CancellationToken cancellationToken = default);
@@ -28,7 +26,6 @@ public interface IBuildingRepository
     /// </summary>
     IQueryable<Building> GetQueryable();
 
-    // ==================== REFERENTIAL INTEGRITY CHECKS (for Delete) ====================
 
     /// <summary>
     /// Check if building has any non-deleted property units
@@ -40,7 +37,6 @@ public interface IBuildingRepository
     /// </summary>
     Task<bool> HasActiveSurveysAsync(Guid buildingId, CancellationToken cancellationToken = default);
 
-    // ==================== SEARCH WITH FILTERS ====================
 
     /// <summary>
     /// Search buildings with multiple filters and pagination
@@ -65,7 +61,6 @@ public interface IBuildingRepository
         bool sortDescending = false,
         CancellationToken cancellationToken = default);
 
-    // ==================== SPATIAL QUERIES (PostGIS) ====================
 
     /// <summary>
     /// Find buildings within a specified radius from a point
@@ -138,7 +133,6 @@ public interface IBuildingRepository
         int count = 10,
         CancellationToken cancellationToken = default);
 
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
     /// <summary>
     /// Get count of buildings grouped by status.
@@ -152,7 +146,6 @@ public interface IBuildingRepository
     /// </summary>
     Task<(int TotalBuildings, int TotalPropertyUnits)> GetBuildingAndUnitCountsAsync(CancellationToken cancellationToken = default);
 
-    // ==================== DASHBOARD TREND QUERIES ====================
 
     /// <summary>
     /// Get monthly creation counts for time-series trends.

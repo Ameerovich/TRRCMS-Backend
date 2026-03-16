@@ -4,23 +4,17 @@ namespace TRRCMS.Application.Common.Interfaces;
 
 /// <summary>
 /// Service interface for .uhc package intake and integrity verification.
-/// Covers UC-003 Stage 2 — S12 (Verify Package Integrity):
 ///   - SHA-256 checksum verification
 ///   - Digital signature verification
 ///   - Manifest parsing (SQLite metadata table)
 ///   - Vocabulary compatibility checking (semver)
 ///   - Package archival to immutable store
-/// 
+///
 /// Implementations should be stateless — all state is persisted
 /// in the ImportPackage entity via the repository layer.
-/// 
-/// Delivery Plan Task: TRRCMS-IMP-01.
-/// FSD: FR-D-2 (Import Management), FR-D-3 (Validation & Verification).
 /// </summary>
 public interface IImportService
 {
-    // ==================== CHECKSUM & INTEGRITY ====================
-
     /// <summary>
     /// Compute SHA-256 checksum of the .uhc file content.
     /// Resets stream position to 0 after computation.
@@ -70,7 +64,6 @@ public interface IImportService
     /// <returns>True if signature is valid (or not required).</returns>
     Task<bool> VerifyDigitalSignatureAsync(Stream fileStream, string? signature, CancellationToken cancellationToken = default);
 
-    // ==================== MANIFEST PARSING ====================
 
     /// <summary>
     /// Open the .uhc file as a SQLite database and parse the manifest table.
@@ -82,7 +75,6 @@ public interface IImportService
     /// <exception cref="InvalidOperationException">Thrown if manifest table is missing or corrupt.</exception>
     Task<ManifestData> ParseManifestAsync(string uhcFilePath, CancellationToken cancellationToken = default);
 
-    // ==================== VOCABULARY COMPATIBILITY ====================
 
     /// <summary>
     /// Check vocabulary version compatibility between the package and the server.
@@ -95,7 +87,6 @@ public interface IImportService
     /// <returns>Compatibility result with per-domain details.</returns>
     Task<VocabularyCompatibilityResult> CheckVocabularyCompatibilityAsync(ManifestData manifest, CancellationToken cancellationToken = default);
 
-    // ==================== FILE MANAGEMENT ====================
 
     /// <summary>
     /// Save the uploaded .uhc file to the temporary package storage path.

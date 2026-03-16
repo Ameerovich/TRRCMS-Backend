@@ -4,8 +4,7 @@ using TRRCMS.Application.Buildings.Dtos;
 namespace TRRCMS.Application.Buildings.Commands.UpdateBuildingGeometry;
 
 /// <summary>
-/// Command to update building geometry and coordinates
-/// UC-000: Manage Building Data
+/// Command to update building geometry and coordinates.
 /// </summary>
 public class UpdateBuildingGeometryCommand : IRequest<BuildingDto>
 {

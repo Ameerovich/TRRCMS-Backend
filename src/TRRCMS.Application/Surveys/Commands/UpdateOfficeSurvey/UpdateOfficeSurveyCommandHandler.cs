@@ -11,7 +11,7 @@ namespace TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
 /// <summary>
 /// Handler for UpdateOfficeSurveyCommand
 /// Updates existing office survey while in Draft status
-/// UC-004/UC-005: Office Survey update workflow
+/// Updates existing office survey while in Draft status
 /// </summary>
 public class UpdateOfficeSurveyCommandHandler : IRequestHandler<UpdateOfficeSurveyCommand, SurveyDto>
 {

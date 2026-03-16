@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Infrastructure.Persistence;
@@ -69,8 +69,6 @@ public class HouseholdRepository : IHouseholdRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
-
-    // ==================== AGGREGATE QUERIES (Dashboard) ====================
 
     public async Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default)
     {

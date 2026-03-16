@@ -5,12 +5,9 @@ namespace TRRCMS.Domain.Entities;
 
 /// <summary>
 /// Building Assignment entity - tracks assignment of buildings to field collectors
-/// UC-012: Assign Buildings to Field Collectors
 /// </summary>
 public class BuildingAssignment : BaseAuditableEntity
 {
-    // ==================== RELATIONSHIPS ====================
-
     /// <summary>
     /// Foreign key to Building being assigned
     /// </summary>
@@ -25,9 +22,6 @@ public class BuildingAssignment : BaseAuditableEntity
     /// Foreign key to supervisor who made the assignment (optional)
     /// </summary>
     public Guid? AssignedByUserId { get; private set; }
-
-    // ==================== ASSIGNMENT DETAILS ====================
-
     /// <summary>
     /// Date when building was assigned (تاريخ التعيين)
     /// </summary>
@@ -57,9 +51,6 @@ public class BuildingAssignment : BaseAuditableEntity
     /// Date when data was synchronized back from tablet
     /// </summary>
     public DateTime? SynchronizedFromTabletDate { get; private set; }
-
-    // ==================== REVISIT TRACKING ====================
-
     /// <summary>
     /// Array of property unit IDs selected for revisit
     /// Stored as JSON array: ["uuid1", "uuid2", ...]
@@ -81,9 +72,6 @@ public class BuildingAssignment : BaseAuditableEntity
     /// NULLABLE: May be null if this is the first assignment or original was deleted
     /// </summary>
     public Guid? OriginalAssignmentId { get; private set; }
-
-    // ==================== ASSIGNMENT STATUS ====================
-
     /// <summary>
     /// Assignment priority (Normal, High, Urgent)
     /// </summary>
@@ -108,9 +96,6 @@ public class BuildingAssignment : BaseAuditableEntity
     /// Number of property units surveyed so far
     /// </summary>
     public int CompletedPropertyUnits { get; private set; }
-
-    // ==================== TRANSFER ERROR TRACKING ====================
-
     /// <summary>
     /// Error message if transfer failed
     /// </summary>
@@ -125,9 +110,6 @@ public class BuildingAssignment : BaseAuditableEntity
     /// Last transfer attempt date
     /// </summary>
     public DateTime? LastTransferAttemptDate { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Building being assigned
     /// </summary>
@@ -137,9 +119,6 @@ public class BuildingAssignment : BaseAuditableEntity
     /// Original assignment (if this is a revisit)
     /// </summary>
     public virtual BuildingAssignment? OriginalAssignment { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -196,7 +175,7 @@ public class BuildingAssignment : BaseAuditableEntity
     public static BuildingAssignment CreateRevisit(
         Guid buildingId,
         Guid fieldCollectorId,
-        Guid? originalAssignmentId,  // FIX: Changed from Guid to Guid? - can be null!
+        Guid? originalAssignmentId,
         string unitsForRevisit,
         string revisitReason,
         int totalPropertyUnits,
@@ -222,9 +201,6 @@ public class BuildingAssignment : BaseAuditableEntity
 
         return assignment;
     }
-
-    // ==================== DOMAIN METHODS ====================
-
     /// <summary>
     /// Mark assignment as transferred to tablet
     /// </summary>

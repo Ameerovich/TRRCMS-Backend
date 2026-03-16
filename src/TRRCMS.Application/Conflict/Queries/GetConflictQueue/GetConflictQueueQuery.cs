@@ -8,8 +8,6 @@ namespace TRRCMS.Application.Conflicts.Queries.GetConflictQueue;
 /// </summary>
 public class GetConflictQueueQuery : IRequest<GetConflictQueueResponse>
 {
-    // ==================== FILTERS ====================
-
     /// <summary>
     /// Filter by conflict type: PersonDuplicate, PropertyDuplicate, ClaimConflict.
     /// Null returns all types.
@@ -47,12 +45,8 @@ public class GetConflictQueueQuery : IRequest<GetConflictQueueResponse>
     /// </summary>
     public bool? IsOverdue { get; set; }
 
-    // ==================== PAGINATION ====================
-
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
-
-    // ==================== SORTING ====================
 
     /// <summary>
     /// Sort field: DetectedDate, SimilarityScore, Priority (default: DetectedDate).

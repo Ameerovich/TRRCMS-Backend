@@ -20,8 +20,7 @@ public class BuildingAssignmentDto
 
     // Building Spatial Data
     /// <summary>
-    /// Building geometry in WKT format (POLYGON or POINT)
-    /// Used by frontend to render building footprint on the map
+    /// Building geometry in WKT format (POLYGON or POINT).
     /// </summary>
     public string? BuildingGeometryWkt { get; set; }
 
@@ -157,8 +156,7 @@ public class BuildingForAssignmentDto
     public decimal? Longitude { get; set; }
 
     /// <summary>
-    /// Building geometry in WKT format (POLYGON or POINT)
-    /// Used by frontend to render building footprint on the map
+    /// Building geometry in WKT format (POLYGON or POINT).
     /// </summary>
     public string? BuildingGeometryWkt { get; set; }
 
@@ -263,17 +261,13 @@ public class BuildingsForAssignmentPagedResult
     /// </summary>
     public bool HasPreviousPage => Page > 1;
 
-    // ==================== POLYGON SEARCH RESPONSE FIELDS ====================
-
     /// <summary>
-    /// The polygon WKT used for search (only present if polygon search was used)
-    /// Returns null if regular/radius search was used
+    /// The polygon WKT used for search (null if regular/radius search was used).
     /// </summary>
     public string? PolygonWkt { get; set; }
 
     /// <summary>
-    /// Approximate polygon area in square meters (only present if polygon search was used)
-    /// Returns null if regular/radius search was used or if area calculation failed
+    /// Approximate polygon area in square meters (null if polygon search was not used).
     /// </summary>
     public double? PolygonAreaSquareMeters { get; set; }
 }

@@ -9,7 +9,7 @@ namespace TRRCMS.Application.Conflicts.Queries.GetEscalatedConflicts;
 /// Handler for <see cref="GetEscalatedConflictsQuery"/>.
 ///
 /// Returns only escalated conflicts that are still pending resolution,
-/// forming the "senior review queue" for UC-007 S05a / UC-008 S05a.
+/// forming the senior review queue.
 ///
 /// Default sort: EscalatedDate descending (most recently escalated first).
 /// </summary>
@@ -28,11 +28,9 @@ public class GetEscalatedConflictsQueryHandler
         GetEscalatedConflictsQuery request,
         CancellationToken cancellationToken)
     {
-        // Core filter: escalated + still pending review
         var query = _conflictRepository.GetQueryable()
             .Where(c => c.IsEscalated && c.Status == "PendingReview");
 
-        // Apply optional filters
         if (!string.IsNullOrWhiteSpace(request.ConflictType))
             query = query.Where(c => c.ConflictType.StartsWith(request.ConflictType));
 
@@ -45,10 +43,8 @@ public class GetEscalatedConflictsQueryHandler
         if (request.IsOverdue.HasValue)
             query = query.Where(c => c.IsOverdue == request.IsOverdue.Value);
 
-        // Total count before pagination
         var totalCount = query.Count();
 
-        // Sorting — default to EscalatedDate for the senior review queue
         query = request.SortBy?.ToLower() switch
         {
             "priority" => request.SortDescending
@@ -68,7 +64,6 @@ public class GetEscalatedConflictsQueryHandler
                 : query.OrderBy(c => c.EscalatedDate)
         };
 
-        // Pagination
         var conflicts = query
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)

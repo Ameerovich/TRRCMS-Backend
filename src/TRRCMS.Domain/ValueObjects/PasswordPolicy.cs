@@ -2,17 +2,9 @@ namespace TRRCMS.Domain.ValueObjects;
 
 /// <summary>
 /// Value object encapsulating password policy parameters.
-/// UC-011 S03: Configure Password Policies.
-/// FSD Section 13.1: Security Requirements.
-/// 
-/// Enforces organizational minimums:
-///   - MinLength ∈ [8, 128]
-///   - ExpiryDays ∈ [0 (disabled), 365]
-///   - ReuseHistory ∈ [0 (disabled), 24]
 /// </summary>
 public sealed class PasswordPolicy : IEquatable<PasswordPolicy>
 {
-    // ==================== ORGANIZATIONAL MINIMUMS ====================
     public const int AbsoluteMinLength = 8;
     public const int AbsoluteMaxLength = 128;
     public const int MaxExpiryDays = 365;
@@ -95,7 +87,7 @@ public sealed class PasswordPolicy : IEquatable<PasswordPolicy>
     }
 
     /// <summary>
-    /// Returns the default (baseline) password policy matching FSD Section 13 recommendations.
+    /// Returns the default (baseline) password policy.
     /// </summary>
     public static PasswordPolicy Default() => new(
         minLength: 8,
@@ -105,8 +97,6 @@ public sealed class PasswordPolicy : IEquatable<PasswordPolicy>
         requireSpecialCharacter: true,
         expiryDays: 90,
         reuseHistory: 5);
-
-    // ==================== EQUALITY ====================
 
     public bool Equals(PasswordPolicy? other)
     {

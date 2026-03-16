@@ -3,12 +3,9 @@ namespace TRRCMS.Domain.Enums;
 /// <summary>
 /// Granular permission system for role-based access control (RBAC)
 /// Each permission represents a specific action a user can perform
-/// Referenced in FSD Section 3: Stakeholders & Roles
 /// </summary>
 public enum Permission
 {
-    // ==================== CLAIM PERMISSIONS ====================
-
     /// <summary>
     /// View all claims in the system (Data Manager, Analyst, Admin)
     /// </summary>
@@ -29,7 +26,7 @@ public enum Permission
     Claims_Create = 1002,
 
     /// <summary>
-    /// Update claim fields (UC-006) (Office Clerk, Data Manager, Admin)
+    /// Update claim fields (Office Clerk, Data Manager, Admin)
     /// </summary>
     [ArabicLabel("تعديل مطالبة")]
     Claims_Update = 1003,
@@ -94,9 +91,6 @@ public enum Permission
     /// </summary>
     [ArabicLabel("عرض سجل المطالبات")]
     Claims_ViewHistory = 1013,
-
-    // ==================== EVIDENCE PERMISSIONS ====================
-
     /// <summary>
     /// View evidence (all roles except Field Collector on desktop)
     /// </summary>
@@ -120,9 +114,6 @@ public enum Permission
     /// </summary>
     [ArabicLabel("حذف دليل")]
     Evidence_Delete = 2003,
-
-    // ==================== BUILDING PERMISSIONS ====================
-
     /// <summary>
     /// View buildings (all roles)
     /// </summary>
@@ -152,9 +143,6 @@ public enum Permission
     /// </summary>
     [ArabicLabel("حذف مبنى")]
     Buildings_Delete = 4004,
-
-    // ==================== PERSON PERMISSIONS ====================
-
     /// <summary>
     /// View persons (all desktop users)
     /// </summary>
@@ -175,7 +163,6 @@ public enum Permission
 
     /// <summary>
     /// Merge duplicate persons (Data Manager, Admin)
-    /// Requires UC-008 duplicate resolution
     /// </summary>
     [ArabicLabel("دمج أشخاص")]
     Persons_Merge = 5003,
@@ -185,9 +172,6 @@ public enum Permission
     /// </summary>
     [ArabicLabel("حذف شخص")]
     Persons_Delete = 5004,
-
-    // ==================== PROPERTY UNIT PERMISSIONS ====================
-
     /// <summary>
     /// View property units (all desktop users)
     /// </summary>
@@ -208,7 +192,6 @@ public enum Permission
 
     /// <summary>
     /// Merge duplicate property units (Data Manager, Admin)
-    /// Requires UC-007 duplicate resolution
     /// </summary>
     [ArabicLabel("دمج وحدات")]
     PropertyUnits_Merge = 6003,
@@ -218,12 +201,8 @@ public enum Permission
     /// </summary>
     [ArabicLabel("حذف وحدة")]
     PropertyUnits_Delete = 6004,
-
-    // ==================== SURVEY PERMISSIONS ====================
-
     /// <summary>
     /// Create new surveys (Field Collector, Data Manager, Admin)
-    /// UC-001 Field Survey, UC-004 Office Survey
     /// </summary>
     [ArabicLabel("إنشاء مسح")]
     Surveys_Create = 7000,
@@ -236,7 +215,6 @@ public enum Permission
 
     /// <summary>
     /// Export surveys to .uhc container (Field Collector)
-    /// UC-003 Export surveys
     /// </summary>
     [ArabicLabel("تصدير مسوحات")]
     Surveys_Export = 7002,
@@ -256,7 +234,6 @@ public enum Permission
 
     /// <summary>
     /// Edit own surveys (Field Collector)
-    /// UC-002 Save and resume drafts
     /// </summary>
     [ArabicLabel("تعديل مسوحاتي")]
     Surveys_EditOwn = 7005,
@@ -275,20 +252,15 @@ public enum Permission
 
     /// <summary>
     /// Finalize surveys for export (Field Collector, Data Manager)
-    /// UC-002 Complete and finalize
     /// </summary>
     [ArabicLabel("إنهاء مسح")]
     Surveys_Finalize = 7008,
 
     /// <summary>
     /// Import surveys from .uhc packages (Data Manager, Admin)
-    /// UC-003 Import surveys
     /// </summary>
     [ArabicLabel("استيراد مسوحات")]
     Surveys_Import = 7009,
-
-    // ==================== ADMIN PERMISSIONS ====================
-
     /// <summary>
     /// View users (Admin only)
     /// </summary>
@@ -321,14 +293,12 @@ public enum Permission
 
     /// <summary>
     /// Manage vocabularies (Admin only)
-    /// UC-010 Vocabulary Management
     /// </summary>
     [ArabicLabel("إدارة المفردات")]
     Vocabularies_Manage = 8200,
 
     /// <summary>
     /// Configure security settings (Admin only)
-    /// UC-011 Security Settings
     /// </summary>
     [ArabicLabel("إعدادات الأمان")]
     Security_Settings = 8300,
@@ -338,21 +308,14 @@ public enum Permission
     /// </summary>
     [ArabicLabel("عرض جميع السجلات")]
     Audit_ViewAll = 8400,
-
-    // ==================== DASHBOARD PERMISSIONS ====================
-
     /// <summary>
     /// View dashboard statistics and analytics (Administrator, DataManager, FieldSupervisor, Analyst)
-    /// FR-D-12: Dashboard Statistics
+    /// : Dashboard Statistics
     /// </summary>
     [ArabicLabel("عرض لوحة المعلومات")]
     Dashboard_View = 8500,
-
-    // ==================== SYSTEM PERMISSIONS ====================
-
     /// <summary>
     /// Import data packages (Data Manager, Admin)
-    /// UC-003 Import pipeline
     /// </summary>
     [ArabicLabel("استيراد النظام")]
     System_Import = 9000,

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using TRRCMS.Domain.Entities;
 
@@ -49,7 +49,6 @@ public class SyncSessionConfiguration : IEntityTypeConfiguration<SyncSession>
         builder.Property(x => x.ErrorMessage)
             .HasMaxLength(2000);
 
-        // ==================== INDEXES ====================
         builder.HasIndex(x => x.DeviceId);
         builder.HasIndex(x => x.FieldCollectorId);
         builder.HasIndex(x => x.SessionStatus);

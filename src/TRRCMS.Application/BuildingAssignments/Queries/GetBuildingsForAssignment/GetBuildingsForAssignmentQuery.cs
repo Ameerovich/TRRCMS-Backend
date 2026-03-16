@@ -5,14 +5,11 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetBuildingsForAssignment;
 
 /// <summary>
-/// Query to get buildings available for assignment
-/// UC-012: S01-S03 - Search and select buildings
-/// Supports: Administrative hierarchy filters, text search, radius search, AND polygon search
+/// Query to get buildings available for assignment.
+/// Supports administrative hierarchy filters, text search, radius search, and polygon search.
 /// </summary>
 public record GetBuildingsForAssignmentQuery : IRequest<BuildingsForAssignmentPagedResult>
 {
-    // ==================== ADMINISTRATIVE HIERARCHY FILTERS ====================
-    
     /// <summary>
     /// Filter by governorate code (محافظة)
     /// </summary>
@@ -38,8 +35,6 @@ public record GetBuildingsForAssignmentQuery : IRequest<BuildingsForAssignmentPa
     /// </summary>
     public string? NeighborhoodCode { get; init; }
     
-    // ==================== BUILDING FILTERS ====================
-    
     /// <summary>
     /// Search by building code (partial match)
     /// </summary>
@@ -55,8 +50,6 @@ public record GetBuildingsForAssignmentQuery : IRequest<BuildingsForAssignmentPa
     /// </summary>
     public BuildingStatus? BuildingStatus { get; init; }
     
-    // ==================== ASSIGNMENT STATUS FILTER ====================
-    
     /// <summary>
     /// Filter by assignment status:
     /// - null: All buildings
@@ -64,8 +57,6 @@ public record GetBuildingsForAssignmentQuery : IRequest<BuildingsForAssignmentPa
     /// - false: Only buildings without active assignments
     /// </summary>
     public bool? HasActiveAssignment { get; init; }
-    
-    // ==================== SPATIAL FILTER: RADIUS ====================
     
     /// <summary>
     /// Center latitude for radius-based spatial search
@@ -82,12 +73,10 @@ public record GetBuildingsForAssignmentQuery : IRequest<BuildingsForAssignmentPa
     /// </summary>
     public int? RadiusMeters { get; init; }
     
-    // ==================== SPATIAL FILTER: POLYGON ====================
-    
     /// <summary>
     /// Polygon geometry in WKT (Well-Known Text) format for spatial search
     /// Example: "POLYGON((37.13 36.20, 37.14 36.20, 37.14 36.21, 37.13 36.21, 37.13 36.20))"
-    /// Note: Coordinates are in longitude-latitude order. First and last coordinate must be identical.
+    /// Coordinates are in longitude-latitude order. First and last coordinate must be identical.
     /// </summary>
     public string? PolygonWkt { get; init; }
     
@@ -98,8 +87,6 @@ public record GetBuildingsForAssignmentQuery : IRequest<BuildingsForAssignmentPa
     /// Polygon will be auto-closed if first != last coordinate
     /// </summary>
     public double[][]? Coordinates { get; init; }
-    
-    // ==================== PAGINATION ====================
     
     /// <summary>
     /// Page number (default: 1)

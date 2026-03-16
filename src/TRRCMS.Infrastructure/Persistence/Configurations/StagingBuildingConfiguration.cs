@@ -9,8 +9,6 @@ namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 /// <summary>
 /// EF Core configuration for StagingBuilding entity.
 /// Mirrors the Building production table in an isolated staging area.
-/// Records are validated before commit to production (FSD FR-D-4).
-/// Referenced in UC-003 Stage 2 (S13).
 /// </summary>
 public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuilding>
 {
@@ -20,8 +18,6 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
 
         // Primary Key
         builder.HasKey(b => b.Id);
-
-        // ==================== STAGING METADATA (from BaseStagingEntity) ====================
 
         builder.Property(b => b.ImportPackageId)
             .IsRequired();
@@ -51,13 +47,9 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
         builder.Property(b => b.StagedAtUtc)
             .IsRequired();
 
-        // ==================== BUILDING IDENTIFICATION ====================
-
         builder.Property(b => b.BuildingId)
             .HasMaxLength(17)
             .HasComment("Composite 17-digit ID — optional in staging, computed from admin codes during commit");
-
-        // ==================== ADMINISTRATIVE CODES ====================
 
         builder.Property(b => b.GovernorateCode)
             .IsRequired()
@@ -83,8 +75,6 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
             .IsRequired()
             .HasMaxLength(5);
 
-        // ==================== LOCATION NAMES ====================
-
         builder.Property(b => b.GovernorateName)
             .HasMaxLength(100)
             .HasComment("From lookup tables — not in mobile package");
@@ -105,15 +95,11 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
             .HasMaxLength(100)
             .HasComment("From lookup tables — not in mobile package");
 
-        // ==================== BUILDING ATTRIBUTES ====================
-
         builder.Property(b => b.BuildingType)
             .IsRequired();
 
         builder.Property(b => b.Status)
             .IsRequired();
-
-        // ==================== UNIT COUNTS (from command — required) ====================
 
         builder.Property(b => b.NumberOfPropertyUnits)
             .IsRequired()
@@ -127,8 +113,6 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
             .IsRequired()
             .HasDefaultValue(0);
 
-        // ==================== SPATIAL DATA ====================
-
         builder.Property(b => b.BuildingGeometryWkt)
             .HasMaxLength(8000)
             .HasComment("WKT representation — converted to PostGIS geometry on commit");
@@ -139,24 +123,16 @@ public class StagingBuildingConfiguration : IEntityTypeConfiguration<StagingBuil
         builder.Property(b => b.Longitude)
             .HasPrecision(10, 7);
 
-        // ==================== OPTIONAL FIELDS ====================
-
         builder.Property(b => b.Notes)
             .HasMaxLength(2000);
 
-        // ==================== CONCURRENCY ====================
-
         builder.Property(b => b.RowVersion)
             .IsRowVersion();
-
-        // ==================== RELATIONSHIPS ====================
 
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(b => b.ImportPackageId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        // ==================== INDEXES ====================
 
         // Primary query: all staging records for a given import package
         builder.HasIndex(b => b.ImportPackageId)

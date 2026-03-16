@@ -9,12 +9,8 @@ namespace TRRCMS.Application.Conflicts.Dtos;
 /// </summary>
 public class ConflictDto
 {
-    // ==================== IDENTIFICATION ====================
-
     public Guid Id { get; set; }
     public string ConflictNumber { get; set; } = string.Empty;
-
-    // ==================== CLASSIFICATION ====================
 
     /// <summary>
     /// PersonDuplicate | PropertyDuplicate | ClaimConflict
@@ -26,14 +22,10 @@ public class ConflictDto
     /// </summary>
     public string EntityType { get; set; } = string.Empty;
 
-    // ==================== ENTITY PAIR ====================
-
     public Guid FirstEntityId { get; set; }
     public Guid SecondEntityId { get; set; }
     public string? FirstEntityIdentifier { get; set; }
     public string? SecondEntityIdentifier { get; set; }
-
-    // ==================== SCORING ====================
 
     /// <summary>
     /// 0–100 similarity score
@@ -44,8 +36,6 @@ public class ConflictDto
     /// Low | Medium | High
     /// </summary>
     public string ConfidenceLevel { get; set; } = string.Empty;
-
-    // ==================== STATUS ====================
 
     /// <summary>
     /// PendingReview | Resolved | Ignored
@@ -59,13 +49,9 @@ public class ConflictDto
     public bool IsAutoDetected { get; set; }
     public bool IsAutoResolved { get; set; }
 
-    // ==================== DATES ====================
-
     public DateTime DetectedDate { get; set; }
     public DateTime? AssignedDate { get; set; }
     public DateTime? ResolvedDate { get; set; }
-
-    // ==================== CONTEXT ====================
 
     public Guid? ImportPackageId { get; set; }
     public Guid? AssignedToUserId { get; set; }

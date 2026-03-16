@@ -1,4 +1,4 @@
-﻿using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Common;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities;
@@ -8,8 +8,6 @@ namespace TRRCMS.Domain.Entities;
 /// </summary>
 public class PropertyUnit : BaseAuditableEntity
 {
-    // ==================== IDENTIFIERS ====================
-
     /// <summary>
     /// Foreign key to parent building
     /// </summary>
@@ -19,9 +17,6 @@ public class PropertyUnit : BaseAuditableEntity
     /// Unit identifier within building (e.g., "Apt 1", "Shop 2")
     /// </summary>
     public string UnitIdentifier { get; private set; }
-
-    // ==================== UNIT ATTRIBUTES ====================
-
     /// <summary>
     /// Floor number where unit is located
     /// </summary>
@@ -46,16 +41,10 @@ public class PropertyUnit : BaseAuditableEntity
     /// Number of rooms (for residential units)
     /// </summary>
     public int? NumberOfRooms { get; private set; }
-
-    // ==================== ADDITIONAL INFORMATION ====================
-
     /// <summary>
     /// Unit description or notes
     /// </summary>
     public string? Description { get; private set; }
-
-    // ==================== NAVIGATION PROPERTIES ====================
-
     /// <summary>
     /// Parent building
     /// </summary>
@@ -80,9 +69,6 @@ public class PropertyUnit : BaseAuditableEntity
     /// Surveys for this specific unit
     /// </summary>
     public virtual ICollection<Survey> Surveys { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
-
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -121,8 +107,8 @@ public class PropertyUnit : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Create new property unit with string type (for Survey workflow - Day 2)
-    /// Overload for field surveys where unit type is entered as text
+    /// Create new property unit with string type.
+    /// Overload for field surveys where unit type is entered as text.
     /// </summary>
     public static PropertyUnit Create(
         Guid buildingId,
@@ -151,9 +137,6 @@ public class PropertyUnit : BaseAuditableEntity
 
         return unit;
     }
-
-    // ==================== ORIGINAL DOMAIN METHODS ====================
-
     /// <summary>
     /// Re-parent this property unit to a different building (used during building merge).
     /// Preserves all unit details; only changes the parent building FK.
@@ -230,9 +213,6 @@ public class PropertyUnit : BaseAuditableEntity
         Description = description;
         MarkAsModified(modifiedByUserId);
     }
-
-    // ==================== DAY 2 METHODS (new - for Survey workflow) ====================
-
     /// <summary>
     /// Update property unit location (floor number)
     /// </summary>

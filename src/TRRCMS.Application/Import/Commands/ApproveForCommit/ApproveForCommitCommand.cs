@@ -13,8 +13,6 @@ namespace TRRCMS.Application.Import.Commands.ApproveForCommit;
 ///
 /// When <see cref="ApproveAllValid"/> is true, all Valid/Warning records are approved.
 /// When false, only specific records in <see cref="StagingRecordIds"/> are approved.
-///
-/// UC-003 Stage 4 — S16 (Approve for Commit).
 /// </summary>
 public class ApproveForCommitCommand : IRequest<ImportPackageDto>
 {

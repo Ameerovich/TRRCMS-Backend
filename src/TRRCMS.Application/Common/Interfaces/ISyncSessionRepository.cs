@@ -9,8 +9,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// </summary>
 public interface ISyncSessionRepository
 {
-    // ==================== BASIC CRUD ====================
-
     Task<SyncSession?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<SyncSession> AddAsync(SyncSession session, CancellationToken cancellationToken = default);
@@ -19,7 +17,6 @@ public interface ISyncSessionRepository
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
-    // ==================== QUERIES ====================
 
     Task<SyncSession?> GetLatestByDeviceAsync(
         string deviceId,

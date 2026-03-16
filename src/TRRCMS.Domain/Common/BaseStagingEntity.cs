@@ -5,70 +5,43 @@ namespace TRRCMS.Domain.Common;
 /// <summary>
 /// Abstract base class for all staging entities in the import pipeline.
 /// Provides common staging metadata (import package link, original entity ID,
-/// validation status, and commit tracking) shared across all 8 staging entity types.
-/// 
-/// Inherits from <see cref="BaseEntity"/> (Id + RowVersion) rather than
-/// <see cref="BaseAuditableEntity"/> because staging records have a distinct
-/// lifecycle: staged → validated → approved → committed. Full audit trails
-/// live on the production entities created during commit.
-/// 
-/// Referenced in UC-003 (Import .uhc Package) and FSD FR-D-4.
+/// validation status, and commit tracking) shared across all staging entity types.
 /// </summary>
 public abstract class BaseStagingEntity : BaseEntity
 {
-    // ==================== IMPORT PACKAGE LINK ====================
-
     /// <summary>
     /// FK to the ImportPackage that owns this staging record.
-    /// CASCADE delete: when an import is cancelled/deleted, all staging data is purged.
     /// </summary>
     public Guid ImportPackageId { get; private set; }
 
     /// <summary>
     /// Original entity UUID from the .uhc SQLite package.
-    /// Used for intra-batch referential integrity (e.g. a StagingPropertyUnit references
-    /// its parent StagingBuilding via OriginalEntityId, not a production FK).
     /// Unique per ImportPackageId to prevent duplicate staging of the same record.
     /// </summary>
     public Guid OriginalEntityId { get; private set; }
 
-    // ==================== VALIDATION STATUS ====================
-
     /// <summary>
     /// Current validation status of this staging record.
-    /// Transitions: Pending → Valid/Invalid/Warning → (optionally) Skipped.
     /// </summary>
     public StagingValidationStatus ValidationStatus { get; private set; }
 
     /// <summary>
     /// JSON array of blocking validation error messages.
-    /// Present when <see cref="ValidationStatus"/> is <see cref="StagingValidationStatus.Invalid"/>.
-    /// Format: ["Error 1", "Error 2", ...]
-    /// Max 8000 chars (configured in EF).
     /// </summary>
     public string? ValidationErrors { get; private set; }
 
     /// <summary>
     /// JSON array of non-blocking validation warning messages.
-    /// Present when <see cref="ValidationStatus"/> is <see cref="StagingValidationStatus.Warning"/> or <see cref="StagingValidationStatus.Valid"/>.
-    /// Format: ["Warning 1", "Warning 2", ...]
-    /// Max 8000 chars (configured in EF).
     /// </summary>
     public string? ValidationWarnings { get; private set; }
 
-    // ==================== COMMIT TRACKING ====================
-
     /// <summary>
     /// Whether this record has been approved for commit to production.
-    /// Set by the data manager after reviewing validation results and resolving conflicts.
-    /// Only records with <see cref="IsApprovedForCommit"/> = true are committed.
     /// </summary>
     public bool IsApprovedForCommit { get; private set; }
 
     /// <summary>
-    /// Production entity ID created during commit.
-    /// Null until the record is actually committed to a production table.
-    /// Enables traceability from staging → production.
+    /// Production entity ID created during commit. Null until committed.
     /// </summary>
     public Guid? CommittedEntityId { get; private set; }
 
@@ -76,8 +49,6 @@ public abstract class BaseStagingEntity : BaseEntity
     /// UTC timestamp when this record was staged (unpacked from .uhc into staging table).
     /// </summary>
     public DateTime StagedAtUtc { get; private set; }
-
-    // ==================== CONSTRUCTORS ====================
 
     /// <summary>
     /// EF Core parameterless constructor.
@@ -87,8 +58,6 @@ public abstract class BaseStagingEntity : BaseEntity
         ValidationStatus = StagingValidationStatus.Pending;
         IsApprovedForCommit = false;
     }
-
-    // ==================== DOMAIN METHODS ====================
 
     /// <summary>
     /// Initialize the common staging metadata when first creating a staging record.

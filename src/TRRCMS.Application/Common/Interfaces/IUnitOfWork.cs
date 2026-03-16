@@ -18,8 +18,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 /// </summary>
 public interface IUnitOfWork : IDisposable
 {
-    // ==================== REPOSITORIES ====================
-
     /// <summary>
     /// Building repository - spatial data and building management
     /// </summary>
@@ -72,7 +70,6 @@ public interface IUnitOfWork : IDisposable
 
     /// <summary>
     /// Building assignment repository - field collector assignments
-    /// UC-012: Assign Buildings to Field Collectors
     /// </summary>
     IBuildingAssignmentRepository BuildingAssignments { get; }
 
@@ -107,8 +104,7 @@ public interface IUnitOfWork : IDisposable
     IConflictResolutionRepository ConflictResolutions { get; }
 
     /// <summary>
-    /// Security policy repository � versioned security configurations
-    /// UC-011: Security Settings
+    /// Security policy repository — versioned security configurations
     /// </summary>
     ISecurityPolicyRepository SecurityPolicies { get; }
 
@@ -123,7 +119,6 @@ public interface IUnitOfWork : IDisposable
     IStreetRepository Streets { get; }
 
 
-    // ==================== TRANSACTION OPERATIONS ====================
 
     /// <summary>
     /// Save all pending changes to the database in a single transaction.

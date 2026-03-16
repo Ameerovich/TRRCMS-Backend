@@ -21,13 +21,12 @@ namespace TRRCMS.WebAPI.Controllers;
 /// </summary>
 /// <remarks>
 /// Provides endpoints for assigning buildings to field collectors.
-/// UC-012: Assign Buildings to Field Collectors
-/// 
+///
 /// **Workflow Overview:**
-/// 1. Search buildings by administrative hierarchy, location, OR polygon (S01-S03)
-/// 2. Review property units for revisit selection (S04-S05)
+/// 1. Search buildings by administrative hierarchy, location, OR polygon
+/// 2. Review property units for revisit selection
 /// 3. Select field collector with workload info
-/// 4. Assign buildings to collector (S06-S07)
+/// 4. Assign buildings to collector
 /// 5. Tablet downloads assignments during sync, acknowledges receipt
 /// 
 /// **TransferStatus Values (حالة النقل):**
@@ -79,10 +78,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Search and filter buildings for assignment to field collectors.
-    /// UC-012: S01-S03 - Search and select buildings
-    /// 
-    /// **Use Case**: UC-012 Assign Buildings - Building Search
-    /// 
+    ///
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **Supported Filters:**
@@ -257,10 +253,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// <remarks>
     /// Search buildings within a polygon area using coordinate arrays.
     /// Use this endpoint when drawing selection on map (easier for frontend).
-    /// UC-012: S01-S03 - Search buildings in polygon
-    /// 
-    /// **Use Case**: UC-012 Assign Buildings - Polygon Search (Map Drawing)
-    /// 
+    ///
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **Polygon Input Options:**
@@ -399,10 +392,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Returns property units within a building for selecting specific units to revisit.
-    /// UC-012: S04-S05 - Review property units and select for revisit
-    /// 
-    /// **Use Case**: UC-012 Assign Buildings - Revisit Selection
-    /// 
+    ///
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **When to Use:**
@@ -469,10 +459,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Returns field collectors with their current workload information.
-    /// UC-012: Select field collector for assignment
-    /// 
-    /// **Use Case**: UC-012 Assign Buildings - Field Collector Selection
-    /// 
+    ///
     /// **Required Permission**: Buildings_Assign (4003) - CanAssignBuildings policy
     /// 
     /// **Filters:**
@@ -549,10 +536,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Returns all assignments for a specific field collector with summary statistics.
-    /// UC-012: View collector's current tasks
-    /// 
-    /// **Use Case**: UC-012 Assign Buildings - View Collector Tasks
-    /// 
+    ///
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **Filters:**
@@ -684,9 +668,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Returns complete details for a specific building assignment.
-    /// 
-    /// **Use Case**: UC-012 - View Assignment Details
-    /// 
+    ///
     /// **Required Permission**: Buildings_View (4000) - CanViewAllBuildings policy
     /// 
     /// **Example Request:**
@@ -755,10 +737,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Assigns one or more buildings to a field collector for survey.
-    /// UC-012: S06-S07 - Assign selected buildings
-    /// 
-    /// **Use Case**: UC-012 Assign Buildings - Create Assignment
-    /// 
+    ///
     /// **Required Permission**: Buildings_Assign (4003) - CanAssignBuildings policy
     /// 
     /// **Supports:**
@@ -855,9 +834,7 @@ public class BuildingAssignmentsController : ControllerBase
     /// <remarks>
     /// Cancels an active building assignment. 
     /// Cannot cancel assignments that have already been synchronized (data collected).
-    /// 
-    /// **Use Case**: UC-012 Assign Buildings - Cancel Assignment
-    /// 
+    ///
     /// **Required Permission**: Buildings_Assign (4003) - CanAssignBuildings policy
     /// 
     /// **Restrictions:**

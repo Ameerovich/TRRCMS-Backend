@@ -22,7 +22,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// </summary>
 /// <remarks>
 /// Manages system users, roles, and permissions for TRRCMS.
-/// إدارة المستخدمين - UC-009 User &amp; Role Management
+/// إدارة المستخدمين
 /// 
 /// **What is a User?**
 /// A User represents a system account that can authenticate and access TRRCMS.
@@ -85,7 +85,7 @@ public class UsersController : ControllerBase
     /// Creates a new system user with specified role and permissions.
     /// إنشاء مستخدم جديد
     /// 
-    /// **Use Case**: UC-009 User Management - Create new user accounts
+    /// **Use Case**: Create new user accounts
     /// 
     /// **Required Permission**: Users_Create (8001) - CanCreateUsers policy
     /// 
@@ -192,7 +192,7 @@ public class UsersController : ControllerBase
     /// Retrieves detailed user information including permissions.
     /// عرض تفاصيل المستخدم
     /// 
-    /// **Use Case**: UC-009 - View user details, verify permissions
+    /// **Use Case**: View user details, verify permissions
     /// 
     /// **Required Permission**: Users_View (8000) - CanViewAllUsers policy
     /// 
@@ -269,7 +269,7 @@ public class UsersController : ControllerBase
     /// Retrieves paginated list of users with optional filters.
     /// عرض قائمة المستخدمين
     /// 
-    /// **Use Case**: UC-009 - User listing, search, administration
+    /// **Use Case**: User listing, search, administration
     /// 
     /// **Required Permission**: Users_View (8000) - CanViewAllUsers policy
     /// 
@@ -333,7 +333,7 @@ public class UsersController : ControllerBase
     /// Updates user profile information. Does not change password or permissions.
     /// تحديث بيانات المستخدم
     /// 
-    /// **Use Case**: UC-009 - Update user profile, contact info, access settings
+    /// **Use Case**: Update user profile, contact info, access settings
     /// 
     /// **Required Permission**: Users_Update (8002) - CanEditUsers policy
     /// 
@@ -391,7 +391,7 @@ public class UsersController : ControllerBase
     /// Reactivates a previously deactivated user account.
     /// تفعيل حساب المستخدم
     /// 
-    /// **Use Case**: UC-009 - Reactivate user who was deactivated
+    /// **Use Case**: Reactivate user who was deactivated
     /// 
     /// **Required Permission**: Users_Update (8002) - CanEditUsers policy
     /// 
@@ -442,7 +442,7 @@ public class UsersController : ControllerBase
     /// Deactivates a user account preventing login.
     /// إلغاء تفعيل حساب المستخدم
     /// 
-    /// **Use Case**: UC-009 - Disable user access without deleting account
+    /// **Use Case**: Disable user access without deleting account
     /// 
     /// **Required Permission**: Users_Deactivate (8003) - CanEditUsers policy
     /// 
@@ -509,7 +509,7 @@ public class UsersController : ControllerBase
     /// Unlocks a user account that was locked due to failed login attempts.
     /// فتح حساب المستخدم المقفل
     /// 
-    /// **Use Case**: UC-009 - Unlock user locked by failed password attempts
+    /// **Use Case**: Unlock user locked by failed password attempts
     /// 
     /// **Required Permission**: Users_Update (8002) - CanEditUsers policy
     /// 
@@ -564,7 +564,7 @@ public class UsersController : ControllerBase
     /// Grants one or more permissions to a user in addition to their role-based permissions.
     /// منح صلاحيات للمستخدم
     /// 
-    /// **Use Case**: UC-009 - Add specific permissions beyond role defaults
+    /// **Use Case**: Add specific permissions beyond role defaults
     /// 
     /// **Required Permission**: CanManageUserRoles policy (Administrator only)
     /// 
@@ -630,7 +630,7 @@ public class UsersController : ControllerBase
     /// Removes a specific permission that was previously granted to a user.
     /// إلغاء صلاحية من المستخدم
     /// 
-    /// **Use Case**: UC-009 - Remove specific permission from user
+    /// **Use Case**: Remove specific permission from user
     /// 
     /// **Required Permission**: CanManageUserRoles policy (Administrator only)
     /// 
@@ -692,7 +692,7 @@ public class UsersController : ControllerBase
     /// Retrieves the audit log for a specific user showing all changes made to their account.
     /// عرض سجل التدقيق للمستخدم
     /// 
-    /// **Use Case**: UC-009 - Review user account history, security audit
+    /// **Use Case**: Review user account history, security audit
     /// 
     /// **Required Permission**: CanViewAuditLogs policy
     /// 
