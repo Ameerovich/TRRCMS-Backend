@@ -209,23 +209,20 @@ public static class PermissionSeeder
             Permission.Evidence_View,
 
             Permission.Buildings_View,
+            Permission.Buildings_Assign,    // Assign buildings to field collectors
 
             Permission.Persons_View,
 
             Permission.PropertyUnits_View,
 
-            Permission.Surveys_View,        // View all surveys for supervision
-            Permission.Surveys_ViewAll,     // View all surveys (alias)
-            Permission.Surveys_ViewOwn,     // View own if created any
-            Permission.Surveys_Export,      // Export for reporting
+            Permission.Surveys_View,
+            Permission.Surveys_ViewAll,
+            Permission.Surveys_ViewOwn,
+            Permission.Surveys_Export,
 
             Permission.Dashboard_View,
 
-            Permission.System_Sync          // Tablet LAN sync — supervisor may trigger sync sessions
-            // No Surveys_Create - supervisors don't create surveys
-            // No Surveys_EditOwn/EditAll - supervisors review, not edit
-            // No Surveys_Finalize - collectors finalize their own
-            // No Surveys_Import - Data Manager responsibility
+            Permission.System_Sync
         };
     }
 
