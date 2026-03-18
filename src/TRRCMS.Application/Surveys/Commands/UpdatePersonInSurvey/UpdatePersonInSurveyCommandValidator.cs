@@ -17,7 +17,8 @@ public class UpdatePersonInSurveyCommandValidator : AbstractValidator<UpdatePers
 
         RuleFor(x => x.HouseholdId)
             .NotEmpty()
-            .WithMessage("معرف الأسرة مطلوب");
+            .When(x => x.HouseholdId.HasValue)
+            .WithMessage("معرف الأسرة غير صالح");
 
         RuleFor(x => x.PersonId)
             .NotEmpty()
