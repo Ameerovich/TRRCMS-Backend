@@ -46,22 +46,29 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Cannot update persons for survey in {survey.Status} status. Only Draft surveys can be modified.");
 
-        // Validate household exists
-        var household = await _unitOfWork.Households.GetByIdAsync(request.HouseholdId, cancellationToken)
-            ?? throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
-
-        // Verify household belongs to survey's building
-        var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(household.PropertyUnitId, cancellationToken);
-        if (propertyUnit == null || propertyUnit.BuildingId != survey.BuildingId)
-            throw new ValidationException("Household does not belong to this survey's building");
-
         // Get person
         var person = await _unitOfWork.Persons.GetByIdAsync(request.PersonId, cancellationToken)
             ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
 
-        // Verify person belongs to the specified household
-        if (person.HouseholdId != request.HouseholdId)
-            throw new ValidationException($"Person {request.PersonId} does not belong to household {request.HouseholdId}");
+        if (request.HouseholdId.HasValue)
+        {
+            // Household path: validate household exists and person belongs to it
+            var household = await _unitOfWork.Households.GetByIdAsync(request.HouseholdId.Value, cancellationToken)
+                ?? throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
+
+            var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(household.PropertyUnitId, cancellationToken);
+            if (propertyUnit == null || propertyUnit.BuildingId != survey.BuildingId)
+                throw new ValidationException("Household does not belong to this survey's building");
+
+            if (person.HouseholdId != request.HouseholdId.Value)
+                throw new ValidationException($"Person {request.PersonId} does not belong to household {request.HouseholdId}");
+        }
+        else
+        {
+            // Contact person path: validate person is the survey's contact person
+            if (survey.ContactPersonId != request.PersonId)
+                throw new ValidationException("Person is not the contact person for this survey. Provide a householdId to update a household member.");
+        }
 
         // Capture old values for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
@@ -102,10 +109,10 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
                 modifiedByUserId: currentUserId);
         }
 
-        // Update relationship to head if provided
-        if (request.RelationshipToHead.HasValue)
+        // Update relationship to head if provided (only for household members)
+        if (request.RelationshipToHead.HasValue && request.HouseholdId.HasValue)
         {
-            person.AssignToHousehold(request.HouseholdId, (RelationshipToHead)request.RelationshipToHead.Value, currentUserId);
+            person.AssignToHousehold(request.HouseholdId.Value, (RelationshipToHead)request.RelationshipToHead.Value, currentUserId);
         }
 
         // Save changes

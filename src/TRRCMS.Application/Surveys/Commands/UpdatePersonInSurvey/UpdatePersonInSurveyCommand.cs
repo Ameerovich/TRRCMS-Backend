@@ -15,9 +15,9 @@ public class UpdatePersonInSurveyCommand : IRequest<PersonDto>
     public Guid SurveyId { get; set; }
 
     /// <summary>
-    /// Household ID (from route)
+    /// Household ID (from route, optional for contact person updates)
     /// </summary>
-    public Guid HouseholdId { get; set; }
+    public Guid? HouseholdId { get; set; }
 
     /// <summary>
     /// Person ID to update (from route)

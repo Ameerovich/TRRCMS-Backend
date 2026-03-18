@@ -1476,6 +1476,44 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
+    /// Update the contact person for a survey
+    /// تعديل بيانات شخص التواصل
+    /// </summary>
+    /// <remarks>
+    /// Updates the person record linked as the survey's contact person.
+    /// All fields are optional for partial updates.
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
+    /// </remarks>
+    /// <param name="surveyId">Survey ID</param>
+    /// <param name="personId">Contact person ID to update</param>
+    /// <param name="command">Person update data</param>
+    /// <returns>Updated person details</returns>
+    /// <response code="200">Contact person updated successfully.</response>
+    /// <response code="400">Validation error or person is not the contact person for this survey.</response>
+    /// <response code="401">Not authenticated.</response>
+    /// <response code="403">Not authorized.</response>
+    /// <response code="404">Survey or person not found.</response>
+    [HttpPut("{surveyId}/contact-person/{personId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(PersonDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PersonDto>> UpdateContactPerson(
+        Guid surveyId,
+        Guid personId,
+        [FromBody] UpdatePersonInSurveyCommand command)
+    {
+        command.SurveyId = surveyId;
+        command.HouseholdId = null; // Contact person path — no household
+        command.PersonId = personId;
+        var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Add person to household in survey context (Office Survey workflow)
     /// </summary>
     /// <remarks>
