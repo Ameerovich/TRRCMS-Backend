@@ -115,7 +115,8 @@ public class GlobalExceptionHandlingMiddleware
                 {
                     Status = (int)HttpStatusCode.Conflict,
                     Title = "Conflict",
-                    Message = conflictEx.Message
+                    Message = conflictEx.Message,
+                    ConflictData = conflictEx.ConflictData
                 }),
 
             // Domain state violation (e.g., invalid state transitions, duplicate entities)

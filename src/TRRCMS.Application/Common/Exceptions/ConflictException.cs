@@ -11,8 +11,19 @@ namespace TRRCMS.Application.Common.Exceptions;
 /// </summary>
 public class ConflictException : Exception
 {
+    /// <summary>
+    /// Optional payload with the conflicting entity data (e.g., existing person with same NationalId).
+    /// Serialized into the 409 response body as "conflictData".
+    /// </summary>
+    public object? ConflictData { get; }
+
     public ConflictException(string message) : base(message)
     {
+    }
+
+    public ConflictException(string message, object conflictData) : base(message)
+    {
+        ConflictData = conflictData;
     }
 
     public ConflictException(string message, Exception innerException)

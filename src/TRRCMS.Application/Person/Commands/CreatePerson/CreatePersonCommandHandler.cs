@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Persons.Dtos;
@@ -31,6 +32,16 @@ public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, P
         // Get current user
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
+
+        // Check NationalId uniqueness
+        if (!string.IsNullOrWhiteSpace(request.NationalId))
+        {
+            var existingPerson = await _personRepository.GetByNationalIdAsync(request.NationalId, cancellationToken);
+            if (existingPerson != null)
+                throw new ConflictException(
+                    $"A person with National ID '{request.NationalId}' already exists.",
+                    _mapper.Map<PersonDto>(existingPerson));
+        }
 
         // Create person entity using factory method
         var person = Person.CreateWithFullInfo(

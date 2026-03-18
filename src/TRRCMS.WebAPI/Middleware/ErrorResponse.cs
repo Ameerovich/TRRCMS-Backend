@@ -9,4 +9,8 @@ public class ErrorResponse
     public string Title { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public IDictionary<string, string[]>? Errors { get; set; }
+    /// <summary>
+    /// Optional payload for conflict responses (e.g., the existing entity that caused the conflict).
+    /// </summary>
+    public object? ConflictData { get; set; }
 }

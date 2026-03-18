@@ -54,6 +54,16 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
             throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
         }
 
+        // Check NationalId uniqueness
+        if (!string.IsNullOrWhiteSpace(request.NationalId))
+        {
+            var existingPerson = await _unitOfWork.Persons.GetByNationalIdAsync(request.NationalId, cancellationToken);
+            if (existingPerson != null)
+                throw new ConflictException(
+                    $"A person with National ID '{request.NationalId}' already exists.",
+                    _mapper.Map<PersonDto>(existingPerson));
+        }
+
         // Create person entity
         var person = Person.CreateWithFullInfo(
             familyNameArabic: request.FamilyNameArabic,
