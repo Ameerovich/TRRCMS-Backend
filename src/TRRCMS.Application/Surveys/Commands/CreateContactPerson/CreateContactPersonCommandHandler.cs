@@ -46,6 +46,16 @@ public class CreateContactPersonCommandHandler : IRequestHandler<CreateContactPe
         // Only draft surveys can be modified
         survey.EnsureCanModify();
 
+        // Check NationalId uniqueness
+        if (!string.IsNullOrWhiteSpace(request.NationalId))
+        {
+            var existingPerson = await _unitOfWork.Persons.GetByNationalIdAsync(request.NationalId, cancellationToken);
+            if (existingPerson != null)
+                throw new ConflictException(
+                    $"A person with National ID '{request.NationalId}' already exists.",
+                    _mapper.Map<PersonDto>(existingPerson));
+        }
+
         // Create person
         var person = Person.CreateWithFullInfo(
             familyNameArabic: request.FamilyNameArabic,

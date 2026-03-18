@@ -107,9 +107,11 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .IsRowVersion()
             .HasComment("Concurrency token");
 
-        // Index for NationalId searches
+        // Unique index for NationalId (filtered: non-null, non-deleted only)
         builder.HasIndex(p => p.NationalId)
-            .HasDatabaseName("IX_Person_NationalId");
+            .HasDatabaseName("IX_Person_NationalId")
+            .IsUnique()
+            .HasFilter("\"NationalId\" IS NOT NULL AND \"IsDeleted\" = false");
 
         // Composite index for name searches
         builder.HasIndex(p => new { p.FirstNameArabic, p.FatherNameArabic, p.FamilyNameArabic })
