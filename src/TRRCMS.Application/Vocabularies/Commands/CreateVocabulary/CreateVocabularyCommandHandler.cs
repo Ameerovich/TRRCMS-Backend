@@ -93,7 +93,8 @@ public class CreateVocabularyCommandHandler : IRequestHandler<CreateVocabularyCo
             labelAr = v.LabelArabic,
             labelEn = v.LabelEnglish,
             description = v.Description,
-            displayOrder = v.DisplayOrder
+            displayOrder = v.DisplayOrder,
+            isDeprecated = v.IsDeprecated
         });
 
         return JsonSerializer.Serialize(rawValues);

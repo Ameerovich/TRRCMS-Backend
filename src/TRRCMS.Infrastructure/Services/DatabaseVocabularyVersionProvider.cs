@@ -6,7 +6,6 @@ namespace TRRCMS.Infrastructure.Services;
 
 /// <summary>
 /// Database-backed vocabulary version provider.
-/// Replaces hardcoded ServerVocabularyVersions from appsettings.json.
 /// Used by ImportService for vocabulary compatibility checking.
 /// </summary>
 public class DatabaseVocabularyVersionProvider : IVocabularyVersionProvider

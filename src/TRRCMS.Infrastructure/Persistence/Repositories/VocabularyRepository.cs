@@ -76,4 +76,27 @@ public class VocabularyRepository : IVocabularyRepository
         _context.Vocabularies.Update(vocabulary);
         return Task.CompletedTask;
     }
+
+    public async Task<int> GetActiveEntityCountForVocabularyAsync(string vocabularyName, CancellationToken cancellationToken = default)
+    {
+        return vocabularyName switch
+        {
+            "building_type" => await _context.Buildings.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "building_status" => await _context.Buildings.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "property_unit_type" => await _context.PropertyUnits.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "property_unit_status" => await _context.PropertyUnits.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "relation_type" => await _context.PersonPropertyRelations.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "occupancy_type" => await _context.PersonPropertyRelations.CountAsync(e => !e.IsDeleted && e.OccupancyType != null, cancellationToken),
+            "evidence_type" => await _context.Evidences.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "claim_type" => await _context.Claims.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "case_status" => await _context.Claims.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "claim_source" => await _context.Claims.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "gender" => await _context.Persons.CountAsync(e => !e.IsDeleted && e.Gender != null, cancellationToken),
+            "nationality" => await _context.Persons.CountAsync(e => !e.IsDeleted && e.Nationality != null, cancellationToken),
+            "survey_type" => await _context.Surveys.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "survey_status" => await _context.Surveys.CountAsync(e => !e.IsDeleted, cancellationToken),
+            "tenure_contract_type" => await _context.Claims.CountAsync(e => !e.IsDeleted && e.TenureContractType != null, cancellationToken),
+            _ => 0 // Non-entity vocabularies (wall_material, damage_level, etc.)
+        };
+    }
 }

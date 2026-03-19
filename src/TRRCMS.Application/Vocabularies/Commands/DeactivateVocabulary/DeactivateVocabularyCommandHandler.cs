@@ -45,6 +45,16 @@ public class DeactivateVocabularyCommandHandler : IRequestHandler<DeactivateVoca
         if (!vocabulary.IsActive)
             throw new ValidationException($"Vocabulary '{vocabulary.VocabularyName}' is already inactive.");
 
+        // Check if any active entities use codes from this vocabulary
+        var entityCount = await _unitOfWork.Vocabularies
+            .GetActiveEntityCountForVocabularyAsync(vocabulary.VocabularyName, cancellationToken);
+
+        if (entityCount > 0)
+            throw new ValidationException(
+                $"Cannot deactivate vocabulary '{vocabulary.VocabularyName}'. " +
+                $"{entityCount} active entities use its codes. " +
+                $"Deprecate individual codes instead of deactivating the entire vocabulary.");
+
         vocabulary.Deactivate(currentUserId);
 
         await _unitOfWork.Vocabularies.UpdateAsync(vocabulary, cancellationToken);

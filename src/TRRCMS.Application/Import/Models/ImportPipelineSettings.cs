@@ -16,12 +16,6 @@ namespace TRRCMS.Application.Import.Models;
 ///     "PersonHighConfidenceThreshold": 90,
 ///     "PersonMediumConfidenceThreshold": 70,
 ///     "PropertyProximityMeters": 50
-///   },
-///   "ServerVocabularyVersions": {
-///     "ownership_type": "1.0.0",
-///     "document_type": "1.0.0",
-///     "building_type": "1.0.0",
-///     "claim_type": "1.0.0"
 ///   }
 /// }
 /// </summary>
@@ -52,13 +46,6 @@ public class ImportPipelineSettings
 
     /// <summary>Duplicate detection threshold settings.</summary>
     public DuplicateDetectionSettings DuplicateDetection { get; set; } = new();
-
-    /// <summary>
-    /// Server's current vocabulary versions.
-    /// Key = domain name, Value = semver string.
-    /// Used for compatibility checking against package vocabulary versions.
-    /// </summary>
-    public Dictionary<string, string> ServerVocabularyVersions { get; set; } = new();
 }
 
 /// <summary>

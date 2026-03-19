@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Persons.Commands.UpdatePerson;
 
@@ -7,7 +8,7 @@ namespace TRRCMS.Application.Persons.Commands.UpdatePerson;
 /// </summary>
 public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonCommand>
 {
-    public UpdatePersonCommandValidator()
+    public UpdatePersonCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.Id)
             .NotEmpty()
@@ -67,5 +68,15 @@ public class UpdatePersonCommandValidator : AbstractValidator<UpdatePersonComman
             .Matches(@"^[\+]?[0-9\s\-]*$")
             .WithMessage("رقم الهاتف غير صحيح")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
+
+        RuleFor(x => x.Gender)
+            .Must(v => vocabService.IsValidCode("gender", (int)v!.Value))
+            .When(x => x.Gender.HasValue)
+            .WithMessage("الجنس غير صالح");
+
+        RuleFor(x => x.Nationality)
+            .Must(v => vocabService.IsValidCode("nationality", (int)v!.Value))
+            .When(x => x.Nationality.HasValue)
+            .WithMessage("الجنسية غير صالحة");
     }
 }

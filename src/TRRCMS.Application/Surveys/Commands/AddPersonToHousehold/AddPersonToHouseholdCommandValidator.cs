@@ -71,6 +71,16 @@ public class AddPersonToHouseholdCommandValidator : AbstractValidator<AddPersonT
             .WithMessage("رقم الهاتف غير صحيح")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
 
+        RuleFor(x => x.Gender)
+            .Must(v => vocabService.IsValidCode("gender", v!.Value))
+            .When(x => x.Gender.HasValue)
+            .WithMessage("الجنس غير صالح");
+
+        RuleFor(x => x.Nationality)
+            .Must(v => vocabService.IsValidCode("nationality", v!.Value))
+            .When(x => x.Nationality.HasValue)
+            .WithMessage("الجنسية غير صالحة");
+
         RuleFor(x => x.RelationshipToHead)
             .Must(v => vocabService.IsValidCode("relationship_to_head", v!.Value))
             .When(x => x.RelationshipToHead.HasValue)

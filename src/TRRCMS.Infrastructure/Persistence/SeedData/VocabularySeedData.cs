@@ -124,7 +124,8 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
                         labelAr = v.LabelAr,
                         labelEn = v.LabelEn,
                         description = v.Description,
-                        displayOrder = v.DisplayOrder
+                        displayOrder = v.DisplayOrder,
+                        isDeprecated = false
                     }));
 
                     var newVersion = existing.CreateMinorVersion(
@@ -217,7 +218,8 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
                 code = enumValue,
                 labelAr = labelAr,
                 labelEn = labelEn,
-                displayOrder = order++
+                displayOrder = order++,
+                isDeprecated = false
             });
         }
 

@@ -2,7 +2,6 @@ namespace TRRCMS.Application.Common.Interfaces;
 
 /// <summary>
 /// Provides vocabulary version information for import compatibility checking.
-/// Replaces hardcoded ServerVocabularyVersions from appsettings.json.
 /// </summary>
 public interface IVocabularyVersionProvider
 {
