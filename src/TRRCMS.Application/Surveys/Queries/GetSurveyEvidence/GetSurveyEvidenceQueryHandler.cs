@@ -4,6 +4,7 @@ using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Queries.GetSurveyEvidence;
 
@@ -38,7 +39,11 @@ public class GetSurveyEvidenceQueryHandler : IRequestHandler<GetSurveyEvidenceQu
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only view evidence for your own surveys");
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_ViewAll))
+                throw new UnauthorizedAccessException("You can only view evidence for your own surveys");
+        }
 
         // Get evidence using EvidenceType? and PersonId? filters
         var evidences = await _evidenceRepository.GetBySurveyContextAsync(

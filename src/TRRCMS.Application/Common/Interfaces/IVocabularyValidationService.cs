@@ -20,6 +20,12 @@ public interface IVocabularyValidationService
     IReadOnlySet<int> GetValidCodes(string vocabularyName);
 
     /// <summary>
+    /// Check if a code is deprecated for the given vocabulary.
+    /// Deprecated codes are still valid but should be hidden from new data entry dropdowns.
+    /// </summary>
+    bool IsDeprecatedCode(string vocabularyName, int code);
+
+    /// <summary>
     /// Invalidate the in-memory cache. Called after vocabulary create/update/activate/deactivate.
     /// Next call to IsValidCode or GetValidCodes will reload from DB.
     /// </summary>

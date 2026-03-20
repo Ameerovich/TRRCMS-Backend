@@ -47,4 +47,10 @@ public interface IVocabularyRepository
     /// Update an existing vocabulary.
     /// </summary>
     Task UpdateAsync(Vocabulary vocabulary, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Count active (non-deleted) entities that use codes from the given vocabulary.
+    /// Returns 0 for vocabularies not mapped to entity columns.
+    /// </summary>
+    Task<int> GetActiveEntityCountForVocabularyAsync(string vocabularyName, CancellationToken cancellationToken = default);
 }

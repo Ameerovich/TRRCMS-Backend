@@ -47,7 +47,9 @@ public class LinkPropertyUnitToSurveyCommandHandler : IRequestHandler<LinkProper
         // Verify ownership
         if (survey.FieldCollectorId != currentUserId)
         {
-            throw new UnauthorizedAccessException("You can only link property units to your own surveys");
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only link property units to your own surveys");
         }
 
         // Verify survey is in Draft status

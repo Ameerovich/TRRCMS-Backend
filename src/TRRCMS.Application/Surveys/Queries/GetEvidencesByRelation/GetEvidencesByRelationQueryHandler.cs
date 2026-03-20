@@ -39,7 +39,11 @@ public class GetEvidencesByRelationQueryHandler : IRequestHandler<GetEvidencesBy
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only view evidences for your own surveys");
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_ViewAll))
+                throw new UnauthorizedAccessException("You can only view evidences for your own surveys");
+        }
 
         // Get and validate relation
         var relation = await _relationRepository.GetByIdAsync(request.RelationId, cancellationToken)

@@ -48,7 +48,9 @@ public class SaveDraftSurveyCommandHandler : IRequestHandler<SaveDraftSurveyComm
         // Verify ownership (only field collector who created survey can edit draft)
         if (survey.FieldCollectorId != currentUserId)
         {
-            throw new UnauthorizedAccessException("You can only edit your own surveys");
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only edit your own surveys");
         }
 
         // Verify survey is in Draft status

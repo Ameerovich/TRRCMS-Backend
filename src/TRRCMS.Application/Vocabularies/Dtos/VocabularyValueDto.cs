@@ -30,4 +30,10 @@ public class VocabularyValueDto
     /// Display order for UI rendering.
     /// </summary>
     public int DisplayOrder { get; set; }
+
+    /// <summary>
+    /// Whether this code is deprecated. Deprecated codes are still valid for existing data
+    /// but should be hidden from dropdowns for new data entry.
+    /// </summary>
+    public bool IsDeprecated { get; set; }
 }

@@ -19,6 +19,7 @@ public class CachedVocabularyValidationService : IVocabularyValidationService
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     private volatile Dictionary<string, HashSet<int>> _cache = new();
+    private volatile Dictionary<string, HashSet<int>> _deprecatedCache = new();
     private volatile bool _loaded;
 
     private static readonly IReadOnlySet<int> EmptySet = new HashSet<int>();
@@ -46,6 +47,12 @@ public class CachedVocabularyValidationService : IVocabularyValidationService
     {
         EnsureLoaded();
         return _cache.TryGetValue(vocabularyName, out var codes) ? codes : EmptySet;
+    }
+
+    public bool IsDeprecatedCode(string vocabularyName, int code)
+    {
+        EnsureLoaded();
+        return _deprecatedCache.TryGetValue(vocabularyName, out var codes) && codes.Contains(code);
     }
 
     public void InvalidateCache()
@@ -93,14 +100,18 @@ public class CachedVocabularyValidationService : IVocabularyValidationService
                 .ToListAsync(cancellationToken);
 
             var newCache = new Dictionary<string, HashSet<int>>(vocabularies.Count);
+            var newDeprecatedCache = new Dictionary<string, HashSet<int>>(vocabularies.Count);
 
             foreach (var vocab in vocabularies)
             {
-                var codes = ParseCodes(vocab.ValuesJson);
-                newCache[vocab.VocabularyName] = codes;
+                var (allCodes, deprecatedCodes) = ParseCodesWithDeprecation(vocab.ValuesJson);
+                newCache[vocab.VocabularyName] = allCodes;
+                if (deprecatedCodes.Count > 0)
+                    newDeprecatedCache[vocab.VocabularyName] = deprecatedCodes;
             }
 
             _cache = newCache;
+            _deprecatedCache = newDeprecatedCache;
             _loaded = true;
 
             _logger.LogInformation(
@@ -114,26 +125,29 @@ public class CachedVocabularyValidationService : IVocabularyValidationService
         }
     }
 
-    private static HashSet<int> ParseCodes(string valuesJson)
+    private static (HashSet<int> allCodes, HashSet<int> deprecatedCodes) ParseCodesWithDeprecation(string valuesJson)
     {
         if (string.IsNullOrWhiteSpace(valuesJson) || valuesJson == "[]")
-            return new HashSet<int>();
+            return (new HashSet<int>(), new HashSet<int>());
 
         try
         {
             var values = JsonSerializer.Deserialize<List<VocabularyCodeEntry>>(valuesJson, JsonOptions);
-            if (values is null) return new HashSet<int>();
+            if (values is null) return (new HashSet<int>(), new HashSet<int>());
 
-            return values.Select(v => v.Code).ToHashSet();
+            var allCodes = values.Select(v => v.Code).ToHashSet();
+            var deprecatedCodes = values.Where(v => v.IsDeprecated).Select(v => v.Code).ToHashSet();
+            return (allCodes, deprecatedCodes);
         }
         catch
         {
-            return new HashSet<int>();
+            return (new HashSet<int>(), new HashSet<int>());
         }
     }
 
     private class VocabularyCodeEntry
     {
         public int Code { get; set; }
+        public bool IsDeprecated { get; set; }
     }
 }

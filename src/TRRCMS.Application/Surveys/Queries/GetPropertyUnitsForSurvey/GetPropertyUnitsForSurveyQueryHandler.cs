@@ -4,6 +4,7 @@ using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.PropertyUnits.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Queries.GetPropertyUnitsForSurvey;
 
@@ -49,7 +50,9 @@ public class GetPropertyUnitsForSurveyQueryHandler : IRequestHandler<GetProperty
         // Verify ownership (users can only view property units for their own surveys)
         if (survey.FieldCollectorId != currentUserId)
         {
-            throw new UnauthorizedAccessException("You can only view property units for your own surveys");
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_ViewAll))
+                throw new UnauthorizedAccessException("You can only view property units for your own surveys");
         }
 
         // Get all property units for the survey's building

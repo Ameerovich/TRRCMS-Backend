@@ -43,6 +43,38 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
         if (!vocabulary.IsCurrentVersion)
             throw new ValidationException("Can only create new versions from the current version of a vocabulary.");
 
+        // Block code removal — codes can only be deprecated, never removed
+        var oldValues = VocabularyMappingHelper.ParseValues(vocabulary.ValuesJson);
+        var oldCodes = new HashSet<int>(oldValues.Select(v => v.Code));
+        var newCodes = new HashSet<int>(request.Values.Select(v => v.Code));
+        var removedCodes = oldCodes.Except(newCodes).ToList();
+
+        if (removedCodes.Any())
+        {
+            var removedLabels = oldValues
+                .Where(v => removedCodes.Contains(v.Code))
+                .Select(v => $"{v.Code} ({v.LabelArabic} / {v.LabelEnglish})")
+                .ToList();
+
+            throw new ValidationException(
+                $"Vocabulary codes cannot be removed. The following codes are missing from the new version: " +
+                $"{string.Join(", ", removedLabels)}. " +
+                $"Set isDeprecated=true on these codes instead to deprecate them.");
+        }
+
+        // Enforce AllowCustomValues — if false, block new codes on minor/patch versions
+        if (!vocabulary.AllowCustomValues && request.VersionType.ToLowerInvariant() != "major")
+        {
+            var addedCodes = newCodes.Except(oldCodes).ToList();
+            if (addedCodes.Any())
+            {
+                throw new ValidationException(
+                    $"This vocabulary does not allow custom values. " +
+                    $"New codes ({string.Join(", ", addedCodes)}) cannot be added in a {request.VersionType} version. " +
+                    $"Only label changes and deprecation are permitted. Use a major version to add new codes.");
+            }
+        }
+
         var valuesJson = SerializeValues(request.Values);
         var oldVersion = vocabulary.Version;
 
@@ -88,7 +120,8 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
             labelAr = v.LabelArabic,
             labelEn = v.LabelEnglish,
             description = v.Description,
-            displayOrder = v.DisplayOrder
+            displayOrder = v.DisplayOrder,
+            isDeprecated = v.IsDeprecated
         });
 
         return JsonSerializer.Serialize(rawValues);

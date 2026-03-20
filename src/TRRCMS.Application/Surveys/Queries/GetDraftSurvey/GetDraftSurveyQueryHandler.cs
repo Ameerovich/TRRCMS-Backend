@@ -4,6 +4,7 @@ using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Surveys.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Queries.GetDraftSurvey;
 
@@ -45,7 +46,9 @@ public class GetDraftSurveyQueryHandler : IRequestHandler<GetDraftSurveyQuery, S
         // For now, enforce strict ownership for field collectors
         if (survey.FieldCollectorId != currentUserId)
         {
-            throw new UnauthorizedAccessException("You can only view your own surveys");
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_ViewAll))
+                throw new UnauthorizedAccessException("You can only view your own surveys");
         }
 
         // Map to DTO

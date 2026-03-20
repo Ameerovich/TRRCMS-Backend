@@ -4,6 +4,7 @@ using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Households.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Queries.GetHouseholdsForSurvey;
 
@@ -48,7 +49,9 @@ public class GetHouseholdsForSurveyQueryHandler : IRequestHandler<GetHouseholdsF
         // Verify ownership
         if (survey.FieldCollectorId != currentUserId)
         {
-            throw new UnauthorizedAccessException("You can only view households for your own surveys");
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_ViewAll))
+                throw new UnauthorizedAccessException("You can only view households for your own surveys");
         }
 
         // Check if survey has property unit

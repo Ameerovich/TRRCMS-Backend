@@ -37,7 +37,11 @@ public class DeleteHouseholdInSurveyCommandHandler : IRequestHandler<DeleteHouse
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only delete households in your own surveys");
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only delete households in your own surveys");
+        }
 
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Cannot delete household. Survey status is {survey.Status}. Only Draft surveys can be modified.");

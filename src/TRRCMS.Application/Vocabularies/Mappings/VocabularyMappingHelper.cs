@@ -37,7 +37,7 @@ public static class VocabularyMappingHelper
         return vocabularies.Select(MapToDto).ToList();
     }
 
-    private static List<VocabularyValueDto> ParseValues(string valuesJson)
+    public static List<VocabularyValueDto> ParseValues(string valuesJson)
     {
         if (string.IsNullOrWhiteSpace(valuesJson) || valuesJson == "[]")
             return new List<VocabularyValueDto>();
@@ -55,7 +55,8 @@ public static class VocabularyMappingHelper
                 LabelArabic = v.LabelAr ?? string.Empty,
                 LabelEnglish = v.LabelEn ?? string.Empty,
                 Description = v.Description,
-                DisplayOrder = v.DisplayOrder
+                DisplayOrder = v.DisplayOrder,
+                IsDeprecated = v.IsDeprecated
             }).ToList();
         }
         catch
@@ -71,5 +72,6 @@ public static class VocabularyMappingHelper
         public string? LabelEn { get; set; }
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
+        public bool IsDeprecated { get; set; }
     }
 }

@@ -39,6 +39,16 @@ public class UpdatePersonCommandHandler : IRequestHandler<UpdatePersonCommand, P
             throw new NotFoundException($"Person with ID {request.Id} not found");
         }
 
+        // Check NationalId uniqueness (only if changing it)
+        if (!string.IsNullOrWhiteSpace(request.NationalId) && request.NationalId != person.NationalId)
+        {
+            var existingPerson = await _personRepository.GetByNationalIdAsync(request.NationalId, cancellationToken);
+            if (existingPerson != null && existingPerson.Id != person.Id)
+                throw new ConflictException(
+                    $"A person with National ID '{request.NationalId}' already exists.",
+                    _mapper.Map<PersonDto>(existingPerson));
+        }
+
         // Update basic info (only if provided)
         person.UpdateBasicInfo(
             familyNameArabic: request.FamilyNameArabic ?? person.FamilyNameArabic,

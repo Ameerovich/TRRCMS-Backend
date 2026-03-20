@@ -90,7 +90,8 @@ public class ImportVocabulariesCommandHandler : IRequestHandler<ImportVocabulari
             labelAr = v.LabelArabic,
             labelEn = v.LabelEnglish,
             description = v.Description,
-            displayOrder = v.DisplayOrder
+            displayOrder = v.DisplayOrder,
+            isDeprecated = v.IsDeprecated
         });
 
         return JsonSerializer.Serialize(rawValues);

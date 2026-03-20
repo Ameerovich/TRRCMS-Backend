@@ -1514,6 +1514,35 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
+    /// Get the contact person for a survey
+    /// عرض بيانات شخص التواصل
+    /// </summary>
+    /// <remarks>
+    /// Returns the person record linked as the survey's contact person.
+    /// Returns 404 if no contact person is set.
+    ///
+    /// **Required Permission**: Surveys_ViewOwn (CanViewOwnSurveys)
+    /// </remarks>
+    /// <param name="surveyId">Survey ID</param>
+    /// <returns>Contact person details</returns>
+    /// <response code="200">Contact person returned successfully.</response>
+    /// <response code="401">Not authenticated.</response>
+    /// <response code="403">Not authorized.</response>
+    /// <response code="404">Survey not found or no contact person set.</response>
+    [HttpGet("{surveyId}/contact-person")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(PersonDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PersonDto>> GetContactPerson(Guid surveyId)
+    {
+        var query = new TRRCMS.Application.Surveys.Queries.GetContactPerson.GetContactPersonQuery { SurveyId = surveyId };
+        var result = await _mediator.Send(query);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Add person to household in survey context (Office Survey workflow)
     /// </summary>
     /// <remarks>
