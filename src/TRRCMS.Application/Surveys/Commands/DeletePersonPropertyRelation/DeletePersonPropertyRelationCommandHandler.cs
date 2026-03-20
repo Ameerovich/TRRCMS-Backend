@@ -47,7 +47,11 @@ public class DeletePersonPropertyRelationCommandHandler : IRequestHandler<Delete
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only delete relations in your own surveys");
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only delete relations in your own surveys");
+        }
 
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Cannot modify survey in {survey.Status} status");

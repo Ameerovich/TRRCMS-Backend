@@ -55,7 +55,11 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only upload evidence for your own surveys");
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only upload evidence for your own surveys");
+        }
 
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Cannot upload evidence for survey in {survey.Status} status. Only Draft surveys can be modified.");

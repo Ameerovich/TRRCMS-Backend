@@ -41,7 +41,11 @@ public class CreateContactPersonCommandHandler : IRequestHandler<CreateContactPe
 
         // Verify ownership
         if (survey.FieldCollectorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only add persons to your own surveys");
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only add persons to your own surveys");
+        }
 
         // Only draft surveys can be modified
         survey.EnsureCanModify();

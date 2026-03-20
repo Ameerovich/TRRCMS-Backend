@@ -49,7 +49,9 @@ public class CreatePropertyUnitInSurveyCommandHandler : IRequestHandler<CreatePr
         // Verify ownership (only field collector who created survey can create units)
         if (survey.FieldCollectorId != currentUserId)
         {
-            throw new UnauthorizedAccessException("You can only create property units for your own surveys");
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only create property units for your own surveys");
         }
 
         // Verify survey is in Draft status

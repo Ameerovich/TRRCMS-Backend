@@ -3,6 +3,7 @@ using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
+using TRRCMS.Domain.Enums;
 using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.Surveys.Queries.GetRelationsForPropertyUnitInSurvey;
@@ -44,7 +45,9 @@ public class GetRelationsForPropertyUnitInSurveyQueryHandler
 
         if (survey.FieldCollectorId != currentUserId)
         {
-            throw new UnauthorizedAccessException("You can only view relations for your own surveys");
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_ViewAll))
+                throw new UnauthorizedAccessException("You can only view relations for your own surveys");
         }
 
         var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId, cancellationToken)

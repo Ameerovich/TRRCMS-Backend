@@ -41,7 +41,11 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
         if (survey.FieldCollectorId != currentUserId)
-            throw new UnauthorizedAccessException("You can only update persons in your own surveys");
+        {
+            var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
+                throw new UnauthorizedAccessException("You can only update persons in your own surveys");
+        }
 
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Cannot update persons for survey in {survey.Status} status. Only Draft surveys can be modified.");
@@ -86,6 +90,16 @@ public class UpdatePersonInSurveyCommandHandler : IRequestHandler<UpdatePersonIn
             person.PhoneNumber,
             RelationshipToHead = person.RelationshipToHead?.ToString()
         });
+
+        // Check NationalId uniqueness (only if changing it)
+        if (!string.IsNullOrWhiteSpace(request.NationalId) && request.NationalId != person.NationalId)
+        {
+            var existingPerson = await _unitOfWork.Persons.GetByNationalIdAsync(request.NationalId, cancellationToken);
+            if (existingPerson != null && existingPerson.Id != person.Id)
+                throw new ConflictException(
+                    $"A person with National ID '{request.NationalId}' already exists.",
+                    _mapper.Map<PersonDto>(existingPerson));
+        }
 
         // Update basic info (use existing values for fields not provided)
         person.UpdateBasicInfo(
