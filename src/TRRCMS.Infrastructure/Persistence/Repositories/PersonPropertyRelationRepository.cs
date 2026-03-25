@@ -151,4 +151,24 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .Where(r => r.EvidenceRelations.Any(er => !er.IsDeleted && er.IsActive))
             .CountAsync(cancellationToken);
     }
+
+    public async Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), PersonPropertyRelation>> GetByPersonPropertyPairsBatchAsync(
+        IEnumerable<(Guid PersonId, Guid PropertyUnitId)> pairs, CancellationToken cancellationToken = default)
+    {
+        var pairList = pairs.ToList();
+        if (pairList.Count == 0) return new();
+
+        var personIds = pairList.Select(p => p.PersonId).Distinct().ToList();
+        var propertyUnitIds = pairList.Select(p => p.PropertyUnitId).Distinct().ToList();
+
+        var relations = await _context.Set<PersonPropertyRelation>()
+            .AsNoTracking()
+            .Where(r => !r.IsDeleted && personIds.Contains(r.PersonId) && propertyUnitIds.Contains(r.PropertyUnitId))
+            .ToListAsync(cancellationToken);
+
+        var pairSet = pairList.ToHashSet();
+        return relations
+            .Where(r => pairSet.Contains((r.PersonId, r.PropertyUnitId)))
+            .ToDictionary(r => (r.PersonId, r.PropertyUnitId));
+    }
 }

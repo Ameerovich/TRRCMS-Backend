@@ -29,18 +29,12 @@ public class GetAllHouseholdsQueryHandler : IRequestHandler<GetAllHouseholdsQuer
     {
         var households = await _householdRepository.GetAllAsync(cancellationToken);
 
-        // Get all property units for DTO enrichment
-        var propertyUnitIds = households.Select(h => h.PropertyUnitId).Distinct();
-        var propertyUnitDict = new Dictionary<Guid, string>();
-
-        foreach (var propertyUnitId in propertyUnitIds)
-        {
-            var propertyUnit = await _propertyUnitRepository.GetByIdAsync(propertyUnitId, cancellationToken);
-            if (propertyUnit != null)
-            {
-                propertyUnitDict[propertyUnitId] = propertyUnit.UnitIdentifier;
-            }
-        }
+        // Batch load all referenced property units (avoids N+1 queries)
+        var propertyUnitIds = households.Select(h => h.PropertyUnitId).Distinct().ToList();
+        var allPropertyUnits = await _propertyUnitRepository.GetAllAsync(cancellationToken);
+        var propertyUnitDict = allPropertyUnits
+            .Where(pu => propertyUnitIds.Contains(pu.Id))
+            .ToDictionary(pu => pu.Id, pu => pu.UnitIdentifier);
 
         // Map to DTOs and paginate
         var dtos = households.Select(household =>

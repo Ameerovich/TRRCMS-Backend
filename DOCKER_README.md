@@ -1,4 +1,4 @@
-# 🐳 TRRCMS Docker Deployment Guide
+# TRRCMS Docker Deployment Guide
 
 ## Quick Start
 
@@ -20,7 +20,7 @@ Wait 2-5 minutes for first build.
 | Service | URL |
 |---------|-----|
 | **Swagger UI** | http://localhost:8080/swagger |
-| **API Base** | http://localhost:8080/api |
+| **API Base** | http://localhost:8080/api/v1 |
 | **Database** | localhost:5432 |
 
 ---
@@ -32,7 +32,7 @@ Wait 2-5 minutes for first build.
 | trrcms-api | Custom .NET 8 | 8080 |
 | trrcms-db | postgis/postgis:16-3.4-alpine | 5432 |
 
-**PostGIS is included!** ✅ Spatial queries work out of the box.
+PostGIS is included. Spatial queries work out of the box.
 
 ---
 
@@ -44,37 +44,33 @@ Wait 2-5 minutes for first build.
 | Port | `5432` |
 | Database | `TRRCMS_Dev` |
 | Username | `postgres` |
-| Password | `3123124` |
+| Password | Set via `DB_PASSWORD` env var (default: `ChangeThisPassword`) |
 
 ### Connect with pgAdmin:
 - Host: `localhost`
 - Port: `5432`
 - Username: `postgres`
-- Password: `3123124`
+- Password: Your `DB_PASSWORD` value
 
-### 🔑 Changing the Database Password
+### Changing the Database Password
 
-If you need a different password, update it in **two places** inside `docker-compose.yml`:
+Set the `DB_PASSWORD` environment variable before starting containers:
 
-1. The `db` service environment:
-   ```yaml
-   environment:
-     POSTGRES_PASSWORD: YOUR_NEW_PASSWORD
-   ```
-
-2. The `api` service connection string:
-   ```yaml
-   environment:
-     ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=TRRCMS_Dev;Username=postgres;Password=YOUR_NEW_PASSWORD"
-   ```
-
-Then rebuild:
 ```bash
-docker compose down -v
+# Linux/Mac
+export DB_PASSWORD=YourSecurePassword
+docker compose up --build
+
+# Windows (PowerShell)
+$env:DB_PASSWORD="YourSecurePassword"
+docker compose up --build
+
+# Or use a .env file in the project root:
+echo DB_PASSWORD=YourSecurePassword > .env
 docker compose up --build
 ```
 
-> ⚠️ Both values **must match** or the API won't connect to the database.
+The password is used automatically in both the database and API connection string.
 
 ---
 
@@ -141,14 +137,14 @@ curl http://localhost:8080/health
 
 ### 2. Login
 ```bash
-curl -X POST http://localhost:8080/api/Auth/login \
+curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "AmeerY", "password": "your_password"}'
+  -d '{"username": "admin", "password": "Admin@123"}'
 ```
 
 ### 3. Get Buildings (with token)
 ```bash
-curl http://localhost:8080/api/Buildings \
+curl http://localhost:8080/api/v1/buildings \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 

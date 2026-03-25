@@ -116,3 +116,6 @@ dev/
 src/TRRCMS.WebAPI/wwwroot/uploads/
 src/TRRCMS.WebAPI/wwwroot/sync-quarantine/
 src/TRRCMS.WebAPI/archives/
+
+# Docker secrets
+.env
