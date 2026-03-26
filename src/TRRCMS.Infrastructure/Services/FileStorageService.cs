@@ -32,6 +32,21 @@ public class FileStorageService : IFileStorageService
         {
             Directory.CreateDirectory(_uploadPath);
         }
+
+        _resolvedUploadRoot = Path.GetFullPath(_uploadPath);
+    }
+
+    private readonly string _resolvedUploadRoot;
+
+    /// <summary>
+    /// Resolve and validate a file path to prevent path traversal attacks.
+    /// </summary>
+    private string ResolveSafePath(string filePath)
+    {
+        var fullPath = Path.GetFullPath(Path.Combine(_uploadPath, filePath));
+        if (!fullPath.StartsWith(_resolvedUploadRoot, StringComparison.OrdinalIgnoreCase))
+            throw new UnauthorizedAccessException("Invalid file path.");
+        return fullPath;
     }
 
     public async Task<string> SaveFileAsync(
@@ -72,7 +87,7 @@ public class FileStorageService : IFileStorageService
 
     public async Task<Stream> GetFileAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        var fullPath = Path.Combine(_uploadPath, filePath);
+        var fullPath = ResolveSafePath(filePath);
 
         if (!File.Exists(fullPath))
         {
@@ -91,7 +106,7 @@ public class FileStorageService : IFileStorageService
 
     public Task DeleteFileAsync(string filePath, CancellationToken cancellationToken = default)
     {
-        var fullPath = Path.Combine(_uploadPath, filePath);
+        var fullPath = ResolveSafePath(filePath);
 
         if (File.Exists(fullPath))
         {
@@ -103,7 +118,7 @@ public class FileStorageService : IFileStorageService
 
     public Task<bool> FileExistsAsync(string filePath)
     {
-        var fullPath = Path.Combine(_uploadPath, filePath);
+        var fullPath = ResolveSafePath(filePath);
         return Task.FromResult(File.Exists(fullPath));
     }
 

@@ -88,4 +88,19 @@ public class EvidenceRelationRepository : IEvidenceRelationRepository
     {
         return await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<Dictionary<Guid, List<EvidenceRelation>>> GetActiveByRelationIdsBatchAsync(
+        IEnumerable<Guid> relationIds, CancellationToken cancellationToken = default)
+    {
+        var idList = relationIds.ToList();
+        if (idList.Count == 0) return new();
+
+        var relations = await _context.EvidenceRelations
+            .AsNoTracking()
+            .Where(er => idList.Contains(er.PersonPropertyRelationId) && er.IsActive && !er.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        return relations.GroupBy(er => er.PersonPropertyRelationId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+    }
 }

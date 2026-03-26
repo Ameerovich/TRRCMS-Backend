@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Microsoft.AspNetCore.RateLimiting;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Auth.Commands.ChangePassword;
@@ -106,6 +107,7 @@ public class AuthController : ControllerBase
     /// <response code="500">Server error during authentication.</response>
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -176,6 +178,7 @@ public class AuthController : ControllerBase
     /// <response code="500">Server error during token refresh.</response>
     [HttpPost("refresh")]
     [AllowAnonymous]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

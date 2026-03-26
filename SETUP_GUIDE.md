@@ -1,4 +1,4 @@
-# 🚀 TRRCMS - Team Setup Guide
+# TRRCMS - Team Setup Guide
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ Before you start, make sure you have:
 
 ---
 
-## 📦 Step 1: Clone Repository
+## Step 1: Clone Repository
 ```bash
 git clone https://github.com/Ameerovich/TRRCMS.git
 cd TRRCMS
@@ -19,7 +19,7 @@ cd TRRCMS
 
 ---
 
-## 🗄️ Step 2: Setup PostgreSQL Database
+## Step 2: Setup PostgreSQL Database
 
 ### 2.1 Install PostgreSQL
 - Download PostgreSQL 16 from the link above
@@ -59,7 +59,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 ```sql
 SELECT PostGIS_Version();
 ```
-5. ✅ **Expected output:** `3.6 USE_GEOS=1 USE_PROJ=1 USE_STATS=1` (or similar version)
+5. **Expected output:** `3.6 USE_GEOS=1 USE_PROJ=1 USE_STATS=1` (or similar version)
 
 ---
 
@@ -89,18 +89,18 @@ SELECT PostGIS_Version();
 
 6. **Save** the file
 
-⚠️ **IMPORTANT:** Do NOT commit this file! It contains your password and is already in `.gitignore`.
+**IMPORTANT:** Do NOT commit this file! It contains your password and is already in `.gitignore`.
 
 ---
 
-## 🔧 Step 4: Restore Packages & Build
+## Step 4: Restore Packages & Build
 
 ### Using Visual Studio:
 1. Open `TRRCMS.sln` (double-click the solution file)
 2. Wait for Visual Studio to load
 3. Right-click **Solution 'TRRCMS'** → **Restore NuGet Packages**
 4. **Build** → **Rebuild Solution** (or press Ctrl + Shift + B)
-5. ✅ Should see: "Rebuild All succeeded"
+5. Should see: "Rebuild All succeeded"
 
 ### Using Command Line:
 ```bash
@@ -110,11 +110,11 @@ dotnet build
 
 ---
 
-## 🗄️ Step 5: Run Database Migrations
+## Step 5: Run Database Migrations
 
 This creates the database tables from the code.
 
-⚠️ **IMPORTANT:** Only run `Update-Database` - do NOT run `Add-Migration`!
+**IMPORTANT:** Only run `Update-Database` - do NOT run `Add-Migration`!
 
 ### Using Visual Studio:
 1. **Tools** → **NuGet Package Manager** → **Package Manager Console**
@@ -129,7 +129,7 @@ Update-Database -StartupProject TRRCMS.WebAPI
 dotnet ef database update --project src/TRRCMS.Infrastructure --startup-project src/TRRCMS.WebAPI
 ```
 
-✅ **Expected output:** 
+**Expected output:** 
 ```
 Applying migration '20260102233937_InitialCreate'.
 Applying migration '20260127151113_AddBuildingLocationDescription'.
@@ -139,7 +139,7 @@ Done.
 
 ---
 
-## 🚀 Step 6: Run the Application
+## Step 6: Run the Application
 
 ### Using Visual Studio:
 1. Make sure **TRRCMS.WebAPI** is the **Startup Project** (it should be **bold**)
@@ -156,7 +156,7 @@ Then manually open browser to: `https://localhost:7204/swagger`
 
 ---
 
-## ✅ Step 7: Test the API (Verify Everything Works!)
+## Step 7: Test the API (Verify Everything Works!)
 
 In the **Swagger UI** page:
 
@@ -187,7 +187,7 @@ In the **Swagger UI** page:
 ```
 
 4. **Click** "Execute"
-5. ✅ **Should see:** `201 Created` response with full building data including:
+5. **Should see:** `201 Created` response with full building data including:
    - `id` (GUID) - Use this for other API calls
    - `buildingId` (17 digits) - Stored format
    - `buildingIdFormatted` - Display format with dashes
@@ -198,7 +198,7 @@ In the **Swagger UI** page:
 2. **Click** "Try it out"
 3. **Paste** the `id` (GUID) from Test 1
 4. **Click** "Execute"
-5. ✅ **Should see:** `200 OK` with full building details including `buildingGeometryWkt`
+5. **Should see:** `200 OK` with full building details including `buildingGeometryWkt`
 
 ### Test 3: Update Building Geometry
 
@@ -214,7 +214,7 @@ In the **Swagger UI** page:
 }
 ```
 5. **Click** "Execute"
-6. ✅ **Should see:** `200 OK` with updated coordinates and geometry
+6. **Should see:** `200 OK` with updated coordinates and geometry
 
 ### Test 4: Verify PostGIS in Database (Optional)
 
@@ -228,7 +228,7 @@ SELECT
 FROM "Buildings"
 WHERE "BuildingGeometry" IS NOT NULL;
 ```
-✅ **Should see:** Your building with the polygon geometry
+**Should see:** Your building with the polygon geometry
 
 **If all tests pass, your setup is complete!** 🎉
 
@@ -338,7 +338,7 @@ TRRCMS/
 
 ---
 
-## 🔑 Key Technologies
+## Key Technologies
 
 | Technology | Purpose |
 |------------|---------|
@@ -353,4 +353,4 @@ TRRCMS/
 
 ---
 
-**Happy Coding!** 🚀
+**Happy Coding!**

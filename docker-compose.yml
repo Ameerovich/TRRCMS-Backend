@@ -12,7 +12,7 @@ services:
     environment:
       POSTGRES_DB: TRRCMS_Dev
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 3123124
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ChangeThisPassword}
       PGDATA: /var/lib/postgresql/data/pgdata
     
     ports:
@@ -47,18 +47,19 @@ services:
     
     environment:
       # ASP.NET Core Configuration
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
       
       # Database Connection (using docker service name 'db')
-      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=TRRCMS_Dev;Username=postgres;Password=3123124"
-      
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=TRRCMS_Dev;Username=postgres;Password=${DB_PASSWORD:-ChangeThisPassword}"
+
       # JWT Settings
-      JwtSettings__Secret: "docker-dev-jwt-secret-key-minimum-32-characters-long-change-in-production"
+      JwtSettings__Secret: "${JWT_SECRET:-docker-dev-jwt-secret-key-minimum-32-characters-long-change-in-production}"
       JwtSettings__Issuer: "TRRCMS.API"
       JwtSettings__Audience: "TRRCMS.Clients"
       JwtSettings__AccessTokenExpirationMinutes: "60"
       JwtSettings__RefreshTokenExpirationDays: "30"
+      JwtSettings__RequireHttpsMetadata: "false"
     
     ports:
       - "8080:8080"

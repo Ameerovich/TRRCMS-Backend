@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using TRRCMS.WebAPI.Extensions;
@@ -85,6 +86,20 @@ else
     });
 }
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 builder.Services.AddHealthChecks()
     .AddNpgSql(
         connectionString: builder.Configuration.GetConnectionString("DefaultConnection")
@@ -107,6 +122,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
+app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -17,4 +17,10 @@ public interface IEvidenceRelationRepository
     Task<EvidenceRelation> AddAsync(EvidenceRelation evidenceRelation, CancellationToken cancellationToken = default);
     Task UpdateAsync(EvidenceRelation evidenceRelation, CancellationToken cancellationToken = default);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Batch load active evidence relations for multiple relation IDs (avoids N+1 queries).
+    /// </summary>
+    Task<Dictionary<Guid, List<EvidenceRelation>>> GetActiveByRelationIdsBatchAsync(
+        IEnumerable<Guid> relationIds, CancellationToken cancellationToken = default);
 }

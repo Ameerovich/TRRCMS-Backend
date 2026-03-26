@@ -37,4 +37,10 @@ public interface IPersonPropertyRelationRepository
     /// Get count of relations that have at least one evidence attached.
     /// </summary>
     Task<int> GetCountWithEvidenceAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Batch load relations by person-property pairs (avoids N+1 queries).
+    /// </summary>
+    Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), PersonPropertyRelation>> GetByPersonPropertyPairsBatchAsync(
+        IEnumerable<(Guid PersonId, Guid PropertyUnitId)> pairs, CancellationToken cancellationToken = default);
 }

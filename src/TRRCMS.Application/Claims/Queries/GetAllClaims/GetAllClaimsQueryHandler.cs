@@ -62,19 +62,23 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
         }
 
         // Map to DTOs
-        var dtos = _mapper.Map<List<ClaimDto>>(claims);
+        var claimList = claims.ToList();
+        var dtos = _mapper.Map<List<ClaimDto>>(claimList);
 
-        // Enrich each claim DTO with evidence from the source PersonPropertyRelation
-        foreach (var (dto, claim) in dtos.Zip(claims))
+        // Batch load relations and evidence links (avoids N+1 queries)
+        var pairs = claimList.Select(c => (c.PrimaryClaimantId, c.PropertyUnitId)).ToList();
+        var relationsDict = await _relationRepository.GetByPersonPropertyPairsBatchAsync(pairs, cancellationToken);
+
+        var relationIds = relationsDict.Values.Select(r => r.Id).ToList();
+        var evidenceDict = await _evidenceRelationRepository.GetActiveByRelationIdsBatchAsync(relationIds, cancellationToken);
+
+        // Enrich DTOs from batch-loaded data
+        foreach (var (dto, claim) in dtos.Zip(claimList))
         {
-            var relation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
-                claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken);
-
-            if (relation != null)
+            if (relationsDict.TryGetValue((claim.PrimaryClaimantId, claim.PropertyUnitId), out var relation))
             {
                 dto.SourceRelationId = relation.Id;
-                var activeLinks = await _evidenceRelationRepository
-                    .GetActiveByRelationIdAsync(relation.Id, cancellationToken);
+                var activeLinks = evidenceDict.GetValueOrDefault(relation.Id, new List<Domain.Entities.EvidenceRelation>());
                 dto.EvidenceIds = activeLinks.Select(er => er.EvidenceId).ToList();
                 dto.HasEvidence = dto.EvidenceIds.Count > 0 || (claim.Evidences != null && claim.Evidences.Any());
             }
