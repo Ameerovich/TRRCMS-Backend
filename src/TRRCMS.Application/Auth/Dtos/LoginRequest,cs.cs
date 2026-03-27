@@ -16,7 +16,8 @@ public class LoginRequest
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
-    /// Optional device identifier for audit trail (tablet ID, device name, etc.)
+    /// Optional. Only used by field collectors on tablets for device tracking.
+    /// Desktop and dashboard clients should omit this field.
     /// </summary>
     public string? DeviceId { get; set; }
 }

@@ -52,17 +52,13 @@ public class CreatePersonCommandValidator : AbstractValidator<CreatePersonComman
             .When(x => !string.IsNullOrEmpty(x.Email));
 
         RuleFor(x => x.MobileNumber)
-            .MaximumLength(20)
-            .WithMessage("رقم الموبايل يجب ألا يتجاوز 20 رقم")
-            .Matches(@"^[\+]?[0-9\s\-]*$")
-            .WithMessage("رقم الموبايل غير صحيح")
+            .Matches(@"^(\+963|0)9\d{8}$")
+            .WithMessage("رقم الموبايل يجب أن يكون بالصيغة السورية: 09XXXXXXXX أو 9639XXXXXXXX+")
             .When(x => !string.IsNullOrEmpty(x.MobileNumber));
 
         RuleFor(x => x.PhoneNumber)
-            .MaximumLength(20)
-            .WithMessage("رقم الهاتف يجب ألا يتجاوز 20 رقم")
-            .Matches(@"^[\+]?[0-9\s\-]*$")
-            .WithMessage("رقم الهاتف غير صحيح")
+            .Matches(@"^(\+963|0)\d{7,9}$")
+            .WithMessage("رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+")
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
 
         RuleFor(x => x.Gender)

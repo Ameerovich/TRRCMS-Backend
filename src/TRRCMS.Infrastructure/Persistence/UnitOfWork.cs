@@ -35,6 +35,7 @@ private IClaimRepository? _claims;
     private ISecurityPolicyRepository? _securityPolicies;
     private ILandmarkRepository? _landmarks;
     private IStreetRepository? _streets;
+    private ILandmarkTypeIconRepository? _landmarkTypeIcons;
 
     public UnitOfWork(ApplicationDbContext context, ICurrentUserService currentUserService)
     {
@@ -100,6 +101,9 @@ private IClaimRepository? _claims;
 
     public IStreetRepository Streets =>
         _streets ??= new StreetRepository(_context);
+
+    public ILandmarkTypeIconRepository LandmarkTypeIcons =>
+        _landmarkTypeIcons ??= new LandmarkTypeIconRepository(_context);
 
     /// <summary>
     /// Save all pending changes to the database.

@@ -337,6 +337,10 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
 
             options.AddPolicy("CanManageSecuritySettings", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Security_Settings)));
+
+            // Landmarks
+            options.AddPolicy("CanManageLandmarks", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Landmarks_Manage)));
         });
 
         return services;

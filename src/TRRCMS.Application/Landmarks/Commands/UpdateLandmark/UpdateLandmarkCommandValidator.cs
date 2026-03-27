@@ -14,6 +14,6 @@ public class UpdateLandmarkCommandValidator : AbstractValidator<UpdateLandmarkCo
             .MaximumLength(500).WithMessage("Landmark name cannot exceed 500 characters");
 
         RuleFor(x => x.Type)
-            .InclusiveBetween(1, 8).WithMessage("Landmark type must be between 1 and 8");
+            .InclusiveBetween(1, 10).WithMessage("Landmark type must be between 1 and 10");
     }
 }

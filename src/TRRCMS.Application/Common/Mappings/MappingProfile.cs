@@ -242,6 +242,11 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (int)src.Type))
             .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.ToString()));
 
+        // Landmark type icon mappings
+        CreateMap<LandmarkTypeIcon, LandmarkTypeIconDto>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => (int)src.Type))
+            .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.ToString()));
+
         // Street mappings
         CreateMap<Street, StreetDto>()
             .ForMember(dest => dest.GeometryWkt, opt => opt.MapFrom(src => src.GeometryWkt));

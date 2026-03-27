@@ -344,4 +344,10 @@ public enum Permission
     [ArabicLabel("مزامنة النظام")]
     System_Sync = 9010,
 
+    /// <summary>
+    /// Manage landmark type icons (Administrator, DataManager)
+    /// </summary>
+    [ArabicLabel("إدارة المعالم")]
+    Landmarks_Manage = 9020,
+
 }
