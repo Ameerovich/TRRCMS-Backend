@@ -2139,6 +2139,7 @@ public class SurveysController : ControllerBase
     /// **File Requirements**:
     /// - Format: JPG, JPEG, PNG, GIF
     /// - Max size: 10MB
+    /// - File content is validated (magic bytes must match the declared format)
     /// - Required: Photo file, description
     /// 
     /// **Optional Linking**:
@@ -2207,6 +2208,7 @@ public class SurveysController : ControllerBase
     /// **File Requirements**:
     /// - Format: PDF, JPG, JPEG, PNG
     /// - Max size: 15MB
+    /// - File content is validated (magic bytes must match the declared format)
     /// - Required: File, person ID
     /// - Optional: Description (defaults to filename if not provided)
     ///
@@ -2291,6 +2293,7 @@ public class SurveysController : ControllerBase
     /// **File Requirements** (only if replacing):
     /// - Format: PDF, JPG, JPEG, PNG, GIF, WebP, TIFF
     /// - Max size: 15MB
+    /// - File content is validated (magic bytes must match the declared format)
     /// - File is optional - omit to keep existing file
     ///
     /// **Document Metadata** (all optional - only provided fields update):
@@ -2385,6 +2388,7 @@ public class SurveysController : ControllerBase
     /// **File Requirements**:
     /// - Format: PDF, JPG, JPEG, PNG, DOC, DOCX
     /// - Max size: 25MB
+    /// - File content is validated (magic bytes must match the declared format)
     /// - Required: File, person-property relation ID
     /// - Optional: Description (defaults to filename if not provided)
     ///
@@ -2521,6 +2525,7 @@ public class SurveysController : ControllerBase
     /// **File Requirements** (only if replacing):
     /// - Format: PDF, JPG, JPEG, PNG, GIF, WebP, TIFF, DOC, DOCX
     /// - Max size: 25MB
+    /// - File content is validated (magic bytes must match the declared format)
     /// - File is optional - omit to keep existing file
     ///
     /// **Document Metadata** (all optional - only provided fields update):

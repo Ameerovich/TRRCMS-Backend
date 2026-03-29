@@ -3,6 +3,7 @@ using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 
 namespace TRRCMS.Application.Buildings.Queries.GetBuildingsInPolygon;
 
@@ -70,8 +71,8 @@ public class GetBuildingsInPolygonQueryHandler
 
         // QUERY VIA REPOSITORY
 
-        var page = request.Page < 1 ? 1 : request.Page;
-        var pageSize = request.PageSize < 1 ? 100 : (request.PageSize > 1000 ? 1000 : request.PageSize);
+        var page = PagedQuery.ClampPageNumber(request.Page);
+        var pageSize = PagedQuery.ClampPageSize(request.PageSize);
 
         try
         {

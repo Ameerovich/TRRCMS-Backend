@@ -42,11 +42,11 @@ public class ImportController : ControllerBase
 
     /// <summary>
     /// Upload a .uhc package for import.
-    /// Performs integrity checks (checksum, signature, vocabulary compatibility).
+    /// Performs integrity checks: magic bytes (must be valid SQLite), checksum, signature, vocabulary compatibility.
     /// </summary>
-    /// <param name="file">The .uhc file (multipart form-data).</param>
+    /// <param name="file">The .uhc file (multipart form-data). Must be a valid SQLite database with .uhc extension. Max 500 MB.</param>
     /// <response code="201">Package uploaded and validated.</response>
-    /// <response code="400">Invalid file or validation errors.</response>
+    /// <response code="400">Invalid file (wrong extension, invalid SQLite format, or validation errors).</response>
     /// <response code="409">Package already imported (idempotency).</response>
     [HttpPost("upload")]
     [ProducesResponseType(typeof(UploadPackageResultDto), StatusCodes.Status201Created)]
@@ -62,6 +62,13 @@ public class ImportController : ControllerBase
             return BadRequest("Only .uhc package files are accepted.");
 
         await using var stream = file.OpenReadStream();
+
+        // Verify .uhc is actually a SQLite file (magic bytes: "SQLite format 3\000")
+        var header = new byte[6];
+        var bytesRead = await stream.ReadAsync(header.AsMemory(0, 6));
+        stream.Position = 0;
+        if (bytesRead < 6 || !header.AsSpan().SequenceEqual("SQLite"u8))
+            return BadRequest("Invalid .uhc package — file is not a valid SQLite database.");
 
         var command = new UploadPackageCommand
         {

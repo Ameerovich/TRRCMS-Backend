@@ -92,16 +92,6 @@ public class Evidence : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Deprecated: Use EvidenceRelation.Create() for many-to-many linking.
-    /// </summary>
-    [Obsolete("Use EvidenceRelation.Create() instead. Evidence now supports many-to-many with PersonPropertyRelation.")]
-    public void LinkToRelation(Guid relationId, Guid modifiedByUserId)
-    {
-        // No-op: PersonPropertyRelationId FK has been removed.
-        // Use EvidenceRelation.Create() to link evidence to relations.
-        MarkAsModified(modifiedByUserId);
-    }
-
     public void LinkToClaim(Guid claimId, Guid modifiedByUserId)
     {
         ClaimId = claimId;

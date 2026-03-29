@@ -2,6 +2,7 @@ using MediatR;
 using TRRCMS.Application.BuildingAssignments.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetBuildingsForAssignment;
@@ -39,7 +40,7 @@ public class GetBuildingsForAssignmentQueryHandler
             polygonArea = CalculateApproximateArea(polygonWkt);
 
             // Validate and cap page size for polygon search
-            var pageSize = Math.Min(request.PageSize, 1000); // Cap at 1000 for polygon
+            var pageSize = PagedQuery.ClampPageSize(request.PageSize);
 
             var (polygonBuildings, polygonTotalCount) = await _unitOfWork.Buildings.SearchBuildingsInPolygonAsync(
                 polygonWkt: polygonWkt,

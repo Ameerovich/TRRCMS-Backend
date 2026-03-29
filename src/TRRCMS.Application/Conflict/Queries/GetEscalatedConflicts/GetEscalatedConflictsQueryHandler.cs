@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Conflicts.Dtos;
 using TRRCMS.Application.Conflicts.Queries.GetConflictQueue;
 
@@ -64,9 +65,12 @@ public class GetEscalatedConflictsQueryHandler
                 : query.OrderBy(c => c.EscalatedDate)
         };
 
+        var page = PagedQuery.ClampPageNumber(request.Page);
+        var pageSize = PagedQuery.ClampPageSize(request.PageSize);
+
         var conflicts = query
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToList();
 
         var items = conflicts.Select(c => new ConflictDto

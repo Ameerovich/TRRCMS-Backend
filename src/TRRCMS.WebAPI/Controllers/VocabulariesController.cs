@@ -109,12 +109,17 @@ public class VocabulariesController : ControllerBase
     ///     "isActive": true,
     ///     "valueCount": 5,
     ///     "values": [
-    ///       { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0 },
-    ///       { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1 }
+    ///       { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0, "isDeprecated": false },
+    ///       { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1, "isDeprecated": false },
+    ///       { "code": 4, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 3, "isDeprecated": true }
     ///     ]
     ///   }
     /// ]
     /// ```
+    ///
+    /// **Note:** Values with `isDeprecated: true` are still valid for existing data but should be
+    /// hidden from dropdown menus for new data entry. Display them with a visual indicator (e.g., strikethrough)
+    /// when showing existing records that use deprecated codes.
     /// </remarks>
     /// <param name="category">Optional category filter (e.g., "Demographics", "Property", "Legal", "Claims", "Survey")</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -223,11 +228,11 @@ public class VocabulariesController : ControllerBase
     ///   "isSystemVocabulary": false,
     ///   "allowCustomValues": true,
     ///   "values": [
-    ///     { "code": 1, "labelArabic": "خرسانة مسلحة", "labelEnglish": "Reinforced Concrete", "displayOrder": 0 },
-    ///     { "code": 2, "labelArabic": "طوب", "labelEnglish": "Brick", "displayOrder": 1 },
-    ///     { "code": 3, "labelArabic": "حجر", "labelEnglish": "Stone", "displayOrder": 2 },
-    ///     { "code": 4, "labelArabic": "طين", "labelEnglish": "Mud/Adobe", "displayOrder": 3 },
-    ///     { "code": 99, "labelArabic": "أخرى", "labelEnglish": "Other", "displayOrder": 99 }
+    ///     { "code": 1, "labelArabic": "خرسانة مسلحة", "labelEnglish": "Reinforced Concrete", "displayOrder": 0, "isDeprecated": false },
+    ///     { "code": 2, "labelArabic": "طوب", "labelEnglish": "Brick", "displayOrder": 1, "isDeprecated": false },
+    ///     { "code": 3, "labelArabic": "حجر", "labelEnglish": "Stone", "displayOrder": 2, "isDeprecated": false },
+    ///     { "code": 4, "labelArabic": "طين", "labelEnglish": "Mud/Adobe", "displayOrder": 3, "isDeprecated": false },
+    ///     { "code": 99, "labelArabic": "أخرى", "labelEnglish": "Other", "displayOrder": 99, "isDeprecated": false }
     ///   ]
     /// }
     /// ```
@@ -338,26 +343,41 @@ public class VocabulariesController : ControllerBase
     /// **Required permission:** `CanManageVocabularies`
     ///
     /// **Version types (Semantic Versioning):**
-    /// | Type    | When to use                                           | Example         |
-    /// |---------|-------------------------------------------------------|-----------------|
-    /// | `minor` | Add new values or reorder existing values              | 1.0.0 → 1.1.0  |
-    /// | `major` | Remove values or make breaking changes                | 1.1.0 → 2.0.0  |
-    /// | `patch` | Fix typos in labels without changing codes             | 1.1.0 → 1.1.1  |
+    /// | Type    | When to use                                                     | Example         |
+    /// |---------|-----------------------------------------------------------------|-----------------|
+    /// | `minor` | Add new values, reorder, or deprecate existing values            | 1.0.0 → 1.1.0  |
+    /// | `major` | Make breaking label changes (codes cannot be removed, only deprecated) | 1.1.0 → 2.0.0  |
+    /// | `patch` | Fix typos in labels without changing codes or adding values       | 1.1.0 → 1.1.1  |
     ///
-    /// **Important:** The `id` parameter must be the ID of the **current version** of the vocabulary.
-    /// You cannot create a new version from an old (non-current) version.
+    /// **Important rules:**
+    /// - The `id` parameter must be the ID of the **current version** of the vocabulary
+    /// - You cannot create a new version from an old (non-current) version
+    /// - **All existing codes must be included** — removing a code returns 400 (use `isDeprecated: true` instead)
+    /// - If `allowCustomValues` is false (system vocabs), minor/patch cannot add new codes — only major can
     ///
-    /// **Example request — add a new building type value:**
+    /// **Example request — add a new value (minor):**
     /// ```json
     /// {
     ///   "versionType": "minor",
     ///   "changeLog": "Added 'Mixed Use' building type for Aleppo reconstruction",
     ///   "values": [
-    ///     { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0 },
-    ///     { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1 },
-    ///     { "code": 3, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 2 },
-    ///     { "code": 4, "labelArabic": "حكومي", "labelEnglish": "Government", "displayOrder": 3 },
-    ///     { "code": 5, "labelArabic": "متعدد الاستخدامات", "labelEnglish": "Mixed Use", "displayOrder": 4 }
+    ///     { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0, "isDeprecated": false },
+    ///     { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1, "isDeprecated": false },
+    ///     { "code": 3, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 2, "isDeprecated": false },
+    ///     { "code": 5, "labelArabic": "متعدد الاستخدامات", "labelEnglish": "Mixed Use", "displayOrder": 4, "isDeprecated": false }
+    ///   ]
+    /// }
+    /// ```
+    ///
+    /// **Example request — deprecate a value (minor):**
+    /// ```json
+    /// {
+    ///   "versionType": "minor",
+    ///   "changeLog": "Deprecated 'Industrial' — no longer applicable in surveyed areas",
+    ///   "values": [
+    ///     { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0, "isDeprecated": false },
+    ///     { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1, "isDeprecated": false },
+    ///     { "code": 3, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 2, "isDeprecated": true }
     ///   ]
     /// }
     /// ```
@@ -368,9 +388,9 @@ public class VocabulariesController : ControllerBase
     ///   "versionType": "patch",
     ///   "changeLog": "Fixed Arabic label typo for Industrial",
     ///   "values": [
-    ///     { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0 },
-    ///     { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1 },
-    ///     { "code": 3, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 2 }
+    ///     { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0, "isDeprecated": false },
+    ///     { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1, "isDeprecated": false },
+    ///     { "code": 3, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 2, "isDeprecated": false }
     ///   ]
     /// }
     /// ```
@@ -464,6 +484,9 @@ public class VocabulariesController : ControllerBase
     /// **Restrictions:**
     /// - **System vocabularies cannot be deactivated** (returns 400). System vocabularies are
     ///   core enums like gender, building_type, claim_source that are required by the domain model.
+    /// - **Vocabularies with active entity usage cannot be deactivated** (returns 400). The system
+    ///   checks if any entities in the database use the vocabulary's codes. To phase out a vocabulary,
+    ///   deprecate individual codes first using the Create Version endpoint with `isDeprecated: true`.
     /// - Returns 400 if the vocabulary is already inactive
     /// </remarks>
     /// <param name="id">Vocabulary ID (GUID)</param>
@@ -532,11 +555,10 @@ public class VocabulariesController : ControllerBase
     ///     "isSystemVocabulary": true,
     ///     "allowCustomValues": false,
     ///     "values": [
-    ///       { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0 },
-    ///       { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1 },
-    ///       { "code": 3, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 2 },
-    ///       { "code": 4, "labelArabic": "حكومي", "labelEnglish": "Government", "displayOrder": 3 },
-    ///       { "code": 5, "labelArabic": "متعدد الاستخدامات", "labelEnglish": "Mixed Use", "displayOrder": 4 }
+    ///       { "code": 1, "labelArabic": "سكني", "labelEnglish": "Residential", "displayOrder": 0, "isDeprecated": false },
+    ///       { "code": 2, "labelArabic": "تجاري", "labelEnglish": "Commercial", "displayOrder": 1, "isDeprecated": false },
+    ///       { "code": 3, "labelArabic": "صناعي", "labelEnglish": "Industrial", "displayOrder": 2, "isDeprecated": true },
+    ///       { "code": 5, "labelArabic": "متعدد الاستخدامات", "labelEnglish": "Mixed Use", "displayOrder": 4, "isDeprecated": false }
     ///     ]
     ///   },
     ///   {
@@ -549,8 +571,8 @@ public class VocabulariesController : ControllerBase
     ///     "isSystemVocabulary": true,
     ///     "allowCustomValues": false,
     ///     "values": [
-    ///       { "code": 1, "labelArabic": "ذكر", "labelEnglish": "Male", "displayOrder": 0 },
-    ///       { "code": 2, "labelArabic": "أنثى", "labelEnglish": "Female", "displayOrder": 1 }
+    ///       { "code": 1, "labelArabic": "ذكر", "labelEnglish": "Male", "displayOrder": 0, "isDeprecated": false },
+    ///       { "code": 2, "labelArabic": "أنثى", "labelEnglish": "Female", "displayOrder": 1, "isDeprecated": false }
     ///     ]
     ///   }
     /// ]
@@ -718,15 +740,15 @@ public class UpdateVocabularyMetadataRequest
 public class CreateVocabularyVersionRequest
 {
     /// <summary>
-    /// Version bump type: "minor" (add values), "major" (breaking changes), or "patch" (label fixes)
+    /// Version bump type: "minor" (add values/deprecate), "major" (breaking label changes), or "patch" (label fixes only)
     /// </summary>
     /// <example>minor</example>
     public string VersionType { get; set; } = string.Empty;
 
     /// <summary>
     /// Complete list of vocabulary values for the new version.
-    /// Must include ALL values (not just changes) — this replaces the entire value set.
-    /// Each value needs: code (unique integer), labelArabic (required), labelEnglish (optional), displayOrder.
+    /// Must include ALL existing codes (not just changes) — removing a code is not allowed, use isDeprecated instead.
+    /// Each value needs: code (unique integer), labelArabic (required), labelEnglish (optional), displayOrder, isDeprecated.
     /// </summary>
     public List<VocabularyValueDto> Values { get; set; } = new();
 

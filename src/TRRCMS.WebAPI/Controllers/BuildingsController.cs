@@ -733,7 +733,7 @@ public class BuildingsController : ControllerBase
     /// 
     /// **Pagination:**
     /// - page: Page number (default: 1)
-    /// - pageSize: Items per page (default: 100, max: 1000)
+    /// - pageSize: Items per page (default: 20, max: 100)
     /// 
     /// **Performance Options:**
     /// - includeFullDetails: false (default) = lightweight response for map markers

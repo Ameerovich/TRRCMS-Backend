@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Import.Dtos;
 
 namespace TRRCMS.Application.Import.Queries.GetImportPackages;
@@ -26,8 +27,8 @@ public class GetImportPackagesQueryHandler : IRequestHandler<GetImportPackagesQu
             importedAfter: request.ImportedAfter,
             importedBefore: request.ImportedBefore,
             searchTerm: request.SearchTerm,
-            page: request.Page,
-            pageSize: request.PageSize,
+            page: PagedQuery.ClampPageNumber(request.Page),
+            pageSize: PagedQuery.ClampPageSize(request.PageSize),
             sortBy: request.SortBy,
             sortDescending: request.SortDescending,
             cancellationToken: cancellationToken);
