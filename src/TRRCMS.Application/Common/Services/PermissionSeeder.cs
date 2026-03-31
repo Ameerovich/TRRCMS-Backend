@@ -96,7 +96,8 @@ public static class PermissionSeeder
             Permission.System_Export,
             Permission.System_Backup,
             Permission.System_Restore,
-            Permission.System_Sync    // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
+            Permission.System_Sync,   // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
+            Permission.Landmarks_Manage
         };
     }
 
@@ -154,42 +155,22 @@ public static class PermissionSeeder
 
             Permission.System_Import,
             Permission.System_Export,
-            Permission.Audit_ViewAll
+            Permission.Audit_ViewAll,
+            Permission.Landmarks_Manage
         };
     }
 
     /// <summary>
-    /// Field Collector - Mobile field survey operations.
-    /// Works primarily on tablet in the field.
+    /// Field Collector - Tablet-only user.
+    /// All data operations happen offline on the tablet.
+    /// Only interacts with the server via sync protocol and auth.
+    /// Auth endpoints (login, refresh, logout) are [AllowAnonymous] or [Authorize] — no permissions needed.
     /// </summary>
     private static List<Permission> GetFieldCollectorPermissions()
     {
         return new List<Permission>
         {
-            // View only claims they created through surveys
-            Permission.Claims_ViewAssigned,
-
-            Permission.Evidence_View,
-            Permission.Evidence_Upload,     // Upload photos, documents in field
-
-            Permission.Buildings_View,      // View buildings for survey selection
-
-            Permission.Persons_View,        // View persons in surveys
-            Permission.Persons_Create,      // Create persons during survey
-
-            Permission.PropertyUnits_View,  // View property units
-
-            Permission.Surveys_Create,      // Create new field surveys
-            Permission.Surveys_ViewOwn,     // View own surveys to resume
-            Permission.Surveys_EditOwn,     // Edit/update own draft surveys
-            Permission.Surveys_Finalize,    // Finalize completed surveys
-            Permission.Surveys_Export,      // Export to .uhc for sync
-
             Permission.System_Sync          // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
-            // No Surveys_View/ViewAll - cannot see other collectors' surveys
-            // No Surveys_EditAll - cannot edit others' surveys
-            // No Surveys_Import - done by office staff
-            // No Surveys_Delete - Admin only
         };
     }
 

@@ -29,19 +29,29 @@ public static class WebApplicationExtensions
             await context.Database.MigrateAsync();
             logger.LogInformation("Database migrations applied successfully");
 
+            // Step 1: Seed default users (independent — failure should not block permission sync)
             try
             {
                 var userRepository = services.GetRequiredService<IUserRepository>();
                 var passwordHasher = services.GetRequiredService<IPasswordHasher>();
-
-                logger.LogInformation("Starting user permission synchronization.");
                 await SeedUsersIfNeeded(context, userRepository, passwordHasher, logger);
-                await SyncAllUserPermissions(context, logger);
-                logger.LogInformation("User permission synchronization completed successfully");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "An error occurred while seeding/syncing user permissions");
+                logger.LogWarning(ex, "User seeding failed (non-critical): {Message}", ex.Message);
+                context.ChangeTracker.Clear(); // Clear failed state so sync can proceed
+            }
+
+            // Step 2: Sync permissions for ALL users (must run even if seeding fails)
+            try
+            {
+                logger.LogWarning("========== STARTING USER PERMISSION SYNCHRONIZATION ==========");
+                await SyncAllUserPermissions(context, logger);
+                logger.LogWarning("========== USER PERMISSION SYNCHRONIZATION COMPLETED ==========");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "========== PERMISSION SYNC FAILED: {Message} ==========", ex.Message);
             }
         }
 
@@ -119,7 +129,24 @@ public static class WebApplicationExtensions
             }
         }
 
-        // SCOPE 6: Warm vocabulary validation cache
+        // SCOPE 6: Seed landmark type icons
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            var logger = services.GetRequiredService<ILogger<Program>>();
+
+            try
+            {
+                var context = services.GetRequiredService<ApplicationDbContext>();
+                await SeedLandmarkTypeIconsIfNeeded(context, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "An error occurred while seeding landmark type icons");
+            }
+        }
+
+        // SCOPE 7: Warm vocabulary validation cache
         {
             var vocabValidation = app.Services.GetRequiredService<IVocabularyValidationService>();
             await vocabValidation.WarmupAsync();
@@ -190,23 +217,22 @@ public static class WebApplicationExtensions
     private static async Task SyncAllUserPermissions(ApplicationDbContext context, ILogger logger)
     {
         var users = await context.Users.ToListAsync();
-        logger.LogInformation("Syncing permissions for {Count} users", users.Count);
+        logger.LogWarning("Syncing permissions for {Count} users", users.Count);
 
         foreach (var user in users)
         {
             try
             {
-                logger.LogInformation("Syncing permissions for user: {Username} (ID: {UserId}, Role: {Role})",
-                    user.Username, user.Id, user.Role);
+                logger.LogWarning("Syncing permissions for user: {Username} (Role: {Role})",
+                    user.Username, user.Role);
 
                 await SyncUserPermissions(context, user.Id, user.Role, logger);
             }
             catch (Exception ex)
             {
-                // Log per-user failures but continue with other users
-                logger.LogError(ex,
-                    "Failed to sync permissions for user {Username} (ID: {UserId}, Role: {Role})",
-                    user.Username, user.Id, user.Role);
+                logger.LogWarning(ex,
+                    "PERMISSION SYNC FAILED for user {Username}: {Message}",
+                    user.Username, ex.Message);
             }
         }
     }
@@ -218,6 +244,9 @@ public static class WebApplicationExtensions
         ILogger logger)
     {
         var expectedPermissions = PermissionSeeder.GetDefaultPermissionsForRole(role).ToList();
+
+        // Detect valid enum values for ghost permission detection
+        var validEnumValues = Enum.GetValues<Permission>().ToHashSet();
 
         // Use IgnoreQueryFilters to see ALL permissions including soft-deleted ones.
         // The global soft-delete filter would hide IsDeleted=true records, but the
@@ -233,9 +262,21 @@ public static class WebApplicationExtensions
             .Select(p => p.Permission)
             .ToList();
 
-        bool changed = false;
+        // PHASE 1: Detect and warn about ghost permissions (DB values not in current enum)
+        var ghostPermissions = activePermissions
+            .Where(p => !validEnumValues.Contains(p))
+            .ToList();
 
-        // Add missing permissions — reactivate soft-deleted ones instead of inserting duplicates
+        if (ghostPermissions.Any())
+        {
+            logger.LogWarning(
+                "User {UserId} has {Count} ghost permissions (not in current Permission enum): {Codes}. These will be revoked.",
+                userId, ghostPermissions.Count,
+                string.Join(", ", ghostPermissions.Select(p => (int)p)));
+        }
+
+        // PHASE 2: Add missing permissions FIRST — save immediately so they persist
+        //          even if removing extras fails later
         var missingPermissions = expectedPermissions
             .Except(activePermissions)
             .ToList();
@@ -248,13 +289,11 @@ public static class WebApplicationExtensions
 
             foreach (var permission in missingPermissions)
             {
-                // Check if a soft-deleted or inactive record already exists
                 var existing = allPermissions
                     .FirstOrDefault(p => p.Permission == permission);
 
                 if (existing != null)
                 {
-                    // Restore soft-deleted record if needed, then reactivate
                     if (existing.IsDeleted)
                         existing.Restore(Guid.Empty);
                     if (!existing.IsActive)
@@ -274,10 +313,20 @@ public static class WebApplicationExtensions
                 }
             }
 
-            changed = true;
+            try
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation("Successfully added {Count} permissions for user {UserId}",
+                    missingPermissions.Count, userId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to save new permissions for user {UserId}", userId);
+                return; // Don't proceed to removal if add failed
+            }
         }
 
-        // Remove extra permissions (soft-delete via Revoke, not hard delete)
+        // PHASE 3: Remove extra permissions (includes ghost permissions) — separate save
         var extraPermissions = activePermissions
             .Except(expectedPermissions)
             .ToList();
@@ -286,7 +335,7 @@ public static class WebApplicationExtensions
         {
             logger.LogInformation("Removing {Count} extra permissions for user {UserId}: {Permissions}",
                 extraPermissions.Count, userId,
-                string.Join(", ", extraPermissions));
+                string.Join(", ", extraPermissions.Select(p => $"{p} ({(int)p})")));
 
             foreach (var permission in extraPermissions)
             {
@@ -299,15 +348,21 @@ public static class WebApplicationExtensions
                 }
             }
 
-            changed = true;
+            try
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation("Successfully removed {Count} extra permissions for user {UserId}",
+                    extraPermissions.Count, userId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Failed to remove extra permissions for user {UserId}. New permissions were already saved successfully.",
+                    userId);
+            }
         }
 
-        if (changed)
-        {
-            await context.SaveChangesAsync();
-            logger.LogInformation("Permission sync completed for user {UserId}", userId);
-        }
-        else
+        if (!missingPermissions.Any() && !extraPermissions.Any())
         {
             logger.LogInformation("No permission changes needed for user {UserId}", userId);
         }
@@ -334,5 +389,66 @@ public static class WebApplicationExtensions
 
         await context.SaveChangesAsync();
         logger.LogInformation("Successfully seeded {Count} neighborhoods.", neighborhoods.Count);
+    }
+
+    private static async Task SeedLandmarkTypeIconsIfNeeded(ApplicationDbContext context, ILogger logger)
+    {
+        var existingTypes = await context.Set<LandmarkTypeIcon>()
+            .Select(i => i.Type)
+            .ToListAsync();
+
+        logger.LogInformation("Checking landmark type icons ({Count} existing)...", existingTypes.Count);
+
+        var systemUserId = Guid.Empty;
+        var pinTop = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 42' width='32' height='42'>";
+        var pinBot = "</svg>";
+
+        string MakePin(string color, string symbol) =>
+            $"{pinTop}<path d='M16 0C7.2 0 0 7.2 0 16c0 12 16 26 16 26s16-14 16-26C32 7.2 24.8 0 16 0z' fill='{color}'/><circle cx='16' cy='16' r='11' fill='#fff' opacity='0.3'/>{symbol}{pinBot}";
+
+        var types = new (LandmarkType type, string nameAr, string nameEn, string svg)[]
+        {
+            (LandmarkType.PoliceStation, "مركز شرطة", "Police Station",
+                MakePin("#3B82F6", "<path d='M16 8l-6 4v6h4v-4h4v4h4v-6z' fill='#fff'/>")),
+            (LandmarkType.Mosque, "مسجد", "Mosque",
+                MakePin("#10B981", "<path d='M16 8c-1 0-4 3-4 6h8c0-3-3-6-4-6z' fill='#fff'/><rect x='14' y='14' width='4' height='6' fill='#fff'/><rect x='10' y='20' width='12' height='2' fill='#fff'/>")),
+            (LandmarkType.Square, "ساحة", "Square",
+                MakePin("#8B5CF6", "<rect x='10' y='10' width='12' height='12' rx='1' fill='none' stroke='#fff' stroke-width='2'/><circle cx='16' cy='16' r='2' fill='#fff'/>")),
+            (LandmarkType.Shop, "محل تجاري", "Shop",
+                MakePin("#F59E0B", "<path d='M11 10h10l2 4H9l2-4zm-1 5h12v7H10v-7zm4 2v3h4v-3z' fill='#fff'/>")),
+            (LandmarkType.School, "مدرسة", "School",
+                MakePin("#EF4444", "<rect x='10' y='12' width='12' height='10' rx='1' fill='#fff'/><rect x='13' y='9' width='6' height='3' fill='#fff'/><line x1='13' y1='15' x2='19' y2='15' stroke='" + "#EF4444" + "' stroke-width='1'/><line x1='13' y1='17' x2='19' y2='17' stroke='" + "#EF4444" + "' stroke-width='1'/><line x1='13' y1='19' x2='17' y2='19' stroke='" + "#EF4444" + "' stroke-width='1'/>")),
+            (LandmarkType.Clinic, "عيادة", "Clinic",
+                MakePin("#EC4899", "<rect x='13' y='9' width='6' height='14' rx='1' fill='#fff'/><rect x='9' y='13' width='14' height='6' rx='1' fill='#fff'/>")),
+            (LandmarkType.WaterTank, "خزان مياه", "Water Tank",
+                MakePin("#06B6D4", "<path d='M16 9c-2 0-3 1-3 3v2c0 3 3 6 3 8 0-2 3-5 3-8v-2c0-2-1-3-3-3z' fill='#fff'/>")),
+            (LandmarkType.FuelStation, "محطة وقود", "Fuel Station",
+                MakePin("#F97316", "<rect x='10' y='10' width='8' height='12' rx='1' fill='#fff'/><path d='M18 12h2v4l2-1v6h-2v-4l-2 1z' fill='#fff'/><rect x='12' y='12' width='4' height='3' fill='" + "#F97316" + "'/>")),
+            (LandmarkType.Hospital, "مستشفى", "Hospital",
+                MakePin("#DC2626", "<rect x='13' y='9' width='6' height='14' rx='1' fill='#fff'/><rect x='9' y='13' width='14' height='6' rx='1' fill='#fff'/><text x='16' y='19' text-anchor='middle' fill='" + "#DC2626" + "' font-size='8' font-weight='bold' font-family='Arial'>H</text>")),
+            (LandmarkType.Park, "حديقة", "Park",
+                MakePin("#16A34A", "<circle cx='16' cy='12' r='4' fill='#fff'/><rect x='15' y='14' width='2' height='6' fill='#fff'/><path d='M12 20h8' stroke='#fff' stroke-width='2'/>")),
+        };
+
+        var added = 0;
+        foreach (var (type, nameAr, nameEn, svg) in types)
+        {
+            if (existingTypes.Contains(type))
+                continue;
+
+            var icon = LandmarkTypeIcon.Create(type, svg, nameAr, nameEn, systemUserId);
+            await context.Set<LandmarkTypeIcon>().AddAsync(icon);
+            added++;
+        }
+
+        if (added > 0)
+        {
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded {Count} new landmark type icons.", added);
+        }
+        else
+        {
+            logger.LogInformation("All landmark type icons already exist — skipping.");
+        }
     }
 }

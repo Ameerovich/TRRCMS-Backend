@@ -62,17 +62,22 @@ public class AuthController : ControllerBase
     /// - Platform access flags (mobile/desktop)
     /// - Password change requirement flag
     /// 
-    /// **DeviceId Usage:**
-    /// The optional `deviceId` field is used for:
-    /// - Audit trail (tracking which device/tablet initiated the login)
-    /// - Session management across multiple devices
-    /// - Security monitoring
-    /// 
-    /// **Example request:**
+    /// **DeviceId:** Optional. Only used by field collectors on tablets for device tracking.
+    /// Desktop and dashboard clients should omit this field.
+    ///
+    /// **Example request (desktop/dashboard):**
     /// ```json
     /// {
-    ///   "username": "fieldcollector1",
-    ///   "password": "SecurePass123!",
+    ///   "username": "admin",
+    ///   "password": "Admin@123"
+    /// }
+    /// ```
+    ///
+    /// **Example request (field collector with tablet):**
+    /// ```json
+    /// {
+    ///   "username": "collector",
+    ///   "password": "Field@123",
     ///   "deviceId": "TABLET-FC-001"
     /// }
     /// ```

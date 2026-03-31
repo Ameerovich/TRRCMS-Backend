@@ -68,4 +68,5 @@ public class LandmarksController : ControllerBase
         var result = await _mediator.Send(searchQuery, cancellationToken);
         return Ok(ListResponse<LandmarkDto>.From(result));
     }
+
 }

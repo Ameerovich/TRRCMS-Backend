@@ -27,8 +27,8 @@ public class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.PhoneNumber)
-            .Matches(@"^\+?[0-9\s\-\(\)]+$").WithMessage("Invalid phone number format")
-            .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters")
+            .Matches(@"^(\+963|0)\d{7,9}$")
+            .WithMessage("رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+")
             .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
 
         RuleFor(x => x.Role)

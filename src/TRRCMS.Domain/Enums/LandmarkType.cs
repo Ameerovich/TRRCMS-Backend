@@ -19,10 +19,10 @@ public enum LandmarkType
     Mosque = 2,
 
     /// <summary>
-    /// Public building (مبنى عام)
+    /// Square (ساحة)
     /// </summary>
-    [ArabicLabel("مبنى عام")]
-    PublicBuilding = 3,
+    [ArabicLabel("ساحة")]
+    Square = 3,
 
     /// <summary>
     /// Shop (محل تجاري)
@@ -52,5 +52,17 @@ public enum LandmarkType
     /// Fuel station (محطة وقود)
     /// </summary>
     [ArabicLabel("محطة وقود")]
-    FuelStation = 8
+    FuelStation = 8,
+
+    /// <summary>
+    /// Hospital (مستشفى)
+    /// </summary>
+    [ArabicLabel("مستشفى")]
+    Hospital = 9,
+
+    /// <summary>
+    /// Park (حديقة)
+    /// </summary>
+    [ArabicLabel("حديقة")]
+    Park = 10
 }

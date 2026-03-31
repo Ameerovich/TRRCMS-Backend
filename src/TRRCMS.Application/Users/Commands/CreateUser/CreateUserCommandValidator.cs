@@ -30,8 +30,8 @@ public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
             .MaximumLength(100).WithMessage("Email cannot exceed 100 characters");
 
         RuleFor(x => x.PhoneNumber)
-            .Matches(@"^\+?[0-9\s\-\(\)]+$").WithMessage("Invalid phone number format")
-            .MaximumLength(20).WithMessage("Phone number cannot exceed 20 characters")
+            .Matches(@"^(\+963|0)\d{7,9}$")
+            .WithMessage("رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+")
             .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
 
         RuleFor(x => x.Role)

@@ -118,7 +118,10 @@ public interface IUnitOfWork : IDisposable
     /// </summary>
     IStreetRepository Streets { get; }
 
-
+    /// <summary>
+    /// Landmark type icon repository — SVG icons for landmark types
+    /// </summary>
+    ILandmarkTypeIconRepository LandmarkTypeIcons { get; }
 
     /// <summary>
     /// Save all pending changes to the database in a single transaction.
