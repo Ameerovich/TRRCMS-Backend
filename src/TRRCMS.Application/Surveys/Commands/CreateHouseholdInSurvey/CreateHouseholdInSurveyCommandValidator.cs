@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 
@@ -8,7 +9,7 @@ namespace TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 /// </summary>
 public class CreateHouseholdInSurveyCommandValidator : AbstractValidator<CreateHouseholdInSurveyCommand>
 {
-    public CreateHouseholdInSurveyCommandValidator()
+    public CreateHouseholdInSurveyCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
@@ -91,6 +92,18 @@ public class CreateHouseholdInSurveyCommandValidator : AbstractValidator<CreateH
             })
             .WithMessage("Total disabled count cannot exceed household size")
             .When(x => x.HouseholdSize > 0);
+
+        // Occupancy Type
+        RuleFor(x => x.OccupancyType)
+            .Must(v => vocabService.IsValidCode("occupancy_type", v!.Value))
+            .When(x => x.OccupancyType.HasValue)
+            .WithMessage("Invalid occupancy type");
+
+        // Occupancy Nature
+        RuleFor(x => x.OccupancyNature)
+            .Must(v => vocabService.IsValidCode("occupancy_nature", v!.Value))
+            .When(x => x.OccupancyNature.HasValue)
+            .WithMessage("Invalid occupancy nature");
 
         // Notes
         RuleFor(x => x.Notes)

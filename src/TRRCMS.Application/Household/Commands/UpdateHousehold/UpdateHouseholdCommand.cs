@@ -17,11 +17,6 @@ public class UpdateHouseholdCommand : IRequest<HouseholdDto>
     // ==================== BASIC INFORMATION ====================
 
     /// <summary>
-    /// Head of household name (رب الأسرة/العميل)
-    /// </summary>
-    public string? HeadOfHouseholdName { get; set; }
-
-    /// <summary>
     /// Total household size (عدد الأفراد)
     /// </summary>
     public int? HouseholdSize { get; set; }

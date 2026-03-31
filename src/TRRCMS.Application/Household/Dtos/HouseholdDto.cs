@@ -26,16 +26,6 @@ public class HouseholdDto
     // ==================== BASIC INFORMATION ====================
 
     /// <summary>
-    /// Head of household name (رب الأسرة/العميل - اسم الشخص) - optional for office survey
-    /// </summary>
-    public string? HeadOfHouseholdName { get; set; }
-
-    /// <summary>
-    /// Link to Person entity if head is registered - optional for office survey
-    /// </summary>
-    public Guid? HeadOfHouseholdPersonId { get; set; }
-
-    /// <summary>
     /// Total household size (عدد الأفراد)
     /// </summary>
     public int HouseholdSize { get; set; }

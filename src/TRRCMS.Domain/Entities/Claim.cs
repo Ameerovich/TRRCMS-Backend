@@ -208,4 +208,16 @@ public class Claim : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
+    public void UpdateOwnershipShare(int? ownershipShare, Guid modifiedByUserId)
+    {
+        OwnershipShare = ownershipShare;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    public void UpdateClaimDescription(string? claimDescription, Guid modifiedByUserId)
+    {
+        ClaimDescription = claimDescription;
+        MarkAsModified(modifiedByUserId);
+    }
+
 }

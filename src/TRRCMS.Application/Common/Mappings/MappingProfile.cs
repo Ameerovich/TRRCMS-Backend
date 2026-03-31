@@ -85,8 +85,6 @@ public class MappingProfile : Profile
        .ForMember(dest => dest.PropertyUnitIdentifier, opt => opt.Ignore()) // Set in handler
 
        // Basic info
-       .ForMember(dest => dest.HeadOfHouseholdName, opt => opt.MapFrom(src => src.HeadOfHouseholdName))
-       .ForMember(dest => dest.HeadOfHouseholdPersonId, opt => opt.MapFrom(src => src.HeadOfHouseholdPersonId))
        .ForMember(dest => dest.HouseholdSize, opt => opt.MapFrom(src => src.HouseholdSize))
        .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
 

@@ -21,7 +21,7 @@ public class HouseholdRepository : IHouseholdRepository
     {
         return await _context.Households
             .Include(h => h.PropertyUnit)
-            .Include(h => h.HeadOfHouseholdPerson)
+
             .Include(h => h.Members)
             .FirstOrDefaultAsync(h => h.Id == id && !h.IsDeleted, cancellationToken);
     }
@@ -30,7 +30,7 @@ public class HouseholdRepository : IHouseholdRepository
     {
         return await _context.Households
             .Include(h => h.PropertyUnit)
-            .Include(h => h.HeadOfHouseholdPerson)
+
             .Where(h => !h.IsDeleted)
             .OrderBy(h => h.CreatedAtUtc)
             .ToListAsync(cancellationToken);
@@ -40,7 +40,7 @@ public class HouseholdRepository : IHouseholdRepository
     {
         return await _context.Households
             .Include(h => h.PropertyUnit)
-            .Include(h => h.HeadOfHouseholdPerson)
+
             .Include(h => h.Members)
             .Where(h => h.PropertyUnitId == propertyUnitId && !h.IsDeleted)
             .OrderBy(h => h.CreatedAtUtc)

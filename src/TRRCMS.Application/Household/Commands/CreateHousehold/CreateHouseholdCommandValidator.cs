@@ -14,12 +14,6 @@ public class CreateHouseholdCommandValidator : AbstractValidator<CreateHousehold
             .NotEmpty()
             .WithMessage("Property unit ID is required");
 
-        RuleFor(x => x.HeadOfHouseholdName)
-            .NotEmpty()
-            .WithMessage("Head of household name (رب الأسرة) is required")
-            .MaximumLength(200)
-            .WithMessage("Head of household name must not exceed 200 characters");
-
         RuleFor(x => x.HouseholdSize)
             .GreaterThan(0)
             .WithMessage("Household size (عدد الأفراد) must be at least 1")

@@ -1,6 +1,6 @@
 // TRRCMS - Entity Relationship Diagram (DBML)
 // PostgreSQL 16 + PostGIS 3.4
-// Generated: 2026-03-13
+// Generated: 2026-03-30
 //
 // Base Classes (inherited fields present in all tables):
 // ─────────────────────────────────────────────────────
@@ -127,8 +127,6 @@ Table Households {
   Id uuid [pk]
   RowVersion bytea
   PropertyUnitId uuid [not null, ref: > PropertyUnits.Id]
-  HeadOfHouseholdPersonId uuid [ref: > Persons.Id]
-  HeadOfHouseholdName varchar
   HouseholdSize int
   OccupancyType int [note: 'OccupancyType enum']
   OccupancyNature int [note: 'OccupancyNature enum']
@@ -257,16 +255,14 @@ Table Surveys {
   BuildingId uuid [not null, ref: > Buildings.Id]
   PropertyUnitId uuid [ref: > PropertyUnits.Id]
   FieldCollectorId uuid [not null, ref: > Users.Id]
-  Type int [not null, note: 'SurveyType enum (Field/Office)']
+  Type int [not null, note: 'SurveyType enum']
   Source int [not null, note: 'SurveySource enum']
   SurveyDate timestamp [not null]
   Status int [not null, note: 'SurveyStatus enum']
   GpsCoordinates varchar
-  IntervieweeName varchar
-  IntervieweeRelationship varchar
   Notes text
   DurationMinutes int
-  OfficeLocation varchar [note: 'Office surveys only']
+  OfficeLocation varchar
   RegistrationNumber varchar
   AppointmentReference varchar
   ContactPhone varchar
@@ -275,7 +271,7 @@ Table Surveys {
   ClaimId uuid [ref: > Claims.Id]
   ClaimCreatedDate timestamp
   ContactPersonId uuid [ref: > Persons.Id]
-  ContactPersonFullName varchar [note: 'Denormalized']
+  ContactPersonFullName varchar
   CreatedAtUtc timestamp [not null]
   CreatedBy uuid [not null]
   LastModifiedAtUtc timestamp
@@ -392,6 +388,7 @@ Table ImportPackages {
   FailedImportCount int [not null, default: 0]
   SkippedRecordCount int [not null, default: 0]
   ImportSummary text
+  CommitReportJson jsonb [note: 'Full commit report snapshot']
   ErrorMessage text
   ErrorLog jsonb
   ArchivePath varchar
@@ -569,6 +566,22 @@ Table Landmarks {
   Location geometry [note: 'PostGIS POINT SRID 4326']
   Latitude decimal [not null]
   Longitude decimal [not null]
+  CreatedAtUtc timestamp [not null]
+  CreatedBy uuid [not null]
+  LastModifiedAtUtc timestamp
+  LastModifiedBy uuid
+  IsDeleted boolean [not null, default: false]
+  DeletedAtUtc timestamp
+  DeletedBy uuid
+}
+
+Table LandmarkTypeIcons {
+  Id uuid [pk]
+  RowVersion bytea
+  Type int [unique, not null, note: 'LandmarkType enum']
+  SvgContent text [not null]
+  DisplayNameArabic varchar [not null]
+  DisplayNameEnglish varchar [not null]
   CreatedAtUtc timestamp [not null]
   CreatedBy uuid [not null]
   LastModifiedAtUtc timestamp
@@ -917,8 +930,6 @@ Table StagingHouseholds {
   CommittedEntityId uuid
   StagedAtUtc timestamp
   OriginalPropertyUnitId uuid [not null, note: 'Refs StagingPropertyUnit']
-  OriginalHeadOfHouseholdPersonId uuid [note: 'Refs StagingPerson']
-  HeadOfHouseholdName varchar [not null]
   HouseholdSize int [not null]
   MaleCount int [not null, default: 0]
   FemaleCount int [not null, default: 0]
@@ -928,6 +939,8 @@ Table StagingHouseholds {
   FemaleElderlyCount int [not null, default: 0]
   MaleDisabledCount int [not null, default: 0]
   FemaleDisabledCount int [not null, default: 0]
+  OccupancyType int [note: 'OccupancyType enum']
+  OccupancyNature int [note: 'OccupancyNature enum']
   Notes text
   CreatedAtUtc timestamp [not null]
   CreatedBy uuid [not null]
@@ -954,6 +967,8 @@ Table StagingPersonPropertyRelations {
   OwnershipShare decimal
   ContractDetails text
   Notes text
+  OccupancyType int [note: 'OccupancyType enum']
+  HasEvidence boolean [not null, default: false]
   IsActive boolean [not null, default: true]
   CreatedAtUtc timestamp [not null]
   CreatedBy uuid [not null]
@@ -976,8 +991,9 @@ Table StagingClaims {
   StagedAtUtc timestamp
   OriginalPropertyUnitId uuid [not null, note: 'Refs StagingPropertyUnit']
   OriginalPrimaryClaimantId uuid [note: 'Refs StagingPerson']
+  OriginalOriginatingSurveyId uuid [note: 'Refs StagingSurvey']
   ClaimNumber varchar
-  ClaimType varchar [not null]
+  ClaimType int [not null, note: 'ClaimType enum']
   ClaimSource int [not null, note: 'ClaimSource enum']
   CaseStatus int [note: 'CaseStatus enum']
   TenureContractType int [note: 'TenureContractType enum']
@@ -1050,8 +1066,7 @@ Table StagingSurveys {
   SurveyDate timestamp [not null]
   Status int [note: 'SurveyStatus enum']
   GpsCoordinates varchar
-  IntervieweeName varchar
-  IntervieweeRelationship varchar
+  DurationMinutes int
   Notes text
   OfficeLocation varchar
   RegistrationNumber varchar
@@ -1104,6 +1119,7 @@ TableGroup ReferenceData {
   Communities
   Neighborhoods
   Landmarks
+  LandmarkTypeIcons
   Streets
 }
 

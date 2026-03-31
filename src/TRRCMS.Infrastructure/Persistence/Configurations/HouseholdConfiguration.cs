@@ -22,15 +22,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .IsRequired()
             .HasComment("Foreign key to PropertyUnit");
 
-        builder.Property(h => h.HeadOfHouseholdPersonId)
-            .IsRequired(false)
-            .HasComment("Foreign key to Person (head of household)");
-
-        builder.Property(h => h.HeadOfHouseholdName)
-            .IsRequired(false)
-            .HasMaxLength(200)
-            .HasComment("رب الأسرة/العميل - Name of head of household (nullable for office survey)");
-
         builder.Property(h => h.HouseholdSize)
             .IsRequired()
             .HasDefaultValue(0)
@@ -141,10 +132,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
         builder.HasIndex(h => h.PropertyUnitId)
             .HasDatabaseName("IX_Household_PropertyUnitId");
 
-        // Index for head of household person
-        builder.HasIndex(h => h.HeadOfHouseholdPersonId)
-            .HasDatabaseName("IX_Household_HeadOfHouseholdPersonId");
-
         // Index for soft delete queries
         builder.HasIndex(h => h.IsDeleted)
             .HasDatabaseName("IX_Household_IsDeleted");
@@ -154,13 +141,6 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .WithMany()
             .HasForeignKey(h => h.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // Relationship to HeadOfHouseholdPerson (optional one-to-one)
-        builder.HasOne(h => h.HeadOfHouseholdPerson)
-            .WithMany()
-            .HasForeignKey(h => h.HeadOfHouseholdPersonId)
-            .OnDelete(DeleteBehavior.Restrict)
-            .IsRequired(false);
 
         // Relationship to Members (One-to-Many)
         builder.HasMany(h => h.Members)

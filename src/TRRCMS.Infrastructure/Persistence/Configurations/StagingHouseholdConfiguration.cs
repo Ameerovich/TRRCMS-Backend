@@ -51,13 +51,6 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
             .IsRequired()
             .HasComment("Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits");
 
-        builder.Property(h => h.OriginalHeadOfHouseholdPersonId)
-            .HasComment("Original head-of-household Person UUID from .uhc");
-
-        builder.Property(h => h.HeadOfHouseholdName)
-            .IsRequired()
-            .HasMaxLength(200);
-
         builder.Property(h => h.HouseholdSize)
             .IsRequired();
 
@@ -104,6 +97,12 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
         builder.Property(h => h.PersonsWithDisabilitiesCount)
             .IsRequired()
             .HasDefaultValue(0);
+
+        builder.Property(h => h.OccupancyType)
+            .HasComment("OccupancyType enum");
+
+        builder.Property(h => h.OccupancyNature)
+            .HasComment("OccupancyNature enum");
 
         builder.Property(h => h.Notes)
             .HasMaxLength(2000);

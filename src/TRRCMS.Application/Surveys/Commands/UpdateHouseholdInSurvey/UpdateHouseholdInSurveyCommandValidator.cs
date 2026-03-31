@@ -1,4 +1,5 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 
@@ -7,7 +8,7 @@ namespace TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 /// </summary>
 public class UpdateHouseholdInSurveyCommandValidator : AbstractValidator<UpdateHouseholdInSurveyCommand>
 {
-    public UpdateHouseholdInSurveyCommandValidator()
+    public UpdateHouseholdInSurveyCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
@@ -76,6 +77,18 @@ public class UpdateHouseholdInSurveyCommandValidator : AbstractValidator<UpdateH
             .When(x => x.FemaleDisabledCount.HasValue)
             .LessThanOrEqualTo(20)
             .When(x => x.FemaleDisabledCount.HasValue);
+
+        // Occupancy Type
+        RuleFor(x => x.OccupancyType)
+            .Must(v => vocabService.IsValidCode("occupancy_type", v!.Value))
+            .When(x => x.OccupancyType.HasValue)
+            .WithMessage("Invalid occupancy type");
+
+        // Occupancy Nature
+        RuleFor(x => x.OccupancyNature)
+            .Must(v => vocabService.IsValidCode("occupancy_nature", v!.Value))
+            .When(x => x.OccupancyNature.HasValue)
+            .WithMessage("Invalid occupancy nature");
 
         // Notes
         RuleFor(x => x.Notes)

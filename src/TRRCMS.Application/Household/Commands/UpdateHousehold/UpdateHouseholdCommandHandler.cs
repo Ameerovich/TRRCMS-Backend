@@ -47,7 +47,6 @@ public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdComm
         // Track old values for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
-            household.HeadOfHouseholdName,
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
@@ -61,12 +60,10 @@ public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdComm
         });
 
         // Update basic info if provided
-        if (!string.IsNullOrEmpty(request.HeadOfHouseholdName) ||
-            request.HouseholdSize.HasValue ||
+        if (request.HouseholdSize.HasValue ||
             request.Notes != null)
         {
             household.UpdateBasicInfo(
-                headOfHouseholdName: request.HeadOfHouseholdName ?? household.HeadOfHouseholdName,
                 householdSize: request.HouseholdSize ?? household.HouseholdSize,
                 notes: request.Notes ?? household.Notes,
                 occupancyType: null, // Not supported in UpdateHousehold command
@@ -101,7 +98,6 @@ public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdComm
         // Track new values for audit
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
         {
-            household.HeadOfHouseholdName,
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
@@ -115,12 +111,13 @@ public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdComm
         });
 
         // Audit logging
+        var householdIdentifier = $"Household {household.Id.ToString()[..8]}";
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
-            actionDescription: $"Updated household for {household.HeadOfHouseholdName}",
+            actionDescription: $"Updated {householdIdentifier}",
             entityType: "Household",
             entityId: household.Id,
-            entityIdentifier: household.HeadOfHouseholdName,
+            entityIdentifier: householdIdentifier,
             oldValues: oldValues,
             newValues: newValues,
             changedFields: "Household update",

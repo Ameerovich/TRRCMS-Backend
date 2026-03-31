@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260331094053_SyncStagingWithProductionEntities")]
+    partial class SyncStagingWithProductionEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1468,6 +1471,15 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasDefaultValue(0)
                         .HasComment("عدد كبار السن الإناث (أكثر من 65) - Number of female elderly over 65");
 
+                    b.Property<string>("HeadOfHouseholdName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasComment("رب الأسرة/العميل - Name of head of household (nullable for office survey)");
+
+                    b.Property<Guid?>("HeadOfHouseholdPersonId")
+                        .HasColumnType("uuid")
+                        .HasComment("Foreign key to Person (head of household)");
+
                     b.Property<int>("HouseholdSize")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -1542,6 +1554,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasComment("Concurrency token");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("HeadOfHouseholdPersonId")
+                        .HasDatabaseName("IX_Household_HeadOfHouseholdPersonId");
 
                     b.HasIndex("IsDeleted")
                         .HasDatabaseName("IX_Household_IsDeleted");
@@ -3029,6 +3044,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<string>("HeadOfHouseholdName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int>("HouseholdSize")
                         .HasColumnType("integer");
 
@@ -3074,6 +3094,10 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.Property<Guid>("OriginalEntityId")
                         .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OriginalHeadOfHouseholdPersonId")
+                        .HasColumnType("uuid")
+                        .HasComment("Original head-of-household Person UUID from .uhc");
 
                     b.Property<Guid>("OriginalPropertyUnitId")
                         .HasColumnType("uuid")
@@ -4548,11 +4572,18 @@ namespace TRRCMS.Infrastructure.Migrations
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Household", b =>
                 {
+                    b.HasOne("TRRCMS.Domain.Entities.Person", "HeadOfHouseholdPerson")
+                        .WithMany()
+                        .HasForeignKey("HeadOfHouseholdPersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TRRCMS.Domain.Entities.PropertyUnit", "PropertyUnit")
                         .WithMany("Households")
                         .HasForeignKey("PropertyUnitId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("HeadOfHouseholdPerson");
 
                     b.Navigation("PropertyUnit");
                 });

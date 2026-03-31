@@ -1,16 +1,12 @@
 using FluentValidation;
 using TRRCMS.Application.Claims.Dtos;
+using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Claims.Commands.UpdateClaim;
 
 public class UpdateClaimCommandValidator : AbstractValidator<UpdateClaimCommand>
 {
-    private static readonly int[] ValidRelationTypes = { 1, 2, 3, 4, 5, 99 };
-    private static readonly int[] ValidOccupancyTypes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 99 };
-    private static readonly int[] ValidTenureContractTypes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 99 };
-    private static readonly int[] ValidEvidenceTypes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 99 };
-
-    public UpdateClaimCommandValidator()
+    public UpdateClaimCommandValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.ClaimId)
             .NotEmpty()
@@ -27,12 +23,12 @@ public class UpdateClaimCommandValidator : AbstractValidator<UpdateClaimCommand>
         // ---- Relation fields ----
 
         RuleFor(x => x.RelationType)
-            .Must(v => ValidRelationTypes.Contains(v!.Value))
+            .Must(v => vocabService.IsValidCode("relation_type", v!.Value))
             .When(x => x.RelationType.HasValue)
             .WithMessage("Invalid relation type. Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99.");
 
         RuleFor(x => x.OccupancyType)
-            .Must(v => ValidOccupancyTypes.Contains(v!.Value))
+            .Must(v => vocabService.IsValidCode("occupancy_type", v!.Value))
             .When(x => x.OccupancyType.HasValue)
             .WithMessage("Invalid occupancy type.");
 
@@ -57,7 +53,7 @@ public class UpdateClaimCommandValidator : AbstractValidator<UpdateClaimCommand>
         // ---- Claim-level fields ----
 
         RuleFor(x => x.TenureContractType)
-            .Must(v => ValidTenureContractTypes.Contains(v!.Value))
+            .Must(v => vocabService.IsValidCode("tenure_contract_type", v!.Value))
             .When(x => x.TenureContractType.HasValue)
             .WithMessage("Invalid tenure contract type.");
 
@@ -69,7 +65,7 @@ public class UpdateClaimCommandValidator : AbstractValidator<UpdateClaimCommand>
         // ---- Evidence: new evidence items ----
 
         RuleForEach(x => x.NewEvidence)
-            .SetValidator(new CreateAndLinkEvidenceDtoValidator())
+            .SetValidator(new CreateAndLinkEvidenceDtoValidator(vocabService))
             .When(x => x.NewEvidence != null && x.NewEvidence.Count > 0);
 
         // ---- Evidence: link/unlink IDs ----
@@ -88,12 +84,10 @@ public class UpdateClaimCommandValidator : AbstractValidator<UpdateClaimCommand>
 
 public class CreateAndLinkEvidenceDtoValidator : AbstractValidator<CreateAndLinkEvidenceDto>
 {
-    private static readonly int[] ValidEvidenceTypes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 99 };
-
-    public CreateAndLinkEvidenceDtoValidator()
+    public CreateAndLinkEvidenceDtoValidator(IVocabularyValidationService vocabService)
     {
         RuleFor(x => x.EvidenceType)
-            .Must(v => ValidEvidenceTypes.Contains(v))
+            .Must(v => vocabService.IsValidCode("evidence_type", v))
             .WithMessage("Invalid evidence type.");
 
         RuleFor(x => x.Description)

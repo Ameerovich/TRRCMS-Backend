@@ -46,11 +46,8 @@ public class StagingSurvey : BaseStagingEntity
     /// <summary>GPS coordinates as string (e.g. "35.123456,36.789012").</summary>
     public string? GpsCoordinates { get; private set; }
 
-    /// <summary>Name of the person interviewed during the survey.</summary>
-    public string? IntervieweeName { get; private set; }
-
-    /// <summary>Interviewee's relationship to the property (e.g. "Owner", "Neighbor").</summary>
-    public string? IntervieweeRelationship { get; private set; }
+    /// <summary>Duration of the survey in minutes.</summary>
+    public int? DurationMinutes { get; private set; }
 
     /// <summary>Survey notes and observations.</summary>
     public string? Notes { get; private set; }
@@ -84,8 +81,7 @@ public class StagingSurvey : BaseStagingEntity
         // --- optional: from command ---
         Guid? originalPropertyUnitId = null,
         string? gpsCoordinates = null,
-        string? intervieweeName = null,
-        string? intervieweeRelationship = null,
+        int? durationMinutes = null,
         string? notes = null,
         string? officeLocation = null,
         string? registrationNumber = null,
@@ -114,8 +110,7 @@ public class StagingSurvey : BaseStagingEntity
             SurveyDate = surveyDate,
             Status = status,
             GpsCoordinates = gpsCoordinates,
-            IntervieweeName = intervieweeName,
-            IntervieweeRelationship = intervieweeRelationship,
+            DurationMinutes = durationMinutes,
             Notes = notes,
             OfficeLocation = officeLocation,
             RegistrationNumber = registrationNumber,

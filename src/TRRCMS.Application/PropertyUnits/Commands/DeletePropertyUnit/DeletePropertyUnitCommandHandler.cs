@@ -135,7 +135,7 @@ public class DeletePropertyUnitCommandHandler : IRequestHandler<DeletePropertyUn
             {
                 EntityId = household.Id,
                 EntityType = "Household",
-                EntityIdentifier = household.HeadOfHouseholdName ?? "Household"
+                EntityIdentifier = $"Household {household.Id.ToString()[..8]}"
             });
         }
 

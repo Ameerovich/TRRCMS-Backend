@@ -125,7 +125,7 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
             }
             household.MarkAsDeleted(userId);
             await _householdRepository.UpdateAsync(household, ct);
-            affected.Add(new DeletedEntityInfo { EntityId = household.Id, EntityType = "Household", EntityIdentifier = household.HeadOfHouseholdName ?? "Household" });
+            affected.Add(new DeletedEntityInfo { EntityId = household.Id, EntityType = "Household", EntityIdentifier = $"Household {household.Id.ToString()[..8]}" });
         }
 
         var relations = await _relationRepository.GetByPropertyUnitIdAsync(propertyUnitId, ct);
