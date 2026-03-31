@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Conflicts.Dtos;
 
 namespace TRRCMS.Application.Conflicts.Queries.GetConflictQueue;
@@ -32,8 +33,8 @@ public class GetConflictQueueQueryHandler
             assignedToUserId: request.AssignedToUserId,
             isEscalated: request.IsEscalated,
             isOverdue: request.IsOverdue,
-            page: request.Page,
-            pageSize: request.PageSize,
+            page: PagedQuery.ClampPageNumber(request.Page),
+            pageSize: PagedQuery.ClampPageSize(request.PageSize),
             sortBy: request.SortBy,
             sortDescending: request.SortDescending,
             cancellationToken: cancellationToken);

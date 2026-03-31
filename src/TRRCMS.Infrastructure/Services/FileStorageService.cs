@@ -159,4 +159,36 @@ public class FileStorageService : IFileStorageService
         var extension = Path.GetExtension(fileName).ToLowerInvariant();
         return allowedExtensions.Contains(extension);
     }
+
+    // Magic bytes for supported file types
+    private static readonly Dictionary<string, byte[][]> _magicBytes = new()
+    {
+        { ".jpg", new[] { new byte[] { 0xFF, 0xD8, 0xFF } } },
+        { ".jpeg", new[] { new byte[] { 0xFF, 0xD8, 0xFF } } },
+        { ".png", new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } } },
+        { ".pdf", new[] { new byte[] { 0x25, 0x50, 0x44, 0x46 } } }, // %PDF
+        { ".uhc", new[] { new byte[] { 0x53, 0x51, 0x4C, 0x69, 0x74, 0x65 } } }, // SQLite format 3
+    };
+
+    public async Task<bool> ValidateFileMagicBytesAsync(Stream fileStream, string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+        if (!_magicBytes.TryGetValue(extension, out var expectedSignatures))
+            return true; // No magic bytes defined for this extension — skip check
+
+        var maxLength = expectedSignatures.Max(s => s.Length);
+        var headerBuffer = new byte[maxLength];
+        var originalPosition = fileStream.Position;
+
+        fileStream.Position = 0;
+        var bytesRead = await fileStream.ReadAsync(headerBuffer.AsMemory(0, maxLength));
+        fileStream.Position = originalPosition;
+
+        if (bytesRead < expectedSignatures.Min(s => s.Length))
+            return false; // File too small to contain valid magic bytes
+
+        return expectedSignatures.Any(sig =>
+            headerBuffer.AsSpan(0, sig.Length).SequenceEqual(sig));
+    }
 }

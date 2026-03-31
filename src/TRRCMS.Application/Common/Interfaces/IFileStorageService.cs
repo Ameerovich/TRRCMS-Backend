@@ -79,4 +79,13 @@ public interface IFileStorageService
     /// <param name="allowedExtensions">List of allowed extensions</param>
     /// <returns>True if extension is valid</returns>
     bool ValidateFileExtension(string fileName, string[] allowedExtensions);
+
+    /// <summary>
+    /// Validate that the file's magic bytes match the claimed extension.
+    /// Prevents file spoofing (e.g., renaming malware.exe to document.pdf).
+    /// </summary>
+    /// <param name="fileStream">File stream (position will be reset after reading)</param>
+    /// <param name="fileName">Filename with extension</param>
+    /// <returns>True if magic bytes match the extension</returns>
+    Task<bool> ValidateFileMagicBytesAsync(Stream fileStream, string fileName);
 }

@@ -87,6 +87,9 @@ public class UploadTenureDocumentCommandHandler : IRequestHandler<UploadTenureDo
         string fileHash;
         using (var stream = request.File.OpenReadStream())
         {
+            if (!await _fileStorageService.ValidateFileMagicBytesAsync(stream, request.File.FileName))
+                throw new ValidationException("File content does not match the declared file type. Ensure the file is a valid PDF or image.");
+
             fileHash = await _fileStorageService.CalculateFileHashAsync(stream, cancellationToken);
             filePath = await _fileStorageService.SaveFileAsync(
                 stream, request.File.FileName, "tenure-documents", request.SurveyId, cancellationToken);

@@ -2,6 +2,7 @@
 using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 
 namespace TRRCMS.Application.Buildings.Queries.SearchBuildings;
 
@@ -27,7 +28,7 @@ public class SearchBuildingsQueryHandler : IRequestHandler<SearchBuildingsQuery,
     {
         // Validate pagination
         var page = request.Page < 1 ? 1 : request.Page;
-        var pageSize = request.PageSize < 1 ? 20 : (request.PageSize > 100 ? 100 : request.PageSize);
+        var pageSize = PagedQuery.ClampPageSize(request.PageSize);
 
         // Get filtered and paginated buildings
         var (buildings, totalCount) = await _buildingRepository.SearchBuildingsAsync(

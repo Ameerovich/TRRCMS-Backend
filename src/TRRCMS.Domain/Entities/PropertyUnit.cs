@@ -117,12 +117,11 @@ public class PropertyUnit : BaseAuditableEntity
         int? floorNumber,
         Guid createdByUserId)
     {
-        // Parse unitType string to enum, default to Unknown if can't parse
-        PropertyUnitType parsedUnitType = PropertyUnitType.Other;
-        if (!string.IsNullOrWhiteSpace(unitType))
-        {
-            Enum.TryParse<PropertyUnitType>(unitType, ignoreCase: true, out parsedUnitType);
-        }
+        if (string.IsNullOrWhiteSpace(unitType))
+            throw new ArgumentException("Unit type is required.", nameof(unitType));
+
+        if (!Enum.TryParse<PropertyUnitType>(unitType, ignoreCase: true, out var parsedUnitType))
+            throw new ArgumentException($"Invalid unit type '{unitType}'. Valid values: {string.Join(", ", Enum.GetNames<PropertyUnitType>())}", nameof(unitType));
 
         var unit = new PropertyUnit
         {

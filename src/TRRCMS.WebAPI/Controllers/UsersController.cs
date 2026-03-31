@@ -280,7 +280,7 @@ public class UsersController : ControllerBase
     /// 
     /// **Pagination:**
     /// - `page`: Page number (default: 1)
-    /// - `pageSize`: Items per page (default: 20)
+    /// - `pageSize`: Items per page (default: 20, max: 100)
     /// 
     /// **Example Request:**
     /// ```

@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Domain.Enums;
@@ -31,10 +32,8 @@ public class GetOfficeSurveysQueryHandler : IRequestHandler<GetOfficeSurveysQuer
         GetOfficeSurveysQuery request, 
         CancellationToken cancellationToken)
     {
-        // Validate pagination parameters
-        if (request.Page < 1) request.Page = 1;
-        if (request.PageSize < 1) request.PageSize = 20;
-        if (request.PageSize > 100) request.PageSize = 100;
+        request.Page = PagedQuery.ClampPageNumber(request.Page);
+        request.PageSize = PagedQuery.ClampPageSize(request.PageSize);
 
         // Get office surveys with filters
         var (surveys, totalCount) = await _surveyRepository.GetOfficeSurveysAsync(
