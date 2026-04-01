@@ -433,6 +433,21 @@ public class CommitService : ICommitService
 
                 if (existingBuilding != null)
                 {
+                    // Skip update if building is locked — still map the ID for dependent entities
+                    if (existingBuilding.IsLocked)
+                    {
+                        _logger.LogWarning(
+                            "Building {BuildingId} is locked — skipping field survey update. Staging {OriginalId} mapped to existing {ProductionId}.",
+                            buildingIdCode, staging.OriginalEntityId, existingBuilding.Id);
+
+                        _idMap[staging.OriginalEntityId] = existingBuilding.Id;
+                        staging.SetCommittedEntityId(existingBuilding.Id);
+                        await _stagingBuildingRepo.UpdateAsync(staging, ct);
+                        report.Buildings.Committed++;
+                        report.Buildings.IdMappings[staging.OriginalEntityId] = existingBuilding.Id;
+                        continue;
+                    }
+
                     // Update existing building with field survey data
                     // (preserves BuildingId, admin codes, geometry, and coordinates)
                     existingBuilding.UpdateFromFieldSurvey(

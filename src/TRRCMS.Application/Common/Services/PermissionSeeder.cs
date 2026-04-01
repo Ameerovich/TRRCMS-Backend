@@ -57,6 +57,7 @@ public static class PermissionSeeder
             Permission.Buildings_Update,
             Permission.Buildings_Assign,
             Permission.Buildings_Delete,
+            Permission.Buildings_Lock,
 
             Permission.Persons_View,
             Permission.Persons_Create,
@@ -129,6 +130,7 @@ public static class PermissionSeeder
             Permission.Buildings_Create,
             Permission.Buildings_Update,
             Permission.Buildings_Assign,
+            Permission.Buildings_Lock,
 
             Permission.Persons_View,
             Permission.Persons_Create,

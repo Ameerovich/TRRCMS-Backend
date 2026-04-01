@@ -166,7 +166,9 @@ public class GetBuildingsForAssignmentQueryHandler
                 HasActiveAssignment = hasAssignment,
                 CurrentAssignmentId = hasAssignment ? assignmentInfo.AssignmentId : null,
                 CurrentAssigneeId = hasAssignment ? assignmentInfo.CollectorId.ToString() : null,
-                CurrentAssigneeName = hasAssignment ? assignmentInfo.CollectorName : null
+                CurrentAssigneeName = hasAssignment ? assignmentInfo.CollectorName : null,
+                IsAssigned = b.IsAssigned,
+                IsLocked = b.IsLocked
             };
         }).ToList();
 

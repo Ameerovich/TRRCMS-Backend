@@ -7,6 +7,7 @@ using TRRCMS.Application.Buildings.Commands.DeleteBuilding;
 using TRRCMS.Application.Buildings.Commands.RegisterBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuildingGeometry;
+using TRRCMS.Application.Buildings.Commands.ToggleBuildingLock;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Buildings.Queries.GetAllBuildings;
 using TRRCMS.Application.Buildings.Queries.GetBuilding;
@@ -60,6 +61,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// - Buildings_Create (4001) - CanCreateBuildings
 /// - Buildings_Update (4002) - CanEditBuildings
 /// - Buildings_Delete (4003) - CanDeleteBuildings
+/// - Buildings_Lock (4005) - CanLockBuildings (Admin, DataManager)
 /// 
 /// **Building Geometry (PostGIS):**
 /// 
@@ -620,6 +622,69 @@ public class BuildingsController : ControllerBase
         return Ok(result);
     }
 
+    // ==================== LOCK ENDPOINT ====================
+
+    /// <summary>
+    /// Lock or unlock a building
+    /// قفل / فتح قفل المبنى
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: Data Manager / Admin - Protect building data from import overwrites
+    /// حماية بيانات المبنى من التحديث عبر الاستيراد
+    ///
+    /// **Purpose**: Locks or unlocks a building. When a building is locked, the import pipeline (.uhc commit)
+    /// will **skip updating** this building's data from staging, while still mapping its ID so that dependent
+    /// entities (PropertyUnits, Persons, Claims, Evidence) can still be committed normally.
+    ///
+    /// **Required Permission**: Buildings_Lock (4005) - CanLockBuildings policy (Admin, DataManager)
+    ///
+    /// **What it does**:
+    /// - Sets `isLocked` to `true` (lock) or `false` (unlock) on the building
+    /// - When locked: import pipeline commits skip `UpdateFromFieldSurvey()` for this building
+    /// - When locked: building ID is still mapped so dependent entities resolve correctly
+    /// - Logs the lock/unlock action in the audit trail
+    ///
+    /// **When to use**:
+    /// - Building data has been manually verified/corrected and should not be overwritten by field data
+    /// - Prevent field survey data from reverting office corrections
+    /// - Temporarily freeze building attributes during review
+    ///
+    /// **Example request - Lock:**
+    /// ```json
+    /// {
+    ///   "isLocked": true
+    /// }
+    /// ```
+    ///
+    /// **Example request - Unlock:**
+    /// ```json
+    /// {
+    ///   "isLocked": false
+    /// }
+    /// ```
+    ///
+    /// **Note**: The `isLocked` and `isAssigned` flags are returned in all building-related responses
+    /// (BuildingDto, BuildingMapDto, BuildingForAssignmentDto, assignment DTOs).
+    /// </remarks>
+    /// <param name="id">Building ID (GUID)</param>
+    /// <param name="request">Lock state to set</param>
+    /// <response code="204">Building lock state updated successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission - requires Buildings_Lock (4005)</response>
+    /// <response code="404">Building not found</response>
+    [HttpPut("{id}/lock")]
+    [Authorize(Policy = "CanLockBuildings")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ToggleBuildingLock(Guid id, [FromBody] ToggleBuildingLockRequest request)
+    {
+        var command = new ToggleBuildingLockCommand(id, request.IsLocked);
+        await _mediator.Send(command);
+        return NoContent();
+    }
+
     // ==================== MAP ENDPOINTS ====================
 
     /// <summary>
@@ -800,4 +865,15 @@ public class BuildingsController : ControllerBase
         var result = await _mediator.Send(query);
         return Ok(result);
     }
+}
+
+/// <summary>
+/// Request body for the lock/unlock building endpoint
+/// </summary>
+public class ToggleBuildingLockRequest
+{
+    /// <summary>
+    /// True to lock the building, false to unlock
+    /// </summary>
+    public bool IsLocked { get; set; }
 }

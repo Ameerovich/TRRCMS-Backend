@@ -146,6 +146,16 @@ public class BuildingDto
     /// </summary>
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// Whether this building has ever been assigned to a field collector
+    /// </summary>
+    public bool IsAssigned { get; set; }
+
+    /// <summary>
+    /// Whether this building is locked (import pipeline will not update it)
+    /// </summary>
+    public bool IsLocked { get; set; }
+
 
     /// <summary>
     /// Created timestamp

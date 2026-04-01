@@ -79,14 +79,45 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             throw new UnauthorizedAccessException("Invalid username or password.");
         }
 
-        // Step 5: Check if password is expired
+        // Step 5: Check if user must change password (first login)
+        if (user.MustChangePassword)
+        {
+            // Generate restricted token — only allows access to change-password endpoint
+            var limitedToken = _tokenService.GenerateAccessToken(user, request.DeviceId, isPasswordChangeOnly: true);
+            var limitedExpiry = DateTime.UtcNow.AddMinutes(10);
+
+            user.RecordSuccessfulLogin();
+            await _userRepository.UpdateAsync(user, cancellationToken);
+            await _userRepository.SaveChangesAsync(cancellationToken);
+
+            return new LoginResponse
+            {
+                UserId = user.Id,
+                Username = user.Username,
+                FullNameArabic = user.FullNameArabic,
+                FullNameEnglish = user.FullNameEnglish,
+                Email = user.Email,
+                Role = user.Role,
+                RoleName = user.Role.ToString(),
+                HasMobileAccess = user.HasMobileAccess,
+                HasDesktopAccess = user.HasDesktopAccess,
+                PreferredLanguage = user.PreferredLanguage,
+                AccessToken = limitedToken,
+                RefreshToken = null,
+                AccessTokenExpiry = limitedExpiry,
+                RefreshTokenExpiry = null,
+                MustChangePassword = true
+            };
+        }
+
+        // Step 6: Check if password is expired
         if (user.IsPasswordExpired())
         {
             throw new UnauthorizedAccessException(
                 "Your password has expired. Please contact your administrator to reset it.");
         }
 
-        // Step 6: Generate tokens
+        // Step 7: Generate tokens
         var accessToken = _tokenService.GenerateAccessToken(user, request.DeviceId);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
@@ -99,14 +130,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         var accessTokenExpiry = DateTime.UtcNow.AddMinutes(accessTokenExpirationMinutes);
         var refreshTokenExpiry = DateTime.UtcNow.AddDays(refreshTokenExpirationDays);
 
-        // Step 7: Update user's refresh token and login tracking
+        // Step 8: Update user's refresh token and login tracking
         user.UpdateRefreshToken(refreshToken, refreshTokenExpiry);
         user.RecordSuccessfulLogin();
 
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
-        // Step 8: Build and return response
+        // Step 9: Build and return response
         return new LoginResponse
         {
             UserId = user.Id,
@@ -123,7 +154,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             RefreshToken = refreshToken,
             AccessTokenExpiry = accessTokenExpiry,
             RefreshTokenExpiry = refreshTokenExpiry,
-            MustChangePassword = user.MustChangePassword
+            MustChangePassword = false
         };
     }
 }

@@ -37,7 +37,7 @@ public class TokenService : ITokenService
     /// <summary>
     /// Generate a JWT access token with user claims
     /// </summary>
-    public string GenerateAccessToken(User user, string? deviceId = null)
+    public string GenerateAccessToken(User user, string? deviceId = null, bool isPasswordChangeOnly = false)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_secretKey);
@@ -61,11 +61,18 @@ public class TokenService : ITokenService
         if (!string.IsNullOrEmpty(deviceId))
             claims.Add(new JwtClaim("device_id", deviceId));
 
+        // Add restricted claim for password-change-only tokens
+        if (isPasswordChangeOnly)
+            claims.Add(new JwtClaim("must_change_password", "true"));
+
+        // Use shorter expiry for password-change-only tokens (10 minutes)
+        var expirationMinutes = isPasswordChangeOnly ? 10 : _accessTokenExpirationMinutes;
+
         // Token descriptor
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes),
+            Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
             Issuer = _issuer,
             Audience = _audience,
             SigningCredentials = new SigningCredentials(

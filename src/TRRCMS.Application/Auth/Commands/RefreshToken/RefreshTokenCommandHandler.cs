@@ -52,6 +52,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
             throw new UnauthorizedAccessException("Account is locked.");
         }
 
+        // Step 4b: Block refresh if user must change password
+        if (user.MustChangePassword)
+        {
+            throw new UnauthorizedAccessException(
+                "You must change your password before continuing. Please login and change your password.");
+        }
+
         // Step 5: Generate new tokens
         var newAccessToken = _tokenService.GenerateAccessToken(user, request.DeviceId);
         var newRefreshToken = _tokenService.GenerateRefreshToken();

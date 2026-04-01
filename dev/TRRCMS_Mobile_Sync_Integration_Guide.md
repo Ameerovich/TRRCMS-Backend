@@ -1,7 +1,7 @@
 # TRRCMS Mobile Sync Integration Guide
 
-**Version:** 1.6
-**Last Updated:** March 31, 2026
+**Version:** 1.6.1
+**Last Updated:** April 1, 2026
 **Audience:** Mobile (Flutter/Android) Development Team
 **Backend Contact:** TRRCMS Backend Team
 **System:** Tenure Rights Registration & Claims Management System (TRRCMS)
@@ -21,6 +21,17 @@
 9. [Package Assembly Workflow](#9-package-assembly-workflow)
 10. [Error Handling & Edge Cases](#10-error-handling--edge-cases)
 11. [Checklist Before First Sync](#11-checklist-before-first-sync)
+
+---
+
+## Changelog — v1.6.1 (April 1, 2026)
+
+> **Mobile team: review all items marked with `>>> CHANGED v1.6.1` in this document.**
+> Search for `>>> CHANGED v1.6.1` to find every updated section.
+
+| Change | Section | Impact |
+|--------|---------|--------|
+| First-login password change blocks sync endpoints | 1, 2, 10, 11 | Mobile app must handle `mustChangePassword` flow before sync |
 
 ---
 
@@ -55,9 +66,48 @@ The TRRCMS LAN Sync protocol allows Android field tablets to exchange survey dat
 
 **Authorization:** All endpoints require a valid JWT Bearer token with the `CanSyncData` permission (permission code 9010). Roles with this permission: Field Collector, Field Supervisor, Administrator.
 
+`>>> CHANGED v1.6.1` **First-Login Password Change:** When a user logs in for the first time after account creation, the server returns a **restricted token** (`mustChangePassword: true` in the login response). This restricted token is **blocked by all sync endpoints** (returns 403 Forbidden). The mobile app must detect `mustChangePassword` in the login response and redirect the user to change their password via `POST /api/v1/auth/change-password` before attempting any sync operation. After changing the password, the user must log in again to receive a full-access token. See Section 2 — Pre-Sync Authentication for details.
+
 ---
 
 ## 2. Sync Protocol — Step by Step
+
+### `>>> CHANGED v1.6.1` Pre-Sync Authentication
+
+Before starting the sync protocol, the mobile app must ensure the user has a **full-access token** (not a restricted password-change token).
+
+**Login flow:**
+1. Call `POST /api/v1/auth/login` with `username`, `password`, and `deviceId`.
+2. Check the `mustChangePassword` field in the response:
+   - If `false`: proceed to sync (Step 1). Store `accessToken` and `refreshToken`.
+   - If `true`: the token is restricted. Sync endpoints will return **403 Forbidden**.
+3. If `mustChangePassword` is `true`:
+   - Display a password change screen to the user.
+   - Call `POST /api/v1/auth/change-password` using the restricted token:
+     ```json
+     {
+       "userId": "<userId from login response>",
+       "currentPassword": "<the password they just logged in with>",
+       "newPassword": "<new password>",
+       "confirmPassword": "<new password>"
+     }
+     ```
+   - Password requirements: min 8 chars, uppercase, lowercase, digit, special character.
+   - On success: redirect to login. The user logs in again with the new password.
+   - The second login will return `mustChangePassword: false` with a full-access token.
+4. Note: when `mustChangePassword` is `true`, `refreshToken` is `null` — do not attempt token refresh.
+
+**Restricted token properties:**
+- Lifetime: 10 minutes (vs. normal 15 minutes)
+- No refresh token issued
+- Only works for: `POST /api/v1/auth/change-password`, `POST /api/v1/auth/logout`
+- All other endpoints (including all sync endpoints) return 403:
+  ```json
+  {
+    "error": "PasswordChangeRequired",
+    "message": "You must change your password before accessing other resources."
+  }
+  ```
 
 ### Step 1 — Open Session
 
@@ -891,6 +941,7 @@ When the tablet is ready to export collected data:
 | Upload network failure | Retry with same PackageId — idempotent. |
 | Ack network failure | Retry — acknowledging already-transferred assignments is a no-op. |
 | JWT token expired | Refresh the token and retry the request. |
+| `>>> CHANGED v1.6.1` 403 `PasswordChangeRequired` | User must change password before sync. Redirect to password change screen, then re-login. |
 | Major vocab version mismatch | Import blocked. Re-sync vocabularies before uploading. |
 
 ---
@@ -898,6 +949,9 @@ When the tablet is ready to export collected data:
 ## 11. Checklist Before First Sync
 
 - [ ] JWT authentication working with `CanSyncData` permission
+- [ ] `>>> CHANGED v1.6.1` — Handle `mustChangePassword: true` in login response — redirect to password change screen, then re-login before sync
+- [ ] `>>> CHANGED v1.6.1` — Handle `refreshToken: null` when `mustChangePassword` is true — do not attempt token refresh
+- [ ] `>>> CHANGED v1.6.1` — Handle 403 response with `"error": "PasswordChangeRequired"` on any sync endpoint — redirect to password change
 - [ ] Can create sync session (Step 1)
 - [ ] SQLite database creation with all 11 tables (manifest + 9 data + attachments)
 - [ ] Content checksum implementation matches server algorithm

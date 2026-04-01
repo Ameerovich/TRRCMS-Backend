@@ -2426,9 +2426,19 @@ public class SurveysController : ControllerBase
     /// - Survey must be in Draft status
     /// - Evidence must belong to the survey's building context (via relation → property unit)
     ///
+    /// **Versioning Behavior** (file replacement only):
+    /// - When a **new file** is provided: a **new version** of the evidence is created
+    ///   - Old evidence gets `isCurrentVersion = false`
+    ///   - New evidence gets `versionNumber` incremented, `isCurrentVersion = true`, `previousVersionId` pointing to the old version
+    ///   - All active EvidenceRelations (person-property relation links) are **automatically migrated** to the new version
+    ///   - Old version is preserved for audit/history (accessible via version history queries)
+    ///   - The response returns the **new version** with its new ID
+    /// - When **no file** is provided (metadata-only update): the existing evidence is updated **in-place** (no version bump)
+    /// - **Note**: Versioning applies only to tenure documents (PersonPropertyRelation evidence), not to identification documents or building documents
+    ///
     /// **What it does**:
     /// - Updates document metadata (type, description, dates, authority, reference number)
-    /// - Optionally replaces the uploaded file with a new one
+    /// - Optionally replaces the uploaded file with a new one (**creates a new version**)
     /// - Optionally re-links the document to a different person-property relation
     /// - Optionally changes the evidence type (e.g., from OwnershipDeed to RentalContract)
     /// - Validates file type and size (if new file provided)
@@ -2482,13 +2492,31 @@ public class SurveysController : ControllerBase
     /// ```
     ///
     /// **Response**: Updated EvidenceDto with file details.
+    /// When a file was replaced, the response contains the **new version** with a new `id`, incremented `versionNumber`,
+    /// and `previousVersionId` pointing to the old version. The old version's `isCurrentVersion` becomes `false`.
+    ///
+    /// **Example response** (after file replacement - new version):
+    /// ```json
+    /// {
+    ///   "id": "new-evidence-guid",
+    ///   "evidenceType": 2,
+    ///   "description": "Property Deed - Rescanned",
+    ///   "versionNumber": 2,
+    ///   "isCurrentVersion": true,
+    ///   "previousVersionId": "old-evidence-guid",
+    ///   "originalFileName": "updated-deed.pdf",
+    ///   "isExpired": false,
+    ///   "evidenceRelations": [...]
+    /// }
+    /// ```
+    ///
     /// Note: evidenceType is returned as integer (e.g., 2 for OwnershipDeed, 3 for RentalContract). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="evidenceId">Evidence ID to update</param>
+    /// <param name="evidenceId">Evidence ID to update (returns new version ID if file replaced)</param>
     /// <param name="command">Update command with optional file and metadata (from form)</param>
-    /// <returns>Updated evidence record</returns>
-    /// <response code="200">Document updated successfully.</response>
+    /// <returns>Updated evidence record (new version if file replaced)</returns>
+    /// <response code="200">Document updated successfully. If file replaced, returns new version with new ID.</response>
     /// <response code="400">Validation error (invalid file type, size exceeded, invalid evidence type, expiry before issue date, etc.).</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only update evidence in your own surveys.</response>
