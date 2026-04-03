@@ -63,9 +63,9 @@ public class LoginResponse
     public string AccessToken { get; set; } = string.Empty;
 
     /// <summary>
-    /// Refresh token (long-lived, 7 days)
+    /// Refresh token (long-lived, 7 days). Null when MustChangePassword is true.
     /// </summary>
-    public string RefreshToken { get; set; } = string.Empty;
+    public string? RefreshToken { get; set; }
 
     /// <summary>
     /// Access token expiration time (UTC)
@@ -73,9 +73,9 @@ public class LoginResponse
     public DateTime AccessTokenExpiry { get; set; }
 
     /// <summary>
-    /// Refresh token expiration time (UTC)
+    /// Refresh token expiration time (UTC). Null when MustChangePassword is true.
     /// </summary>
-    public DateTime RefreshTokenExpiry { get; set; }
+    public DateTime? RefreshTokenExpiry { get; set; }
 
     /// <summary>
     /// Whether user must change password on next login

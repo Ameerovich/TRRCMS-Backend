@@ -82,11 +82,7 @@ public class StagingSurveyConfiguration : IEntityTypeConfiguration<StagingSurvey
         builder.Property(s => s.GpsCoordinates)
             .HasMaxLength(100);
 
-        builder.Property(s => s.IntervieweeName)
-            .HasMaxLength(200);
-
-        builder.Property(s => s.IntervieweeRelationship)
-            .HasMaxLength(100);
+        builder.Property(s => s.DurationMinutes);
 
         builder.Property(s => s.Notes)
             .HasMaxLength(4000);

@@ -337,9 +337,7 @@ public class StagingService : IStagingService
                 importPackageId: packageId,
                 originalEntityId: GetGuid(reader, "id"),
                 originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
-                headOfHouseholdName: GetString(reader, "head_of_household_name"),
                 householdSize: GetInt(reader, "household_size"),
-                originalHeadOfHouseholdPersonId: GetNullableGuid(reader, "head_of_household_person_id"),
                 maleCount: GetInt(reader, "male_count", 0),
                 femaleCount: GetInt(reader, "female_count", 0),
                 maleChildCount: GetInt(reader, "male_child_count", 0),
@@ -348,6 +346,8 @@ public class StagingService : IStagingService
                 femaleElderlyCount: GetInt(reader, "female_elderly_count", 0),
                 maleDisabledCount: GetInt(reader, "male_disabled_count", 0),
                 femaleDisabledCount: GetInt(reader, "female_disabled_count", 0),
+                occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
+                occupancyNature: GetNullableEnum<OccupancyNature>(reader, "occupancy_nature", "occupancy_nature"),
                 notes: GetNullableString(reader, "notes"));
 
             entities.Add(entity);
@@ -382,7 +382,9 @@ public class StagingService : IStagingService
                 originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
                 relationType: GetEnum<RelationType>(reader, "relation_type", "relation_type"),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
-                notes: GetNullableString(reader, "notes"));
+                notes: GetNullableString(reader, "notes"),
+                occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
+                hasEvidence: GetBool(reader, "has_evidence", false));
 
             entities.Add(entity);
         }
@@ -413,9 +415,10 @@ public class StagingService : IStagingService
                 importPackageId: packageId,
                 originalEntityId: GetGuid(reader, "id"),
                 originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
-                claimType: GetString(reader, "claim_type"),
+                claimType: GetEnum<ClaimType>(reader, "claim_type", "claim_type"),
                 claimSource: GetEnum<ClaimSource>(reader, "claim_source", "claim_source"),
                 originalPrimaryClaimantId: GetNullableGuid(reader, "primary_claimant_id"),
+                originalOriginatingSurveyId: GetNullableGuid(reader, "originating_survey_id"),
                 tenureContractType: GetNullableEnum<TenureContractType>(reader, "tenure_contract_type", "tenure_contract_type"),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
                 claimDescription: GetNullableString(reader, "claim_description"));
@@ -452,8 +455,7 @@ public class StagingService : IStagingService
                 surveyDate: GetDateTime(reader, "survey_date"),
                 originalPropertyUnitId: GetNullableGuid(reader, "property_unit_id"),
                 gpsCoordinates: GetNullableString(reader, "gps_coordinates"),
-                intervieweeName: GetNullableString(reader, "interviewee_name"),
-                intervieweeRelationship: GetNullableString(reader, "interviewee_relationship"),
+                durationMinutes: GetNullableInt(reader, "duration_minutes"),
                 notes: GetNullableString(reader, "notes"),
                 originalFieldCollectorId: GetNullableGuid(reader, "field_collector_id"),
                 originalContactPersonId: GetNullableGuid(reader, "contact_person_id"),

@@ -88,7 +88,6 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             household.PropertyUnitId,
-            household.HeadOfHouseholdName,
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
@@ -108,7 +107,6 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             request.OccupancyNature.HasValue)
         {
             household.UpdateBasicInfo(
-                headOfHouseholdName: household.HeadOfHouseholdName,
                 householdSize: request.HouseholdSize ?? household.HouseholdSize,
                 notes: request.Notes ?? household.Notes,
                 occupancyType: request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : household.OccupancyType,
@@ -144,7 +142,6 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             household.PropertyUnitId,
-            household.HeadOfHouseholdName,
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
@@ -158,12 +155,13 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
         });
 
         // Audit logging
+        var householdIdentifier = $"Household {household.Id.ToString()[..8]}";
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
-            actionDescription: $"Updated household {household.HeadOfHouseholdName} in survey {survey.ReferenceCode}",
+            actionDescription: $"Updated {householdIdentifier} in survey {survey.ReferenceCode}",
             entityType: "Household",
             entityId: household.Id,
-            entityIdentifier: household.HeadOfHouseholdName,
+            entityIdentifier: householdIdentifier,
             oldValues: oldValues,
             newValues: newValues,
             changedFields: "Household updates",

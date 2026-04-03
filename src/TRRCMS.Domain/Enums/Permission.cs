@@ -143,6 +143,12 @@ public enum Permission
     /// </summary>
     [ArabicLabel("حذف مبنى")]
     Buildings_Delete = 4004,
+
+    /// <summary>
+    /// Lock/unlock buildings to prevent import pipeline updates (Admin, Data Manager)
+    /// </summary>
+    [ArabicLabel("قفل مبنى")]
+    Buildings_Lock = 4005,
     /// <summary>
     /// View persons (all desktop users)
     /// </summary>

@@ -138,14 +138,6 @@ public class HouseholdStructureValidator : IStagingValidator
             if (genderTotal > 0 && genderTotal != h.HouseholdSize)
                 warns.Add($"MaleCount({h.MaleCount}) + FemaleCount({h.FemaleCount}) = {genderTotal} ≠ HouseholdSize({h.HouseholdSize})");
 
-            // Head of household person should exist in batch
-            if (h.OriginalHeadOfHouseholdPersonId.HasValue)
-            {
-                var headExists = persons.Any(p => p.OriginalEntityId == h.OriginalHeadOfHouseholdPersonId.Value);
-                if (!headExists)
-                    warns.Add($"Head of household person {h.OriginalHeadOfHouseholdPersonId} not found in batch");
-            }
-
             // Check actual person count matches declared size
             if (personsByHousehold.TryGetValue(h.OriginalEntityId, out var members))
             {

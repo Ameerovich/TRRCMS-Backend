@@ -90,7 +90,11 @@ public class PropertyUnit : BaseAuditableEntity
         string unitIdentifier,
         PropertyUnitType unitType,
         int? floorNumber,
-        Guid createdByUserId)
+        Guid createdByUserId,
+        PropertyUnitStatus? status = null,
+        int? numberOfRooms = null,
+        decimal? areaSquareMeters = null,
+        string? description = null)
     {
         var unit = new PropertyUnit
         {
@@ -98,7 +102,10 @@ public class PropertyUnit : BaseAuditableEntity
             UnitIdentifier = unitIdentifier,
             UnitType = unitType,
             FloorNumber = floorNumber,
-            Status = PropertyUnitStatus.Unknown
+            Status = status ?? PropertyUnitStatus.Unknown,
+            NumberOfRooms = numberOfRooms,
+            AreaSquareMeters = areaSquareMeters,
+            Description = description
         };
 
         unit.MarkAsCreated(createdByUserId);

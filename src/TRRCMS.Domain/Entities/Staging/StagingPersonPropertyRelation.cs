@@ -37,6 +37,12 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
     /// <summary>Additional notes about the relation.</summary>
     public string? Notes { get; private set; }
 
+    /// <summary>Occupancy type (OwnerOccupied, TenantOccupied, etc.).</summary>
+    public OccupancyType? OccupancyType { get; private set; }
+
+    /// <summary>Whether evidence documents are attached to this relation.</summary>
+    public bool HasEvidence { get; private set; }
+
     /// <summary>Whether this relation is currently active.</summary>
     public bool IsActive { get; private set; }
     /// <summary>EF Core constructor.</summary>
@@ -57,6 +63,8 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
         decimal? ownershipShare = null,
         string? contractDetails = null,
         string? notes = null,
+        OccupancyType? occupancyType = null,
+        bool hasEvidence = false,
         bool isActive = true)
     {
         var entity = new StagingPersonPropertyRelation
@@ -67,6 +75,8 @@ public class StagingPersonPropertyRelation : BaseStagingEntity
             OwnershipShare = ownershipShare,
             ContractDetails = contractDetails,
             Notes = notes,
+            OccupancyType = occupancyType,
+            HasEvidence = hasEvidence,
             IsActive = isActive
         };
 

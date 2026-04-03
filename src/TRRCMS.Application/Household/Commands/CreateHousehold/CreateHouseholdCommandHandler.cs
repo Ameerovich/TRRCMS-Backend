@@ -48,7 +48,6 @@ public class CreateHouseholdCommandHandler : IRequestHandler<CreateHouseholdComm
         // Create household with full composition
         var household = Household.Create(
             propertyUnitId: request.PropertyUnitId,
-            headOfHouseholdName: request.HeadOfHouseholdName,
             householdSize: request.HouseholdSize,
             maleCount: request.MaleCount,
             femaleCount: request.FemaleCount,
@@ -69,16 +68,16 @@ public class CreateHouseholdCommandHandler : IRequestHandler<CreateHouseholdComm
         await _householdRepository.SaveChangesAsync(cancellationToken);
 
         // Audit logging
+        var householdIdentifier = $"Household {household.Id.ToString()[..8]}";
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,
-            actionDescription: $"Created household for {request.HeadOfHouseholdName} in property unit",
+            actionDescription: $"Created {householdIdentifier} in property unit",
             entityType: "Household",
             entityId: household.Id,
-            entityIdentifier: request.HeadOfHouseholdName,
+            entityIdentifier: householdIdentifier,
             oldValues: null,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
-                household.HeadOfHouseholdName,
                 household.HouseholdSize,
                 household.MaleCount,
                 household.FemaleCount

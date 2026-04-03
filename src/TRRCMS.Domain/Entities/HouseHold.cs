@@ -19,15 +19,6 @@ public class Household : BaseAuditableEntity
     public int HouseholdSize { get; private set; }
 
     /// <summary>
-    /// Head of household name - رب الأسرة/العميل (nullable for office survey)
-    /// </summary>
-    public string? HeadOfHouseholdName { get; private set; }
-
-    /// <summary>
-    /// Foreign key to Person who is head of household (if registered) - nullable for office survey
-    /// </summary>
-    public Guid? HeadOfHouseholdPersonId { get; private set; }
-    /// <summary>
     /// Occupancy type (نوع الإشغال) - OwnerOccupied, TenantOccupied, FamilyOccupied, etc.
     /// </summary>
     public OccupancyType? OccupancyType { get; private set; }
@@ -80,7 +71,6 @@ public class Household : BaseAuditableEntity
     public int ElderlyCount { get; private set; }
     public int PersonsWithDisabilitiesCount { get; private set; }
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
-    public virtual Person? HeadOfHouseholdPerson { get; private set; }
     public virtual ICollection<Person> Members { get; private set; }
     private Household() : base()
     {
@@ -92,7 +82,6 @@ public class Household : BaseAuditableEntity
     /// </summary>
     public static Household Create(
         Guid propertyUnitId,
-        string? headOfHouseholdName,
         int householdSize,
         int maleCount,
         int femaleCount,
@@ -110,7 +99,6 @@ public class Household : BaseAuditableEntity
         var household = new Household
         {
             PropertyUnitId = propertyUnitId,
-            HeadOfHouseholdName = headOfHouseholdName,
             HouseholdSize = householdSize,
             MaleCount = maleCount,
             FemaleCount = femaleCount,
@@ -134,25 +122,6 @@ public class Household : BaseAuditableEntity
     }
 
     /// <summary>
-    /// Simple create (legacy compatibility)
-    /// </summary>
-    public static Household CreateSimple(
-        Guid propertyUnitId,
-        string? headOfHouseholdName,
-        int householdSize,
-        Guid createdByUserId)
-    {
-        var household = new Household
-        {
-            PropertyUnitId = propertyUnitId,
-            HeadOfHouseholdName = headOfHouseholdName,
-            HouseholdSize = householdSize
-        };
-
-        household.MarkAsCreated(createdByUserId);
-        return household;
-    }
-    /// <summary>
     /// Update the property unit this household belongs to
     /// </summary>
     public void UpdatePropertyUnit(Guid propertyUnitId, Guid modifiedByUserId)
@@ -165,14 +134,12 @@ public class Household : BaseAuditableEntity
     /// Update basic info
     /// </summary>
     public void UpdateBasicInfo(
-        string? headOfHouseholdName,
         int householdSize,
         string? notes,
         OccupancyType? occupancyType,
         OccupancyNature? occupancyNature,
         Guid modifiedByUserId)
     {
-        HeadOfHouseholdName = headOfHouseholdName;
         HouseholdSize = householdSize;
         Notes = notes;
         OccupancyType = occupancyType;
@@ -208,15 +175,6 @@ public class Household : BaseAuditableEntity
         ElderlyCount = maleElderlyCount + femaleElderlyCount;
         PersonsWithDisabilitiesCount = maleDisabledCount + femaleDisabledCount;
 
-        MarkAsModified(modifiedByUserId);
-    }
-
-    /// <summary>
-    /// Link head of household to Person entity
-    /// </summary>
-    public void LinkHeadOfHousehold(Guid personId, Guid modifiedByUserId)
-    {
-        HeadOfHouseholdPersonId = personId;
         MarkAsModified(modifiedByUserId);
     }
 

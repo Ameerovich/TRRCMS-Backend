@@ -61,6 +61,22 @@ public class AuthController : ControllerBase
     /// - Refresh token (7 days lifetime)
     /// - Platform access flags (mobile/desktop)
     /// - Password change requirement flag
+    ///
+    /// **First Login / Password Change Required:**
+    /// When `mustChangePassword` is `true` (first login after account creation):
+    /// - `accessToken` is a **restricted token** (10 min lifetime, contains `must_change_password` claim)
+    /// - `refreshToken` is `null` — no refresh token is issued
+    /// - `refreshTokenExpiry` is `null`
+    /// - The restricted token **only works** for `POST /api/v1/auth/change-password` and `POST /api/v1/auth/logout`
+    /// - All other API endpoints will return **403 Forbidden** with `"error": "PasswordChangeRequired"`
+    /// - After changing password, the user **must login again** to get a full access token
+    ///
+    /// **Frontend flow for first login:**
+    /// 1. Call `POST /api/v1/auth/login`
+    /// 2. Check `mustChangePassword` in response
+    /// 3. If `true`: redirect to change-password screen, use the restricted `accessToken` for the change-password call
+    /// 4. After successful password change: redirect to login screen, user logs in again with new password
+    /// 5. If `false`: proceed normally with full access token
     /// 
     /// **DeviceId:** Optional. Only used by field collectors on tablets for device tracking.
     /// Desktop and dashboard clients should omit this field.
@@ -82,7 +98,7 @@ public class AuthController : ControllerBase
     /// }
     /// ```
     /// 
-    /// **Example success response:**
+    /// **Example success response (normal login):**
     /// ```json
     /// {
     ///   "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -102,8 +118,31 @@ public class AuthController : ControllerBase
     ///   "mustChangePassword": false
     /// }
     /// ```
-    /// 
-    /// **Note:** If `mustChangePassword` is `true`, redirect user to change password before allowing other actions.
+    ///
+    /// **Example response (first login - must change password):**
+    /// ```json
+    /// {
+    ///   "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "username": "newuser",
+    ///   "fullNameArabic": "مستخدم جديد",
+    ///   "role": 3,
+    ///   "roleName": "OfficeClerk",
+    ///   "hasMobileAccess": false,
+    ///   "hasDesktopAccess": true,
+    ///   "preferredLanguage": "ar",
+    ///   "accessToken": "eyJhbGciOiJIUzI1NiIs...(restricted)...",
+    ///   "refreshToken": null,
+    ///   "accessTokenExpiry": "2026-01-31T15:25:00Z",
+    ///   "refreshTokenExpiry": null,
+    ///   "mustChangePassword": true
+    /// }
+    /// ```
+    ///
+    /// **IMPORTANT:** If `mustChangePassword` is `true`:
+    /// - The `accessToken` is restricted (10 min, only works for change-password)
+    /// - `refreshToken` and `refreshTokenExpiry` are `null`
+    /// - Redirect user to change-password screen immediately
+    /// - After password change, user must login again for full access
     /// </remarks>
     /// <param name="request">Login credentials containing username, password, and optional deviceId</param>
     /// <returns>User profile with access and refresh tokens</returns>
@@ -175,11 +214,14 @@ public class AuthController : ControllerBase
     ///   "refreshTokenExpiry": "2026-02-07T15:30:00Z"
     /// }
     /// ```
+    ///
+    /// **Note:** Refresh is blocked if the user has `mustChangePassword = true`.
+    /// In that case, the user must login and change their password first.
     /// </remarks>
     /// <param name="request">Refresh token and optional deviceId</param>
     /// <returns>New access token and refresh token</returns>
     /// <response code="200">Token refreshed successfully. Returns new tokens.</response>
-    /// <response code="401">Invalid or expired refresh token. User must login again.</response>
+    /// <response code="401">Invalid or expired refresh token, or user must change password first. User must login again.</response>
     /// <response code="500">Server error during token refresh.</response>
     [HttpPost("refresh")]
     [AllowAnonymous]
@@ -233,9 +275,14 @@ public class AuthController : ControllerBase
     /// - At least one digit
     /// - At least one special character
     /// 
+    /// **Works with restricted tokens:** This endpoint is accessible with the restricted token
+    /// issued when `mustChangePassword` is `true` (first login). After changing the password,
+    /// the user must login again to receive a full-access token.
+    ///
     /// **After Success:**
-    /// - All existing tokens are invalidated
-    /// - User must login again with new password
+    /// - All existing tokens are invalidated (SecurityStamp is regenerated)
+    /// - `mustChangePassword` is set to `false`
+    /// - User must login again with new password to get full access
     /// 
     /// **Example request:**
     /// ```json

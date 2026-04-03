@@ -22,7 +22,6 @@ using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 using TRRCMS.Application.Surveys.Commands.ProcessOfficeSurveyClaims;
 using TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
-using TRRCMS.Application.Surveys.Commands.SetHouseholdHead;
 using TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdatePersonPropertyRelation;
@@ -1813,86 +1812,6 @@ public class SurveysController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>
-    /// Set household head (designate a person as رب الأسرة)
-    /// تعيين رب الأسرة
-    /// </summary>
-    /// <remarks>
-    /// **Use Case**: Designate household head
-    ///
-    /// **Purpose**: Links a Person entity as the official head of household.
-    ///
-    /// **Required Permission**: CanEditOwnSurveys
-    ///
-    /// **What it does**:
-    /// - Designates a person as head of household
-    /// - Updates household's `headOfHouseholdPersonId` and `headOfHouseholdName`
-    /// - Creates audit trail
-    ///
-    /// **Important**: Person must already be a member of this household (householdId must match)
-    ///
-    /// **Example Request**:
-    /// ```
-    /// PUT /api/v1/surveys/{surveyId}/households/{householdId}/head/{personId}
-    /// ```
-    /// No request body needed — person ID is in the URL.
-    ///
-    /// **Example Response**:
-    /// ```json
-    /// {
-    ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    ///   "propertyUnitIdentifier": "1A",
-    ///   "headOfHouseholdName": "محمد أحمد الأحمد",
-    ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
-    ///   "householdSize": 5,
-    ///   "occupancyType": 1,
-    ///   "occupancyNature": 1,
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 2,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 0,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
-    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
-    ///   "lastModifiedAtUtc": "2026-02-14T11:00:00Z",
-    ///   "isDeleted": false
-    /// }
-    /// ```
-    /// </remarks>
-    /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="householdId">Household ID</param>
-    /// <param name="personId">Person ID to set as head (must belong to this household)</param>
-    /// <returns>Updated household details with linked head</returns>
-    /// <response code="200">Household head set successfully.</response>
-    /// <response code="400">Person doesn't belong to this household.</response>
-    /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Can only modify your own surveys.</response>
-    /// <response code="404">Survey, household, or person not found.</response>
-    [HttpPut("{surveyId}/households/{householdId}/head/{personId}")]
-    [Authorize(Policy = "CanEditOwnSurveys")]
-    [ProducesResponseType(typeof(HouseholdDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<HouseholdDto>> SetHouseholdHead(
-        Guid surveyId,
-        Guid householdId,
-        Guid personId)
-    {
-        var command = new SetHouseholdHeadCommand
-        {
-            SurveyId = surveyId,
-            HouseholdId = householdId,
-            PersonId = personId
-        };
-        var result = await _mediator.Send(command);
-        return Ok(result);
-    }
-
     // ==================== PERSON-PROPERTY RELATIONS ====================
 
     /// <summary>
@@ -2507,9 +2426,19 @@ public class SurveysController : ControllerBase
     /// - Survey must be in Draft status
     /// - Evidence must belong to the survey's building context (via relation → property unit)
     ///
+    /// **Versioning Behavior** (file replacement only):
+    /// - When a **new file** is provided: a **new version** of the evidence is created
+    ///   - Old evidence gets `isCurrentVersion = false`
+    ///   - New evidence gets `versionNumber` incremented, `isCurrentVersion = true`, `previousVersionId` pointing to the old version
+    ///   - All active EvidenceRelations (person-property relation links) are **automatically migrated** to the new version
+    ///   - Old version is preserved for audit/history (accessible via version history queries)
+    ///   - The response returns the **new version** with its new ID
+    /// - When **no file** is provided (metadata-only update): the existing evidence is updated **in-place** (no version bump)
+    /// - **Note**: Versioning applies only to tenure documents (PersonPropertyRelation evidence), not to identification documents or building documents
+    ///
     /// **What it does**:
     /// - Updates document metadata (type, description, dates, authority, reference number)
-    /// - Optionally replaces the uploaded file with a new one
+    /// - Optionally replaces the uploaded file with a new one (**creates a new version**)
     /// - Optionally re-links the document to a different person-property relation
     /// - Optionally changes the evidence type (e.g., from OwnershipDeed to RentalContract)
     /// - Validates file type and size (if new file provided)
@@ -2563,13 +2492,31 @@ public class SurveysController : ControllerBase
     /// ```
     ///
     /// **Response**: Updated EvidenceDto with file details.
+    /// When a file was replaced, the response contains the **new version** with a new `id`, incremented `versionNumber`,
+    /// and `previousVersionId` pointing to the old version. The old version's `isCurrentVersion` becomes `false`.
+    ///
+    /// **Example response** (after file replacement - new version):
+    /// ```json
+    /// {
+    ///   "id": "new-evidence-guid",
+    ///   "evidenceType": 2,
+    ///   "description": "Property Deed - Rescanned",
+    ///   "versionNumber": 2,
+    ///   "isCurrentVersion": true,
+    ///   "previousVersionId": "old-evidence-guid",
+    ///   "originalFileName": "updated-deed.pdf",
+    ///   "isExpired": false,
+    ///   "evidenceRelations": [...]
+    /// }
+    /// ```
+    ///
     /// Note: evidenceType is returned as integer (e.g., 2 for OwnershipDeed, 3 for RentalContract). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="evidenceId">Evidence ID to update</param>
+    /// <param name="evidenceId">Evidence ID to update (returns new version ID if file replaced)</param>
     /// <param name="command">Update command with optional file and metadata (from form)</param>
-    /// <returns>Updated evidence record</returns>
-    /// <response code="200">Document updated successfully.</response>
+    /// <returns>Updated evidence record (new version if file replaced)</returns>
+    /// <response code="200">Document updated successfully. If file replaced, returns new version with new ID.</response>
     /// <response code="400">Validation error (invalid file type, size exceeded, invalid evidence type, expiry before issue date, etc.).</response>
     /// <response code="401">Not authenticated. Login required.</response>
     /// <response code="403">Not authorized. Can only update evidence in your own surveys.</response>

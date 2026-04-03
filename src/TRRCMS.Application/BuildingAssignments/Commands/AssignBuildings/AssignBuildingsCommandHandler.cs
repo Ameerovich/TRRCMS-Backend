@@ -156,7 +156,10 @@ public class AssignBuildingsCommandHandler : IRequestHandler<AssignBuildingsComm
 
                 await _unitOfWork.BuildingAssignments.AddAsync(assignment, cancellationToken);
                 createdAssignments.Add(assignment);
-                
+
+                // Mark building as assigned (one-way flag)
+                building.MarkAsAssigned(currentUserId);
+
                 result.CreatedAssignmentIds.Add(assignment.Id);
                 result.AssignedCount++;
 
@@ -204,7 +207,9 @@ public class AssignBuildingsCommandHandler : IRequestHandler<AssignBuildingsComm
                     IsActive = assignment.IsActive,
                     IsOverdue = assignment.IsOverdue(),
                     IsRevisit = assignment.IsRevisit,
-                    Priority = assignment.Priority
+                    Priority = assignment.Priority,
+                    IsAssigned = building?.IsAssigned ?? false,
+                    IsLocked = building?.IsLocked ?? false
                 });
             }
 

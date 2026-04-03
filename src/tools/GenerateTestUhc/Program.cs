@@ -98,7 +98,7 @@ using (var conn = new SqliteConnection(connStr))
     var manifest = new Dictionary<string, string>
     {
         ["package_id"]                = packageId.ToString(),
-        ["schema_version"]            = "1.5.0",
+        ["schema_version"]            = "1.6.0",
         ["created_utc"]               = DateTime.UtcNow.ToString("o"),
         ["device_id"]                 = "TABLET-TEST-001",
         ["app_version"]               = "1.0.0",
@@ -127,7 +127,7 @@ using (var conn = new SqliteConnection(connStr))
     }
 
     // ── 2. SURVEYS TABLE ───────────────────────────────────────────────────────
-    // v1.5: Removed interviewee_name, interviewee_relationship (use contact_person_id instead)
+    // v1.6: Added duration_minutes
     Execute(conn, @"
         CREATE TABLE surveys (
             id                      TEXT PRIMARY KEY,
@@ -135,6 +135,7 @@ using (var conn = new SqliteConnection(connStr))
             survey_date             TEXT NOT NULL,
             property_unit_id        TEXT,
             gps_coordinates         TEXT,
+            duration_minutes        INTEGER,
             notes                   TEXT,
             field_collector_id      TEXT,
             contact_person_id       TEXT,
@@ -150,6 +151,7 @@ using (var conn = new SqliteConnection(connStr))
         INSERT INTO surveys VALUES (
             @id, @bid, @date, @uid,
             '36.2021,37.1343',
+            45,
             'مسح ميداني لمبنى سكني في حي الجميلية - حالة المبنى جيدة',
             @cid, @cpid, 'SRV-2026-001', 1, 1, 3
         );",
@@ -330,9 +332,7 @@ using (var conn = new SqliteConnection(connStr))
         CREATE TABLE households (
             id                          TEXT PRIMARY KEY,
             property_unit_id            TEXT NOT NULL,
-            head_of_household_name      TEXT NOT NULL,
             household_size              INTEGER NOT NULL,
-            head_of_household_person_id TEXT,
             male_count                  INTEGER DEFAULT 0,
             female_count                INTEGER DEFAULT 0,
             male_child_count            INTEGER DEFAULT 0,
@@ -341,30 +341,34 @@ using (var conn = new SqliteConnection(connStr))
             female_elderly_count        INTEGER DEFAULT 0,
             male_disabled_count         INTEGER DEFAULT 0,
             female_disabled_count       INTEGER DEFAULT 0,
+            occupancy_type              INTEGER,
+            occupancy_nature            INTEGER,
             notes                       TEXT
         );");
 
     // Household 1: Ahmed's family (4 members: 2 adults + 2 children) in Unit 1
+    // OccupancyType=1(OwnerOccupied), OccupancyNature=1(LegalFormal)
     Execute(conn, @"
         INSERT INTO households VALUES (
-            @id, @uid, 'أحمد محمد العلي', 4, @pid,
+            @id, @uid, 4,
             1, 1, 1, 1, 0, 0, 0, 0,
+            1, 1,
             'عائلة مقيمة منذ 2005'
         );",
         ("@id", householdId1.ToString()),
-        ("@uid", unitId1.ToString()),
-        ("@pid", personId1.ToString()));
+        ("@uid", unitId1.ToString()));
 
     // Household 2: Omar's family (3 members: 2 adults + 1 child) in Unit 2
+    // OccupancyType=2(TenantOccupied), OccupancyNature=2(Informal)
     Execute(conn, @"
         INSERT INTO households VALUES (
-            @id, @uid, 'عمر خالد الخالد', 3, @pid,
+            @id, @uid, 3,
             1, 1, 1, 0, 0, 0, 0, 0,
+            2, 2,
             'عائلة نازحة من الرقة منذ 2016'
         );",
         ("@id", householdId2.ToString()),
-        ("@uid", unitId2.ToString()),
-        ("@pid", personId3.ToString()));
+        ("@uid", unitId2.ToString()));
 
     // ── 7. PERSON_PROPERTY_RELATIONS TABLE ─────────────────────────────────────
     // Columns aligned with StagingPersonPropertyRelation entity
@@ -376,22 +380,26 @@ using (var conn = new SqliteConnection(connStr))
             property_unit_id        TEXT NOT NULL,
             relation_type           INTEGER NOT NULL,
             ownership_share         REAL,
+            occupancy_type          INTEGER,
+            has_evidence            INTEGER DEFAULT 0,
             notes                   TEXT
         );");
 
     // Ahmed owns Unit 1 (100% ownership since 2005)
+    // OccupancyType=1(OwnerOccupied), HasEvidence=1(true)
     Execute(conn, @"
         INSERT INTO person_property_relations VALUES (
-            @id, @pid, @uid, 1, 100.0, 'مالك بموجب سند ملكية'
+            @id, @pid, @uid, 1, 100.0, 1, 1, 'مالك بموجب سند ملكية'
         );",
         ("@id", relationId1.ToString()),
         ("@pid", personId1.ToString()),
         ("@uid", unitId1.ToString()));
 
     // Omar is tenant of Unit 2 (rental contract)
+    // OccupancyType=2(TenantOccupied), HasEvidence=0(false)
     Execute(conn, @"
         INSERT INTO person_property_relations VALUES (
-            @id, @pid, @uid, 3, NULL, 'مستأجر بعقد سنوي'
+            @id, @pid, @uid, 3, NULL, 2, 0, 'مستأجر بعقد سنوي'
         );",
         ("@id", relationId2.ToString()),
         ("@pid", personId3.ToString()),
@@ -406,23 +414,25 @@ using (var conn = new SqliteConnection(connStr))
         CREATE TABLE claims (
             id                      TEXT PRIMARY KEY,
             property_unit_id        TEXT NOT NULL,
-            claim_type              TEXT NOT NULL,
+            claim_type              INTEGER NOT NULL,
             claim_source            INTEGER NOT NULL,
             primary_claimant_id     TEXT NOT NULL,
+            originating_survey_id   TEXT,
             ownership_share         REAL,
             claim_description       TEXT
         );");
 
     // Ownership claim for Unit 1 by Ahmed
-    // ClaimSource=1(FieldCollection)
+    // ClaimType=1(OwnershipClaim), ClaimSource=1(FieldCollection)
     Execute(conn, @"
         INSERT INTO claims VALUES (
-            @id, @uid, 'Ownership', 1, @pid, 100.0,
+            @id, @uid, 1, 1, @pid, @sid, 100.0,
             'مطالبة ملكية للشقة 1 بناءً على سند ملكية أصلي'
         );",
         ("@id", claimId1.ToString()),
         ("@uid", unitId1.ToString()),
-        ("@pid", personId1.ToString()));
+        ("@pid", personId1.ToString()),
+        ("@sid", surveyId1.ToString()));
 
     // ── 9. EVIDENCES TABLE ─────────────────────────────────────────────────────
     Execute(conn, @"

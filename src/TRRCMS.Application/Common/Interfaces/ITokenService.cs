@@ -12,8 +12,9 @@ public interface ITokenService
     /// </summary>
     /// <param name="user">User to generate token for</param>
     /// <param name="deviceId">Optional device identifier for audit trail</param>
-    /// <returns>JWT access token (short-lived, 15 minutes)</returns>
-    string GenerateAccessToken(User user, string? deviceId = null);
+    /// <param name="isPasswordChangeOnly">When true, generates a restricted token with must_change_password claim and shorter expiry</param>
+    /// <returns>JWT access token (short-lived, 15 minutes; or 10 minutes for password-change-only)</returns>
+    string GenerateAccessToken(User user, string? deviceId = null, bool isPasswordChangeOnly = false);
 
     /// <summary>
     /// Generate a refresh token (random string)

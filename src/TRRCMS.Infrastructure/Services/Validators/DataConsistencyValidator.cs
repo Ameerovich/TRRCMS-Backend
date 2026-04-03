@@ -211,7 +211,6 @@ public class DataConsistencyValidator : IStagingValidator
         var warnings = new List<string>();
 
         if (h.OriginalPropertyUnitId == Guid.Empty) errors.Add("OriginalPropertyUnitId is required");
-        if (string.IsNullOrWhiteSpace(h.HeadOfHouseholdName)) errors.Add("HeadOfHouseholdName is required");
         if (h.HouseholdSize <= 0) errors.Add("HouseholdSize must be > 0");
         if (h.MaleCount < 0 || h.FemaleCount < 0) errors.Add("Gender counts cannot be negative");
 
@@ -255,7 +254,7 @@ public class DataConsistencyValidator : IStagingValidator
         var warnings = new List<string>();
 
         if (c.OriginalPropertyUnitId == Guid.Empty) errors.Add("OriginalPropertyUnitId is required");
-        if (string.IsNullOrWhiteSpace(c.ClaimType)) errors.Add("ClaimType is required");
+        if (!_vocabService.IsValidCode("claim_type", (int)c.ClaimType)) errors.Add($"Invalid ClaimType: {c.ClaimType}");
         if (!_vocabService.IsValidCode("claim_source", (int)c.ClaimSource)) errors.Add($"Invalid ClaimSource: {c.ClaimSource}");
 
         return (errors, warnings);

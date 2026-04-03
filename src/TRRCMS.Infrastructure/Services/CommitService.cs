@@ -433,6 +433,21 @@ public class CommitService : ICommitService
 
                 if (existingBuilding != null)
                 {
+                    // Skip update if building is locked — still map the ID for dependent entities
+                    if (existingBuilding.IsLocked)
+                    {
+                        _logger.LogWarning(
+                            "Building {BuildingId} is locked — skipping field survey update. Staging {OriginalId} mapped to existing {ProductionId}.",
+                            buildingIdCode, staging.OriginalEntityId, existingBuilding.Id);
+
+                        _idMap[staging.OriginalEntityId] = existingBuilding.Id;
+                        staging.SetCommittedEntityId(existingBuilding.Id);
+                        await _stagingBuildingRepo.UpdateAsync(staging, ct);
+                        report.Buildings.Committed++;
+                        report.Buildings.IdMappings[staging.OriginalEntityId] = existingBuilding.Id;
+                        continue;
+                    }
+
                     // Update existing building with field survey data
                     // (preserves BuildingId, admin codes, geometry, and coordinates)
                     existingBuilding.UpdateFromFieldSurvey(
@@ -581,7 +596,11 @@ public class CommitService : ICommitService
                     unitIdentifier: staging.UnitIdentifier,
                     unitType: staging.UnitType,
                     floorNumber: staging.FloorNumber,
-                    createdByUserId: userId);
+                    createdByUserId: userId,
+                    status: staging.Status,
+                    numberOfRooms: staging.NumberOfRooms,
+                    areaSquareMeters: staging.AreaSquareMeters,
+                    description: staging.Description);
 
                 await _unitOfWork.PropertyUnits.AddAsync(unit, ct);
 
@@ -684,7 +703,6 @@ public class CommitService : ICommitService
 
                 var household = Household.Create(
                     propertyUnitId: productionUnitId,
-                    headOfHouseholdName: staging.HeadOfHouseholdName,
                     householdSize: staging.HouseholdSize,
                     maleCount: staging.MaleCount,
                     femaleCount: staging.FemaleCount,
@@ -694,9 +712,9 @@ public class CommitService : ICommitService
                     femaleElderlyCount: staging.FemaleElderlyCount,
                     maleDisabledCount: staging.MaleDisabledCount,
                     femaleDisabledCount: staging.FemaleDisabledCount,
-                    notes: null,
-                    occupancyType: null, // Not captured during import
-                    occupancyNature: null, // Not captured during import
+                    notes: staging.Notes,
+                    occupancyType: staging.OccupancyType.HasValue ? (OccupancyType)staging.OccupancyType.Value : null,
+                    occupancyNature: staging.OccupancyNature.HasValue ? (OccupancyNature)staging.OccupancyNature.Value : null,
                     createdByUserId: userId);
 
                 await _unitOfWork.Households.AddAsync(household, ct);
@@ -749,14 +767,14 @@ public class CommitService : ICommitService
                     personId: productionPersonId,
                     propertyUnitId: productionUnitId,
                     relationType: staging.RelationType,
-                    occupancyType: null, // Not captured during import
-                    hasEvidence: false, // Not captured during import
+                    occupancyType: staging.OccupancyType,
+                    hasEvidence: staging.HasEvidence,
                     createdByUserId: userId);
 
                 relation.UpdateRelationDetails(
                     relationType: staging.RelationType,
-                    occupancyType: null, // Not captured during import
-                    hasEvidence: false, // Not captured during import
+                    occupancyType: staging.OccupancyType,
+                    hasEvidence: staging.HasEvidence,
                     ownershipShare: staging.OwnershipShare,
                     contractDetails: staging.ContractDetails,
                     notes: staging.Notes,
@@ -865,6 +883,13 @@ public class CommitService : ICommitService
                     createdByUserId: userId,
                     referenceCode: refCode);
 
+                // Transfer survey details (GPS, notes, duration)
+                survey.UpdateSurveyDetails(
+                    staging.GpsCoordinates,
+                    staging.Notes,
+                    staging.DurationMinutes,
+                    userId);
+
                 // Resolve contact person from staging
                 if (staging.OriginalContactPersonId.HasValue &&
                     _idMap.TryGetValue(staging.OriginalContactPersonId.Value, out var productionContactPersonId))
@@ -940,18 +965,32 @@ public class CommitService : ICommitService
                 // Generate a proper claim number
                 var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(ct);
 
-                // Parse ClaimType from staging string to enum
-                var claimType = staging.ClaimType?.Contains("Ownership", StringComparison.OrdinalIgnoreCase) == true
-                    ? ClaimType.OwnershipClaim
-                    : ClaimType.OccupancyClaim;
+                // Resolve originating survey if present
+                Guid? productionSurveyId = null;
+                if (staging.OriginalOriginatingSurveyId.HasValue &&
+                    _idMap.TryGetValue(staging.OriginalOriginatingSurveyId.Value, out var surveyId))
+                {
+                    productionSurveyId = surveyId;
+                }
 
                 var claim = Claim.Create(
                     claimNumber: claimNumber,
                     propertyUnitId: productionUnitId,
                     primaryClaimantId: productionClaimantId,
-                    claimType: claimType,
+                    claimType: staging.ClaimType,
                     claimSource: staging.ClaimSource,
-                    createdByUserId: userId);
+                    createdByUserId: userId,
+                    originatingSurveyId: productionSurveyId);
+
+                // Transfer tenure contract, ownership share, and description from staging
+                if (staging.TenureContractType.HasValue)
+                    claim.UpdateTenureContract(staging.TenureContractType.Value, null, userId);
+
+                if (staging.OwnershipShare.HasValue)
+                    claim.UpdateOwnershipShare((int)staging.OwnershipShare.Value, userId);
+
+                if (!string.IsNullOrWhiteSpace(staging.ClaimDescription))
+                    claim.UpdateClaimDescription(staging.ClaimDescription, userId);
 
                 // Claims from tablet → set lifecycle to Submitted
                 claim.Submit(userId, userId);

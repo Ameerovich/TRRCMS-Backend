@@ -54,13 +54,15 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.OriginalPrimaryClaimantId)
             .HasComment("Original primary claimant Person UUID from .uhc");
 
+        builder.Property(c => c.OriginalOriginatingSurveyId)
+            .HasComment("Original Survey UUID from .uhc — maps to production OriginatingSurveyId");
+
         builder.Property(c => c.ClaimNumber)
             .HasMaxLength(30)
             .HasComment("Optional in staging — auto-generated during commit");
 
         builder.Property(c => c.ClaimType)
-            .IsRequired()
-            .HasMaxLength(50);
+            .IsRequired();
 
         builder.Property(c => c.ClaimSource)
             .IsRequired();

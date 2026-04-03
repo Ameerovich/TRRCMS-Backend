@@ -130,7 +130,11 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
             }
         }
 
-        // Update file if provided
+        // Track whether a new version was created (file replacement triggers versioning)
+        Evidence currentEvidence = evidence;
+        bool versionCreated = false;
+
+        // Update file if provided — creates a NEW VERSION for tenure documents
         if (request.File != null && request.File.Length > 0)
         {
             if (!_fileStorageService.ValidateFileSize(request.File.Length))
@@ -152,40 +156,68 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
                     stream, request.File.FileName, "tenure-documents", request.SurveyId, cancellationToken);
             }
 
-            var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
+            // Create new version — old evidence gets IsCurrentVersion = false
+            var newVersion = evidence.CreateNewVersion(filePath, request.File.Length, fileHash, currentUserId);
 
-            evidence.UpdateFileInfo(filePath, request.File.FileName, request.File.Length, mimeType, fileHash, currentUserId);
+            // Update OriginalFileName and MimeType on the new version
+            var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
+            newVersion.UpdateFileInfo(filePath, request.File.FileName, request.File.Length, mimeType, fileHash, currentUserId);
+
+            await _evidenceRepository.AddAsync(newVersion, cancellationToken);
+
+            // Re-fetch active relations to include any newly created links from the re-link step above
+            var relationsToMigrate = await _evidenceRelationRepository.GetActiveByEvidenceIdAsync(
+                evidence.Id, cancellationToken);
+
+            // Migrate active EvidenceRelations from old evidence to new version
+            foreach (var er in relationsToMigrate)
+            {
+                er.Deactivate(currentUserId, "Superseded by new version");
+                var newLink = EvidenceRelation.Create(
+                    evidenceId: newVersion.Id,
+                    personPropertyRelationId: er.PersonPropertyRelationId,
+                    linkedBy: currentUserId);
+                await _evidenceRelationRepository.AddAsync(newLink, cancellationToken);
+            }
+
+            // All subsequent updates apply to the new version
+            currentEvidence = newVersion;
+            versionCreated = true;
         }
 
         // Update evidence type if provided
         if (request.EvidenceType.HasValue)
         {
-            evidence.UpdateEvidenceType((EvidenceType)request.EvidenceType.Value, currentUserId);
+            currentEvidence.UpdateEvidenceType((EvidenceType)request.EvidenceType.Value, currentUserId);
         }
 
         // Update description if provided
         if (request.Description != null)
         {
-            evidence.UpdateDescription(request.Description, currentUserId);
+            currentEvidence.UpdateDescription(request.Description, currentUserId);
         }
 
         // Update metadata (use existing values for fields not provided)
-        evidence.UpdateMetadata(
-            issuedDate: request.DocumentIssuedDate ?? evidence.DocumentIssuedDate,
-            expiryDate: request.DocumentExpiryDate ?? evidence.DocumentExpiryDate,
-            issuingAuthority: request.IssuingAuthority ?? evidence.IssuingAuthority,
-            referenceNumber: request.DocumentReferenceNumber ?? evidence.DocumentReferenceNumber,
-            notes: request.Notes ?? evidence.Notes,
+        currentEvidence.UpdateMetadata(
+            issuedDate: request.DocumentIssuedDate ?? currentEvidence.DocumentIssuedDate,
+            expiryDate: request.DocumentExpiryDate ?? currentEvidence.DocumentExpiryDate,
+            issuingAuthority: request.IssuingAuthority ?? currentEvidence.IssuingAuthority,
+            referenceNumber: request.DocumentReferenceNumber ?? currentEvidence.DocumentReferenceNumber,
+            notes: request.Notes ?? currentEvidence.Notes,
             modifiedByUserId: currentUserId);
 
-        // Save changes
-        await _evidenceRepository.UpdateAsync(evidence, cancellationToken);
+        // Save changes (both old and new evidence if versioned)
+        if (!versionCreated)
+        {
+            await _evidenceRepository.UpdateAsync(currentEvidence, cancellationToken);
+        }
         await _evidenceRepository.SaveChangesAsync(cancellationToken);
 
         // Build changed fields
         var changedFields = new List<string>();
         if (request.PersonPropertyRelationId.HasValue) changedFields.Add("PersonPropertyRelationId");
         if (request.File != null) changedFields.Add("File");
+        if (versionCreated) changedFields.Add("VersionCreated");
         if (request.EvidenceType.HasValue) changedFields.Add("EvidenceType");
         if (request.Description != null) changedFields.Add("Description");
         if (request.DocumentIssuedDate.HasValue) changedFields.Add("DocumentIssuedDate");
@@ -196,32 +228,37 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
 
         // Audit logging
         var updatedRelationIds = (await _evidenceRelationRepository.GetActiveByEvidenceIdAsync(
-            request.EvidenceId, cancellationToken)).Select(er => er.PersonPropertyRelationId).ToList();
+            currentEvidence.Id, cancellationToken)).Select(er => er.PersonPropertyRelationId).ToList();
 
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
-            actionDescription: $"Updated tenure document '{evidence.OriginalFileName}' in survey {survey.ReferenceCode}",
+            actionDescription: versionCreated
+                ? $"Created new version (v{currentEvidence.VersionNumber}) of tenure document '{currentEvidence.OriginalFileName}' in survey {survey.ReferenceCode}"
+                : $"Updated tenure document '{currentEvidence.OriginalFileName}' in survey {survey.ReferenceCode}",
             entityType: "Evidence",
-            entityId: evidence.Id,
-            entityIdentifier: evidence.OriginalFileName,
+            entityId: currentEvidence.Id,
+            entityIdentifier: currentEvidence.OriginalFileName,
             oldValues: oldValues,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
                 LinkedRelationIds = updatedRelationIds,
-                EvidenceType = evidence.EvidenceType.ToString(),
-                evidence.OriginalFileName,
-                evidence.Description,
-                evidence.DocumentIssuedDate,
-                evidence.DocumentExpiryDate,
-                evidence.IssuingAuthority,
-                evidence.DocumentReferenceNumber,
-                evidence.Notes
+                EvidenceType = currentEvidence.EvidenceType.ToString(),
+                currentEvidence.OriginalFileName,
+                currentEvidence.Description,
+                currentEvidence.VersionNumber,
+                currentEvidence.IsCurrentVersion,
+                PreviousVersionId = versionCreated ? evidence.Id : (Guid?)null,
+                currentEvidence.DocumentIssuedDate,
+                currentEvidence.DocumentExpiryDate,
+                currentEvidence.IssuingAuthority,
+                currentEvidence.DocumentReferenceNumber,
+                currentEvidence.Notes
             }),
             changedFields: string.Join(", ", changedFields),
             cancellationToken: cancellationToken);
 
-        var result = _mapper.Map<EvidenceDto>(evidence);
-        result.IsExpired = evidence.IsExpired();
+        var result = _mapper.Map<EvidenceDto>(currentEvidence);
+        result.IsExpired = currentEvidence.IsExpired();
 
         return result;
     }

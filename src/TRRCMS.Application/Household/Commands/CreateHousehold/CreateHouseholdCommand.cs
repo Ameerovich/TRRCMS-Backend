@@ -17,11 +17,6 @@ public class CreateHouseholdCommand : IRequest<HouseholdDto>
     // ==================== BASIC INFORMATION ====================
 
     /// <summary>
-    /// Head of household name (رب الأسرة/العميل) - required
-    /// </summary>
-    public string HeadOfHouseholdName { get; set; } = string.Empty;
-
-    /// <summary>
     /// Total household size (عدد الأفراد) - required
     /// </summary>
     public int HouseholdSize { get; set; }

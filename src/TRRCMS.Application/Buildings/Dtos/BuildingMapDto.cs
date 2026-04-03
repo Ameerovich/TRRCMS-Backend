@@ -76,4 +76,14 @@ public class BuildingMapDto
     /// Number of shops (عدد المحلات)
     /// </summary>
     public int NumberOfShops { get; set; }
+
+    /// <summary>
+    /// Whether this building has ever been assigned to a field collector
+    /// </summary>
+    public bool IsAssigned { get; set; }
+
+    /// <summary>
+    /// Whether this building is locked (import pipeline will not update it)
+    /// </summary>
+    public bool IsLocked { get; set; }
 }

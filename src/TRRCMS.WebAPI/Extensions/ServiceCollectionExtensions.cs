@@ -242,6 +242,8 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
                 policy.Requirements.Add(new PermissionRequirement(Permission.Buildings_Assign)));
             options.AddPolicy("CanDeleteBuildings", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Buildings_Delete)));
+            options.AddPolicy("CanLockBuildings", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Buildings_Lock)));
 
             // Persons
             options.AddPolicy("CanViewPersons", policy =>

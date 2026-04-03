@@ -76,7 +76,6 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
         // Create household with full composition
         var household = Household.Create(
             propertyUnitId: propertyUnitId.Value,
-            headOfHouseholdName: null,
             householdSize: request.HouseholdSize,
             maleCount: request.MaleCount,
             femaleCount: request.FemaleCount,

@@ -126,6 +126,7 @@ app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TRRCMS.WebAPI.Middleware.MustChangePasswordMiddleware>();
 app.UseStaticFiles();
 app.MapHealthChecks("/health");
 app.MapControllers();

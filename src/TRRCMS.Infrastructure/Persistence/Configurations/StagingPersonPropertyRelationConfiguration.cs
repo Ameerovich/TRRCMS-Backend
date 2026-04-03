@@ -67,6 +67,13 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
         builder.Property(r => r.Notes)
             .HasMaxLength(2000);
 
+        builder.Property(r => r.OccupancyType)
+            .HasComment("OccupancyType enum");
+
+        builder.Property(r => r.HasEvidence)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(r => r.IsActive)
             .IsRequired()
             .HasDefaultValue(true);

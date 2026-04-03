@@ -1,4 +1,5 @@
 using TRRCMS.Domain.Common;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Domain.Entities.Staging;
 
@@ -17,14 +18,6 @@ public class StagingHousehold : BaseStagingEntity
     /// Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits.
     /// </summary>
     public Guid OriginalPropertyUnitId { get; private set; }
-
-    /// <summary>
-    /// Original head-of-household Person UUID from .uhc.
-    /// Used for cross-entity validation (head must exist in StagingPersons).
-    /// </summary>
-    public Guid? OriginalHeadOfHouseholdPersonId { get; private set; }
-    /// <summary>Full name of the head of household.</summary>
-    public string HeadOfHouseholdName { get; private set; }
 
     /// <summary>Total number of persons in the household.</summary>
     public int HouseholdSize { get; private set; }
@@ -59,12 +52,17 @@ public class StagingHousehold : BaseStagingEntity
 
     /// <summary>Total number of persons with disabilities (MaleDisabledCount + FemaleDisabledCount).</summary>
     public int PersonsWithDisabilitiesCount { get; private set; }
+    /// <summary>Occupancy type (OwnerOccupied, TenantOccupied, etc.).</summary>
+    public OccupancyType? OccupancyType { get; private set; }
+
+    /// <summary>Occupancy nature (LegalFormal, Informal, Customary, etc.).</summary>
+    public OccupancyNature? OccupancyNature { get; private set; }
+
     /// <summary>Additional notes.</summary>
     public string? Notes { get; private set; }
     /// <summary>EF Core constructor.</summary>
     private StagingHousehold() : base()
     {
-        HeadOfHouseholdName = string.Empty;
     }
     /// <summary>
     /// Create a new StagingHousehold record from .uhc package data.
@@ -73,9 +71,7 @@ public class StagingHousehold : BaseStagingEntity
         Guid importPackageId,
         Guid originalEntityId,
         Guid originalPropertyUnitId,
-        string headOfHouseholdName,
         int householdSize,
-        Guid? originalHeadOfHouseholdPersonId = null,
         int maleCount = 0,
         int femaleCount = 0,
         int maleChildCount = 0,
@@ -84,13 +80,13 @@ public class StagingHousehold : BaseStagingEntity
         int femaleElderlyCount = 0,
         int maleDisabledCount = 0,
         int femaleDisabledCount = 0,
+        OccupancyType? occupancyType = null,
+        OccupancyNature? occupancyNature = null,
         string? notes = null)
     {
         var entity = new StagingHousehold
         {
             OriginalPropertyUnitId = originalPropertyUnitId,
-            OriginalHeadOfHouseholdPersonId = originalHeadOfHouseholdPersonId,
-            HeadOfHouseholdName = headOfHouseholdName,
             HouseholdSize = householdSize,
             MaleCount = maleCount,
             FemaleCount = femaleCount,
@@ -103,6 +99,8 @@ public class StagingHousehold : BaseStagingEntity
             ChildCount = maleChildCount + femaleChildCount,
             ElderlyCount = maleElderlyCount + femaleElderlyCount,
             PersonsWithDisabilitiesCount = maleDisabledCount + femaleDisabledCount,
+            OccupancyType = occupancyType,
+            OccupancyNature = occupancyNature,
             Notes = notes
         };
 

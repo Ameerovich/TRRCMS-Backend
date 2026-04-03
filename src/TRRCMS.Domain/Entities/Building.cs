@@ -120,6 +120,18 @@ public class Building : BaseAuditableEntity
     /// Additional notes / General description (الوصف العام)
     /// </summary>
     public string? Notes { get; private set; }
+
+    /// <summary>
+    /// Indicates whether this building has ever been assigned to a field collector.
+    /// Once set to true, it remains true permanently.
+    /// </summary>
+    public bool IsAssigned { get; private set; }
+
+    /// <summary>
+    /// When true, the import pipeline will NOT update this building's data from staging.
+    /// Only Admin or DataManager can toggle this field.
+    /// </summary>
+    public bool IsLocked { get; private set; }
     public virtual ICollection<BuildingDocument> BuildingDocuments { get; private set; }
     public virtual ICollection<PropertyUnit> PropertyUnits { get; private set; }
     public virtual ICollection<BuildingAssignment> BuildingAssignments { get; private set; }
@@ -146,6 +158,8 @@ public class Building : BaseAuditableEntity
         BuildingAssignments = new List<BuildingAssignment>();
         Surveys = new List<Survey>();
         Status = BuildingStatus.Unknown;
+        IsAssigned = false;
+        IsLocked = false;
     }
     /// <summary>
     /// Create new building (Factory Method - DDD pattern)
@@ -329,6 +343,37 @@ public class Building : BaseAuditableEntity
         BuildingId = $"{governorateCode}{districtCode}{subDistrictCode}" +
                      $"{communityCode}{neighborhoodCode}{buildingNumber}";
 
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Mark building as assigned. Once set, cannot be reverted.
+    /// Called when the building enters the building assignment process.
+    /// </summary>
+    public void MarkAsAssigned(Guid modifiedByUserId)
+    {
+        if (!IsAssigned)
+        {
+            IsAssigned = true;
+            MarkAsModified(modifiedByUserId);
+        }
+    }
+
+    /// <summary>
+    /// Lock building to prevent import pipeline from updating it.
+    /// </summary>
+    public void Lock(Guid modifiedByUserId)
+    {
+        IsLocked = true;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Unlock building to allow import pipeline updates.
+    /// </summary>
+    public void Unlock(Guid modifiedByUserId)
+    {
+        IsLocked = false;
         MarkAsModified(modifiedByUserId);
     }
 }

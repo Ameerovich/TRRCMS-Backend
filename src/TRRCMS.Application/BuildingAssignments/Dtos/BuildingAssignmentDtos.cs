@@ -71,6 +71,10 @@ public class BuildingAssignmentDto
     public bool IsActive { get; set; }
     public bool IsOverdue { get; set; }
 
+    // Building flags
+    public bool IsAssigned { get; set; }
+    public bool IsLocked { get; set; }
+
     // Audit
     public DateTime CreatedAt { get; set; }
     public DateTime? ModifiedAt { get; set; }
@@ -105,6 +109,10 @@ public class BuildingAssignmentSummaryDto
     public bool IsOverdue { get; set; }
     public bool IsRevisit { get; set; }
     public string Priority { get; set; } = "Normal";
+
+    // Building flags
+    public bool IsAssigned { get; set; }
+    public bool IsLocked { get; set; }
 }
 
 /// <summary>
@@ -165,6 +173,10 @@ public class BuildingForAssignmentDto
     public Guid? CurrentAssignmentId { get; set; }
     public string? CurrentAssigneeId { get; set; }
     public string? CurrentAssigneeName { get; set; }
+
+    // Building flags
+    public bool IsAssigned { get; set; }
+    public bool IsLocked { get; set; }
 }
 
 /// <summary>

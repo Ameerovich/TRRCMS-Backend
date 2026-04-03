@@ -123,7 +123,7 @@ public class DeleteHouseholdInSurveyCommandHandler : IRequestHandler<DeleteHouse
         {
             EntityId = household.Id,
             EntityType = "Household",
-            EntityIdentifier = household.HeadOfHouseholdName ?? "Household"
+            EntityIdentifier = $"Household {household.Id.ToString()[..8]}"
         });
 
         // Save all changes atomically
@@ -135,12 +135,13 @@ public class DeleteHouseholdInSurveyCommandHandler : IRequestHandler<DeleteHouse
         int evidenceCount = affectedEntities.Count(e => e.EntityType == "Evidence");
 
         // Audit
+        var householdIdentifier = $"Household {household.Id.ToString()[..8]}";
         await _auditService.LogActionAsync(
             AuditActionType.Delete,
-            $"Deleted household '{household.HeadOfHouseholdName}' in survey {survey.ReferenceCode} with cascades",
+            $"Deleted {householdIdentifier} in survey {survey.ReferenceCode} with cascades",
             "Household",
             household.Id,
-            household.HeadOfHouseholdName ?? "Household",
+            householdIdentifier,
             null,
             null,
             $"Cascaded: {personCount} person(s), {relationCount} relation(s), {evidenceCount} evidence(s)",
