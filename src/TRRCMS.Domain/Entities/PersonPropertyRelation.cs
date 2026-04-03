@@ -19,6 +19,11 @@ public class PersonPropertyRelation : BaseAuditableEntity
     public Guid? SurveyId { get; private set; }
 
     /// <summary>
+    /// Foreign key to the Case this relation belongs to (set automatically)
+    /// </summary>
+    public Guid? CaseId { get; private set; }
+
+    /// <summary>
     /// Relation type (نوع العلاقة) - Owner, Occupant, Tenant, Guest, Heir, Other
     /// </summary>
     public RelationType RelationType { get; private set; }
@@ -40,6 +45,7 @@ public class PersonPropertyRelation : BaseAuditableEntity
     public virtual Person Person { get; private set; } = null!;
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
     public virtual Survey? Survey { get; private set; }
+    public virtual Case? Case { get; private set; }
     /// <summary>
     /// Many-to-many links to Evidence via EvidenceRelation join entity
     /// </summary>
@@ -111,6 +117,15 @@ public class PersonPropertyRelation : BaseAuditableEntity
     public void SetHasEvidence(bool hasEvidence, Guid modifiedByUserId)
     {
         HasEvidence = hasEvidence;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    public void LinkToCase(Guid caseId, Guid modifiedByUserId)
+    {
+        if (CaseId.HasValue)
+            return;
+
+        CaseId = caseId;
         MarkAsModified(modifiedByUserId);
     }
 }

@@ -108,6 +108,20 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                 modifiedByUserId: currentUserId);
         }
 
+        // Resolve or create Case for this PropertyUnit
+        var caseEntity = await _unitOfWork.Cases.GetByPropertyUnitIdAsync(
+            survey.PropertyUnitId.Value, cancellationToken);
+
+        // Link all survey relations to the Case
+        if (caseEntity != null)
+        {
+            foreach (var relation in surveyRelations)
+            {
+                if (!relation.CaseId.HasValue)
+                    relation.LinkToCase(caseEntity.Id, currentUserId);
+            }
+        }
+
         var createdClaims = new List<CreatedClaimSummaryDto>();
         string? claimNotCreatedReason = null;
 
@@ -149,6 +163,15 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                     // CaseStatus: Owner/Heir → Closed, all others → Open (default)
                     if (isOwnershipRelation)
                         claim.CloseCase(currentUserId);
+
+                    // Link claim to Case and auto-close Case on ownership
+                    if (caseEntity != null)
+                    {
+                        claim.LinkToCase(caseEntity.Id, currentUserId);
+
+                        if (isOwnershipRelation && caseEntity.Status == Domain.Enums.CaseLifecycleStatus.Open)
+                            caseEntity.Close(claim.Id, currentUserId);
+                    }
 
                     await _unitOfWork.Claims.AddAsync(claim, cancellationToken);
 

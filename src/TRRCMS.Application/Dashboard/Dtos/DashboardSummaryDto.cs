@@ -6,11 +6,25 @@ namespace TRRCMS.Application.Dashboard.Dtos;
 /// </summary>
 public sealed class DashboardSummaryDto
 {
+    public CaseStatisticsDto Cases { get; set; } = new();
     public ClaimStatisticsDto Claims { get; set; } = new();
     public SurveyStatisticsDto Surveys { get; set; } = new();
     public ImportStatisticsDto Imports { get; set; } = new();
     public BuildingStatisticsDto Buildings { get; set; } = new();
     public DateTime GeneratedAtUtc { get; set; }
+}
+
+/// <summary>
+/// Case statistics: total cases, counts by lifecycle status (Open/Closed).
+/// </summary>
+public sealed class CaseStatisticsDto
+{
+    public int TotalCases { get; set; }
+
+    /// <summary>
+    /// Count per CaseLifecycleStatus enum name (e.g. "Open": 10, "Closed": 5).
+    /// </summary>
+    public Dictionary<string, int> ByStatus { get; set; } = new();
 }
 
 /// <summary>

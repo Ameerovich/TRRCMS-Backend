@@ -6,6 +6,7 @@ namespace TRRCMS.Application.Dashboard.Dtos;
 /// </summary>
 public sealed class DashboardTrendsDto
 {
+    public List<MonthlyTrendPointDto> Cases { get; set; } = new();
     public List<MonthlyTrendPointDto> Claims { get; set; } = new();
     public List<MonthlyTrendPointDto> Surveys { get; set; } = new();
     public List<MonthlyTrendPointDto> Buildings { get; set; } = new();

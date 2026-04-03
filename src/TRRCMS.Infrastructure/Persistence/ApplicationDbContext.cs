@@ -23,6 +23,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Evidence> Evidences => Set<Evidence>();
     public DbSet<EvidenceRelation> EvidenceRelations => Set<EvidenceRelation>();
 public DbSet<Claim> Claims => Set<Claim>();
+    public DbSet<Case> Cases => Set<Case>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
     public DbSet<Survey> Surveys => Set<Survey>();

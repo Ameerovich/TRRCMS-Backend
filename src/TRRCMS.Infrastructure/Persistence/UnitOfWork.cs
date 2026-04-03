@@ -23,6 +23,7 @@ public class UnitOfWork : IUnitOfWork
     private IPersonPropertyRelationRepository? _personPropertyRelations;
     private IEvidenceRepository? _evidences;
 private IClaimRepository? _claims;
+    private ICaseRepository? _cases;
     private ISurveyRepository? _surveys;
     private IUserRepository? _users;
     private IBuildingAssignmentRepository? _buildingAssignments;
@@ -66,6 +67,9 @@ private IClaimRepository? _claims;
 
     public IClaimRepository Claims =>
         _claims ??= new ClaimRepository(_context);
+
+    public ICaseRepository Cases =>
+        _cases ??= new CaseRepository(_context);
 
     public ISurveyRepository Surveys =>
         _surveys ??= new SurveyRepository(_context);

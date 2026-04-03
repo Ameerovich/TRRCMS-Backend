@@ -19,8 +19,10 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
     private readonly ISurveyRepository _surveyRepository;
     private readonly IBuildingRepository _buildingRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
+    private readonly ICaseRepository _caseRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly ISurveyReferenceCodeGenerator _refCodeGenerator;
+    private readonly ICaseNumberGenerator _caseNumberGenerator;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
@@ -28,16 +30,20 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
         ISurveyRepository surveyRepository,
         IBuildingRepository buildingRepository,
         IPropertyUnitRepository propertyUnitRepository,
+        ICaseRepository caseRepository,
         ICurrentUserService currentUserService,
         ISurveyReferenceCodeGenerator refCodeGenerator,
+        ICaseNumberGenerator caseNumberGenerator,
         IAuditService auditService,
         IMapper mapper)
     {
         _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
         _buildingRepository = buildingRepository ?? throw new ArgumentNullException(nameof(buildingRepository));
         _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
+        _caseRepository = caseRepository ?? throw new ArgumentNullException(nameof(caseRepository));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _refCodeGenerator = refCodeGenerator ?? throw new ArgumentNullException(nameof(refCodeGenerator));
+        _caseNumberGenerator = caseNumberGenerator ?? throw new ArgumentNullException(nameof(caseNumberGenerator));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
@@ -112,6 +118,25 @@ public class CreateOfficeSurveyCommandHandler : IRequestHandler<CreateOfficeSurv
             inPersonVisit: request.InPersonVisit,
             modifiedByUserId: currentUserId
         );
+
+        // Auto-create Case for the PropertyUnit if one doesn't exist yet
+        if (request.PropertyUnitId.HasValue)
+        {
+            var existingCase = await _caseRepository.GetByPropertyUnitIdAsync(
+                request.PropertyUnitId.Value, cancellationToken);
+
+            if (existingCase != null)
+            {
+                survey.LinkToCase(existingCase.Id, currentUserId);
+            }
+            else
+            {
+                var caseNumber = await _caseNumberGenerator.GenerateNextCaseNumberAsync(cancellationToken);
+                var newCase = Case.Create(caseNumber, request.PropertyUnitId.Value, currentUserId);
+                await _caseRepository.AddAsync(newCase, cancellationToken);
+                survey.LinkToCase(newCase.Id, currentUserId);
+            }
+        }
 
         // Save to repository
         await _surveyRepository.AddAsync(survey, cancellationToken);

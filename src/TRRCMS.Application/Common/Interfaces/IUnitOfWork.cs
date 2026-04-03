@@ -59,6 +59,11 @@ public interface IUnitOfWork : IDisposable
     IClaimRepository Claims { get; }
 
     /// <summary>
+    /// Case repository - aggregates surveys, claims, relations for a property unit
+    /// </summary>
+    ICaseRepository Cases { get; }
+
+    /// <summary>
     /// Survey repository - field and office surveys
     /// </summary>
     ISurveyRepository Surveys { get; }

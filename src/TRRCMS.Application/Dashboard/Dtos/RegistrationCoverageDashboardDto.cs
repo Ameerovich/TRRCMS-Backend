@@ -25,6 +25,10 @@ public sealed class RegistrationCoverageDashboardDto
 
     public int RelationsWithEvidence { get; set; }
 
+    public int TotalCases { get; set; }
+    public int CasesOpen { get; set; }
+    public int CasesClosed { get; set; }
+
     public int ClaimsOpen { get; set; }
     public int ClaimsClosed { get; set; }
 

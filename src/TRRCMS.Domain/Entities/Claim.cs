@@ -30,6 +30,11 @@ public class Claim : BaseAuditableEntity
     /// Set during office survey finalization or .uhc import commit.
     /// </summary>
     public Guid? OriginatingSurveyId { get; private set; }
+
+    /// <summary>
+    /// Foreign key to the Case this claim belongs to (set automatically)
+    /// </summary>
+    public Guid? CaseId { get; private set; }
     /// <summary>
     /// Claim type classification: OwnershipClaim=1, OccupancyClaim=2 (نوع المطالبة)
     /// </summary>
@@ -77,6 +82,11 @@ public class Claim : BaseAuditableEntity
     /// Primary claimant person
     /// </summary>
     public virtual Person PrimaryClaimant { get; private set; } = null!;
+
+    /// <summary>
+    /// Case this claim belongs to
+    /// </summary>
+    public virtual Case? Case { get; private set; }
 
     /// <summary>
     /// Evidence supporting this claim
@@ -155,6 +165,18 @@ public class Claim : BaseAuditableEntity
     public void UpdateClassification(ClaimType claimType, Guid modifiedByUserId)
     {
         ClaimType = claimType;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Link claim to a case
+    /// </summary>
+    public void LinkToCase(Guid caseId, Guid modifiedByUserId)
+    {
+        if (CaseId.HasValue)
+            return;
+
+        CaseId = caseId;
         MarkAsModified(modifiedByUserId);
     }
 

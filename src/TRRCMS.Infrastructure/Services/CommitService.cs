@@ -46,6 +46,7 @@ public class CommitService : ICommitService
     private readonly IStagingRepository<StagingSurvey> _stagingSurveyRepo;
     private readonly IImportPackageRepository _importPackageRepository;
     private readonly IClaimNumberGenerator _claimNumberGenerator;
+    private readonly ICaseNumberGenerator _caseNumberGenerator;
     private readonly ISurveyReferenceCodeGenerator _surveyRefCodeGenerator;
     private readonly IImportService _importService;
     private readonly IFileStorageService _fileStorageService;
@@ -69,6 +70,7 @@ public class CommitService : ICommitService
         IStagingRepository<StagingSurvey> stagingSurveyRepo,
         IImportPackageRepository importPackageRepository,
         IClaimNumberGenerator claimNumberGenerator,
+        ICaseNumberGenerator caseNumberGenerator,
         ISurveyReferenceCodeGenerator surveyRefCodeGenerator,
         IImportService importService,
         IFileStorageService fileStorageService,
@@ -88,6 +90,7 @@ public class CommitService : ICommitService
         _stagingSurveyRepo = stagingSurveyRepo;
         _importPackageRepository = importPackageRepository;
         _claimNumberGenerator = claimNumberGenerator;
+        _caseNumberGenerator = caseNumberGenerator;
         _surveyRefCodeGenerator = surveyRefCodeGenerator;
         _importService = importService;
         _fileStorageService = fileStorageService;
@@ -140,6 +143,9 @@ public class CommitService : ICommitService
             await CommitSurveysAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitClaimsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitEvidenceAsync(importPackageId, committedByUserId, report, cancellationToken);
+
+            // Link Cases — runs last so all entities are resolved
+            await LinkCasesAsync(importPackageId, committedByUserId, report, cancellationToken);
         }, cancellationToken);
 
         // Update aggregate counts
@@ -1125,6 +1131,115 @@ public class CommitService : ICommitService
                     ErrorMessage = ex.Message
                 });
             }
+        }
+    }
+
+    /// <summary>
+    /// Link Cases to committed entities. Runs as the last step so all IDs are resolved.
+    /// For each unique PropertyUnit touched by this import:
+    ///   - Creates a Case if one doesn't exist
+    ///   - Links all committed Surveys, Claims, and PersonPropertyRelations to the Case
+    ///   - Auto-closes the Case if an ownership/heir claim was committed
+    /// </summary>
+    private async Task LinkCasesAsync(
+        Guid importPackageId, Guid userId, CommitReportDto report, CancellationToken ct)
+    {
+        try
+        {
+            // Collect all production PropertyUnit IDs touched by this import
+            // from committed surveys, claims, and relations
+            var propertyUnitIds = new HashSet<Guid>();
+
+            // From surveys
+            var committedSurveys = await _stagingSurveyRepo.GetApprovedForCommitAsync(importPackageId, ct);
+            foreach (var staging in committedSurveys)
+            {
+                if (staging.CommittedEntityId.HasValue && staging.OriginalPropertyUnitId.HasValue)
+                {
+                    if (_idMap.TryGetValue(staging.OriginalPropertyUnitId.Value, out var productionUnitId))
+                        propertyUnitIds.Add(productionUnitId);
+                }
+            }
+
+            // From claims
+            var committedClaims = await _stagingClaimRepo.GetApprovedForCommitAsync(importPackageId, ct);
+            foreach (var staging in committedClaims)
+            {
+                if (staging.CommittedEntityId.HasValue)
+                {
+                    if (_idMap.TryGetValue(staging.OriginalPropertyUnitId, out var productionUnitId))
+                        propertyUnitIds.Add(productionUnitId);
+                }
+            }
+
+            if (!propertyUnitIds.Any()) return;
+
+            foreach (var propertyUnitId in propertyUnitIds)
+            {
+                try
+                {
+                    // Get or create Case for this PropertyUnit
+                    var caseEntity = await _unitOfWork.Cases.GetByPropertyUnitIdAsync(propertyUnitId, ct);
+
+                    if (caseEntity == null)
+                    {
+                        var caseNumber = await _caseNumberGenerator.GenerateNextCaseNumberAsync(ct);
+                        caseEntity = Case.Create(caseNumber, propertyUnitId, userId);
+                        await _unitOfWork.Cases.AddAsync(caseEntity, ct);
+                        await _unitOfWork.SaveChangesAsync(ct);
+
+                        _logger.LogInformation(
+                            "Created Case {CaseNumber} for PropertyUnit {PropertyUnitId}",
+                            caseNumber, propertyUnitId);
+                    }
+
+                    // Link surveys to Case
+                    var surveys = await _unitOfWork.Surveys.GetByPropertyUnitAsync(propertyUnitId, ct);
+                    foreach (var survey in surveys)
+                    {
+                        if (!survey.CaseId.HasValue)
+                            survey.LinkToCase(caseEntity.Id, userId);
+                    }
+
+                    // Link claims to Case and check for ownership
+                    var claims = await _unitOfWork.Claims.GetAllByPropertyUnitIdAsync(propertyUnitId, ct);
+                    foreach (var claim in claims)
+                    {
+                        if (!claim.CaseId.HasValue)
+                            claim.LinkToCase(caseEntity.Id, userId);
+
+                        // Auto-close Case on ownership/heir claim
+                        if (claim.ClaimType == ClaimType.OwnershipClaim)
+                        {
+                            caseEntity.Close(claim.Id, userId);
+                            _logger.LogInformation(
+                                "Case {CaseNumber} closed by ownership claim {ClaimNumber}",
+                                caseEntity.CaseNumber, claim.ClaimNumber);
+                        }
+                    }
+
+                    // Link PersonPropertyRelations to Case
+                    var relations = await _unitOfWork.PersonPropertyRelations
+                        .GetByPropertyUnitIdAsync(propertyUnitId, ct);
+                    foreach (var relation in relations)
+                    {
+                        if (!relation.CaseId.HasValue)
+                            relation.LinkToCase(caseEntity.Id, userId);
+                    }
+
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "Failed to link Case for PropertyUnit {PropertyUnitId}. Import continues.",
+                        propertyUnitId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Case linking failed for import {ImportPackageId}. Import data is unaffected.", importPackageId);
         }
     }
 
