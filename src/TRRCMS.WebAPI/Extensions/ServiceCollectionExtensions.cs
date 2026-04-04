@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEvidenceRelationRepository, EvidenceRelationRepository>();
 services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<ICaseRepository, CaseRepository>();
+        services.AddScoped<IIdentificationDocumentRepository, IdentificationDocumentRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISurveyRepository, SurveyRepository>();
         services.AddScoped<INeighborhoodRepository, NeighborhoodRepository>();
@@ -88,6 +89,7 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<IClaimNumberGenerator, ClaimNumberGenerator>();
         services.AddScoped<ICaseNumberGenerator, CaseNumberGenerator>();
         services.AddScoped<ISurveyReferenceCodeGenerator, SurveyReferenceCodeGenerator>();
+        services.AddScoped<IAdministrativeNameResolver, AdministrativeNameResolver>();
 
         // ── Import pipeline ──────────────────────────────────────────
         services.AddScoped(typeof(IStagingRepository<>), typeof(StagingRepository<>));

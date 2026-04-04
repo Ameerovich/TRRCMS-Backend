@@ -134,6 +134,11 @@ public class MappingProfile : Profile
         // EvidenceRelation mappings (many-to-many join entity)
         CreateMap<EvidenceRelation, EvidenceRelationDto>();
 
+        // IdentificationDocument mappings
+        CreateMap<IdentificationDocument, TRRCMS.Application.IdentificationDocuments.Dtos.IdentificationDocumentDto>()
+            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => (int)src.DocumentType))
+            .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()));
+
         // Claim mappings
         CreateMap<Claim, TRRCMS.Application.Claims.Dtos.ClaimDto>()
             .ForMember(dest => dest.ClaimType, opt => opt.MapFrom(src => (int)src.ClaimType))

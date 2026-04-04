@@ -27,6 +27,7 @@ public class CreateEvidenceCommandValidator : AbstractValidator<CreateEvidenceCo
         // ==================== REQUIRED FIELDS ====================
 
         RuleFor(x => x.EvidenceType)
+            .IsInEnum().WithMessage("Evidence type value is not a recognized enum member")
             .Must(v => vocabService.IsValidCode("evidence_type", (int)v))
             .WithMessage("Invalid evidence type");
 

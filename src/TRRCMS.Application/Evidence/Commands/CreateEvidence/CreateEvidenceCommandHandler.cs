@@ -53,9 +53,6 @@ public class CreateEvidenceCommandHandler : IRequestHandler<CreateEvidenceComman
             request.FileHash,
             currentUserId);
 
-        if (request.PersonId.HasValue)
-            evidence.LinkToPerson(request.PersonId.Value, currentUserId);
-
         if (request.ClaimId.HasValue)
             evidence.LinkToClaim(request.ClaimId.Value, currentUserId);
 

@@ -1,56 +1,18 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using TRRCMS.Application.Common.Interfaces;
-using TRRCMS.Infrastructure.Persistence;
 
 namespace TRRCMS.Infrastructure.Services;
 
 /// <summary>
-/// Generates sequential survey reference codes using a PostgreSQL sequence.
-/// Format: {Prefix}-YYYY-NNNNN  (e.g., ALG-2026-00001)
-/// Thread-safe, collision-free, survives app restarts.
+/// Generates unique survey reference codes using timestamp + source identifier.
+/// Format: SRV-{Source}-{YYYYMMDDHHmmss}
+/// No database dependency — pure timestamp-based, works offline and online.
 /// </summary>
 public class SurveyReferenceCodeGenerator : ISurveyReferenceCodeGenerator
 {
-    private readonly ApplicationDbContext _context;
-
-    public SurveyReferenceCodeGenerator(ApplicationDbContext context)
+    public Task<string> GenerateNextAsync(
+        string source, CancellationToken cancellationToken = default)
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-    }
-
-    public async Task<string> GenerateNextAsync(
-        string prefix, CancellationToken cancellationToken = default)
-    {
-        var sequenceValue = await GetNextSequenceValueAsync(cancellationToken);
-        var year = DateTime.UtcNow.Year;
-        return $"{prefix}-{year}-{sequenceValue:D5}";
-    }
-
-    private async Task<long> GetNextSequenceValueAsync(CancellationToken cancellationToken)
-    {
-        var connection = _context.Database.GetDbConnection();
-        var wasAlreadyOpen = connection.State == System.Data.ConnectionState.Open;
-
-        if (!wasAlreadyOpen)
-            await connection.OpenAsync(cancellationToken);
-
-        try
-        {
-            using var command = connection.CreateCommand();
-            command.CommandText = "SELECT nextval('\"SurveyReferenceSequence\"')";
-
-            var currentTransaction = _context.Database.CurrentTransaction;
-            if (currentTransaction != null)
-                command.Transaction = currentTransaction.GetDbTransaction();
-
-            var result = await command.ExecuteScalarAsync(cancellationToken);
-            return Convert.ToInt64(result);
-        }
-        finally
-        {
-            if (!wasAlreadyOpen)
-                await connection.CloseAsync();
-        }
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+        return Task.FromResult($"SRV-{source}-{timestamp}");
     }
 }

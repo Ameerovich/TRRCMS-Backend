@@ -145,6 +145,10 @@ public class FileStorageService : IFileStorageService
             ".pdf" => "application/pdf",
             ".doc" => "application/msword",
             ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".mp3" => "audio/mpeg",
+            ".wav" => "audio/wav",
+            ".ogg" => "audio/ogg",
+            ".m4a" => "audio/mp4",
             _ => "application/octet-stream"
         };
     }
@@ -168,6 +172,10 @@ public class FileStorageService : IFileStorageService
         { ".png", new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } } },
         { ".pdf", new[] { new byte[] { 0x25, 0x50, 0x44, 0x46 } } }, // %PDF
         { ".uhc", new[] { new byte[] { 0x53, 0x51, 0x4C, 0x69, 0x74, 0x65 } } }, // SQLite format 3
+        { ".mp3", new[] { new byte[] { 0xFF, 0xFB }, new byte[] { 0xFF, 0xF3 }, new byte[] { 0xFF, 0xF2 }, new byte[] { 0x49, 0x44, 0x33 } } }, // MPEG audio or ID3 tag
+        { ".wav", new[] { new byte[] { 0x52, 0x49, 0x46, 0x46 } } }, // RIFF header
+        { ".ogg", new[] { new byte[] { 0x4F, 0x67, 0x67, 0x53 } } }, // OggS
+        { ".m4a", new[] { new byte[] { 0x00, 0x00, 0x00 } } }, // ftyp box (variable 4th byte)
     };
 
     public async Task<bool> ValidateFileMagicBytesAsync(Stream fileStream, string fileName)

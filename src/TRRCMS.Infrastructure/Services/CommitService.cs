@@ -1088,12 +1088,6 @@ public class CommitService : ICommitService
                     createdByUserId: userId);
 
                 // Link to resolved production FKs
-                if (staging.OriginalPersonId.HasValue &&
-                    _idMap.TryGetValue(staging.OriginalPersonId.Value, out var prodPersonId))
-                {
-                    evidence.LinkToPerson(prodPersonId, userId);
-                }
-
                 if (staging.OriginalPersonPropertyRelationId.HasValue &&
                     _idMap.TryGetValue(staging.OriginalPersonPropertyRelationId.Value, out var prodRelId))
                 {

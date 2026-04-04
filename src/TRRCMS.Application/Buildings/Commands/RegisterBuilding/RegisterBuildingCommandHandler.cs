@@ -2,6 +2,7 @@ using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
@@ -18,15 +19,18 @@ public class RegisterBuildingCommandHandler : IRequestHandler<RegisterBuildingCo
     private readonly IBuildingRepository _buildingRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IGeometryConverter _geometryConverter;
+    private readonly IAdministrativeNameResolver _nameResolver;
 
     public RegisterBuildingCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
-        IGeometryConverter geometryConverter)
+        IGeometryConverter geometryConverter,
+        IAdministrativeNameResolver nameResolver)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _geometryConverter = geometryConverter;
+        _nameResolver = nameResolver;
     }
 
     public async Task<BuildingDto> Handle(RegisterBuildingCommand request, CancellationToken cancellationToken)
@@ -43,6 +47,12 @@ public class RegisterBuildingCommandHandler : IRequestHandler<RegisterBuildingCo
         if (existing != null)
             throw new ConflictException($"Building with code '{buildingIdCode}' already exists.");
 
+        // Resolve administrative hierarchy codes to Arabic names
+        var names = await _nameResolver.ResolveAsync(
+            request.GovernorateCode, request.DistrictCode,
+            request.SubDistrictCode, request.CommunityCode,
+            request.NeighborhoodCode, cancellationToken);
+
         // Create building with minimal QGIS data + defaults
         var building = Building.Create(
             governorateCode: request.GovernorateCode,
@@ -51,11 +61,11 @@ public class RegisterBuildingCommandHandler : IRequestHandler<RegisterBuildingCo
             communityCode: request.CommunityCode,
             neighborhoodCode: request.NeighborhoodCode,
             buildingNumber: request.BuildingNumber,
-            governorateName: string.Empty,
-            districtName: string.Empty,
-            subDistrictName: string.Empty,
-            communityName: string.Empty,
-            neighborhoodName: string.Empty,
+            governorateName: names.GovernorateName,
+            districtName: names.DistrictName,
+            subDistrictName: names.SubDistrictName,
+            communityName: names.CommunityName,
+            neighborhoodName: names.NeighborhoodName,
             buildingType: BuildingType.Residential,
             status: BuildingStatus.Unknown,
             createdByUserId: userId);

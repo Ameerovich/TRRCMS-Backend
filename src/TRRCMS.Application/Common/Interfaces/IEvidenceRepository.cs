@@ -10,7 +10,6 @@ public interface IEvidenceRepository
 {
     Task<Evidence?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<IEnumerable<Evidence>> GetAllAsync(CancellationToken cancellationToken = default);
-    Task<IEnumerable<Evidence>> GetByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Evidence>> GetByRelationIdAsync(Guid relationId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Evidence>> GetByRelationIdAsync(Guid relationId, EvidenceType? evidenceType, bool onlyCurrentVersions, CancellationToken cancellationToken = default);
     Task<IEnumerable<Evidence>> GetByClaimIdAsync(Guid claimId, CancellationToken cancellationToken = default);

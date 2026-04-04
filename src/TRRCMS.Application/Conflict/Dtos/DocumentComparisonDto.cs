@@ -1,4 +1,5 @@
 using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Application.IdentificationDocuments.Dtos;
 
 namespace TRRCMS.Application.Conflicts.Dtos;
 
@@ -19,5 +20,6 @@ public sealed record DocumentComparisonDto(
 public sealed record EntityDocumentsDto(
     Guid EntityId,
     string? EntityIdentifier,
-    IReadOnlyList<EvidenceDto> Evidences
+    IReadOnlyList<EvidenceDto> Evidences,
+    IReadOnlyList<IdentificationDocumentDto> IdentificationDocuments = null!
 );

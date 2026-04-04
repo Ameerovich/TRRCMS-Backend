@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Http;
-using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Application.IdentificationDocuments.Dtos;
 
 namespace TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 
@@ -8,7 +8,7 @@ namespace TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 /// Command to upload identification document for a person
 /// Links document directly to Person entity
 /// </summary>
-public class UploadIdentificationDocumentCommand : IRequest<EvidenceDto>
+public class UploadIdentificationDocumentCommand : IRequest<IdentificationDocumentDto>
 {
     /// <summary>
     /// Survey ID for authorization

@@ -13,6 +13,7 @@ public class DeletePropertyUnitCommandHandler : IRequestHandler<DeletePropertyUn
     private readonly IPersonRepository _personRepository;
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IIdentificationDocumentRepository _identificationDocumentRepository;
     private readonly ISurveyRepository _surveyRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
@@ -23,6 +24,7 @@ public class DeletePropertyUnitCommandHandler : IRequestHandler<DeletePropertyUn
         IPersonRepository personRepository,
         IPersonPropertyRelationRepository relationRepository,
         IEvidenceRepository evidenceRepository,
+        IIdentificationDocumentRepository identificationDocumentRepository,
         ISurveyRepository surveyRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService)
@@ -32,6 +34,7 @@ public class DeletePropertyUnitCommandHandler : IRequestHandler<DeletePropertyUn
         _personRepository = personRepository;
         _relationRepository = relationRepository;
         _evidenceRepository = evidenceRepository;
+        _identificationDocumentRepository = identificationDocumentRepository;
         _surveyRepository = surveyRepository;
         _currentUserService = currentUserService;
         _auditService = auditService;
@@ -100,18 +103,18 @@ public class DeletePropertyUnitCommandHandler : IRequestHandler<DeletePropertyUn
                     });
                 }
 
-                // CASCADE DELETE 1a-ii: Delete evidences directly linked to person
-                var personEvidences = await _evidenceRepository.GetByPersonIdAsync(person.Id, cancellationToken);
-                foreach (var evidence in personEvidences.Where(e => !e.IsDeleted && !e.EvidenceRelations.Any(er => er.IsActive && !er.IsDeleted)))
+                // CASCADE DELETE 1a-ii: Delete identification documents linked to person
+                var personIdDocs = await _identificationDocumentRepository.GetByPersonIdAsync(person.Id, cancellationToken);
+                foreach (var idDoc in personIdDocs.Where(d => !d.IsDeleted))
                 {
-                    evidence.MarkAsDeleted(currentUserId);
-                    await _evidenceRepository.UpdateAsync(evidence, cancellationToken);
+                    idDoc.MarkAsDeleted(currentUserId);
+                    await _identificationDocumentRepository.UpdateAsync(idDoc, cancellationToken);
 
                     affectedEntities.Add(new DeletedEntityInfo
                     {
-                        EntityId = evidence.Id,
-                        EntityType = "Evidence",
-                        EntityIdentifier = evidence.OriginalFileName
+                        EntityId = idDoc.Id,
+                        EntityType = "IdentificationDocument",
+                        EntityIdentifier = idDoc.OriginalFileName
                     });
                 }
 

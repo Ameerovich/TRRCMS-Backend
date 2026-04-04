@@ -18,6 +18,7 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
     private readonly IPersonRepository _personRepository;
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IIdentificationDocumentRepository _identificationDocumentRepository;
     private readonly ISurveyRepository _surveyRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
@@ -29,6 +30,7 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
         IPersonRepository personRepository,
         IPersonPropertyRelationRepository relationRepository,
         IEvidenceRepository evidenceRepository,
+        IIdentificationDocumentRepository identificationDocumentRepository,
         ISurveyRepository surveyRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService)
@@ -39,6 +41,7 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
         _personRepository = personRepository;
         _relationRepository = relationRepository;
         _evidenceRepository = evidenceRepository;
+        _identificationDocumentRepository = identificationDocumentRepository;
         _surveyRepository = surveyRepository;
         _currentUserService = currentUserService;
         _auditService = auditService;
@@ -150,12 +153,12 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
             await DeleteRelationCascade(relation.Id, userId, affected, ct);
         }
 
-        var evidences = await _evidenceRepository.GetByPersonIdAsync(personId, ct);
-        foreach (var evidence in evidences.Where(e => !e.IsDeleted && !e.EvidenceRelations.Any(er => er.IsActive && !er.IsDeleted) && !affected.Any(ae => ae.EntityId == e.Id)))
+        var idDocs = await _identificationDocumentRepository.GetByPersonIdAsync(personId, ct);
+        foreach (var idDoc in idDocs.Where(d => !d.IsDeleted && !affected.Any(ae => ae.EntityId == d.Id)))
         {
-            evidence.MarkAsDeleted(userId);
-            await _evidenceRepository.UpdateAsync(evidence, ct);
-            affected.Add(new DeletedEntityInfo { EntityId = evidence.Id, EntityType = "Evidence", EntityIdentifier = evidence.OriginalFileName });
+            idDoc.MarkAsDeleted(userId);
+            await _identificationDocumentRepository.UpdateAsync(idDoc, ct);
+            affected.Add(new DeletedEntityInfo { EntityId = idDoc.Id, EntityType = "IdentificationDocument", EntityIdentifier = idDoc.OriginalFileName });
         }
 
         person.MarkAsDeleted(userId);

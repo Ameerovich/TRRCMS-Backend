@@ -17,17 +17,20 @@ namespace TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 public class CreatePropertyUnitInSurveyCommandHandler : IRequestHandler<CreatePropertyUnitInSurveyCommand, PropertyUnitDto>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICaseNumberGenerator _caseNumberGenerator;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public CreatePropertyUnitInSurveyCommandHandler(
         IUnitOfWork unitOfWork,
+        ICaseNumberGenerator caseNumberGenerator,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _caseNumberGenerator = caseNumberGenerator ?? throw new ArgumentNullException(nameof(caseNumberGenerator));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -112,6 +115,23 @@ public class CreatePropertyUnitInSurveyCommandHandler : IRequestHandler<CreatePr
 
         // Link property unit to survey
         survey.LinkToPropertyUnit(propertyUnit.Id, currentUserId);
+
+        // Auto-create Case for the PropertyUnit if one doesn't exist yet
+        var existingCase = await _unitOfWork.Cases.GetByPropertyUnitIdAsync(
+            propertyUnit.Id, cancellationToken);
+
+        if (existingCase != null)
+        {
+            survey.LinkToCase(existingCase.Id, currentUserId);
+        }
+        else
+        {
+            var caseNumber = await _caseNumberGenerator.GenerateNextCaseNumberAsync(cancellationToken);
+            var newCase = Case.Create(caseNumber, propertyUnit.Id, currentUserId);
+            await _unitOfWork.Cases.AddAsync(newCase, cancellationToken);
+            survey.LinkToCase(newCase.Id, currentUserId);
+        }
+
         await _unitOfWork.Surveys.UpdateAsync(survey, cancellationToken);
 
         // Save all changes atomically

@@ -64,6 +64,11 @@ public interface IUnitOfWork : IDisposable
     ICaseRepository Cases { get; }
 
     /// <summary>
+    /// Identification document repository - personal ID documents linked to persons
+    /// </summary>
+    IIdentificationDocumentRepository IdentificationDocuments { get; }
+
+    /// <summary>
     /// Survey repository - field and office surveys
     /// </summary>
     ISurveyRepository Surveys { get; }

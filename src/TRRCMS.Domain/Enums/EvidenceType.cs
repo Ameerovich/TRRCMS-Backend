@@ -1,17 +1,12 @@
-﻿namespace TRRCMS.Domain.Enums;
+namespace TRRCMS.Domain.Enums;
 
 /// <summary>
-/// Evidence/Document type classification
+/// Evidence type classification for tenure documents only.
+/// Identification documents are now handled by the separate IdentificationDocument entity
+/// with its own DocumentType enum.
 /// </summary>
 public enum EvidenceType
 {
-    /// <summary>
-    /// Personal identification document (National ID, Passport)
-    /// (بطاقة هوية شخصية)
-    /// </summary>
-    [ArabicLabel("بطاقة هوية شخصية")]
-    IdentificationDocument = 1,
-
     /// <summary>
     /// Property ownership deed (سند ملكية)
     /// </summary>
@@ -30,12 +25,6 @@ public enum EvidenceType
     /// </summary>
     [ArabicLabel("فاتورة مرافق")]
     UtilityBill = 4,
-
-    /// <summary>
-    /// Building or property photo (صورة)
-    /// </summary>
-    [ArabicLabel("صورة")]
-    Photo = 5,
 
     /// <summary>
     /// Official letter or government document

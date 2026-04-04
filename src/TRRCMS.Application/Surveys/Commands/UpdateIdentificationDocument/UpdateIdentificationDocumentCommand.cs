@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Http;
-using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Application.IdentificationDocuments.Dtos;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
 
@@ -8,7 +8,7 @@ namespace TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
 /// Command to update an identification document
 /// Mirrors UploadIdentificationDocumentCommand fields (all nullable for partial update)
 /// </summary>
-public class UpdateIdentificationDocumentCommand : IRequest<EvidenceDto>
+public class UpdateIdentificationDocumentCommand : IRequest<IdentificationDocumentDto>
 {
     /// <summary>
     /// Survey ID for authorization

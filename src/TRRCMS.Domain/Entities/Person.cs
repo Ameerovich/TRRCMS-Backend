@@ -87,9 +87,9 @@ public class Person : BaseAuditableEntity
     public virtual ICollection<PersonPropertyRelation> PropertyRelations { get; private set; }
 
     /// <summary>
-    /// Evidence/documents attached to this person
+    /// Identification documents attached to this person (e.g., ID photo, family record)
     /// </summary>
-    public virtual ICollection<Evidence> Evidences { get; private set; }
+    public virtual ICollection<IdentificationDocument> IdentificationDocuments { get; private set; }
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -99,7 +99,7 @@ public class Person : BaseAuditableEntity
         FirstNameArabic = null;
         FatherNameArabic = null;
         PropertyRelations = new List<PersonPropertyRelation>();
-        Evidences = new List<Evidence>();
+        IdentificationDocuments = new List<IdentificationDocument>();
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using MediatR;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Conflicts.Dtos;
 using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Application.IdentificationDocuments.Dtos;
 
 namespace TRRCMS.Application.Conflicts.Queries.GetConflictDocumentComparison;
 
@@ -56,11 +57,15 @@ public class GetConflictDocumentComparisonQueryHandler
         CancellationToken ct)
     {
         IReadOnlyList<EvidenceDto> evidenceDtos;
+        IReadOnlyList<IdentificationDocumentDto> idDocDtos = Array.Empty<IdentificationDocumentDto>();
 
         if (entityType == "Person")
         {
-            var evidences = await _uow.Evidences.GetByPersonIdAsync(entityId, ct);
-            evidenceDtos = _mapper.Map<List<EvidenceDto>>(evidences);
+            // Evidence is linked through EvidenceRelation, not directly to Person.
+            // Load identification documents for person-level document comparison.
+            var idDocs = await _uow.IdentificationDocuments.GetByPersonIdAsync(entityId, ct);
+            idDocDtos = _mapper.Map<List<IdentificationDocumentDto>>(idDocs);
+            evidenceDtos = Array.Empty<EvidenceDto>();
         }
         else // PropertyUnit
         {
@@ -83,7 +88,8 @@ public class GetConflictDocumentComparisonQueryHandler
         return new EntityDocumentsDto(
             EntityId: entityId,
             EntityIdentifier: entityIdentifier,
-            Evidences: evidenceDtos
+            Evidences: evidenceDtos,
+            IdentificationDocuments: idDocDtos
         );
     }
 }

@@ -2,6 +2,7 @@
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
@@ -15,15 +16,18 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
     private readonly IBuildingRepository _buildingRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IGeometryConverter _geometryConverter;
+    private readonly IAdministrativeNameResolver _nameResolver;
 
     public CreateBuildingCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
-        IGeometryConverter geometryConverter)
+        IGeometryConverter geometryConverter,
+        IAdministrativeNameResolver nameResolver)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _geometryConverter = geometryConverter;
+        _nameResolver = nameResolver;
     }
 
     public async Task<BuildingDto> Handle(CreateBuildingCommand request, CancellationToken cancellationToken)
@@ -43,8 +47,13 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             throw new ConflictException($"Building with code {buildingIdCode} already exists.");
         }
 
+        // Resolve administrative hierarchy codes to Arabic names
+        var names = await _nameResolver.ResolveAsync(
+            request.GovernorateCode, request.DistrictCode,
+            request.SubDistrictCode, request.CommunityCode,
+            request.NeighborhoodCode, cancellationToken);
+
         // Create building entity
-        // Note: Location names will be empty for now - can be populated from lookup tables later
         var building = Building.Create(
             governorateCode: request.GovernorateCode,
             districtCode: request.DistrictCode,
@@ -52,11 +61,11 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             communityCode: request.CommunityCode,
             neighborhoodCode: request.NeighborhoodCode,
             buildingNumber: request.BuildingNumber,
-            governorateName: string.Empty, // Can be populated from lookup
-            districtName: string.Empty,
-            subDistrictName: string.Empty,
-            communityName: string.Empty,
-            neighborhoodName: string.Empty,
+            governorateName: names.GovernorateName,
+            districtName: names.DistrictName,
+            subDistrictName: names.SubDistrictName,
+            communityName: names.CommunityName,
+            neighborhoodName: names.NeighborhoodName,
             buildingType: request.BuildingType,
             status: request.BuildingStatus,
             createdByUserId: userId

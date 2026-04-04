@@ -21,6 +21,7 @@ using TRRCMS.Application.Surveys.Commands.LinkEvidenceToRelation;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 using TRRCMS.Application.Surveys.Commands.ProcessOfficeSurveyClaims;
+using TRRCMS.Application.Surveys.Commands.RevertSurveyToDraft;
 using TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdateOfficeSurvey;
@@ -29,6 +30,8 @@ using TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 using TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
 using TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
+using TRRCMS.Application.IdentificationDocuments.Dtos;
+using TRRCMS.Application.IdentificationDocuments.Queries.GetIdentificationDocumentsByPerson;
 using TRRCMS.Application.Surveys.Commands.UpdatePersonInSurvey;
 using TRRCMS.Application.Surveys.Commands.UpdateTenureDocument;
 using TRRCMS.Application.Surveys.Commands.UploadTenureDocument;
@@ -181,7 +184,7 @@ public class SurveysController : ControllerBase
     /// 
     /// **Response**: Paginated list with survey summaries and pagination metadata
     /// </remarks>
-    /// <param name="status">Filter by survey status (Draft, Completed, Finalized)</param>
+    /// <param name="status">Filter by survey status (Draft, Finalized, Obstructed, Cancelled, Archived)</param>
     /// <param name="buildingId">Filter by building ID</param>
     /// <param name="clerkId">Filter by office clerk ID</param>
     /// <param name="fromDate">Filter surveys from this date</param>
@@ -533,6 +536,41 @@ public class SurveysController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> CancelSurvey(Guid id, [FromBody] CancelSurveyCommand command)
+    {
+        command.SurveyId = id;
+        await _mediator.Send(command);
+        return Ok();
+    }
+
+
+    /// <summary>
+    /// Revert a finalized survey back to Draft (Admin / DataManager only)
+    /// إعادة المسح إلى مسودة
+    /// </summary>
+    /// <remarks>
+    /// **Purpose**: Reverts a Finalized survey back to Draft status so it can be
+    /// edited, have new data added, and be re-finalized / re-processed.
+    ///
+    /// **Allowed transition**: Finalized → Draft
+    ///
+    /// **Required permissions**: Surveys_EditAll (Admin, DataManager)
+    /// </remarks>
+    /// <param name="id">Survey ID to revert</param>
+    /// <param name="command">Reason for reverting</param>
+    /// <returns>200 OK on success</returns>
+    /// <response code="200">Survey reverted to Draft successfully</response>
+    /// <response code="400">Survey is not in Finalized status</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized — requires Surveys_EditAll permission</response>
+    /// <response code="404">Survey not found</response>
+    [HttpPost("{id}/revert-to-draft")]
+    [Authorize(Policy = "CanEditAllSurveys")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RevertSurveyToDraft(Guid id, [FromBody] RevertSurveyToDraftCommand command)
     {
         command.SurveyId = id;
         await _mediator.Send(command);
@@ -2272,6 +2310,33 @@ public class SurveysController : ControllerBase
         command.SurveyId = surveyId;
         command.EvidenceId = evidenceId;
         var result = await _mediator.Send(command);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get all identification documents for a person
+    /// الحصول على جميع وثائق التعريف لشخص معين
+    /// </summary>
+    /// <remarks>
+    /// **Purpose**: Retrieves all identification documents (personal ID photos, family records, photos)
+    /// linked to a specific person. Returns newest first.
+    ///
+    /// **Required permissions**: CanViewOwnSurveys
+    /// </remarks>
+    /// <param name="personId">Person ID</param>
+    /// <returns>List of identification documents (may be empty)</returns>
+    /// <response code="200">Success. Returns list of identification documents.</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized</response>
+    [HttpGet("persons/{personId}/identification-documents")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
+    [ProducesResponseType(typeof(List<IdentificationDocumentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<List<IdentificationDocumentDto>>> GetIdentificationDocumentsByPerson(Guid personId)
+    {
+        var query = new GetIdentificationDocumentsByPersonQuery(personId);
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
 
