@@ -119,6 +119,16 @@ public DbSet<Claim> Claims => Set<Claim>();
     public DbSet<StagingEvidence> StagingEvidences => Set<StagingEvidence>();
 
     /// <summary>
+    /// Staging area for Evidence-Relation junction records from .uhc packages.
+    /// </summary>
+    public DbSet<StagingEvidenceRelation> StagingEvidenceRelations => Set<StagingEvidenceRelation>();
+
+    /// <summary>
+    /// Staging area for IdentificationDocument records from .uhc packages.
+    /// </summary>
+    public DbSet<StagingIdentificationDocument> StagingIdentificationDocuments => Set<StagingIdentificationDocument>();
+
+    /// <summary>
     /// Staging area for Claim records from .uhc packages.
     /// </summary>
     public DbSet<StagingClaim> StagingClaims => Set<StagingClaim>();

@@ -37,20 +37,18 @@ public class AdministrativeNameResolver : IAdministrativeNameResolver
         string neighborhoodCode,
         CancellationToken cancellationToken = default)
     {
-        // Run all lookups concurrently — they are independent
-        var govTask = _governorates.GetByCodeAsync(governorateCode, cancellationToken);
-        var distTask = _districts.GetByCodeAsync(governorateCode, districtCode, cancellationToken);
-        var subDistTask = _subDistricts.GetByCodeAsync(governorateCode, districtCode, subDistrictCode, cancellationToken);
-        var commTask = _communities.GetByCodeAsync(governorateCode, districtCode, subDistrictCode, communityCode, cancellationToken);
-        var neighTask = _neighborhoods.GetByCodeAsync(governorateCode, districtCode, subDistrictCode, communityCode, neighborhoodCode, cancellationToken);
-
-        await Task.WhenAll(govTask, distTask, subDistTask, commTask, neighTask);
+        // Run sequentially — all repositories share the same scoped DbContext
+        var gov = await _governorates.GetByCodeAsync(governorateCode, cancellationToken);
+        var dist = await _districts.GetByCodeAsync(governorateCode, districtCode, cancellationToken);
+        var subDist = await _subDistricts.GetByCodeAsync(governorateCode, districtCode, subDistrictCode, cancellationToken);
+        var comm = await _communities.GetByCodeAsync(governorateCode, districtCode, subDistrictCode, communityCode, cancellationToken);
+        var neigh = await _neighborhoods.GetByCodeAsync(governorateCode, districtCode, subDistrictCode, communityCode, neighborhoodCode, cancellationToken);
 
         return new AdministrativeNames(
-            GovernorateName: govTask.Result?.NameArabic ?? string.Empty,
-            DistrictName: distTask.Result?.NameArabic ?? string.Empty,
-            SubDistrictName: subDistTask.Result?.NameArabic ?? string.Empty,
-            CommunityName: commTask.Result?.NameArabic ?? string.Empty,
-            NeighborhoodName: neighTask.Result?.NameArabic ?? string.Empty);
+            GovernorateName: gov?.NameArabic ?? string.Empty,
+            DistrictName: dist?.NameArabic ?? string.Empty,
+            SubDistrictName: subDist?.NameArabic ?? string.Empty,
+            CommunityName: comm?.NameArabic ?? string.Empty,
+            NeighborhoodName: neigh?.NameArabic ?? string.Empty);
     }
 }

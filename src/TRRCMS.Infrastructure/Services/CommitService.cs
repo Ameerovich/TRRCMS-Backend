@@ -42,6 +42,8 @@ public class CommitService : ICommitService
     private readonly IStagingRepository<StagingHousehold> _stagingHouseholdRepo;
     private readonly IStagingRepository<StagingPersonPropertyRelation> _stagingRelationRepo;
     private readonly IStagingRepository<StagingEvidence> _stagingEvidenceRepo;
+    private readonly IStagingRepository<StagingEvidenceRelation> _stagingEvidenceRelationRepo;
+    private readonly IStagingRepository<StagingIdentificationDocument> _stagingIdDocRepo;
     private readonly IStagingRepository<StagingClaim> _stagingClaimRepo;
     private readonly IStagingRepository<StagingSurvey> _stagingSurveyRepo;
     private readonly IImportPackageRepository _importPackageRepository;
@@ -66,6 +68,8 @@ public class CommitService : ICommitService
         IStagingRepository<StagingHousehold> stagingHouseholdRepo,
         IStagingRepository<StagingPersonPropertyRelation> stagingRelationRepo,
         IStagingRepository<StagingEvidence> stagingEvidenceRepo,
+        IStagingRepository<StagingEvidenceRelation> stagingEvidenceRelationRepo,
+        IStagingRepository<StagingIdentificationDocument> stagingIdDocRepo,
         IStagingRepository<StagingClaim> stagingClaimRepo,
         IStagingRepository<StagingSurvey> stagingSurveyRepo,
         IImportPackageRepository importPackageRepository,
@@ -86,6 +90,8 @@ public class CommitService : ICommitService
         _stagingHouseholdRepo = stagingHouseholdRepo;
         _stagingRelationRepo = stagingRelationRepo;
         _stagingEvidenceRepo = stagingEvidenceRepo;
+        _stagingEvidenceRelationRepo = stagingEvidenceRelationRepo;
+        _stagingIdDocRepo = stagingIdDocRepo;
         _stagingClaimRepo = stagingClaimRepo;
         _stagingSurveyRepo = stagingSurveyRepo;
         _importPackageRepository = importPackageRepository;
@@ -143,6 +149,7 @@ public class CommitService : ICommitService
             await CommitSurveysAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitClaimsAsync(importPackageId, committedByUserId, report, cancellationToken);
             await CommitEvidenceAsync(importPackageId, committedByUserId, report, cancellationToken);
+            await CommitIdentificationDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
 
             // Link Cases — runs last so all entities are resolved
             await LinkCasesAsync(importPackageId, committedByUserId, report, cancellationToken);
@@ -154,6 +161,7 @@ public class CommitService : ICommitService
             report.PropertyUnits.Committed +
             report.Persons.Committed + report.Households.Committed +
             report.PersonPropertyRelations.Committed + report.Evidences.Committed +
+            report.IdentificationDocuments.Committed +
             report.Claims.Committed + report.Surveys.Committed;
 
         report.TotalRecordsFailed =
@@ -161,6 +169,7 @@ public class CommitService : ICommitService
             report.PropertyUnits.Failed +
             report.Persons.Failed + report.Households.Failed +
             report.PersonPropertyRelations.Failed + report.Evidences.Failed +
+            report.IdentificationDocuments.Failed +
             report.Claims.Failed + report.Surveys.Failed;
 
         report.TotalRecordsApproved =
@@ -168,6 +177,7 @@ public class CommitService : ICommitService
             report.PropertyUnits.Approved +
             report.Persons.Approved + report.Households.Approved +
             report.PersonPropertyRelations.Approved + report.Evidences.Approved +
+            report.IdentificationDocuments.Approved +
             report.Claims.Approved + report.Surveys.Approved;
 
         report.Status = report.IsFullySuccessful
@@ -1051,6 +1061,12 @@ public class CommitService : ICommitService
 
         if (approved.Count == 0) return;
 
+        // Pre-load junction rows for many-to-many evidence-relation links (v1.8+)
+        var allJunctionRows = await _stagingEvidenceRelationRepo.GetByPackageIdAsync(importPackageId, ct);
+        var junctionByEvidence = allJunctionRows
+            .GroupBy(r => r.OriginalEvidenceId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         for (var i = 0; i < approved.Count; i++)
         {
             var staging = approved[i];
@@ -1087,13 +1103,32 @@ public class CommitService : ICommitService
                     fileHash: staging.FileHash,
                     createdByUserId: userId);
 
-                // Link to resolved production FKs
-                if (staging.OriginalPersonPropertyRelationId.HasValue &&
-                    _idMap.TryGetValue(staging.OriginalPersonPropertyRelationId.Value, out var prodRelId))
+                // Link evidence to person-property relations
+                // Priority: junction table (many-to-many) > direct FK (legacy 1:1)
+                junctionByEvidence.TryGetValue(staging.OriginalEntityId, out var junctionLinks);
+
+                if (junctionLinks != null && junctionLinks.Count > 0)
                 {
+                    // v1.8+ path: create one EvidenceRelation per junction row
+                    foreach (var link in junctionLinks)
+                    {
+                        if (_idMap.TryGetValue(link.OriginalPersonPropertyRelationId, out var prodRelId))
+                        {
+                            var evidenceRelation = EvidenceRelation.Create(
+                                evidenceId: evidence.Id,
+                                personPropertyRelationId: prodRelId,
+                                linkedBy: userId);
+                            await _unitOfWork.EvidenceRelations.AddAsync(evidenceRelation, ct);
+                        }
+                    }
+                }
+                else if (staging.OriginalPersonPropertyRelationId.HasValue &&
+                    _idMap.TryGetValue(staging.OriginalPersonPropertyRelationId.Value, out var fallbackRelId))
+                {
+                    // Legacy fallback: direct FK on evidence row (v1.7 and earlier)
                     var evidenceRelation = EvidenceRelation.Create(
                         evidenceId: evidence.Id,
-                        personPropertyRelationId: prodRelId,
+                        personPropertyRelationId: fallbackRelId,
                         linkedBy: userId);
                     await _unitOfWork.EvidenceRelations.AddAsync(evidenceRelation, ct);
                 }
@@ -1120,6 +1155,81 @@ public class CommitService : ICommitService
                 report.Errors.Add(new CommitErrorDto
                 {
                     EntityType = "Evidence",
+                    StagingEntityId = staging.Id,
+                    OriginalEntityId = staging.OriginalEntityId,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Commit identification documents to production.
+    /// </summary>
+    private async Task CommitIdentificationDocumentsAsync(
+        Guid importPackageId, Guid userId, CommitReportDto report, CancellationToken ct)
+    {
+        var approved = await _stagingIdDocRepo.GetApprovedForCommitAsync(importPackageId, ct);
+        report.IdentificationDocuments.EntityType = "IdentificationDocument";
+        report.IdentificationDocuments.Approved = approved.Count;
+
+        if (approved.Count == 0) return;
+
+        for (var i = 0; i < approved.Count; i++)
+        {
+            var staging = approved[i];
+            try
+            {
+                // Resolve person ID
+                if (!_idMap.TryGetValue(staging.OriginalPersonId, out var prodPersonId))
+                {
+                    _logger.LogWarning(
+                        "IdentificationDocument {OriginalId} references unknown Person {PersonId}, skipping",
+                        staging.OriginalEntityId, staging.OriginalPersonId);
+                    report.IdentificationDocuments.Failed++;
+                    continue;
+                }
+
+                var doc = IdentificationDocument.Create(
+                    documentType: staging.DocumentType,
+                    description: staging.Description,
+                    originalFileName: staging.OriginalFileName,
+                    filePath: staging.FilePath,
+                    fileSizeBytes: staging.FileSizeBytes,
+                    mimeType: staging.MimeType,
+                    fileHash: staging.FileHash,
+                    personId: prodPersonId,
+                    createdByUserId: userId);
+
+                if (staging.DocumentIssuedDate.HasValue || staging.DocumentExpiryDate.HasValue ||
+                    !string.IsNullOrEmpty(staging.IssuingAuthority) || !string.IsNullOrEmpty(staging.DocumentReferenceNumber) ||
+                    !string.IsNullOrEmpty(staging.Notes))
+                {
+                    doc.UpdateMetadata(
+                        issuedDate: staging.DocumentIssuedDate,
+                        expiryDate: staging.DocumentExpiryDate,
+                        issuingAuthority: staging.IssuingAuthority,
+                        referenceNumber: staging.DocumentReferenceNumber,
+                        notes: staging.Notes,
+                        modifiedByUserId: userId);
+                }
+
+                await _unitOfWork.IdentificationDocuments.AddAsync(doc, ct);
+
+                _idMap[staging.OriginalEntityId] = doc.Id;
+                staging.SetCommittedEntityId(doc.Id);
+                await _stagingIdDocRepo.UpdateAsync(staging, ct);
+
+                report.IdentificationDocuments.Committed++;
+                report.IdentificationDocuments.IdMappings[staging.OriginalEntityId] = doc.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to commit IdentificationDocument {OriginalId}", staging.OriginalEntityId);
+                report.IdentificationDocuments.Failed++;
+                report.Errors.Add(new CommitErrorDto
+                {
+                    EntityType = "IdentificationDocument",
                     StagingEntityId = staging.Id,
                     OriginalEntityId = staging.OriginalEntityId,
                     ErrorMessage = ex.Message
