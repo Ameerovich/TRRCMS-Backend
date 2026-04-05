@@ -21,6 +21,7 @@ public sealed class GetDashboardTrendsQueryHandler
         var from = request.From;
         var to = request.To;
 
+        var cases = await _uow.Cases.GetMonthlyCreationCountsAsync(from, to, cancellationToken);
         var claims = await _uow.Claims.GetMonthlyCreationCountsAsync(from, to, cancellationToken);
         var surveys = await _uow.Surveys.GetMonthlyCreationCountsAsync(from, to, cancellationToken);
         var buildings = await _uow.Buildings.GetMonthlyCreationCountsAsync(from, to, cancellationToken);
@@ -29,6 +30,7 @@ public sealed class GetDashboardTrendsQueryHandler
 
         return new DashboardTrendsDto
         {
+            Cases = ToTrendPoints(cases),
             Claims = ToTrendPoints(claims),
             Surveys = ToTrendPoints(surveys),
             Buildings = ToTrendPoints(buildings),

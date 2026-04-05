@@ -591,10 +591,90 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.ToTable("BuildingDocuments", (string)null);
                 });
 
+            modelBuilder.Entity("TRRCMS.Domain.Entities.Case", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CaseNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("ClosedByClaimId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ClosedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsEditable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("OpenedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PropertyUnitId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ClosedByClaimId");
+
+                    b.HasIndex("PropertyUnitId")
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Cases", (string)null);
+                });
+
             modelBuilder.Entity("TRRCMS.Domain.Entities.Claim", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CaseId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("CaseStatus")
@@ -685,6 +765,8 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasComment("Type of tenure contract: 1=Freehold, 2=Leasehold, 3=SharedOwnership, 4=Rental, 5=Informal, 6=Customary, 7=Usufruct, 99=Other (نوع عقد الحيازة)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
 
                     b.HasIndex("CaseStatus")
                         .HasDatabaseName("IX_Claims_CaseStatus");
@@ -1211,10 +1293,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(255)")
                         .HasComment("Original filename as uploaded");
 
-                    b.Property<Guid?>("PersonId")
-                        .HasColumnType("uuid")
-                        .HasComment("Foreign key to Person");
-
                     b.Property<Guid?>("PreviousVersionId")
                         .HasColumnType("uuid")
                         .HasComment("Reference to previous version");
@@ -1247,9 +1325,6 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.HasIndex("IsDeleted")
                         .HasDatabaseName("IX_Evidences_IsDeleted");
-
-                    b.HasIndex("PersonId")
-                        .HasDatabaseName("IX_Evidences_PersonId");
 
                     b.HasIndex("PreviousVersionId");
 
@@ -1556,6 +1631,98 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasDatabaseName("IX_Household_PropertyUnitId");
 
                     b.ToTable("Households", (string)null);
+                });
+
+            modelBuilder.Entity("TRRCMS.Domain.Entities.IdentificationDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeletedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("DocumentExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DocumentIssuedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DocumentReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("IssuingAuthority")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("LastModifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LastModifiedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<Guid>("PersonId")
+                        .HasColumnType("uuid");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("bytea");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentType");
+
+                    b.HasIndex("FileHash");
+
+                    b.HasIndex("PersonId");
+
+                    b.ToTable("IdentificationDocuments", (string)null);
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.ImportPackage", b =>
@@ -2234,6 +2401,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CaseId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("ContractDetails")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)")
@@ -2318,6 +2488,8 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasComment("Foreign key to the originating Survey — scopes claim creation to this survey's relations only");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
 
                     b.HasIndex("IsActive")
                         .HasDatabaseName("IX_PersonPropertyRelation_IsActive");
@@ -3745,6 +3917,9 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<Guid>("BuildingId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CaseId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("ClaimCreatedDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -3849,6 +4024,8 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.HasIndex("BuildingId")
                         .HasDatabaseName("IX_Surveys_BuildingId");
+
+                    b.HasIndex("CaseId");
 
                     b.HasIndex("ClaimId");
 
@@ -4443,8 +4620,31 @@ namespace TRRCMS.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TRRCMS.Domain.Entities.Case", b =>
+                {
+                    b.HasOne("TRRCMS.Domain.Entities.Claim", "ClosedByClaim")
+                        .WithMany()
+                        .HasForeignKey("ClosedByClaimId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TRRCMS.Domain.Entities.PropertyUnit", "PropertyUnit")
+                        .WithOne()
+                        .HasForeignKey("TRRCMS.Domain.Entities.Case", "PropertyUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ClosedByClaim");
+
+                    b.Navigation("PropertyUnit");
+                });
+
             modelBuilder.Entity("TRRCMS.Domain.Entities.Claim", b =>
                 {
+                    b.HasOne("TRRCMS.Domain.Entities.Case", "Case")
+                        .WithMany("Claims")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TRRCMS.Domain.Entities.Survey", null)
                         .WithMany()
                         .HasForeignKey("OriginatingSurveyId")
@@ -4461,6 +4661,8 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasForeignKey("PropertyUnitId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Case");
 
                     b.Navigation("PrimaryClaimant");
 
@@ -4516,19 +4718,12 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasForeignKey("ClaimId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("TRRCMS.Domain.Entities.Person", "Person")
-                        .WithMany("Evidences")
-                        .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("TRRCMS.Domain.Entities.Evidence", "PreviousVersion")
                         .WithMany()
                         .HasForeignKey("PreviousVersionId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Claim");
-
-                    b.Navigation("Person");
 
                     b.Navigation("PreviousVersion");
                 });
@@ -4563,6 +4758,17 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Navigation("PropertyUnit");
                 });
 
+            modelBuilder.Entity("TRRCMS.Domain.Entities.IdentificationDocument", b =>
+                {
+                    b.HasOne("TRRCMS.Domain.Entities.Person", "Person")
+                        .WithMany("IdentificationDocuments")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Person");
+                });
+
             modelBuilder.Entity("TRRCMS.Domain.Entities.Person", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.Household", "Household")
@@ -4575,6 +4781,11 @@ namespace TRRCMS.Infrastructure.Migrations
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.PersonPropertyRelation", b =>
                 {
+                    b.HasOne("TRRCMS.Domain.Entities.Case", "Case")
+                        .WithMany("PersonPropertyRelations")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TRRCMS.Domain.Entities.Person", "Person")
                         .WithMany("PropertyRelations")
                         .HasForeignKey("PersonId")
@@ -4591,6 +4802,8 @@ namespace TRRCMS.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("SurveyId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Case");
 
                     b.Navigation("Person");
 
@@ -4880,6 +5093,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TRRCMS.Domain.Entities.Case", "Case")
+                        .WithMany("Surveys")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TRRCMS.Domain.Entities.Claim", "Claim")
                         .WithMany()
                         .HasForeignKey("ClaimId")
@@ -4902,6 +5120,8 @@ namespace TRRCMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Building");
+
+                    b.Navigation("Case");
 
                     b.Navigation("Claim");
 
@@ -4950,6 +5170,15 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Navigation("PropertyUnits");
                 });
 
+            modelBuilder.Entity("TRRCMS.Domain.Entities.Case", b =>
+                {
+                    b.Navigation("Claims");
+
+                    b.Navigation("PersonPropertyRelations");
+
+                    b.Navigation("Surveys");
+                });
+
             modelBuilder.Entity("TRRCMS.Domain.Entities.Claim", b =>
                 {
                     b.Navigation("Evidences");
@@ -4977,7 +5206,7 @@ namespace TRRCMS.Infrastructure.Migrations
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Person", b =>
                 {
-                    b.Navigation("Evidences");
+                    b.Navigation("IdentificationDocuments");
 
                     b.Navigation("PropertyRelations");
                 });

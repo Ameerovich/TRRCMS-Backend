@@ -28,6 +28,9 @@ public sealed class GetRegistrationCoverageQueryHandler
         var relationTypeCounts = await _uow.PersonPropertyRelations.GetRelationTypeCountsAsync(cancellationToken);
         var relationsWithEvidence = await _uow.PersonPropertyRelations.GetCountWithEvidenceAsync(cancellationToken);
 
+        var totalCases = await _uow.Cases.GetTotalCountAsync(cancellationToken);
+        var caseLifecycleStatusCounts = await _uow.Cases.GetStatusCountsAsync(cancellationToken);
+
         var caseStatusCounts = await _uow.Claims.GetCaseStatusCountsAsync(cancellationToken);
         var claimTypeCounts = await _uow.Claims.GetClaimTypeCountsAsync(cancellationToken);
 
@@ -44,6 +47,9 @@ public sealed class GetRegistrationCoverageQueryHandler
             RelationsByType = relationTypeCounts.ToDictionary(
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),
             RelationsWithEvidence = relationsWithEvidence,
+            TotalCases = totalCases,
+            CasesOpen = caseLifecycleStatusCounts.GetValueOrDefault(CaseLifecycleStatus.Open, 0),
+            CasesClosed = caseLifecycleStatusCounts.GetValueOrDefault(CaseLifecycleStatus.Closed, 0),
             ClaimsOpen = caseStatusCounts.GetValueOrDefault(CaseStatus.Open, 0),
             ClaimsClosed = caseStatusCounts.GetValueOrDefault(CaseStatus.Closed, 0),
             ClaimsByType = claimTypeCounts.ToDictionary(

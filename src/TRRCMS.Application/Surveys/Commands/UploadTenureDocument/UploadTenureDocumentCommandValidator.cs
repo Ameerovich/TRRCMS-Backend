@@ -19,7 +19,8 @@ public class UploadTenureDocumentCommandValidator : AbstractValidator<UploadTenu
         "image/jpeg", "image/png", "image/gif", "image/webp", "image/tiff",
         "application/pdf",
         "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "audio/mpeg", "audio/wav", "audio/ogg", "audio/mp4", "audio/x-m4a"
     };
 
     public UploadTenureDocumentCommandValidator(IVocabularyValidationService vocabService)
@@ -51,7 +52,7 @@ public class UploadTenureDocumentCommandValidator : AbstractValidator<UploadTenu
         RuleFor(x => x.File)
             .Must(file => AllowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
             .When(x => x.File != null)
-            .WithMessage("Only image files, PDFs, and Word documents are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF, DOC, DOCX)");
+            .WithMessage("Only image files, PDFs, Word documents, and audio recordings are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF, DOC, DOCX, MP3, WAV, OGG, M4A)");
 
         // Evidence type validation (int field)
         RuleFor(x => x.EvidenceType)

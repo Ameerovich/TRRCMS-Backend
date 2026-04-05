@@ -2,22 +2,22 @@ using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
-using TRRCMS.Application.Evidences.Dtos;
+using TRRCMS.Application.IdentificationDocuments.Dtos;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
 
 /// <summary>
 /// Handler for UpdateIdentificationDocumentCommand
-/// Updates identification document details and optionally replaces the file
+/// Updates identification document details and optionally replaces the file (in-place, no versioning)
 /// </summary>
-public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<UpdateIdentificationDocumentCommand, EvidenceDto>
+public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<UpdateIdentificationDocumentCommand, IdentificationDocumentDto>
 {
     private readonly ISurveyRepository _surveyRepository;
     private readonly IPersonRepository _personRepository;
     private readonly IHouseholdRepository _householdRepository;
     private readonly IPropertyUnitRepository _propertyUnitRepository;
-    private readonly IEvidenceRepository _evidenceRepository;
+    private readonly IIdentificationDocumentRepository _idDocRepository;
     private readonly IFileStorageService _fileStorageService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
@@ -28,7 +28,7 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
         IPersonRepository personRepository,
         IHouseholdRepository householdRepository,
         IPropertyUnitRepository propertyUnitRepository,
-        IEvidenceRepository evidenceRepository,
+        IIdentificationDocumentRepository idDocRepository,
         IFileStorageService fileStorageService,
         ICurrentUserService currentUserService,
         IAuditService auditService,
@@ -38,14 +38,14 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
         _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
         _householdRepository = householdRepository ?? throw new ArgumentNullException(nameof(householdRepository));
         _propertyUnitRepository = propertyUnitRepository ?? throw new ArgumentNullException(nameof(propertyUnitRepository));
-        _evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
+        _idDocRepository = idDocRepository ?? throw new ArgumentNullException(nameof(idDocRepository));
         _fileStorageService = fileStorageService ?? throw new ArgumentNullException(nameof(fileStorageService));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
-    public async Task<EvidenceDto> Handle(UpdateIdentificationDocumentCommand request, CancellationToken cancellationToken)
+    public async Task<IdentificationDocumentDto> Handle(UpdateIdentificationDocumentCommand request, CancellationToken cancellationToken)
     {
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
@@ -57,54 +57,50 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
         {
             var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
             if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
-                throw new UnauthorizedAccessException("You can only update evidence for your own surveys");
+                throw new UnauthorizedAccessException("You can only update documents for your own surveys");
         }
 
         if (survey.Status != SurveyStatus.Draft)
-            throw new ValidationException($"Cannot update evidence for survey in {survey.Status} status. Only Draft surveys can be modified.");
+            throw new ValidationException($"Cannot update documents for survey in {survey.Status} status. Only Draft surveys can be modified.");
 
-        // Get evidence
-        var evidence = await _evidenceRepository.GetByIdAsync(request.EvidenceId, cancellationToken)
-            ?? throw new NotFoundException($"Evidence with ID {request.EvidenceId} not found");
+        var idDoc = await _idDocRepository.GetByIdAsync(request.EvidenceId, cancellationToken)
+            ?? throw new NotFoundException($"Identification document with ID {request.EvidenceId} not found");
 
-        // Validate evidence is linked to a person in this survey's building context
-        if (evidence.PersonId.HasValue)
+        // Validate document belongs to a person in this survey's building context
+        var person = await _personRepository.GetByIdAsync(idDoc.PersonId, cancellationToken);
+        if (person?.HouseholdId != null)
         {
-            var person = await _personRepository.GetByIdAsync(evidence.PersonId.Value, cancellationToken);
-            if (person?.HouseholdId != null)
+            var household = await _householdRepository.GetByIdAsync(person.HouseholdId.Value, cancellationToken);
+            if (household != null)
             {
-                var household = await _householdRepository.GetByIdAsync(person.HouseholdId.Value, cancellationToken);
-                if (household != null)
-                {
-                    var propertyUnit = await _propertyUnitRepository.GetByIdAsync(household.PropertyUnitId, cancellationToken);
-                    if (propertyUnit == null || propertyUnit.BuildingId != survey.BuildingId)
-                        throw new ValidationException("Evidence does not belong to this survey's building");
-                }
+                var propertyUnit = await _propertyUnitRepository.GetByIdAsync(household.PropertyUnitId, cancellationToken);
+                if (propertyUnit == null || propertyUnit.BuildingId != survey.BuildingId)
+                    throw new ValidationException("Document does not belong to this survey's building");
             }
         }
 
         // Capture old values for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
-            evidence.PersonId,
-            evidence.OriginalFileName,
-            evidence.Description,
-            evidence.DocumentIssuedDate,
-            evidence.DocumentExpiryDate,
-            evidence.IssuingAuthority,
-            evidence.DocumentReferenceNumber,
-            evidence.Notes
+            idDoc.PersonId,
+            idDoc.OriginalFileName,
+            idDoc.Description,
+            idDoc.DocumentIssuedDate,
+            idDoc.DocumentExpiryDate,
+            idDoc.IssuingAuthority,
+            idDoc.DocumentReferenceNumber,
+            idDoc.Notes
         });
 
         // Update PersonId if provided and different
-        if (request.PersonId.HasValue && request.PersonId.Value != evidence.PersonId)
+        if (request.PersonId.HasValue && request.PersonId.Value != idDoc.PersonId)
         {
             var newPerson = await _personRepository.GetByIdAsync(request.PersonId.Value, cancellationToken)
                 ?? throw new NotFoundException($"Person with ID {request.PersonId} not found");
-            evidence.LinkToPerson(request.PersonId.Value, currentUserId);
+            idDoc.LinkToPerson(request.PersonId.Value, currentUserId);
         }
 
-        // Update file if provided
+        // Update file if provided (in-place, no versioning)
         if (request.File != null && request.File.Length > 0)
         {
             if (!_fileStorageService.ValidateFileSize(request.File.Length))
@@ -127,30 +123,23 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
             }
 
             var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
-
-            evidence.UpdateFileInfo(filePath, request.File.FileName, request.File.Length, mimeType, fileHash, currentUserId);
+            idDoc.UpdateFileInfo(filePath, request.File.FileName, request.File.Length, mimeType, fileHash, currentUserId);
         }
 
-        // Update description if provided
         if (request.Description != null)
-        {
-            evidence.UpdateDescription(request.Description, currentUserId);
-        }
+            idDoc.UpdateDescription(request.Description, currentUserId);
 
-        // Update metadata (use existing values for fields not provided)
-        evidence.UpdateMetadata(
-            issuedDate: request.DocumentIssuedDate ?? evidence.DocumentIssuedDate,
-            expiryDate: request.DocumentExpiryDate ?? evidence.DocumentExpiryDate,
-            issuingAuthority: request.IssuingAuthority ?? evidence.IssuingAuthority,
-            referenceNumber: request.DocumentReferenceNumber ?? evidence.DocumentReferenceNumber,
-            notes: request.Notes ?? evidence.Notes,
+        idDoc.UpdateMetadata(
+            issuedDate: request.DocumentIssuedDate ?? idDoc.DocumentIssuedDate,
+            expiryDate: request.DocumentExpiryDate ?? idDoc.DocumentExpiryDate,
+            issuingAuthority: request.IssuingAuthority ?? idDoc.IssuingAuthority,
+            referenceNumber: request.DocumentReferenceNumber ?? idDoc.DocumentReferenceNumber,
+            notes: request.Notes ?? idDoc.Notes,
             modifiedByUserId: currentUserId);
 
-        // Save changes
-        await _evidenceRepository.UpdateAsync(evidence, cancellationToken);
-        await _evidenceRepository.SaveChangesAsync(cancellationToken);
+        await _idDocRepository.UpdateAsync(idDoc, cancellationToken);
+        await _idDocRepository.SaveChangesAsync(cancellationToken);
 
-        // Build changed fields
         var changedFields = new List<string>();
         if (request.PersonId.HasValue) changedFields.Add("PersonId");
         if (request.File != null) changedFields.Add("File");
@@ -161,31 +150,27 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
         if (request.DocumentReferenceNumber != null) changedFields.Add("DocumentReferenceNumber");
         if (request.Notes != null) changedFields.Add("Notes");
 
-        // Audit logging
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
-            actionDescription: $"Updated identification document '{evidence.OriginalFileName}' in survey {survey.ReferenceCode}",
-            entityType: "Evidence",
-            entityId: evidence.Id,
-            entityIdentifier: evidence.OriginalFileName,
+            actionDescription: $"Updated identification document '{idDoc.OriginalFileName}' in survey {survey.ReferenceCode}",
+            entityType: "IdentificationDocument",
+            entityId: idDoc.Id,
+            entityIdentifier: idDoc.OriginalFileName,
             oldValues: oldValues,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
-                evidence.PersonId,
-                evidence.OriginalFileName,
-                evidence.Description,
-                evidence.DocumentIssuedDate,
-                evidence.DocumentExpiryDate,
-                evidence.IssuingAuthority,
-                evidence.DocumentReferenceNumber,
-                evidence.Notes
+                idDoc.PersonId,
+                idDoc.OriginalFileName,
+                idDoc.Description,
+                idDoc.DocumentIssuedDate,
+                idDoc.DocumentExpiryDate,
+                idDoc.IssuingAuthority,
+                idDoc.DocumentReferenceNumber,
+                idDoc.Notes
             }),
             changedFields: string.Join(", ", changedFields),
             cancellationToken: cancellationToken);
 
-        var result = _mapper.Map<EvidenceDto>(evidence);
-        result.IsExpired = evidence.IsExpired();
-
-        return result;
+        return _mapper.Map<IdentificationDocumentDto>(idDoc);
     }
 }

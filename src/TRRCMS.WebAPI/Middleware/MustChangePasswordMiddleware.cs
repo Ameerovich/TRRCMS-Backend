@@ -13,6 +13,8 @@ public class MustChangePasswordMiddleware
     [
         "/api/v1/auth/change-password",
         "/api/v1/auth/logout",
+        "/api/v2/auth/change-password",
+        "/api/v2/auth/logout",
         "/health"
     ];
 
@@ -39,7 +41,7 @@ public class MustChangePasswordMiddleware
                     await context.Response.WriteAsJsonAsync(new
                     {
                         error = "PasswordChangeRequired",
-                        message = "You must change your password before accessing other resources. Use POST /api/v1/auth/change-password."
+                        message = "You must change your password before accessing other resources. Use POST /api/v1/auth/change-password or POST /api/v2/auth/change-password."
                     });
                     return;
                 }

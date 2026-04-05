@@ -140,7 +140,7 @@ public class UpdateTenureDocumentCommandHandler : IRequestHandler<UpdateTenureDo
             if (!_fileStorageService.ValidateFileSize(request.File.Length))
                 throw new ValidationException("File size exceeds maximum allowed size");
 
-            var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+            var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx", ".mp3", ".wav", ".ogg", ".m4a" };
             if (!_fileStorageService.ValidateFileExtension(request.File.FileName, allowedExtensions))
                 throw new ValidationException($"Invalid file type. Allowed types: {string.Join(", ", allowedExtensions)}");
 

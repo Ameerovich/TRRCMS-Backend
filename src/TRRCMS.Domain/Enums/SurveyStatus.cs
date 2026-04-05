@@ -20,6 +20,13 @@ public enum SurveyStatus
     Finalized = 3,
 
     /// <summary>
+    /// Obstructed - Survey could not be conducted due to non-cooperation (معرقل)
+    /// Owner/occupant refused to cooperate or access was blocked
+    /// </summary>
+    [ArabicLabel("معرقل")]
+    Obstructed = 4,
+
+    /// <summary>
     /// Cancelled - Survey cancelled (ملغى)
     /// </summary>
     [ArabicLabel("ملغى")]

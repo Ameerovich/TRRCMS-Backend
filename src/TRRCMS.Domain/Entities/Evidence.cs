@@ -34,11 +34,9 @@ public class Evidence : BaseAuditableEntity
     public bool IsCurrentVersion { get; private set; }
 
     // Relationships
-    public Guid? PersonId { get; private set; }
     public Guid? ClaimId { get; private set; }
 
     // Navigation properties
-    public virtual Person? Person { get; private set; }
     public virtual Claim? Claim { get; private set; }
     public virtual Evidence? PreviousVersion { get; private set; }
 
@@ -83,12 +81,6 @@ public class Evidence : BaseAuditableEntity
         };
         evidence.MarkAsCreated(createdByUserId);
         return evidence;
-    }
-
-    public void LinkToPerson(Guid personId, Guid modifiedByUserId)
-    {
-        PersonId = personId;
-        MarkAsModified(modifiedByUserId);
     }
 
     /// <summary>
@@ -138,7 +130,6 @@ public class Evidence : BaseAuditableEntity
             VersionNumber = VersionNumber + 1,
             IsCurrentVersion = true,
             PreviousVersionId = Id,
-            PersonId = PersonId,
             // Note: EvidenceRelations are NOT copied — re-link new version via EvidenceRelation.Create()
             ClaimId = ClaimId
         };

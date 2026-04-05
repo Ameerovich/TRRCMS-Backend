@@ -106,6 +106,11 @@ public class Survey : BaseAuditableEntity
     /// </summary>
     public DateTime? ClaimCreatedDate { get; private set; }
     /// <summary>
+    /// Foreign key to the Case that this survey belongs to (set automatically)
+    /// </summary>
+    public Guid? CaseId { get; private set; }
+
+    /// <summary>
     /// Foreign key to Person who is the contact person for this survey
     /// </summary>
     public Guid? ContactPersonId { get; private set; }
@@ -138,6 +143,11 @@ public class Survey : BaseAuditableEntity
     /// Contact person for this survey
     /// </summary>
     public virtual Person? ContactPerson { get; private set; }
+
+    /// <summary>
+    /// Case this survey belongs to
+    /// </summary>
+    public virtual Case? Case { get; private set; }
     /// <summary>
     /// EF Core constructor
     /// </summary>
@@ -286,6 +296,45 @@ public class Survey : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Mark survey as obstructed — field collector could not conduct the survey
+    /// because the owner/occupant refused to cooperate or access was blocked.
+    /// Allowed from Draft status.
+    /// </summary>
+    public void MarkAsObstructed(Guid modifiedByUserId)
+    {
+        if (Status != SurveyStatus.Draft)
+            throw new InvalidOperationException("Only Draft surveys can be marked as obstructed.");
+
+        Status = SurveyStatus.Obstructed;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Resume an obstructed survey back to Draft.
+    /// </summary>
+    public void Resume(Guid modifiedByUserId)
+    {
+        if (Status != SurveyStatus.Obstructed)
+            throw new InvalidOperationException("Only Obstructed surveys can be resumed.");
+
+        Status = SurveyStatus.Draft;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Revert a finalized survey back to Draft so it can be edited and re-processed.
+    /// Restricted to Admin / DataManager at the application layer.
+    /// </summary>
+    public void RevertToDraft(Guid modifiedByUserId)
+    {
+        if (Status != SurveyStatus.Finalized)
+            throw new InvalidOperationException("Only Finalized surveys can be reverted to Draft.");
+
+        Status = SurveyStatus.Draft;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Cancel survey. Allowed from Draft or Finalized status.
     /// </summary>
     public void Cancel(Guid modifiedByUserId)
@@ -297,6 +346,18 @@ public class Survey : BaseAuditableEntity
             throw new InvalidOperationException("Cannot cancel an archived survey.");
 
         Status = SurveyStatus.Cancelled;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Link survey to a case
+    /// </summary>
+    public void LinkToCase(Guid caseId, Guid modifiedByUserId)
+    {
+        if (CaseId.HasValue)
+            return;
+
+        CaseId = caseId;
         MarkAsModified(modifiedByUserId);
     }
 

@@ -108,9 +108,9 @@ public class UploadPropertyPhotoCommandHandler : IRequestHandler<UploadPropertyP
 
         var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
 
-        // Create Evidence entity using EvidenceType.Photo enum
+        // Create Evidence entity
         var evidence = Evidence.Create(
-            evidenceType: EvidenceType.Photo,
+            evidenceType: EvidenceType.Other,
             description: request.Description,
             originalFileName: request.File.FileName,
             filePath: filePath,

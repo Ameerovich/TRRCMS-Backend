@@ -19,7 +19,6 @@ public class EvidenceRepository : IEvidenceRepository
     public async Task<Evidence?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
-            .Include(e => e.Person)
             .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
                 .ThenInclude(er => er.PersonPropertyRelation)
             .Include(e => e.PreviousVersion)
@@ -29,25 +28,14 @@ public class EvidenceRepository : IEvidenceRepository
     public async Task<IEnumerable<Evidence>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
-            .Include(e => e.Person)
             .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => !e.IsDeleted)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IEnumerable<Evidence>> GetByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default)
-    {
-        return await _context.Set<Evidence>()
-            .Include(e => e.Person)
-            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
-            .Where(e => e.PersonId == personId && !e.IsDeleted)
             .ToListAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<Evidence>> GetByRelationIdAsync(Guid relationId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
-            .Include(e => e.Person)
             .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => e.EvidenceRelations.Any(er =>
                 er.PersonPropertyRelationId == relationId
@@ -64,7 +52,6 @@ public class EvidenceRepository : IEvidenceRepository
         CancellationToken cancellationToken = default)
     {
         var query = _context.Set<Evidence>()
-            .Include(e => e.Person)
             .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => e.EvidenceRelations.Any(er =>
                 er.PersonPropertyRelationId == relationId
@@ -84,7 +71,6 @@ public class EvidenceRepository : IEvidenceRepository
     public async Task<IEnumerable<Evidence>> GetByClaimIdAsync(Guid claimId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
-            .Include(e => e.Person)
             .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => e.ClaimId == claimId && !e.IsDeleted)
             .ToListAsync(cancellationToken);
@@ -93,7 +79,6 @@ public class EvidenceRepository : IEvidenceRepository
     public async Task<IEnumerable<Evidence>> GetCurrentVersionsAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Set<Evidence>()
-            .Include(e => e.Person)
             .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => e.IsCurrentVersion && !e.IsDeleted)
             .ToListAsync(cancellationToken);
@@ -124,17 +109,13 @@ public class EvidenceRepository : IEvidenceRepository
 
         var query = _context.Evidences
             .Where(e => !e.IsDeleted)
-            .Where(e => (e.PersonId.HasValue && personIds.Contains(e.PersonId.Value))
-                     || e.EvidenceRelations.Any(er =>
+            .Where(e => e.EvidenceRelations.Any(er =>
                             er.IsActive && !er.IsDeleted
                             && relationIds.Contains(er.PersonPropertyRelationId)))
             .Where(e => e.IsCurrentVersion);
 
         if (evidenceType.HasValue)
             query = query.Where(e => e.EvidenceType == evidenceType.Value);
-
-        if (personId.HasValue)
-            query = query.Where(e => e.PersonId == personId.Value);
 
         return await query.OrderByDescending(e => e.CreatedAtUtc).ToListAsync(cancellationToken);
     }

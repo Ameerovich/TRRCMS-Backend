@@ -139,10 +139,10 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasForeignKey(ppr => ppr.PersonId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Relationship to Evidence (one-to-many)
-        builder.HasMany(p => p.Evidences)
-            .WithOne(e => e.Person)
-            .HasForeignKey(e => e.PersonId)
+        // Relationship to IdentificationDocuments (one-to-many)
+        builder.HasMany(p => p.IdentificationDocuments)
+            .WithOne(d => d.Person)
+            .HasForeignKey(d => d.PersonId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

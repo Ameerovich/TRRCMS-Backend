@@ -60,7 +60,6 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
         builder.Property(e => e.IsCurrentVersion).IsRequired().HasDefaultValue(true).HasComment("Indicates if this is the current/latest version");
 
         // Foreign keys
-        builder.Property(e => e.PersonId).IsRequired(false).HasComment("Foreign key to Person");
         builder.Property(e => e.ClaimId).IsRequired(false).HasComment("Foreign key to Claim");
 
         // Audit fields
@@ -75,7 +74,6 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
 
         // Indexes
         builder.HasIndex(e => e.EvidenceType).HasDatabaseName("IX_Evidences_EvidenceType");
-        builder.HasIndex(e => e.PersonId).HasDatabaseName("IX_Evidences_PersonId");
         builder.HasIndex(e => e.ClaimId).HasDatabaseName("IX_Evidences_ClaimId");
         builder.HasIndex(e => e.IsCurrentVersion).HasDatabaseName("IX_Evidences_IsCurrentVersion");
         builder.HasIndex(e => new { e.IsCurrentVersion, e.IsDeleted }).HasDatabaseName("IX_Evidences_IsCurrentVersion_IsDeleted");
@@ -83,11 +81,6 @@ public class EvidenceConfiguration : IEntityTypeConfiguration<Evidence>
         builder.HasIndex(e => e.DocumentExpiryDate).HasDatabaseName("IX_Evidences_DocumentExpiryDate");
 
         // Relationships
-        builder.HasOne(e => e.Person)
-            .WithMany(p => p.Evidences)
-            .HasForeignKey(e => e.PersonId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasOne(e => e.PreviousVersion)
             .WithMany()
             .HasForeignKey(e => e.PreviousVersionId)

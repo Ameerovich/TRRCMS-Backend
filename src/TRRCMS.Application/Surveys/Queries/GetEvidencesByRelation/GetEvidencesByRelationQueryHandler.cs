@@ -86,7 +86,6 @@ public class GetEvidencesByRelationQueryHandler : IRequestHandler<GetEvidencesBy
             VersionNumber = e.VersionNumber,
             PreviousVersionId = e.PreviousVersionId,
             IsCurrentVersion = e.IsCurrentVersion,
-            PersonId = e.PersonId,
             ClaimId = e.ClaimId,
             EvidenceRelations = e.EvidenceRelations?
                 .Where(er => er.IsActive && !er.IsDeleted)

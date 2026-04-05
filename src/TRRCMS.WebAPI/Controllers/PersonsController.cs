@@ -8,6 +8,8 @@ using TRRCMS.Application.Persons.Commands.UpdatePerson;
 using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Application.Persons.Queries.GetAllPersons;
 using TRRCMS.Application.Persons.Queries.GetPerson;
+using TRRCMS.Application.IdentificationDocuments.Dtos;
+using TRRCMS.Application.IdentificationDocuments.Queries.GetIdentificationDocumentsByPerson;
 
 namespace TRRCMS.WebAPI.Controllers;
 
@@ -346,6 +348,35 @@ public class PersonsController : ControllerBase
             return NotFound(new { message = $"Person with ID {id} not found" });
         }
 
+        return Ok(result);
+    }
+
+    // ==================== IDENTIFICATION DOCUMENTS ====================
+
+    /// <summary>
+    /// Get all identification documents for a person
+    /// الحصول على جميع وثائق التعريف لشخص معين
+    /// </summary>
+    /// <remarks>
+    /// **Purpose**: Retrieves all identification documents (personal ID photos, family records, photos)
+    /// linked to a specific person. Returns newest first.
+    ///
+    /// **Required permissions**: Surveys_ViewAll (CanViewAllSurveys)
+    /// </remarks>
+    /// <param name="personId">Person ID</param>
+    /// <returns>List of identification documents (may be empty)</returns>
+    /// <response code="200">Success. Returns list of identification documents.</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized — requires Surveys_ViewAll permission</response>
+    [HttpGet("{personId}/identification-documents")]
+    [Authorize(Policy = "CanViewAllSurveys")]
+    [ProducesResponseType(typeof(List<IdentificationDocumentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<List<IdentificationDocumentDto>>> GetIdentificationDocuments(Guid personId)
+    {
+        var query = new GetIdentificationDocumentsByPersonQuery(personId);
+        var result = await _mediator.Send(query);
         return Ok(result);
     }
 

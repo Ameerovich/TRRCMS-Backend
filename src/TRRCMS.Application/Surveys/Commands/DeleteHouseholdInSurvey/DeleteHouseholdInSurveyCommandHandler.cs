@@ -92,17 +92,17 @@ public class DeleteHouseholdInSurveyCommandHandler : IRequestHandler<DeleteHouse
                 });
             }
 
-            // Delete evidences linked directly to person (not via relation)
-            var personEvidences = await _unitOfWork.Evidences.GetByPersonIdAsync(person.Id, cancellationToken);
-            foreach (var evidence in personEvidences.Where(e => !e.IsDeleted && !affectedEntities.Any(ae => ae.EntityId == e.Id)))
+            // Delete identification documents linked to person
+            var personIdDocs = await _unitOfWork.IdentificationDocuments.GetByPersonIdAsync(person.Id, cancellationToken);
+            foreach (var idDoc in personIdDocs.Where(d => !d.IsDeleted && !affectedEntities.Any(ae => ae.EntityId == d.Id)))
             {
-                evidence.MarkAsDeleted(currentUserId);
-                await _unitOfWork.Evidences.UpdateAsync(evidence, cancellationToken);
+                idDoc.MarkAsDeleted(currentUserId);
+                await _unitOfWork.IdentificationDocuments.UpdateAsync(idDoc, cancellationToken);
                 affectedEntities.Add(new DeletedEntityInfo
                 {
-                    EntityId = evidence.Id,
-                    EntityType = "Evidence",
-                    EntityIdentifier = evidence.OriginalFileName
+                    EntityId = idDoc.Id,
+                    EntityType = "IdentificationDocument",
+                    EntityIdentifier = idDoc.OriginalFileName
                 });
             }
 

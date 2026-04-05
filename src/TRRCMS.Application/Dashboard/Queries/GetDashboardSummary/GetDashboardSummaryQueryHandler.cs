@@ -26,11 +26,24 @@ public sealed class GetDashboardSummaryQueryHandler
     {
         return new DashboardSummaryDto
         {
+            Cases = await BuildCaseStatisticsAsync(cancellationToken),
             Claims = await BuildClaimStatisticsAsync(cancellationToken),
             Surveys = await BuildSurveyStatisticsAsync(cancellationToken),
             Imports = await BuildImportStatisticsAsync(cancellationToken),
             Buildings = await BuildBuildingStatisticsAsync(cancellationToken),
             GeneratedAtUtc = DateTime.UtcNow
+        };
+    }
+
+    private async Task<CaseStatisticsDto> BuildCaseStatisticsAsync(CancellationToken ct)
+    {
+        var statusCounts = await _uow.Cases.GetStatusCountsAsync(ct);
+
+        return new CaseStatisticsDto
+        {
+            TotalCases = await _uow.Cases.GetTotalCountAsync(ct),
+            ByStatus = statusCounts.ToDictionary(
+                kvp => kvp.Key.ToString(), kvp => kvp.Value)
         };
     }
 

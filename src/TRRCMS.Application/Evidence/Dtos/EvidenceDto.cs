@@ -33,7 +33,6 @@ public class EvidenceDto
     public bool IsCurrentVersion { get; set; }
 
     // Relationships
-    public Guid? PersonId { get; set; }
     public Guid? ClaimId { get; set; }
 
     /// <summary>
