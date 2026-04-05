@@ -23,6 +23,8 @@ public class DataConsistencyValidator : IStagingValidator
     private readonly IStagingRepository<StagingHousehold> _householdRepo;
     private readonly IStagingRepository<StagingPersonPropertyRelation> _relationRepo;
     private readonly IStagingRepository<StagingEvidence> _evidenceRepo;
+    private readonly IStagingRepository<StagingEvidenceRelation> _evidenceRelationRepo;
+    private readonly IStagingRepository<StagingIdentificationDocument> _idDocRepo;
     private readonly IStagingRepository<StagingClaim> _claimRepo;
     private readonly IStagingRepository<StagingSurvey> _surveyRepo;
     private readonly IVocabularyValidationService _vocabService;
@@ -34,6 +36,8 @@ public class DataConsistencyValidator : IStagingValidator
         IStagingRepository<StagingHousehold> householdRepo,
         IStagingRepository<StagingPersonPropertyRelation> relationRepo,
         IStagingRepository<StagingEvidence> evidenceRepo,
+        IStagingRepository<StagingEvidenceRelation> evidenceRelationRepo,
+        IStagingRepository<StagingIdentificationDocument> idDocRepo,
         IStagingRepository<StagingClaim> claimRepo,
         IStagingRepository<StagingSurvey> surveyRepo,
         IVocabularyValidationService vocabService)
@@ -44,6 +48,8 @@ public class DataConsistencyValidator : IStagingValidator
         _householdRepo = householdRepo;
         _relationRepo = relationRepo;
         _evidenceRepo = evidenceRepo;
+        _evidenceRelationRepo = evidenceRelationRepo;
+        _idDocRepo = idDocRepo;
         _claimRepo = claimRepo;
         _surveyRepo = surveyRepo;
         _vocabService = vocabService;
@@ -72,6 +78,13 @@ public class DataConsistencyValidator : IStagingValidator
 
         var r6 = await ValidateEntitiesAsync(_evidenceRepo, importPackageId, ValidateEvidence, ct);
         totalChecked += r6.Checked; totalErrors += r6.Errors; totalWarnings += r6.Warnings;
+
+        // Evidence relations are simple junction rows — auto-mark as valid
+        var r6b = await ValidateEntitiesAsync(_evidenceRelationRepo, importPackageId, ValidateEvidenceRelation, ct);
+        totalChecked += r6b.Checked; totalErrors += r6b.Errors; totalWarnings += r6b.Warnings;
+
+        var r6c = await ValidateEntitiesAsync(_idDocRepo, importPackageId, ValidateIdentificationDocument, ct);
+        totalChecked += r6c.Checked; totalErrors += r6c.Errors; totalWarnings += r6c.Warnings;
 
         var r7 = await ValidateEntitiesAsync(_claimRepo, importPackageId, ValidateClaim, ct);
         totalChecked += r7.Checked; totalErrors += r7.Errors; totalWarnings += r7.Warnings;
@@ -226,8 +239,8 @@ public class DataConsistencyValidator : IStagingValidator
         if (r.OriginalPropertyUnitId == Guid.Empty) errors.Add("OriginalPropertyUnitId is required");
         if (!_vocabService.IsValidCode("relation_type", (int)r.RelationType)) errors.Add($"Invalid RelationType: {r.RelationType}");
 
-        if (r.OwnershipShare.HasValue && (r.OwnershipShare < 0 || r.OwnershipShare > 100))
-            errors.Add($"OwnershipShare must be 0-100, got {r.OwnershipShare}");
+        if (r.OwnershipShare.HasValue && (r.OwnershipShare < 0 || r.OwnershipShare > 2400))
+            errors.Add($"OwnershipShare must be 0-2400, got {r.OwnershipShare}");
 
         return (errors, warnings);
     }
@@ -244,6 +257,30 @@ public class DataConsistencyValidator : IStagingValidator
         // At least one parent reference should be present
         if (e.OriginalPersonId == null && e.OriginalPersonPropertyRelationId == null && e.OriginalClaimId == null)
             warnings.Add("Evidence has no linked Person, Relation, or Claim");
+
+        return (errors, warnings);
+    }
+
+    private (List<string>, List<string>) ValidateEvidenceRelation(StagingEvidenceRelation er)
+    {
+        var errors = new List<string>();
+        var warnings = new List<string>();
+
+        if (er.OriginalEvidenceId == Guid.Empty) errors.Add("OriginalEvidenceId is required");
+        if (er.OriginalPersonPropertyRelationId == Guid.Empty) errors.Add("OriginalPersonPropertyRelationId is required");
+
+        return (errors, warnings);
+    }
+
+    private (List<string>, List<string>) ValidateIdentificationDocument(StagingIdentificationDocument d)
+    {
+        var errors = new List<string>();
+        var warnings = new List<string>();
+
+        if (d.OriginalPersonId == Guid.Empty) errors.Add("OriginalPersonId is required");
+        if (!_vocabService.IsValidCode("document_type", (int)d.DocumentType)) errors.Add($"Invalid DocumentType: {d.DocumentType}");
+        if (string.IsNullOrWhiteSpace(d.OriginalFileName)) errors.Add("OriginalFileName is required");
+        if (d.FileSizeBytes <= 0) warnings.Add("FileSizeBytes is 0 or negative");
 
         return (errors, warnings);
     }

@@ -42,6 +42,7 @@ public class CommitReportDto
     public CommitEntityTypeSummary Households { get; set; } = new();
     public CommitEntityTypeSummary PersonPropertyRelations { get; set; } = new();
     public CommitEntityTypeSummary Evidences { get; set; } = new();
+    public CommitEntityTypeSummary IdentificationDocuments { get; set; } = new();
     public CommitEntityTypeSummary Claims { get; set; } = new();
     public CommitEntityTypeSummary Surveys { get; set; } = new();
 

@@ -99,16 +99,47 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
             }
             else
             {
-                // Additive merge: only append enum values not already in the vocabulary
+                // Smart merge: add new values, deprecate removed values, update changed labels
                 var enumValues = GetEnumValues(def.EnumType);
+                var enumByCode = enumValues.ToDictionary(v => v.Code);
                 var existingValues = ParseValues(existing.ValuesJson);
                 var existingCodes = existingValues.Select(v => v.Code).ToHashSet();
 
-                var newValues = enumValues.Where(v => !existingCodes.Contains(v.Code)).ToList();
+                var hasChanges = false;
+                var changeDescriptions = new List<string>();
 
+                // 1. Deprecate DB entries that are no longer in the C# enum
+                foreach (var val in existingValues)
+                {
+                    if (!enumByCode.ContainsKey(val.Code) && !val.IsDeprecated)
+                    {
+                        val.IsDeprecated = true;
+                        hasChanges = true;
+                    }
+
+                    // 2. Update labels for entries that exist in both but labels changed
+                    if (enumByCode.TryGetValue(val.Code, out var enumVal))
+                    {
+                        if (val.LabelAr != enumVal.LabelAr || val.LabelEn != enumVal.LabelEn)
+                        {
+                            val.LabelAr = enumVal.LabelAr;
+                            val.LabelEn = enumVal.LabelEn;
+                            hasChanges = true;
+                        }
+
+                        // Un-deprecate if it was previously deprecated but is back in the enum
+                        if (val.IsDeprecated)
+                        {
+                            val.IsDeprecated = false;
+                            hasChanges = true;
+                        }
+                    }
+                }
+
+                // 3. Add new enum values not already in the vocabulary
+                var newValues = enumValues.Where(v => !existingCodes.Contains(v.Code)).ToList();
                 if (newValues.Count > 0)
                 {
-                    // Determine next display order
                     var maxOrder = existingValues.Count > 0
                         ? existingValues.Max(v => v.DisplayOrder) + 1
                         : 0;
@@ -119,6 +150,12 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
                         existingValues.Add(val);
                     }
 
+                    hasChanges = true;
+                    changeDescriptions.Add($"added {newValues.Count} value(s)");
+                }
+
+                if (hasChanges)
+                {
                     var mergedJson = JsonSerializer.Serialize(existingValues.Select(v => new
                     {
                         code = v.Code,
@@ -126,12 +163,15 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
                         labelEn = v.LabelEn,
                         description = v.Description,
                         displayOrder = v.DisplayOrder,
-                        isDeprecated = false
+                        isDeprecated = v.IsDeprecated
                     }));
+
+                    var deprecatedCount = existingValues.Count(v => v.IsDeprecated);
+                    var description = $"System: synced with enum — {existingValues.Count} total, {deprecatedCount} deprecated";
 
                     var newVersion = existing.CreateMinorVersion(
                         mergedJson,
-                        $"System: added {newValues.Count} new enum value(s) from code deployment",
+                        description,
                         SystemUserId);
 
                     await context.Vocabularies.AddAsync(newVersion, cancellationToken);
@@ -195,6 +235,7 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
         public string LabelEn { get; set; } = "";
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
+        public bool IsDeprecated { get; set; }
     }
 
     /// <summary>

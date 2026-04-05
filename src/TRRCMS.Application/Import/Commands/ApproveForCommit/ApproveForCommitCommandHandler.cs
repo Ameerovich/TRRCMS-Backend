@@ -28,6 +28,8 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
     private readonly IStagingRepository<StagingHousehold> _stagingHouseholdRepo;
     private readonly IStagingRepository<StagingPersonPropertyRelation> _stagingRelationRepo;
     private readonly IStagingRepository<StagingEvidence> _stagingEvidenceRepo;
+    private readonly IStagingRepository<StagingEvidenceRelation> _stagingEvidenceRelationRepo;
+    private readonly IStagingRepository<StagingIdentificationDocument> _stagingIdDocRepo;
     private readonly IStagingRepository<StagingClaim> _stagingClaimRepo;
     private readonly IStagingRepository<StagingSurvey> _stagingSurveyRepo;
     private readonly ICurrentUserService _currentUserService;
@@ -42,6 +44,8 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         IStagingRepository<StagingHousehold> stagingHouseholdRepo,
         IStagingRepository<StagingPersonPropertyRelation> stagingRelationRepo,
         IStagingRepository<StagingEvidence> stagingEvidenceRepo,
+        IStagingRepository<StagingEvidenceRelation> stagingEvidenceRelationRepo,
+        IStagingRepository<StagingIdentificationDocument> stagingIdDocRepo,
         IStagingRepository<StagingClaim> stagingClaimRepo,
         IStagingRepository<StagingSurvey> stagingSurveyRepo,
         ICurrentUserService currentUserService,
@@ -55,6 +59,8 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         _stagingHouseholdRepo = stagingHouseholdRepo;
         _stagingRelationRepo = stagingRelationRepo;
         _stagingEvidenceRepo = stagingEvidenceRepo;
+        _stagingEvidenceRelationRepo = stagingEvidenceRelationRepo;
+        _stagingIdDocRepo = stagingIdDocRepo;
         _stagingClaimRepo = stagingClaimRepo;
         _stagingSurveyRepo = stagingSurveyRepo;
         _currentUserService = currentUserService;
@@ -123,6 +129,8 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         await ApproveValidForTypeAsync(_stagingHouseholdRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingRelationRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingEvidenceRepo, importPackageId, ct);
+        await ApproveValidForTypeAsync(_stagingEvidenceRelationRepo, importPackageId, ct);
+        await ApproveValidForTypeAsync(_stagingIdDocRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingClaimRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingSurveyRepo, importPackageId, ct);
     }

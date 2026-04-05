@@ -43,9 +43,9 @@ public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPe
             .WithMessage("Ownership share must be greater than 0 for Owner relation type");
 
         RuleFor(x => x.OwnershipShare)
-            .LessThanOrEqualTo(1)
+            .LessThanOrEqualTo(2400)
             .When(x => x.OwnershipShare.HasValue)
-            .WithMessage("Ownership share cannot exceed 1.0 (100%)");
+            .WithMessage("Ownership share cannot exceed 2400");
 
         // Text field max lengths
         RuleFor(x => x.ContractDetails)

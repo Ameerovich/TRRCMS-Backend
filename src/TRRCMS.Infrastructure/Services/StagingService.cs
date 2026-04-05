@@ -25,6 +25,8 @@ public class StagingService : IStagingService
     private readonly IStagingRepository<StagingHousehold> _householdRepo;
     private readonly IStagingRepository<StagingPersonPropertyRelation> _relationRepo;
     private readonly IStagingRepository<StagingEvidence> _evidenceRepo;
+    private readonly IStagingRepository<StagingEvidenceRelation> _evidenceRelationRepo;
+    private readonly IStagingRepository<StagingIdentificationDocument> _idDocRepo;
     private readonly IStagingRepository<StagingClaim> _claimRepo;
     private readonly IStagingRepository<StagingSurvey> _surveyRepo;
     private readonly IFileStorageService _fileStorageService;
@@ -39,6 +41,8 @@ public class StagingService : IStagingService
         IStagingRepository<StagingHousehold> householdRepo,
         IStagingRepository<StagingPersonPropertyRelation> relationRepo,
         IStagingRepository<StagingEvidence> evidenceRepo,
+        IStagingRepository<StagingEvidenceRelation> evidenceRelationRepo,
+        IStagingRepository<StagingIdentificationDocument> idDocRepo,
         IStagingRepository<StagingClaim> claimRepo,
         IStagingRepository<StagingSurvey> surveyRepo,
         IFileStorageService fileStorageService,
@@ -52,6 +56,8 @@ public class StagingService : IStagingService
         _householdRepo = householdRepo;
         _relationRepo = relationRepo;
         _evidenceRepo = evidenceRepo;
+        _evidenceRelationRepo = evidenceRelationRepo;
+        _idDocRepo = idDocRepo;
         _claimRepo = claimRepo;
         _surveyRepo = surveyRepo;
         _fileStorageService = fileStorageService;
@@ -96,6 +102,12 @@ public class StagingService : IStagingService
         result.AttachmentFilesExtracted = fileCount;
         result.AttachmentBytesExtracted = fileBytes;
 
+        // Evidence-relation junction (many-to-many links, optional table)
+        await StageEvidenceRelationsAsync(connection, importPackageId, cancellationToken);
+
+        // Identification documents (v1.7+)
+        await StageIdentificationDocumentsAsync(connection, importPackageId, cancellationToken);
+
         _logger.LogInformation(
             "Staging complete for package {PackageId}: {Total} records, {Files} attachments ({Bytes} bytes)",
             importPackageId, result.TotalRecordCount, result.AttachmentFilesExtracted, result.AttachmentBytesExtracted);
@@ -108,6 +120,8 @@ public class StagingService : IStagingService
         _logger.LogInformation("Cleaning up staging data for package {PackageId}", importPackageId);
 
         // Delete in reverse dependency order
+        await _idDocRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
+        await _evidenceRelationRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
         await _evidenceRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
         await _claimRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
         await _surveyRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);
@@ -554,6 +568,149 @@ public class StagingService : IStagingService
             entities.Count, fileCount, totalBytes);
 
         return (entities.Count, fileCount, totalBytes);
+    }
+
+    /// <summary>
+    /// Stage evidence_relations junction table from .uhc (optional, v1.8+).
+    /// Supports many-to-many evidence-to-relation links.
+    /// </summary>
+    private async Task StageEvidenceRelationsAsync(
+        SqliteConnection connection, Guid packageId, CancellationToken ct)
+    {
+        if (!await TableExistsAsync(connection, "evidence_relations", ct)) return;
+
+        var entities = new List<StagingEvidenceRelation>();
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT * FROM evidence_relations";
+        using var reader = await cmd.ExecuteReaderAsync(ct);
+
+        while (await reader.ReadAsync(ct))
+        {
+            var entity = StagingEvidenceRelation.Create(
+                importPackageId: packageId,
+                originalEntityId: GetGuid(reader, "id"),
+                originalEvidenceId: GetGuid(reader, "evidence_id"),
+                originalPersonPropertyRelationId: GetGuid(reader, "person_property_relation_id"));
+
+            entities.Add(entity);
+        }
+
+        if (entities.Count > 0)
+        {
+            await _evidenceRelationRepo.AddRangeAsync(entities, ct);
+            await _evidenceRelationRepo.SaveChangesAsync(ct);
+        }
+
+        _logger.LogDebug("Staged {Count} evidence-relation junction records", entities.Count);
+    }
+
+    /// <summary>
+    /// Stage identification_documents table from .uhc (v1.7+).
+    /// </summary>
+    private async Task StageIdentificationDocumentsAsync(
+        SqliteConnection connection, Guid packageId, CancellationToken ct)
+    {
+        if (!await TableExistsAsync(connection, "identification_documents", ct)) return;
+
+        var entities = new List<StagingIdentificationDocument>();
+        int fileCount = 0;
+        long totalBytes = 0;
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT * FROM identification_documents";
+        using var reader = await cmd.ExecuteReaderAsync(ct);
+
+        while (await reader.ReadAsync(ct))
+        {
+            var originalId = GetGuid(reader, "id");
+            var originalFileName = GetString(reader, "original_file_name");
+            var fileSizeBytes = GetLong(reader, "file_size_bytes", 0);
+
+            string filePath = GetString(reader, "file_path", "");
+            var fileHash = GetNullableString(reader, "file_hash");
+
+            // Extract blob from attachments table if available
+            if (await HasIdentificationDocumentBlobAsync(connection, originalId, ct))
+            {
+                var savedPath = await ExtractIdentificationDocumentBlobAsync(
+                    connection, originalId, originalFileName, packageId, ct);
+                if (savedPath != null)
+                {
+                    filePath = savedPath;
+                    fileCount++;
+                    totalBytes += fileSizeBytes;
+                }
+            }
+
+            var entity = StagingIdentificationDocument.Create(
+                importPackageId: packageId,
+                originalEntityId: originalId,
+                originalPersonId: GetGuid(reader, "person_id"),
+                documentType: GetEnum<DocumentType>(reader, "document_type", "document_type"),
+                description: GetString(reader, "description", ""),
+                originalFileName: originalFileName,
+                filePath: filePath,
+                fileSizeBytes: fileSizeBytes,
+                mimeType: _fileStorageService.GetMimeType(originalFileName),
+                fileHash: fileHash,
+                documentIssuedDate: GetNullableDateTime(reader, "document_issued_date"),
+                documentExpiryDate: GetNullableDateTime(reader, "document_expiry_date"),
+                issuingAuthority: GetNullableString(reader, "issuing_authority"),
+                documentReferenceNumber: GetNullableString(reader, "document_reference_number"),
+                notes: GetNullableString(reader, "notes"));
+
+            entities.Add(entity);
+        }
+
+        if (entities.Count > 0)
+        {
+            await _idDocRepo.AddRangeAsync(entities, ct);
+            await _idDocRepo.SaveChangesAsync(ct);
+        }
+
+        _logger.LogDebug("Staged {Count} identification documents, extracted {Files} files ({Bytes} bytes)",
+            entities.Count, fileCount, totalBytes);
+    }
+
+    private static async Task<bool> HasIdentificationDocumentBlobAsync(
+        SqliteConnection connection, Guid identificationDocumentId, CancellationToken ct)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText =
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='attachments'";
+        var tableExists = Convert.ToInt32(await cmd.ExecuteScalarAsync(ct));
+        if (tableExists == 0) return false;
+
+        using var checkCmd = connection.CreateCommand();
+        checkCmd.CommandText = "SELECT COUNT(*) FROM attachments WHERE identification_document_id = @id";
+        checkCmd.Parameters.AddWithValue("@id", identificationDocumentId.ToString());
+        return Convert.ToInt32(await checkCmd.ExecuteScalarAsync(ct)) > 0;
+    }
+
+    private async Task<string?> ExtractIdentificationDocumentBlobAsync(
+        SqliteConnection connection, Guid identificationDocumentId, string originalFileName, Guid packageId, CancellationToken ct)
+    {
+        try
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT data FROM attachments WHERE identification_document_id = @id LIMIT 1";
+            cmd.Parameters.AddWithValue("@id", identificationDocumentId.ToString());
+
+            var blob = await cmd.ExecuteScalarAsync(ct) as byte[];
+            if (blob == null || blob.Length == 0) return null;
+
+            using var stream = new MemoryStream(blob);
+            var savedPath = await _fileStorageService.SaveFileAsync(
+                stream, originalFileName, "import-attachments", packageId, ct);
+
+            return savedPath;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to extract blob for identification document {DocId}", identificationDocumentId);
+            return null;
+        }
     }
 
     private static async Task<bool> HasAttachmentBlobAsync(

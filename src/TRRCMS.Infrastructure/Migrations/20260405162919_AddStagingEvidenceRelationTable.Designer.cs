@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260405162919_AddStagingEvidenceRelationTable")]
+    partial class AddStagingEvidenceRelationTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3367,117 +3370,6 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.ToTable("StagingHouseholds", (string)null);
                 });
 
-            modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingIdentificationDocument", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CommittedEntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime?>("DocumentExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("DocumentIssuedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DocumentReferenceNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("DocumentType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("FileHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<long>("FileSizeBytes")
-                        .HasColumnType("bigint");
-
-                    b.Property<Guid>("ImportPackageId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsApprovedForCommit")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("IssuingAuthority")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("MimeType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("OriginalEntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<Guid>("OriginalPersonId")
-                        .HasColumnType("uuid")
-                        .HasComment("Original Person UUID from .uhc");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("bytea");
-
-                    b.Property<DateTime>("StagedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ValidationErrors")
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)");
-
-                    b.Property<int>("ValidationStatus")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<string>("ValidationWarnings")
-                        .HasMaxLength(8000)
-                        .HasColumnType("character varying(8000)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FileHash")
-                        .HasDatabaseName("IX_StagingIdentificationDocuments_FileHash");
-
-                    b.HasIndex("ImportPackageId")
-                        .HasDatabaseName("IX_StagingIdentificationDocuments_ImportPackageId");
-
-                    b.HasIndex("ImportPackageId", "OriginalEntityId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_StagingIdentificationDocuments_ImportPackageId_OriginalEntityId");
-
-                    b.HasIndex("ImportPackageId", "OriginalPersonId")
-                        .HasDatabaseName("IX_StagingIdentificationDocuments_ImportPackageId_OriginalPersonId");
-
-                    b.ToTable("StagingIdentificationDocuments", (string)null);
-                });
-
             modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingPerson", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5209,15 +5101,6 @@ namespace TRRCMS.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingHousehold", b =>
-                {
-                    b.HasOne("TRRCMS.Domain.Entities.ImportPackage", null)
-                        .WithMany()
-                        .HasForeignKey("ImportPackageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("TRRCMS.Domain.Entities.Staging.StagingIdentificationDocument", b =>
                 {
                     b.HasOne("TRRCMS.Domain.Entities.ImportPackage", null)
                         .WithMany()

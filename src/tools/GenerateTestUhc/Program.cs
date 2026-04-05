@@ -149,7 +149,7 @@ using (var conn = new SqliteConnection(connStr))
     var manifest = new Dictionary<string, string>
     {
         ["package_id"]                = packageId.ToString(),
-        ["schema_version"]            = "1.7.0",
+        ["schema_version"]            = "1.8.0",
         ["created_utc"]               = DateTime.UtcNow.ToString("o"),
         ["device_id"]                 = "TABLET-TEST-001",
         ["app_version"]               = "1.0.0",
@@ -244,7 +244,7 @@ using (var conn = new SqliteConnection(connStr))
             neighborhood_name       TEXT
         );");
 
-    var fullBuildingCode = $"1414010100110{buildingNumber}";
+    var fullBuildingCode = $"141401010011{buildingNumber}";
     Execute(conn, @"
         INSERT INTO buildings VALUES (
             @id, '14', '14', '01', '010', '011', @bnum,
@@ -555,7 +555,30 @@ using (var conn = new SqliteConnection(connStr))
         ("@rid", relationId1.ToString()),
         ("@cid", claimId1.ToString()));
 
-    // ── 9b. IDENTIFICATION DOCUMENTS TABLE ─────────────────────────────────────
+    // ── 9b. EVIDENCE RELATIONS JUNCTION TABLE ───────────────────────────────────
+    // v1.8: Many-to-many evidence-to-relation links
+    var evidRelId1 = DeriveGuid(packageId, "evid_rel_1");
+    var evidRelId2 = DeriveGuid(packageId, "evid_rel_2");
+
+    Execute(conn, @"
+        CREATE TABLE evidence_relations (
+            id                          TEXT PRIMARY KEY,
+            evidence_id                 TEXT NOT NULL REFERENCES evidences(id),
+            person_property_relation_id TEXT NOT NULL REFERENCES person_property_relations(id)
+        );");
+
+    // Link evidence to both relations (owner + tenant) — tests many-to-many
+    Execute(conn, @"INSERT INTO evidence_relations VALUES (@id, @eid, @rid);",
+        ("@id", evidRelId1.ToString()),
+        ("@eid", evidenceId1.ToString()),
+        ("@rid", relationId1.ToString()));
+
+    Execute(conn, @"INSERT INTO evidence_relations VALUES (@id, @eid, @rid);",
+        ("@id", evidRelId2.ToString()),
+        ("@eid", evidenceId1.ToString()),
+        ("@rid", relationId2.ToString()));
+
+    // ── 9c. IDENTIFICATION DOCUMENTS TABLE ─────────────────────────────────────
     // v1.7: NEW table for personal ID documents
     Execute(conn, @"
         CREATE TABLE identification_documents (
@@ -624,7 +647,7 @@ var statusNames = new Dictionary<int, string> { {1,"Draft"}, {3,"Finalized"}, {4
 
 Console.WriteLine($"  File:     {outputPath}");
 Console.WriteLine($"  Size:     {fileSize:N0} bytes ({fileSize / 1024.0:F1} KB)");
-Console.WriteLine($"  Schema:   v1.7.0");
+Console.WriteLine($"  Schema:   v1.8.0");
 Console.WriteLine($"  PackageId: {packageId}");
 Console.WriteLine($"  Checksum:  {contentChecksum}");
 Console.WriteLine();
@@ -637,7 +660,7 @@ Console.WriteLine($"  Person 3:   {p3First} {p3Family} (ID: {p3NatId}, Gender: {
 Console.WriteLine($"  Person 4:   {p4First} {p4Family} (Gender: {p4Gender}) — Spouse of P3");
 Console.WriteLine($"  Claim 1:    OwnershipClaim (share: {ownershipShare}/2400) by P1");
 Console.WriteLine($"  Claim 2:    OccupancyClaim by P3 (relation: {relationTypeNames.GetValueOrDefault(relation2Type, "Other")})");
-Console.WriteLine($"  Evidence:   type={evidenceType} (tenure doc)");
+Console.WriteLine($"  Evidence:   type={evidenceType} (tenure doc), linked to 2 relations via junction table");
 Console.WriteLine($"  ID Doc:     type={docType} for P1");
 Console.WriteLine($"  Survey:     status={statusNames.GetValueOrDefault(surveyStatus, "Unknown")} ({surveyStatus})");
 Console.WriteLine();
