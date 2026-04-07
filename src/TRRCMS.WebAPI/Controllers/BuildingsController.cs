@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Common.Models;
+using TRRCMS.WebAPI.Middleware;
 using TRRCMS.Application.Buildings.Commands.CreateBuilding;
 using TRRCMS.Application.Buildings.Commands.DeleteBuilding;
 using TRRCMS.Application.Buildings.Commands.RegisterBuilding;
@@ -167,21 +168,14 @@ public class BuildingsController : ControllerBase
     [HttpPost]
     [Authorize(Policy = "CanCreateBuildings")]
     [ProducesResponseType(typeof(BuildingDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<BuildingDto>> CreateBuilding([FromBody] CreateBuildingCommand command)
     {
-        try
-        {
-            var result = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetBuilding), new { id = result.Id }, result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetBuilding), new { id = result.Id }, result);
     }
 
     // ==================== REGISTER (QGIS) ====================

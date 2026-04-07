@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Auth.Commands.ChangePassword;
 using TRRCMS.Application.Auth.Dtos;
 using TRRCMS.Application.Common.Models;
+using TRRCMS.WebAPI.Middleware;
 
 namespace TRRCMS.WebAPI.Controllers.V2;
 
@@ -30,59 +31,39 @@ public class AuthController : ControllerBase
     [HttpPost("change-password")]
     [Authorize]
     [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MessageResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        try
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var currentUserId))
         {
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var currentUserId))
+            return Unauthorized(new ErrorResponse
             {
-                return Unauthorized(new { message = "Invalid user token." });
-            }
-
-            if (request.UserId != currentUserId)
-            {
-                return Forbid();
-            }
-
-            var command = new ChangePasswordCommand(
-                request.UserId,
-                request.CurrentPassword,
-                request.NewPassword,
-                request.ConfirmPassword,
-                currentUserId);
-
-            await _mediator.Send(command);
-
-            _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
-
-            return Ok(MessageResponse.Ok("Password changed successfully. Please login again with your new password."));
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Message = "Invalid user token."
+            });
         }
-        catch (ArgumentException ex)
+
+        if (request.UserId != currentUserId)
         {
-            _logger.LogWarning("Password change validation failed: {Message}", ex.Message);
-            return BadRequest(new { message = ex.Message });
+            return Forbid();
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning("Password change unauthorized: {Message}", ex.Message);
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning("User not found during password change: {Message}", ex.Message);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during password change");
-            return StatusCode(500, new { message = "An error occurred during password change." });
-        }
+
+        var command = new ChangePasswordCommand(
+            request.UserId,
+            request.CurrentPassword,
+            request.NewPassword,
+            request.ConfirmPassword,
+            currentUserId);
+
+        await _mediator.Send(command);
+
+        _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
+
+        return Ok(MessageResponse.Ok("Password changed successfully. Please login again with your new password."));
     }
 
     /// <summary>

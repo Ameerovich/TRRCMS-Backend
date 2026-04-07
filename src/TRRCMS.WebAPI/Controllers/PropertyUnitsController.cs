@@ -9,6 +9,7 @@ using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.PropertyUnits.Queries.GetAllPropertyUnits;
 using TRRCMS.Application.PropertyUnits.Queries.GetPropertyUnit;
 using TRRCMS.Application.PropertyUnits.Queries.GetPropertyUnitsByBuilding;
+using TRRCMS.WebAPI.Middleware;
 
 namespace TRRCMS.WebAPI.Controllers;
 
@@ -190,26 +191,15 @@ public class PropertyUnitsController : ControllerBase
     [HttpPost]
     [Authorize(Policy = "CanCreatePropertyUnits")]
     [ProducesResponseType(typeof(PropertyUnitDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PropertyUnitDto>> CreatePropertyUnit([FromBody] CreatePropertyUnitCommand command)
     {
-        try
-        {
-            var result = await _mediator.Send(command);
-            return CreatedAtAction(nameof(GetPropertyUnit), new { id = result.Id }, result);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
-        {
-            return Conflict(new { message = ex.Message });
-        }
+        var result = await _mediator.Send(command);
+        return CreatedAtAction(nameof(GetPropertyUnit), new { id = result.Id }, result);
     }
 
     // ==================== UPDATE ====================
@@ -604,20 +594,12 @@ public class PropertyUnitsController : ControllerBase
     [ProducesResponseType(typeof(List<PropertyUnitDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<List<PropertyUnitDto>>> GetPropertyUnitsByBuilding(Guid buildingId)
     {
-        try
-        {
-            var query = new GetPropertyUnitsByBuildingQuery(buildingId);
-            var result = await _mediator.Send(query);
-
-            return Ok(result);
-        }
-        catch (Application.Common.Exceptions.NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var query = new GetPropertyUnitsByBuildingQuery(buildingId);
+        var result = await _mediator.Send(query);
+        return Ok(result);
     }
 
     // ==================== DELETE ====================
