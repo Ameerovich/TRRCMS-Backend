@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.PropertyUnits.Dtos;
 using TRRCMS.Application.PropertyUnits.Queries.GetPropertyUnitsByBuilding;
+using TRRCMS.WebAPI.Middleware;
 
 namespace TRRCMS.WebAPI.Controllers.V2;
 
@@ -27,18 +28,11 @@ public class PropertyUnitsController : ControllerBase
     [ProducesResponseType(typeof(ListResponse<PropertyUnitDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ListResponse<PropertyUnitDto>>> GetPropertyUnitsByBuilding(Guid buildingId)
     {
-        try
-        {
-            var query = new GetPropertyUnitsByBuildingQuery(buildingId);
-            var result = await _mediator.Send(query);
-            return Ok(ListResponse<PropertyUnitDto>.From(result));
-        }
-        catch (Application.Common.Exceptions.NotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var query = new GetPropertyUnitsByBuildingQuery(buildingId);
+        var result = await _mediator.Send(query);
+        return Ok(ListResponse<PropertyUnitDto>.From(result));
     }
 }

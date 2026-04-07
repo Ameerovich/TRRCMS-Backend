@@ -6,6 +6,7 @@ using TRRCMS.Application.Auth.Commands.ChangePassword;
 using TRRCMS.Application.Auth.Commands.Login;
 using TRRCMS.Application.Auth.Commands.RefreshToken;
 using TRRCMS.Application.Auth.Dtos;
+using TRRCMS.WebAPI.Middleware;
 
 namespace TRRCMS.WebAPI.Controllers;
 
@@ -153,8 +154,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
         try
@@ -171,12 +171,12 @@ public class AuthController : ControllerBase
         {
             _logger.LogWarning("Failed login attempt for username {Username}: {Message}",
                 request.Username, ex.Message);
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during login for username {Username}", request.Username);
-            return StatusCode(500, new { message = "An error occurred during login." });
+            return Unauthorized(new ErrorResponse
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Message = ex.Message
+            });
         }
     }
 
@@ -227,8 +227,7 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(RefreshTokenResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<RefreshTokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
     {
         try
@@ -244,12 +243,12 @@ public class AuthController : ControllerBase
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning("Failed token refresh: {Message}", ex.Message);
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during token refresh");
-            return StatusCode(500, new { message = "An error occurred during token refresh." });
+            return Unauthorized(new ErrorResponse
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Message = ex.Message
+            });
         }
     }
 
@@ -312,61 +311,41 @@ public class AuthController : ControllerBase
     [HttpPost("change-password")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
     {
-        try
+        // Get current user ID from JWT claims
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var currentUserId))
         {
-            // Get current user ID from JWT claims
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var currentUserId))
+            return Unauthorized(new ErrorResponse
             {
-                return Unauthorized(new { message = "Invalid user token." });
-            }
-
-            // User can only change their own password
-            if (request.UserId != currentUserId)
-            {
-                return Forbid();
-            }
-
-            var command = new ChangePasswordCommand(
-                request.UserId,
-                request.CurrentPassword,
-                request.NewPassword,
-                request.ConfirmPassword,
-                currentUserId);
-
-            await _mediator.Send(command);
-
-            _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
-
-            return Ok(new { message = "Password changed successfully. Please login again with your new password." });
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Unauthorized",
+                Message = "Invalid user token."
+            });
         }
-        catch (ArgumentException ex)
+
+        // User can only change their own password
+        if (request.UserId != currentUserId)
         {
-            _logger.LogWarning("Password change validation failed: {Message}", ex.Message);
-            return BadRequest(new { message = ex.Message });
+            return Forbid();
         }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning("Password change unauthorized: {Message}", ex.Message);
-            return Unauthorized(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning("User not found during password change: {Message}", ex.Message);
-            return NotFound(new { message = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during password change");
-            return StatusCode(500, new { message = "An error occurred during password change." });
-        }
+
+        var command = new ChangePasswordCommand(
+            request.UserId,
+            request.CurrentPassword,
+            request.NewPassword,
+            request.ConfirmPassword,
+            currentUserId);
+
+        await _mediator.Send(command);
+
+        _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
+
+        return Ok(new { message = "Password changed successfully. Please login again with your new password." });
     }
 
     /// <summary>
