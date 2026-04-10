@@ -1,67 +1,70 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Surveys.Commands.CreateContactPerson;
 
 /// <summary>
 /// Validator for CreateContactPersonCommand
 /// </summary>
-public class CreateContactPersonCommandValidator : AbstractValidator<CreateContactPersonCommand>
+public class CreateContactPersonCommandValidator : LocalizedValidator<CreateContactPersonCommand>
 {
-    public CreateContactPersonCommandValidator()
+    public CreateContactPersonCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("معرف المسح مطلوب");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.FirstNameArabic)
             .NotEmpty()
-            .WithMessage("الاسم الأول مطلوب")
+            .WithMessage(L("FirstName_Required"))
             .MaximumLength(100)
-            .WithMessage("الاسم الأول يجب ألا يتجاوز 100 حرف");
+            .WithMessage(L("FirstName_MaxLength100"));
 
         RuleFor(x => x.FatherNameArabic)
             .NotEmpty()
-            .WithMessage("اسم الأب مطلوب")
+            .WithMessage(L("FatherName_Required"))
             .MaximumLength(100)
-            .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف");
+            .WithMessage(L("FatherName_MaxLength100"));
 
         RuleFor(x => x.FamilyNameArabic)
             .NotEmpty()
-            .WithMessage("الكنية مطلوبة")
+            .WithMessage(L("LastName_Required"))
             .MaximumLength(100)
-            .WithMessage("الكنية يجب ألا تتجاوز 100 حرف");
+            .WithMessage(L("LastName_MaxLength100"));
 
         RuleFor(x => x.MotherNameArabic)
             .NotEmpty()
-            .WithMessage("اسم الأم مطلوب")
+            .WithMessage(L("MotherName_Required"))
             .MaximumLength(100)
-            .WithMessage("اسم الأم يجب ألا يتجاوز 100 حرف");
+            .WithMessage(L("MotherName_MaxLength100"));
 
         RuleFor(x => x.NationalId)
             .Matches(@"^\d{11}$")
             .When(x => !string.IsNullOrEmpty(x.NationalId))
-            .WithMessage("الرقم الوطني يجب أن يكون 11 رقماً بالضبط");
+            .WithMessage(L("NationalId_Exactly11Digits"));
 
         RuleFor(x => x.DateOfBirth)
             .Must(date => date <= DateTime.UtcNow)
             .When(x => x.DateOfBirth.HasValue)
-            .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
+            .WithMessage(L("BirthDate_NotFuture"));
 
         RuleFor(x => x.Email)
             .MaximumLength(255)
-            .WithMessage("البريد الالكتروني يجب ألا يتجاوز 255 حرف")
+            .WithMessage(L("PersonEmail_MaxLength255"))
             .EmailAddress()
-            .WithMessage("صيغة البريد الالكتروني غير صحيحة")
+            .WithMessage(L("PersonEmail_InvalidFormat"))
             .When(x => !string.IsNullOrEmpty(x.Email));
 
         RuleFor(x => x.MobileNumber)
             .Matches(@"^(\+963|0)9\d{8}$")
-            .WithMessage("رقم الموبايل يجب أن يكون بالصيغة السورية: 09XXXXXXXX أو 9639XXXXXXXX+")
+            .WithMessage(L("Mobile_SyrianFormat"))
             .When(x => !string.IsNullOrEmpty(x.MobileNumber));
 
         RuleFor(x => x.PhoneNumber)
             .Matches(@"^(\+963|0)\d{7,9}$")
-            .WithMessage("رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+")
+            .WithMessage(L("Landline_SyrianFormat"))
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
     }
 }

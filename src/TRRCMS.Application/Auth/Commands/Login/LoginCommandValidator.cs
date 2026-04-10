@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Auth.Commands.Login;
 
@@ -6,20 +9,20 @@ namespace TRRCMS.Application.Auth.Commands.Login;
 /// Validator for LoginCommand
 /// Validates login credentials format before authentication attempt
 /// </summary>
-public class LoginCommandValidator : AbstractValidator<LoginCommand>
+public class LoginCommandValidator : LocalizedValidator<LoginCommand>
 {
-    public LoginCommandValidator()
+    public LoginCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Username)
-            .NotEmpty().WithMessage("Username is required")
-            .MaximumLength(50).WithMessage("Username cannot exceed 50 characters");
+            .NotEmpty().WithMessage(L("Username_Required"))
+            .MaximumLength(50).WithMessage(L("Username_MaxLength50"));
 
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required")
-            .MaximumLength(128).WithMessage("Password cannot exceed 128 characters");
+            .NotEmpty().WithMessage(L("Password_Required"))
+            .MaximumLength(128).WithMessage(L("Password_MaxLength128"));
 
         RuleFor(x => x.DeviceId)
-            .MaximumLength(100).WithMessage("Device ID cannot exceed 100 characters")
+            .MaximumLength(100).WithMessage(L("DeviceId_MaxLength100"))
             .When(x => !string.IsNullOrWhiteSpace(x.DeviceId));
     }
 }

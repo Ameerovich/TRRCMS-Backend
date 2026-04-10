@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Import.Commands.StagePackage;
 
@@ -6,12 +9,12 @@ namespace TRRCMS.Application.Import.Commands.StagePackage;
 /// Validator for StagePackageCommand.
 /// The handler performs additional business rule checks (package exists, correct status).
 /// </summary>
-public class StagePackageCommandValidator : AbstractValidator<StagePackageCommand>
+public class StagePackageCommandValidator : LocalizedValidator<StagePackageCommand>
 {
-    public StagePackageCommandValidator()
+    public StagePackageCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ImportPackageId)
             .NotEmpty()
-            .WithMessage("Import package ID is required");
+            .WithMessage(L("ImportPackageId_Required"));
     }
 }

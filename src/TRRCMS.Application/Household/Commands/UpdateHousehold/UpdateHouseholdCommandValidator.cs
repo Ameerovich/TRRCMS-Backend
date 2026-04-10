@@ -1,98 +1,101 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Households.Commands.UpdateHousehold;
 
 /// <summary>
 /// Validator for UpdateHouseholdCommand
 /// </summary>
-public class UpdateHouseholdCommandValidator : AbstractValidator<UpdateHouseholdCommand>
+public class UpdateHouseholdCommandValidator : LocalizedValidator<UpdateHouseholdCommand>
 {
-    public UpdateHouseholdCommandValidator()
+    public UpdateHouseholdCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Id)
             .NotEmpty()
-            .WithMessage("Household ID is required");
+            .WithMessage(L("HouseholdId_Required"));
 
         RuleFor(x => x.HouseholdSize)
             .GreaterThan(0)
             .When(x => x.HouseholdSize.HasValue)
-            .WithMessage("Household size must be at least 1")
+            .WithMessage(L("HouseholdSize_AtLeast1"))
             .LessThanOrEqualTo(50)
             .When(x => x.HouseholdSize.HasValue)
-            .WithMessage("Household size must not exceed 50");
+            .WithMessage(L("HouseholdSize_Max50"));
 
         // Adults
         RuleFor(x => x.MaleCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.MaleCount.HasValue)
-            .WithMessage("Adult male count cannot be negative")
+            .WithMessage(L("AdultMale_NonNegative"))
             .LessThanOrEqualTo(50)
             .When(x => x.MaleCount.HasValue)
-            .WithMessage("Adult male count must not exceed 50");
+            .WithMessage(L("AdultMale_Max50"));
 
         RuleFor(x => x.FemaleCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.FemaleCount.HasValue)
-            .WithMessage("Adult female count cannot be negative")
+            .WithMessage(L("AdultFemale_NonNegative"))
             .LessThanOrEqualTo(50)
             .When(x => x.FemaleCount.HasValue)
-            .WithMessage("Adult female count must not exceed 50");
+            .WithMessage(L("AdultFemale_Max50"));
 
         // Children
         RuleFor(x => x.MaleChildCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.MaleChildCount.HasValue)
-            .WithMessage("Male children count cannot be negative")
+            .WithMessage(L("ChildrenMale_NonNegative"))
             .LessThanOrEqualTo(30)
             .When(x => x.MaleChildCount.HasValue)
-            .WithMessage("Male children count must not exceed 30");
+            .WithMessage(L("ChildrenMale_Max30"));
 
         RuleFor(x => x.FemaleChildCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.FemaleChildCount.HasValue)
-            .WithMessage("Female children count cannot be negative")
+            .WithMessage(L("ChildrenFemale_NonNegative"))
             .LessThanOrEqualTo(30)
             .When(x => x.FemaleChildCount.HasValue)
-            .WithMessage("Female children count must not exceed 30");
+            .WithMessage(L("ChildrenFemale_Max30"));
 
         // Elderly
         RuleFor(x => x.MaleElderlyCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.MaleElderlyCount.HasValue)
-            .WithMessage("Male elderly count cannot be negative")
+            .WithMessage(L("ElderlyMale_NonNegative"))
             .LessThanOrEqualTo(20)
             .When(x => x.MaleElderlyCount.HasValue)
-            .WithMessage("Male elderly count must not exceed 20");
+            .WithMessage(L("ElderlyMale_Max20"));
 
         RuleFor(x => x.FemaleElderlyCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.FemaleElderlyCount.HasValue)
-            .WithMessage("Female elderly count cannot be negative")
+            .WithMessage(L("ElderlyFemale_NonNegative"))
             .LessThanOrEqualTo(20)
             .When(x => x.FemaleElderlyCount.HasValue)
-            .WithMessage("Female elderly count must not exceed 20");
+            .WithMessage(L("ElderlyFemale_Max20"));
 
         // Disabled
         RuleFor(x => x.MaleDisabledCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.MaleDisabledCount.HasValue)
-            .WithMessage("Male disabled count cannot be negative")
+            .WithMessage(L("DisabledMale_NonNegative"))
             .LessThanOrEqualTo(20)
             .When(x => x.MaleDisabledCount.HasValue)
-            .WithMessage("Male disabled count must not exceed 20");
+            .WithMessage(L("DisabledMale_Max20"));
 
         RuleFor(x => x.FemaleDisabledCount)
             .GreaterThanOrEqualTo(0)
             .When(x => x.FemaleDisabledCount.HasValue)
-            .WithMessage("Female disabled count cannot be negative")
+            .WithMessage(L("DisabledFemale_NonNegative"))
             .LessThanOrEqualTo(20)
             .When(x => x.FemaleDisabledCount.HasValue)
-            .WithMessage("Female disabled count must not exceed 20");
+            .WithMessage(L("DisabledFemale_Max20"));
 
         // Notes
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => x.Notes != null)
-            .WithMessage("Notes must not exceed 2000 characters");
+            .WithMessage(L("Notes_MaxLength2000"));
     }
 }

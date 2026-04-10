@@ -1,43 +1,46 @@
-﻿using FluentValidation;
+using FluentValidation;
+using TRRCMS.Application.Common.Localization;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Buildings.Queries.GetBuildingsForMap;
 
-public class GetBuildingsForMapQueryValidator : AbstractValidator<GetBuildingsForMapQuery>
+public class GetBuildingsForMapQueryValidator : LocalizedValidator<GetBuildingsForMapQuery>
 {
-    public GetBuildingsForMapQueryValidator()
+    public GetBuildingsForMapQueryValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         // Latitude bounds (Syria: 32.0 to 37.5)
         RuleFor(x => x.NorthEastLat)
             .InclusiveBetween(32.0m, 37.5m)
-            .WithMessage("NorthEast Latitude must be between 32.0 and 37.5");
+            .WithMessage(L("NorthEastLat_SyriaBounds"));
 
         RuleFor(x => x.SouthWestLat)
             .InclusiveBetween(32.0m, 37.5m)
-            .WithMessage("SouthWest Latitude must be between 32.0 and 37.5");
+            .WithMessage(L("SouthWestLat_SyriaBounds"));
 
         // Longitude bounds (Syria: 36.0 to 42.5)
         RuleFor(x => x.NorthEastLng)
             .InclusiveBetween(36.0m, 42.5m)
-            .WithMessage("NorthEast Longitude must be between 36.0 and 42.5");
+            .WithMessage(L("NorthEastLng_SyriaBounds"));
 
         RuleFor(x => x.SouthWestLng)
             .InclusiveBetween(36.0m, 42.5m)
-            .WithMessage("SouthWest Longitude must be between 36.0 and 42.5");
+            .WithMessage(L("SouthWestLng_SyriaBounds"));
 
         // Bounding box logic validation
         RuleFor(x => x)
             .Must(x => x.NorthEastLat > x.SouthWestLat)
-            .WithMessage("NorthEast Latitude must be greater than SouthWest Latitude");
+            .WithMessage(L("NorthEastLat_GreaterThanSouthWest"));
 
         RuleFor(x => x)
             .Must(x => x.NorthEastLng > x.SouthWestLng)
-            .WithMessage("NorthEast Longitude must be greater than SouthWest Longitude");
+            .WithMessage(L("NorthEastLng_GreaterThanSouthWest"));
 
         // Max results validation
         RuleFor(x => x.MaxResults)
             .GreaterThan(0)
-            .WithMessage("MaxResults must be greater than 0")
+            .WithMessage(L("MaxResults_GreaterThanZero"))
             .LessThanOrEqualTo(50000)
-            .WithMessage("MaxResults cannot exceed 50,000 for performance reasons");
+            .WithMessage(L("MaxResults_Max50000"));
     }
 }

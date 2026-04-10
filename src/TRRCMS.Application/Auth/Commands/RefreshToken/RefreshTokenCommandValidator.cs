@@ -1,19 +1,22 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Auth.Commands.RefreshToken;
 
 /// <summary>
 /// Validator for RefreshTokenCommand
 /// </summary>
-public class RefreshTokenCommandValidator : AbstractValidator<RefreshTokenCommand>
+public class RefreshTokenCommandValidator : LocalizedValidator<RefreshTokenCommand>
 {
-    public RefreshTokenCommandValidator()
+    public RefreshTokenCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.RefreshToken)
-            .NotEmpty().WithMessage("Refresh token is required");
+            .NotEmpty().WithMessage(L("RefreshToken_Required"));
 
         RuleFor(x => x.DeviceId)
-            .MaximumLength(100).WithMessage("Device ID cannot exceed 100 characters")
+            .MaximumLength(100).WithMessage(L("DeviceId_MaxLength100"))
             .When(x => !string.IsNullOrWhiteSpace(x.DeviceId));
     }
 }

@@ -1,5 +1,8 @@
 using FluentValidation;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Localization;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Buildings.Queries.SearchBuildings;
 
@@ -7,80 +10,80 @@ namespace TRRCMS.Application.Buildings.Queries.SearchBuildings;
 /// Validator for SearchBuildingsQuery
 /// Validates filters, pagination, and administrative code formats
 /// </summary>
-public class SearchBuildingsQueryValidator : AbstractValidator<SearchBuildingsQuery>
+public class SearchBuildingsQueryValidator : LocalizedValidator<SearchBuildingsQuery>
 {
     private static readonly string[] AllowedSortFields =
         { "buildingid", "createddate", "status", "buildingtype" };
 
-    public SearchBuildingsQueryValidator(IVocabularyValidationService vocabService)
+    public SearchBuildingsQueryValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.GovernorateCode)
-            .Matches(@"^\d{2}$").WithMessage("Governorate code must be exactly 2 digits")
+            .Matches(@"^\d{2}$").WithMessage(L("Governorate_Exactly2Digits"))
             .When(x => !string.IsNullOrWhiteSpace(x.GovernorateCode));
 
         RuleFor(x => x.DistrictCode)
-            .Matches(@"^\d{2}$").WithMessage("District code must be exactly 2 digits")
+            .Matches(@"^\d{2}$").WithMessage(L("District_Exactly2Digits"))
             .When(x => !string.IsNullOrWhiteSpace(x.DistrictCode));
 
         RuleFor(x => x.SubDistrictCode)
-            .Matches(@"^\d{2}$").WithMessage("Sub-district code must be exactly 2 digits")
+            .Matches(@"^\d{2}$").WithMessage(L("SubDistrict_Exactly2Digits"))
             .When(x => !string.IsNullOrWhiteSpace(x.SubDistrictCode));
 
         RuleFor(x => x.CommunityCode)
-            .Matches(@"^\d{3}$").WithMessage("Community code must be exactly 3 digits")
+            .Matches(@"^\d{3}$").WithMessage(L("Community_Exactly3Digits"))
             .When(x => !string.IsNullOrWhiteSpace(x.CommunityCode));
 
         RuleFor(x => x.NeighborhoodCode)
-            .Matches(@"^\d{3}$").WithMessage("Neighborhood code must be exactly 3 digits")
+            .Matches(@"^\d{3}$").WithMessage(L("Neighborhood_Exactly3Digits"))
             .When(x => !string.IsNullOrWhiteSpace(x.NeighborhoodCode));
 
 
         RuleFor(x => x.BuildingId)
-            .Matches(@"^\d+$").WithMessage("Building ID must contain only digits")
-            .MaximumLength(17).WithMessage("Building ID cannot exceed 17 digits")
+            .Matches(@"^\d+$").WithMessage(L("BuildingId_DigitsOnly"))
+            .MaximumLength(17).WithMessage(L("BuildingId_MaxLength17"))
             .When(x => !string.IsNullOrWhiteSpace(x.BuildingId));
 
         RuleFor(x => x.BuildingNumber)
-            .Matches(@"^\d+$").WithMessage("Building number must contain only digits")
-            .MaximumLength(5).WithMessage("Building number cannot exceed 5 digits")
+            .Matches(@"^\d+$").WithMessage(L("BuildingNumber_DigitsOnly"))
+            .MaximumLength(5).WithMessage(L("BuildingNumber_MaxLength5"))
             .When(x => !string.IsNullOrWhiteSpace(x.BuildingNumber));
 
 
         RuleFor(x => x.Status)
             .Must(v => vocabService.IsValidCode("building_status", (int)v!.Value))
             .When(x => x.Status.HasValue)
-            .WithMessage("Invalid building status value");
+            .WithMessage(L("BuildingStatus_Invalid"));
 
         RuleFor(x => x.BuildingType)
             .Must(v => vocabService.IsValidCode("building_type", (int)v!.Value))
             .When(x => x.BuildingType.HasValue)
-            .WithMessage("Invalid building type value");
+            .WithMessage(L("BuildingType_Invalid"));
 
 
         RuleFor(x => x.Page)
-            .GreaterThanOrEqualTo(1).WithMessage("Page must be at least 1");
+            .GreaterThanOrEqualTo(1).WithMessage(L("Page_AtLeast1"));
 
         RuleFor(x => x.PageSize)
-            .InclusiveBetween(1, 100).WithMessage("Page size must be between 1 and 100");
+            .InclusiveBetween(1, 100).WithMessage(L("PageSize_Between1And100"));
 
 
         RuleFor(x => x.SortBy)
             .Must(sortBy => AllowedSortFields.Contains(sortBy!.ToLowerInvariant()))
             .When(x => !string.IsNullOrWhiteSpace(x.SortBy))
-            .WithMessage("Sort field must be one of: buildingId, createdDate, status, buildingType");
+            .WithMessage(L("SortField_Invalid"));
 
         // District requires Governorate, SubDistrict requires District, etc.
 
         RuleFor(x => x)
             .Must(x => !string.IsNullOrWhiteSpace(x.GovernorateCode) || string.IsNullOrWhiteSpace(x.DistrictCode))
-            .WithMessage("District code requires Governorate code to be specified");
+            .WithMessage(L("District_RequiresGovernorate"));
 
         RuleFor(x => x)
             .Must(x => !string.IsNullOrWhiteSpace(x.DistrictCode) || string.IsNullOrWhiteSpace(x.SubDistrictCode))
-            .WithMessage("Sub-district code requires District code to be specified");
+            .WithMessage(L("SubDistrict_RequiresDistrict"));
 
         RuleFor(x => x)
             .Must(x => !string.IsNullOrWhiteSpace(x.SubDistrictCode) || string.IsNullOrWhiteSpace(x.CommunityCode))
-            .WithMessage("Community code requires Sub-district code to be specified");
+            .WithMessage(L("Community_RequiresSubDistrict"));
     }
 }

@@ -1,13 +1,16 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Claims.Commands.DeleteClaim;
 
-public class DeleteClaimCommandValidator : AbstractValidator<DeleteClaimCommand>
+public class DeleteClaimCommandValidator : LocalizedValidator<DeleteClaimCommand>
 {
-    public DeleteClaimCommandValidator()
+    public DeleteClaimCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ClaimId)
             .NotEmpty()
-            .WithMessage("Claim ID is required");
+            .WithMessage(L("ClaimId_Required"));
     }
 }

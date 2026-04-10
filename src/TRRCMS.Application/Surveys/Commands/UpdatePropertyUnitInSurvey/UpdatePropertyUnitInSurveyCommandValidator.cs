@@ -1,54 +1,57 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 
 /// <summary>
 /// Validator for UpdatePropertyUnitInSurveyCommand
 /// </summary>
-public class UpdatePropertyUnitInSurveyCommandValidator : AbstractValidator<UpdatePropertyUnitInSurveyCommand>
+public class UpdatePropertyUnitInSurveyCommandValidator : LocalizedValidator<UpdatePropertyUnitInSurveyCommand>
 {
-    public UpdatePropertyUnitInSurveyCommandValidator()
+    public UpdatePropertyUnitInSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.PropertyUnitId)
             .NotEmpty()
-            .WithMessage("Property unit ID is required");
+            .WithMessage(L("PropertyUnitId_Required"));
 
         RuleFor(x => x.UnitIdentifier)
             .MaximumLength(50)
             .When(x => !string.IsNullOrEmpty(x.UnitIdentifier))
-            .WithMessage("Unit identifier (رقم الوحدة) must not exceed 50 characters");
+            .WithMessage(L("UnitIdentifier_MaxLength50"));
 
         RuleFor(x => x.UnitType)
             .InclusiveBetween(1, 5)
             .When(x => x.UnitType.HasValue)
-            .WithMessage("Unit type (نوع الوحدة) must be between 1 and 5");
+            .WithMessage(L("UnitType_InvalidRange"));
 
         RuleFor(x => x.Status)
             .Must(s => !s.HasValue || (s.Value >= 1 && s.Value <= 6) || s.Value == 99)
-            .WithMessage("Status (حالة الوحدة) must be a valid value (1-6 or 99)");
+            .WithMessage(L("UnitStatus_Invalid"));
 
         RuleFor(x => x.FloorNumber)
             .InclusiveBetween(-5, 200)
             .When(x => x.FloorNumber.HasValue)
-            .WithMessage("Floor number (رقم الطابق) must be between -5 and 200");
+            .WithMessage(L("FloorNumber_InvalidRange"));
 
         RuleFor(x => x.AreaSquareMeters)
             .GreaterThan(0)
             .When(x => x.AreaSquareMeters.HasValue)
-            .WithMessage("Area (مساحة القسم) must be greater than 0");
+            .WithMessage(L("Area_GreaterThanZero"));
 
         RuleFor(x => x.NumberOfRooms)
             .InclusiveBetween(0, 100)
             .When(x => x.NumberOfRooms.HasValue)
-            .WithMessage("Number of rooms (عدد الغرف) must be between 0 and 100");
+            .WithMessage(L("NumberOfRooms_InvalidRange"));
 
         RuleFor(x => x.Description)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrEmpty(x.Description))
-            .WithMessage("Description (وصف مفصل) must not exceed 2000 characters");
+            .WithMessage(L("Description_MaxLength2000"));
     }
 }

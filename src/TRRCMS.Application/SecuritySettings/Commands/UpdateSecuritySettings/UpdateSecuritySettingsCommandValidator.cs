@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 using TRRCMS.Domain.ValueObjects;
 
 namespace TRRCMS.Application.SecuritySettings.Commands.UpdateSecuritySettings;
@@ -7,23 +10,23 @@ namespace TRRCMS.Application.SecuritySettings.Commands.UpdateSecuritySettings;
 /// Validator for UpdateSecuritySettingsCommand.
 /// Prevents configurations that violate hard safety constraints or would make the system unusable.
 /// </summary>
-public class UpdateSecuritySettingsCommandValidator : AbstractValidator<UpdateSecuritySettingsCommand>
+public class UpdateSecuritySettingsCommandValidator : LocalizedValidator<UpdateSecuritySettingsCommand>
 {
-    public UpdateSecuritySettingsCommandValidator()
+    public UpdateSecuritySettingsCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         // Password policy validation
 
         RuleFor(x => x.PasswordMinLength)
             .InclusiveBetween(PasswordPolicy.AbsoluteMinLength, PasswordPolicy.AbsoluteMaxLength)
-            .WithMessage($"Password minimum length must be between {PasswordPolicy.AbsoluteMinLength} and {PasswordPolicy.AbsoluteMaxLength}.");
+            .WithMessage(L("PasswordPolicy_MinLength", PasswordPolicy.AbsoluteMinLength, PasswordPolicy.AbsoluteMaxLength));
 
         RuleFor(x => x.PasswordExpiryDays)
             .InclusiveBetween(0, PasswordPolicy.MaxExpiryDays)
-            .WithMessage($"Password expiry must be between 0 (disabled) and {PasswordPolicy.MaxExpiryDays} days.");
+            .WithMessage(L("PasswordPolicy_ExpiryDays", PasswordPolicy.MaxExpiryDays));
 
         RuleFor(x => x.PasswordReuseHistory)
             .InclusiveBetween(0, PasswordPolicy.MaxReuseHistory)
-            .WithMessage($"Password reuse history must be between 0 (disabled) and {PasswordPolicy.MaxReuseHistory}.");
+            .WithMessage(L("PasswordPolicy_ReuseHistory", PasswordPolicy.MaxReuseHistory));
 
         // Cross-field: if no complexity requirements, enforce higher min length
         RuleFor(x => x.PasswordMinLength)
@@ -32,58 +35,58 @@ public class UpdateSecuritySettingsCommandValidator : AbstractValidator<UpdateSe
                     && !x.PasswordRequireLowercase
                     && !x.PasswordRequireDigit
                     && !x.PasswordRequireSpecialCharacter)
-            .WithMessage("When no complexity requirements are set, minimum password length must be at least 12 characters.");
+            .WithMessage(L("PasswordPolicy_MinLengthNoComplexity"));
 
         // Session and lockout validation
 
         RuleFor(x => x.SessionTimeoutMinutes)
             .InclusiveBetween(SessionLockoutPolicy.MinSessionTimeout, SessionLockoutPolicy.MaxSessionTimeout)
-            .WithMessage($"Session timeout must be between {SessionLockoutPolicy.MinSessionTimeout} and {SessionLockoutPolicy.MaxSessionTimeout} minutes.");
+            .WithMessage(L("Session_Timeout", SessionLockoutPolicy.MinSessionTimeout, SessionLockoutPolicy.MaxSessionTimeout));
 
         RuleFor(x => x.MaxFailedLoginAttempts)
             .InclusiveBetween(SessionLockoutPolicy.MinFailedAttempts, SessionLockoutPolicy.MaxFailedAttempts)
-            .WithMessage($"Maximum failed login attempts must be between {SessionLockoutPolicy.MinFailedAttempts} and {SessionLockoutPolicy.MaxFailedAttempts}.");
+            .WithMessage(L("Session_MaxFailedAttempts", SessionLockoutPolicy.MinFailedAttempts, SessionLockoutPolicy.MaxFailedAttempts));
 
         RuleFor(x => x.LockoutDurationMinutes)
             .InclusiveBetween(SessionLockoutPolicy.MinLockoutDuration, SessionLockoutPolicy.MaxLockoutDuration)
-            .WithMessage($"Lockout duration must be between {SessionLockoutPolicy.MinLockoutDuration} and {SessionLockoutPolicy.MaxLockoutDuration} minutes.");
+            .WithMessage(L("Session_LockoutDuration", SessionLockoutPolicy.MinLockoutDuration, SessionLockoutPolicy.MaxLockoutDuration));
 
         // Access control validation
 
         // At least one authentication method must remain enabled (S06 safety constraint)
         RuleFor(x => x)
             .Must(x => x.AllowPasswordAuthentication || x.AllowSsoAuthentication || x.AllowTokenAuthentication)
-            .WithMessage("At least one authentication method must be enabled. Disabling all methods would lock out all users.");
+            .WithMessage(L("Auth_AtLeastOneMethod"));
 
         // IP allowlist must not be empty when enforced
         RuleFor(x => x.IpAllowlist)
             .NotEmpty()
             .When(x => x.EnforceIpAllowlist)
-            .WithMessage("IP allowlist cannot be empty when enforcement is enabled. This would block all admin access.");
+            .WithMessage(L("IpAllowlist_NotEmpty"));
 
         // Validate IP allowlist format when provided
         RuleFor(x => x.IpAllowlist)
             .Must(BeValidIpList!)
             .When(x => !string.IsNullOrWhiteSpace(x.IpAllowlist))
-            .WithMessage("IP allowlist contains invalid IP addresses or CIDR notation.");
+            .WithMessage(L("IpAllowlist_InvalidEntries"));
 
         // Validate IP denylist format when provided
         RuleFor(x => x.IpDenylist)
             .Must(BeValidIpList!)
             .When(x => !string.IsNullOrWhiteSpace(x.IpDenylist))
-            .WithMessage("IP denylist contains invalid IP addresses or CIDR notation.");
+            .WithMessage(L("IpDenylist_InvalidEntries"));
 
         // Allowed environments must not be empty when restriction is enabled
         RuleFor(x => x.AllowedEnvironments)
             .NotEmpty()
             .When(x => x.RestrictByEnvironment)
-            .WithMessage("Allowed environments cannot be empty when restriction is enabled.");
+            .WithMessage(L("AllowedEnv_NotEmpty"));
 
         // Metadata
 
         RuleFor(x => x.ChangeDescription)
             .MaximumLength(1000)
-            .WithMessage("Change description cannot exceed 1000 characters.");
+            .WithMessage(L("ChangeDescription_MaxLength1000"));
     }
 
     /// <summary>

@@ -1,5 +1,8 @@
 using FluentValidation;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Localization;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Buildings.Queries.GetBuildingsInPolygon;
 
@@ -7,66 +10,66 @@ namespace TRRCMS.Application.Buildings.Queries.GetBuildingsInPolygon;
 /// Validator for GetBuildingsInPolygonQuery
 /// Validates polygon input (WKT or coordinates), pagination, and filters
 /// </summary>
-public class GetBuildingsInPolygonQueryValidator : AbstractValidator<GetBuildingsInPolygonQuery>
+public class GetBuildingsInPolygonQueryValidator : LocalizedValidator<GetBuildingsInPolygonQuery>
 {
-    public GetBuildingsInPolygonQueryValidator(IVocabularyValidationService vocabService)
+    public GetBuildingsInPolygonQueryValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         // Either PolygonWkt or Coordinates must be provided
 
         RuleFor(x => x)
             .Must(x => !string.IsNullOrWhiteSpace(x.PolygonWkt) ||
                         (x.Coordinates != null && x.Coordinates.Length >= 3))
-            .WithMessage("Either PolygonWkt or Coordinates (minimum 3 points) must be provided");
+            .WithMessage(L("PolygonOrCoords_Required"));
 
         // WKT format validation
         RuleFor(x => x.PolygonWkt)
             .Must(BeValidPolygonWkt)
             .When(x => !string.IsNullOrWhiteSpace(x.PolygonWkt))
-            .WithMessage("PolygonWkt must be a valid POLYGON WKT format (e.g., 'POLYGON((lng1 lat1, lng2 lat2, ...))')");
+            .WithMessage(L("PolygonWkt_InvalidFormat"));
 
         RuleFor(x => x.PolygonWkt)
             .MaximumLength(10000)
             .When(x => !string.IsNullOrWhiteSpace(x.PolygonWkt))
-            .WithMessage("PolygonWkt must not exceed 10,000 characters");
+            .WithMessage(L("PolygonWkt_MaxLength10000"));
 
         // Coordinates array validation
         RuleFor(x => x.Coordinates)
             .Must(coords => coords!.Length >= 3)
             .When(x => x.Coordinates != null)
-            .WithMessage("Polygon must have at least 3 coordinate points");
+            .WithMessage(L("Polygon_MinPoints3"));
 
         RuleFor(x => x.Coordinates)
             .Must(coords => coords!.Length <= 10000)
             .When(x => x.Coordinates != null)
-            .WithMessage("Polygon cannot exceed 10,000 coordinate points");
+            .WithMessage(L("Polygon_MaxPoints10000"));
 
         RuleFor(x => x.Coordinates)
             .Must(coords => coords!.All(c => c != null && c.Length == 2))
             .When(x => x.Coordinates != null)
-            .WithMessage("Each coordinate must be an array of exactly 2 values [longitude, latitude]");
+            .WithMessage(L("Coordinate_Exactly2Values"));
 
         RuleFor(x => x.Coordinates)
             .Must(BeValidCoordinateValues)
             .When(x => x.Coordinates != null && x.Coordinates.All(c => c != null && c.Length == 2))
-            .WithMessage("Coordinates must be within valid ranges (longitude: 35.0-43.0, latitude: 32.0-37.5 for Syria)");
+            .WithMessage(L("Coordinate_SyriaRange"));
 
 
         RuleFor(x => x.BuildingType)
             .Must(v => vocabService.IsValidCode("building_type", (int)v!.Value))
             .When(x => x.BuildingType.HasValue)
-            .WithMessage("Invalid building type value");
+            .WithMessage(L("BuildingType_Invalid"));
 
         RuleFor(x => x.Status)
             .Must(v => vocabService.IsValidCode("building_status", (int)v!.Value))
             .When(x => x.Status.HasValue)
-            .WithMessage("Invalid building status value");
+            .WithMessage(L("BuildingStatus_Invalid"));
 
 
         RuleFor(x => x.Page)
-            .GreaterThanOrEqualTo(1).WithMessage("Page must be at least 1");
+            .GreaterThanOrEqualTo(1).WithMessage(L("Page_AtLeast1"));
 
         RuleFor(x => x.PageSize)
-            .InclusiveBetween(1, 1000).WithMessage("Page size must be between 1 and 1000");
+            .InclusiveBetween(1, 1000).WithMessage(L("PageSize_Between1And1000"));
     }
 
     /// <summary>

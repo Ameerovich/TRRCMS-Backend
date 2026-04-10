@@ -1,35 +1,38 @@
-﻿using FluentValidation;
+using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Surveys.Commands.SaveDraftSurvey;
 
 /// <summary>
 /// Validator for SaveDraftSurveyCommand
 /// </summary>
-public class SaveDraftSurveyCommandValidator : AbstractValidator<SaveDraftSurveyCommand>
+public class SaveDraftSurveyCommandValidator : LocalizedValidator<SaveDraftSurveyCommand>
 {
-    public SaveDraftSurveyCommandValidator()
+    public SaveDraftSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.GpsCoordinates)
             .Must(BeValidGpsCoordinates)
             .When(x => !string.IsNullOrWhiteSpace(x.GpsCoordinates))
-            .WithMessage("GPS coordinates must be in format 'latitude,longitude' (e.g., '36.2021,37.1343')");
+            .WithMessage(L("GpsFormat_Invalid"));
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))
-            .WithMessage("Notes cannot exceed 2000 characters");
+            .WithMessage(L("Notes_MaxLength2000"));
 
         RuleFor(x => x.DurationMinutes)
             .GreaterThan(0)
             .When(x => x.DurationMinutes.HasValue)
-            .WithMessage("Duration must be greater than 0 minutes")
+            .WithMessage(L("Duration_GreaterThanZero"))
             .LessThanOrEqualTo(480) // 8 hours max
             .When(x => x.DurationMinutes.HasValue)
-            .WithMessage("Duration cannot exceed 480 minutes (8 hours)");
+            .WithMessage(L("Duration_Max480"));
     }
 
     /// <summary>

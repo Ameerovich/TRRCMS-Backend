@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Households.Commands.CreateHousehold;
 
@@ -6,71 +9,71 @@ namespace TRRCMS.Application.Households.Commands.CreateHousehold;
 /// Validator for CreateHouseholdCommand
 /// Enhanced with cross-field demographics consistency validation
 /// </summary>
-public class CreateHouseholdCommandValidator : AbstractValidator<CreateHouseholdCommand>
+public class CreateHouseholdCommandValidator : LocalizedValidator<CreateHouseholdCommand>
 {
-    public CreateHouseholdCommandValidator()
+    public CreateHouseholdCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.PropertyUnitId)
             .NotEmpty()
-            .WithMessage("Property unit ID is required");
+            .WithMessage(L("PropertyUnitId_Required"));
 
         RuleFor(x => x.HouseholdSize)
             .GreaterThan(0)
-            .WithMessage("Household size (عدد الأفراد) must be at least 1")
+            .WithMessage(L("HouseholdSize_AtLeast1"))
             .LessThanOrEqualTo(50)
-            .WithMessage("Household size must not exceed 50");
+            .WithMessage(L("HouseholdSize_Max50"));
 
         // Adults
         RuleFor(x => x.MaleCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Adult male count (عدد البالغين الذكور) cannot be negative")
+            .WithMessage(L("AdultMale_NonNegative"))
             .LessThanOrEqualTo(50)
-            .WithMessage("Adult male count must not exceed 50");
+            .WithMessage(L("AdultMale_Max50"));
 
         RuleFor(x => x.FemaleCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Adult female count (عدد البالغين الإناث) cannot be negative")
+            .WithMessage(L("AdultFemale_NonNegative"))
             .LessThanOrEqualTo(50)
-            .WithMessage("Adult female count must not exceed 50");
+            .WithMessage(L("AdultFemale_Max50"));
 
         // Children
         RuleFor(x => x.MaleChildCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Male children count (عدد الأطفال الذكور) cannot be negative")
+            .WithMessage(L("ChildrenMale_NonNegative"))
             .LessThanOrEqualTo(30)
-            .WithMessage("Male children count must not exceed 30");
+            .WithMessage(L("ChildrenMale_Max30"));
 
         RuleFor(x => x.FemaleChildCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Female children count (عدد الأطفال الإناث) cannot be negative")
+            .WithMessage(L("ChildrenFemale_NonNegative"))
             .LessThanOrEqualTo(30)
-            .WithMessage("Female children count must not exceed 30");
+            .WithMessage(L("ChildrenFemale_Max30"));
 
         // Elderly
         RuleFor(x => x.MaleElderlyCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Male elderly count (عدد كبار السن الذكور) cannot be negative")
+            .WithMessage(L("ElderlyMale_NonNegative"))
             .LessThanOrEqualTo(20)
-            .WithMessage("Male elderly count must not exceed 20");
+            .WithMessage(L("ElderlyMale_Max20"));
 
         RuleFor(x => x.FemaleElderlyCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Female elderly count (عدد كبار السن الإناث) cannot be negative")
+            .WithMessage(L("ElderlyFemale_NonNegative"))
             .LessThanOrEqualTo(20)
-            .WithMessage("Female elderly count must not exceed 20");
+            .WithMessage(L("ElderlyFemale_Max20"));
 
         // Disabled
         RuleFor(x => x.MaleDisabledCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Male disabled count (عدد المعاقين الذكور) cannot be negative")
+            .WithMessage(L("DisabledMale_NonNegative"))
             .LessThanOrEqualTo(20)
-            .WithMessage("Male disabled count must not exceed 20");
+            .WithMessage(L("DisabledMale_Max20"));
 
         RuleFor(x => x.FemaleDisabledCount)
             .GreaterThanOrEqualTo(0)
-            .WithMessage("Female disabled count (عدد المعاقين الإناث) cannot be negative")
+            .WithMessage(L("DisabledFemale_NonNegative"))
             .LessThanOrEqualTo(20)
-            .WithMessage("Female disabled count must not exceed 20");
+            .WithMessage(L("DisabledFemale_Max20"));
 
         // ==================== CROSS-FIELD: Demographics sum consistency ====================
         // Total demographic members (adults + children + elderly) should not exceed household size
@@ -82,7 +85,7 @@ public class CreateHouseholdCommandValidator : AbstractValidator<CreateHousehold
                                    x.MaleElderlyCount + x.FemaleElderlyCount;
                 return totalMembers <= x.HouseholdSize;
             })
-            .WithMessage("Sum of demographic members (adults + children + elderly) cannot exceed household size")
+            .WithMessage(L("Demographics_ExceedHouseholdSize"))
             .When(x => x.HouseholdSize > 0);
 
         // Disabled count should not exceed total household size
@@ -92,13 +95,13 @@ public class CreateHouseholdCommandValidator : AbstractValidator<CreateHousehold
                 var totalDisabled = x.MaleDisabledCount + x.FemaleDisabledCount;
                 return totalDisabled <= x.HouseholdSize;
             })
-            .WithMessage("Total disabled count cannot exceed household size")
+            .WithMessage(L("Disabled_ExceedHouseholdSize"))
             .When(x => x.HouseholdSize > 0);
 
         // Notes
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrEmpty(x.Notes))
-            .WithMessage("Notes (ملاحظات) must not exceed 2000 characters");
+            .WithMessage(L("Notes_MaxLength2000"));
     }
 }

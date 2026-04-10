@@ -1,16 +1,19 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Import.Commands.CommitPackage;
 
 /// <summary>
 /// Validator for CommitPackageCommand.
 /// </summary>
-public class CommitPackageCommandValidator : AbstractValidator<CommitPackageCommand>
+public class CommitPackageCommandValidator : LocalizedValidator<CommitPackageCommand>
 {
-    public CommitPackageCommandValidator()
+    public CommitPackageCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ImportPackageId)
             .NotEmpty()
-            .WithMessage("Import package ID is required.");
+            .WithMessage(L("ImportPackageId_Required"));
     }
 }

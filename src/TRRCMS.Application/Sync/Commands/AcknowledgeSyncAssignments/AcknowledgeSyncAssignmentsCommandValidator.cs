@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Sync.Commands.AcknowledgeSyncAssignments;
 
@@ -17,32 +20,32 @@ namespace TRRCMS.Application.Sync.Commands.AcknowledgeSyncAssignments;
 /// </list>
 /// </summary>
 public sealed class AcknowledgeSyncAssignmentsCommandValidator
-    : AbstractValidator<AcknowledgeSyncAssignmentsCommand>
+    : LocalizedValidator<AcknowledgeSyncAssignmentsCommand>
 {
     /// <summary>Maximum number of assignment IDs accepted in a single ack request.</summary>
     private const int MaxAssignmentIds = 500;
 
-    public AcknowledgeSyncAssignmentsCommandValidator()
+    public AcknowledgeSyncAssignmentsCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         // ── Sync session ──────────────────────────────────────────────────────────
 
         RuleFor(x => x.SyncSessionId)
             .NotEmpty()
-            .WithMessage("SyncSessionId is required.");
+            .WithMessage(L("SyncSessionId_Required"));
 
         // ── Assignment ID list ────────────────────────────────────────────────────
 
         RuleFor(x => x.AssignmentIds)
             .NotNull()
-            .WithMessage("AssignmentIds must not be null.")
+            .WithMessage(L("AssignmentIds_NotNull"))
             .NotEmpty()
-            .WithMessage("At least one assignment ID must be provided.")
+            .WithMessage(L("AssignmentIds_AtLeastOne"))
             .Must(ids => ids.Count <= MaxAssignmentIds)
-            .WithMessage($"A maximum of {MaxAssignmentIds} assignment IDs may be acknowledged per request.");
+            .WithMessage(L("AssignmentIds_MaxCount", MaxAssignmentIds));
 
         // Each individual ID must be non-empty.
         RuleForEach(x => x.AssignmentIds)
             .NotEmpty()
-            .WithMessage("Each assignment ID must be a valid non-empty GUID.");
+            .WithMessage(L("AssignmentId_ValidGuid"));
     }
 }

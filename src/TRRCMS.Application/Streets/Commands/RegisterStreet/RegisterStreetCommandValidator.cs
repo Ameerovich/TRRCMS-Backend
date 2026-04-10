@@ -1,19 +1,22 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Streets.Commands.RegisterStreet;
 
-public class RegisterStreetCommandValidator : AbstractValidator<RegisterStreetCommand>
+public class RegisterStreetCommandValidator : LocalizedValidator<RegisterStreetCommand>
 {
-    public RegisterStreetCommandValidator()
+    public RegisterStreetCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Identifier)
-            .GreaterThan(0).WithMessage("Identifier must be a positive integer");
+            .GreaterThan(0).WithMessage(L("Identifier_PositiveInteger"));
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Street name is required")
-            .MaximumLength(500).WithMessage("Street name cannot exceed 500 characters");
+            .NotEmpty().WithMessage(L("StreetName_Required"))
+            .MaximumLength(500).WithMessage(L("StreetName_MaxLength500"));
 
         RuleFor(x => x.GeometryWkt)
-            .NotEmpty().WithMessage("Street geometry (WKT linestring) is required for street registration");
+            .NotEmpty().WithMessage(L("StreetGeometry_Required"));
     }
 }

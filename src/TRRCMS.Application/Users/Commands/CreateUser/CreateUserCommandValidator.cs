@@ -1,4 +1,7 @@
-﻿using FluentValidation;
+using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Users.Commands.CreateUser;
@@ -7,60 +10,60 @@ namespace TRRCMS.Application.Users.Commands.CreateUser;
 /// Validator for CreateUserCommand
 /// Enforces strong password policy and data integrity
 /// </summary>
-public class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
+public class CreateUserCommandValidator : LocalizedValidator<CreateUserCommand>
 {
-    public CreateUserCommandValidator()
+    public CreateUserCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Username)
-            .NotEmpty().WithMessage("Username is required")
-            .Length(3, 50).WithMessage("Username must be between 3 and 50 characters")
-            .Matches(@"^[a-zA-Z0-9_]+$").WithMessage("Username can only contain letters, numbers, and underscores");
+            .NotEmpty().WithMessage(L("Username_Required"))
+            .Length(3, 50).WithMessage(L("Username_Length3to50"))
+            .Matches(@"^[a-zA-Z0-9_]+$").WithMessage(L("Username_InvalidChars"));
 
         RuleFor(x => x.FullNameArabic)
-            .NotEmpty().WithMessage("Full name in Arabic is required")
-            .MaximumLength(200).WithMessage("Full name in Arabic cannot exceed 200 characters");
+            .NotEmpty().WithMessage(L("FullNameAr_Required"))
+            .MaximumLength(200).WithMessage(L("FullNameAr_MaxLength200"));
 
         RuleFor(x => x.FullNameEnglish)
-            .MaximumLength(200).WithMessage("Full name in English cannot exceed 200 characters")
+            .MaximumLength(200).WithMessage(L("FullNameEn_MaxLength200"))
             .When(x => !string.IsNullOrWhiteSpace(x.FullNameEnglish));
 
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage("Email is required")
-            .EmailAddress().WithMessage("Invalid email format")
-            .MaximumLength(100).WithMessage("Email cannot exceed 100 characters");
+            .NotEmpty().WithMessage(L("Email_Required"))
+            .EmailAddress().WithMessage(L("Email_InvalidFormat"))
+            .MaximumLength(100).WithMessage(L("Email_MaxLength100"));
 
         RuleFor(x => x.PhoneNumber)
             .Matches(@"^(\+963|0)\d{7,9}$")
-            .WithMessage("رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+")
+            .WithMessage(L("Phone_SyrianFormat"))
             .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
 
         RuleFor(x => x.Role)
-            .IsInEnum().WithMessage("Invalid user role");
+            .IsInEnum().WithMessage(L("UserRole_Invalid"));
 
         // Strong password policy
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Password is required")
-            .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-            .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter")
-            .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
-            .Matches(@"[0-9]").WithMessage("Password must contain at least one digit")
-            .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one special character");
+            .NotEmpty().WithMessage(L("Password_Required"))
+            .MinimumLength(8).WithMessage(L("Password_MinLength8"))
+            .Matches(@"[A-Z]").WithMessage(L("Password_RequireUpper"))
+            .Matches(@"[a-z]").WithMessage(L("Password_RequireLower"))
+            .Matches(@"[0-9]").WithMessage(L("Password_RequireDigit"))
+            .Matches(@"[^a-zA-Z0-9]").WithMessage(L("Password_RequireSpecial"));
 
         RuleFor(x => x.Organization)
-            .MaximumLength(100).WithMessage("Organization cannot exceed 100 characters")
+            .MaximumLength(100).WithMessage(L("Organization_MaxLength100"))
             .When(x => !string.IsNullOrWhiteSpace(x.Organization));
 
         RuleFor(x => x.JobTitle)
-            .MaximumLength(100).WithMessage("Job title cannot exceed 100 characters")
+            .MaximumLength(100).WithMessage(L("JobTitle_MaxLength100"))
             .When(x => !string.IsNullOrWhiteSpace(x.JobTitle));
 
         RuleFor(x => x.EmployeeId)
-            .MaximumLength(50).WithMessage("Employee ID cannot exceed 50 characters")
+            .MaximumLength(50).WithMessage(L("EmployeeId_MaxLength50"))
             .When(x => !string.IsNullOrWhiteSpace(x.EmployeeId));
 
         // Business rule: At least one access type must be selected
         RuleFor(x => x)
             .Must(x => x.HasMobileAccess || x.HasDesktopAccess)
-            .WithMessage("User must have at least mobile or desktop access");
+            .WithMessage(L("User_RequireAccess"));
     }
 }

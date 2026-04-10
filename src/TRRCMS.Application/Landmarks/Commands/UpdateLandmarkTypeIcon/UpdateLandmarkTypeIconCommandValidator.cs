@@ -1,21 +1,24 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Landmarks.Commands.UpdateLandmarkTypeIcon;
 
-public class UpdateLandmarkTypeIconCommandValidator : AbstractValidator<UpdateLandmarkTypeIconCommand>
+public class UpdateLandmarkTypeIconCommandValidator : LocalizedValidator<UpdateLandmarkTypeIconCommand>
 {
-    public UpdateLandmarkTypeIconCommandValidator()
+    public UpdateLandmarkTypeIconCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Type)
             .InclusiveBetween(1, 10)
-            .WithMessage("Landmark type must be between 1 and 10.");
+            .WithMessage(L("LandmarkType_Range1to10"));
 
         RuleFor(x => x.SvgContent)
             .NotEmpty()
-            .WithMessage("SVG content is required.")
+            .WithMessage(L("SvgContent_Required"))
             .Must(svg => svg.Contains("<svg", StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Content must be valid SVG (must contain <svg tag).")
+            .WithMessage(L("SvgContent_InvalidTag"))
             .MaximumLength(102400)
-            .WithMessage("SVG content must not exceed 100KB.");
+            .WithMessage(L("SvgContent_Max100KB"));
     }
 }

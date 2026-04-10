@@ -1,28 +1,31 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Landmarks.Commands.BulkRegisterLandmarks;
 
-public class BulkRegisterLandmarksCommandValidator : AbstractValidator<BulkRegisterLandmarksCommand>
+public class BulkRegisterLandmarksCommandValidator : LocalizedValidator<BulkRegisterLandmarksCommand>
 {
-    public BulkRegisterLandmarksCommandValidator()
+    public BulkRegisterLandmarksCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Landmarks)
-            .NotEmpty().WithMessage("At least one landmark is required.");
+            .NotEmpty().WithMessage(L("Landmark_AtLeastOne"));
 
         RuleForEach(x => x.Landmarks).ChildRules(item =>
         {
             item.RuleFor(x => x.Identifier)
-                .GreaterThan(0).WithMessage("Identifier must be a positive integer.");
+                .GreaterThan(0).WithMessage(L("Identifier_PositiveInteger"));
 
             item.RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Landmark name is required.")
-                .MaximumLength(200).WithMessage("Landmark name cannot exceed 200 characters.");
+                .NotEmpty().WithMessage(L("LandmarkName_Required"))
+                .MaximumLength(200).WithMessage(L("LandmarkName_MaxLength200"));
 
             item.RuleFor(x => x.Type)
-                .InclusiveBetween(1, 10).WithMessage("Landmark type must be between 1 and 10.");
+                .InclusiveBetween(1, 10).WithMessage(L("LandmarkType_Range1to10"));
 
             item.RuleFor(x => x.LocationWkt)
-                .NotEmpty().WithMessage("Location geometry (WKT point) is required.");
+                .NotEmpty().WithMessage(L("LandmarkGeometry_BulkRequired"));
         });
     }
 }

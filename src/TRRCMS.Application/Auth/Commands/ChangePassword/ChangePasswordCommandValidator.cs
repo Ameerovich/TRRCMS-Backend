@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Auth.Commands.ChangePassword;
 
@@ -6,35 +9,35 @@ namespace TRRCMS.Application.Auth.Commands.ChangePassword;
 /// Validator for ChangePasswordCommand.
 /// Enforces strong password policy.
 /// </summary>
-public class ChangePasswordCommandValidator : AbstractValidator<ChangePasswordCommand>
+public class ChangePasswordCommandValidator : LocalizedValidator<ChangePasswordCommand>
 {
-    public ChangePasswordCommandValidator()
+    public ChangePasswordCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage(L("UserId_Required"));
 
         RuleFor(x => x.CurrentPassword)
-            .NotEmpty().WithMessage("Current password is required");
+            .NotEmpty().WithMessage(L("CurrentPassword_Required"));
 
         // Strong password policy - same as CreateUserCommandValidator
         RuleFor(x => x.NewPassword)
-            .NotEmpty().WithMessage("New password is required")
-            .MinimumLength(8).WithMessage("Password must be at least 8 characters")
-            .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter")
-            .Matches(@"[a-z]").WithMessage("Password must contain at least one lowercase letter")
-            .Matches(@"[0-9]").WithMessage("Password must contain at least one digit")
-            .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one special character");
+            .NotEmpty().WithMessage(L("Password_Required"))
+            .MinimumLength(8).WithMessage(L("Password_MinLength8"))
+            .Matches(@"[A-Z]").WithMessage(L("Password_RequireUpper"))
+            .Matches(@"[a-z]").WithMessage(L("Password_RequireLower"))
+            .Matches(@"[0-9]").WithMessage(L("Password_RequireDigit"))
+            .Matches(@"[^a-zA-Z0-9]").WithMessage(L("Password_RequireSpecial"));
 
         RuleFor(x => x.ConfirmPassword)
-            .NotEmpty().WithMessage("Password confirmation is required")
-            .Equal(x => x.NewPassword).WithMessage("Password confirmation does not match new password");
+            .NotEmpty().WithMessage(L("PasswordConfirm_Required"))
+            .Equal(x => x.NewPassword).WithMessage(L("PasswordConfirm_Mismatch"));
 
         // New password must be different from current
         RuleFor(x => x.NewPassword)
             .NotEqual(x => x.CurrentPassword)
-            .WithMessage("New password must be different from current password");
+            .WithMessage(L("Password_MustDiffer"));
 
         RuleFor(x => x.ModifiedByUserId)
-            .NotEmpty().WithMessage("Modified by user ID is required");
+            .NotEmpty().WithMessage(L("ModifiedByUserId_Required"));
     }
 }

@@ -1,30 +1,33 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 
 /// <summary>
 /// Validator for UpdateHouseholdInSurveyCommand
 /// </summary>
-public class UpdateHouseholdInSurveyCommandValidator : AbstractValidator<UpdateHouseholdInSurveyCommand>
+public class UpdateHouseholdInSurveyCommandValidator : LocalizedValidator<UpdateHouseholdInSurveyCommand>
 {
-    public UpdateHouseholdInSurveyCommandValidator(IVocabularyValidationService vocabService)
+    public UpdateHouseholdInSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.HouseholdId)
             .NotEmpty()
-            .WithMessage("Household ID is required");
+            .WithMessage(L("HouseholdId_Required"));
 
         RuleFor(x => x.HouseholdSize)
             .GreaterThan(0)
             .When(x => x.HouseholdSize.HasValue)
-            .WithMessage("Household size must be at least 1")
+            .WithMessage(L("HouseholdSize_AtLeast1"))
             .LessThanOrEqualTo(50)
             .When(x => x.HouseholdSize.HasValue)
-            .WithMessage("Household size must not exceed 50");
+            .WithMessage(L("HouseholdSize_Max50"));
 
         // Adults
         RuleFor(x => x.MaleCount)
@@ -82,13 +85,13 @@ public class UpdateHouseholdInSurveyCommandValidator : AbstractValidator<UpdateH
         RuleFor(x => x.OccupancyType)
             .Must(v => vocabService.IsValidCode("occupancy_type", v!.Value))
             .When(x => x.OccupancyType.HasValue)
-            .WithMessage("Invalid occupancy type");
+            .WithMessage(L("OccupancyType_Invalid"));
 
         // Occupancy Nature
         RuleFor(x => x.OccupancyNature)
             .Must(v => vocabService.IsValidCode("occupancy_nature", v!.Value))
             .When(x => x.OccupancyNature.HasValue)
-            .WithMessage("Invalid occupancy nature");
+            .WithMessage(L("OccupancyNature_Invalid"));
 
         // Notes
         RuleFor(x => x.Notes)

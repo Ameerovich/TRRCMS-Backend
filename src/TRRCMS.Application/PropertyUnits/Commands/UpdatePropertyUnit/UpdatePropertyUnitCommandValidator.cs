@@ -1,45 +1,48 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.PropertyUnits.Commands.UpdatePropertyUnit;
 
 /// <summary>
 /// Validator for UpdatePropertyUnitCommand
 /// </summary>
-public class UpdatePropertyUnitCommandValidator : AbstractValidator<UpdatePropertyUnitCommand>
+public class UpdatePropertyUnitCommandValidator : LocalizedValidator<UpdatePropertyUnitCommand>
 {
-    public UpdatePropertyUnitCommandValidator()
+    public UpdatePropertyUnitCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Id)
             .NotEmpty()
-            .WithMessage("Property unit ID is required");
+            .WithMessage(L("PropertyUnitId_Required"));
 
         RuleFor(x => x.UnitType)
             .InclusiveBetween(1, 5)
             .When(x => x.UnitType.HasValue)
-            .WithMessage("Unit type (نوع الوحدة) must be between 1 and 5");
+            .WithMessage(L("UnitType_Range1to5"));
 
         RuleFor(x => x.Status)
             .Must(s => !s.HasValue || (s.Value >= 1 && s.Value <= 6) || s.Value == 99)
-            .WithMessage("Status (حالة الوحدة) must be a valid value (1-6 or 99)");
+            .WithMessage(L("UnitStatus_ValidValue"));
 
         RuleFor(x => x.FloorNumber)
             .InclusiveBetween(-5, 200)
             .When(x => x.FloorNumber.HasValue)
-            .WithMessage("Floor number (رقم الطابق) must be between -5 and 200");
+            .WithMessage(L("FloorNumber_Range"));
 
         RuleFor(x => x.AreaSquareMeters)
             .GreaterThan(0)
             .When(x => x.AreaSquareMeters.HasValue)
-            .WithMessage("Area (مساحة القسم) must be greater than 0");
+            .WithMessage(L("Area_GreaterThanZero"));
 
         RuleFor(x => x.NumberOfRooms)
             .InclusiveBetween(0, 100)
             .When(x => x.NumberOfRooms.HasValue)
-            .WithMessage("Number of rooms (عدد الغرف) must be between 0 and 100");
+            .WithMessage(L("Rooms_Range0to100"));
 
         RuleFor(x => x.Description)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrEmpty(x.Description))
-            .WithMessage("Description (وصف مفصل) must not exceed 2000 characters");
+            .WithMessage(L("Notes_MaxLength2000"));
     }
 }

@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
 
@@ -6,7 +9,7 @@ namespace TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
 /// Validator for UpdateIdentificationDocumentCommand
 /// Mirrors UploadIdentificationDocumentCommandValidator rules (File is optional for update)
 /// </summary>
-public class UpdateIdentificationDocumentCommandValidator : AbstractValidator<UpdateIdentificationDocumentCommand>
+public class UpdateIdentificationDocumentCommandValidator : LocalizedValidator<UpdateIdentificationDocumentCommand>
 {
     private const long MaxFileSizeBytes = 15 * 1024 * 1024;
 
@@ -16,60 +19,60 @@ public class UpdateIdentificationDocumentCommandValidator : AbstractValidator<Up
         "application/pdf"
     };
 
-    public UpdateIdentificationDocumentCommandValidator()
+    public UpdateIdentificationDocumentCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.EvidenceId)
             .NotEmpty()
-            .WithMessage("Evidence ID is required");
+            .WithMessage(L("EvidenceId_Required"));
 
         // File is optional for update (only validate if provided)
         RuleFor(x => x.File)
             .Must(file => file!.Length <= MaxFileSizeBytes)
             .When(x => x.File != null)
-            .WithMessage($"Document file size cannot exceed {MaxFileSizeBytes / (1024 * 1024)} MB");
+            .WithMessage(L("DocFile_SizeExceedsMax", MaxFileSizeBytes / (1024 * 1024)));
 
         RuleFor(x => x.File)
             .Must(file => file!.Length > 0)
             .When(x => x.File != null)
-            .WithMessage("Document file cannot be empty");
+            .WithMessage(L("File_Empty"));
 
         RuleFor(x => x.File)
             .Must(file => AllowedMimeTypes.Contains(file!.ContentType.ToLowerInvariant()))
             .When(x => x.File != null)
-            .WithMessage("Only image files and PDFs are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF)");
+            .WithMessage(L("File_TypeNotAllowed_ImagePdf"));
 
         RuleFor(x => x.Description)
             .MaximumLength(500)
             .When(x => !string.IsNullOrEmpty(x.Description))
-            .WithMessage("Description cannot exceed 500 characters");
+            .WithMessage(L("Description_MaxLength500"));
 
         RuleFor(x => x.DocumentExpiryDate)
             .GreaterThan(x => x.DocumentIssuedDate)
             .When(x => x.DocumentIssuedDate.HasValue && x.DocumentExpiryDate.HasValue)
-            .WithMessage("Expiry date must be after issue date");
+            .WithMessage(L("ExpiryDate_AfterIssue"));
 
         RuleFor(x => x.DocumentIssuedDate)
             .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
             .When(x => x.DocumentIssuedDate.HasValue)
-            .WithMessage("Document issue date cannot be in the future");
+            .WithMessage(L("IssueDate_NotFuture"));
 
         RuleFor(x => x.IssuingAuthority)
             .MaximumLength(200)
             .When(x => !string.IsNullOrWhiteSpace(x.IssuingAuthority))
-            .WithMessage("Issuing authority cannot exceed 200 characters");
+            .WithMessage(L("IssuingAuthority_MaxLength200"));
 
         RuleFor(x => x.DocumentReferenceNumber)
             .MaximumLength(100)
             .When(x => !string.IsNullOrWhiteSpace(x.DocumentReferenceNumber))
-            .WithMessage("Document reference number cannot exceed 100 characters");
+            .WithMessage(L("DocumentRef_MaxLength100"));
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))
-            .WithMessage("Notes cannot exceed 1000 characters");
+            .WithMessage(L("Notes_MaxLength1000"));
     }
 }

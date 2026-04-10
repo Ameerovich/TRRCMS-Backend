@@ -1,3 +1,7 @@
+using System.Globalization;
+using Microsoft.Extensions.Localization;
+using TRRCMS.WebAPI.Resources;
+
 namespace TRRCMS.WebAPI.Middleware;
 
 /// <summary>
@@ -8,6 +12,7 @@ namespace TRRCMS.WebAPI.Middleware;
 public class MustChangePasswordMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly IStringLocalizer<ErrorMessages> _localizer;
 
     private static readonly string[] AllowedPaths =
     [
@@ -18,9 +23,10 @@ public class MustChangePasswordMiddleware
         "/health"
     ];
 
-    public MustChangePasswordMiddleware(RequestDelegate next)
+    public MustChangePasswordMiddleware(RequestDelegate next, IStringLocalizer<ErrorMessages> localizer)
     {
         _next = next;
+        _localizer = localizer;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -38,11 +44,15 @@ public class MustChangePasswordMiddleware
                 {
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsJsonAsync(new
+
+                    var response = new ErrorResponse
                     {
-                        error = "PasswordChangeRequired",
-                        message = "You must change your password before accessing other resources. Use POST /api/v1/auth/change-password or POST /api/v2/auth/change-password."
-                    });
+                        Status = StatusCodes.Status403Forbidden,
+                        Title = _localizer["Title_PasswordChangeRequired"].Value,
+                        Message = _localizer["Message_PasswordChangeRequired"].Value
+                    };
+
+                    await context.Response.WriteAsJsonAsync(response);
                     return;
                 }
             }

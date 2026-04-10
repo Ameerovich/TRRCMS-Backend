@@ -1,4 +1,7 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Localization;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Buildings.Commands.RegisterBuilding;
 
@@ -7,39 +10,39 @@ namespace TRRCMS.Application.Buildings.Commands.RegisterBuilding;
 /// Same admin code rules as CreateBuildingCommandValidator.
 /// BuildingGeometryWkt is required (QGIS always provides polygon).
 /// </summary>
-public class RegisterBuildingCommandValidator : AbstractValidator<RegisterBuildingCommand>
+public class RegisterBuildingCommandValidator : LocalizedValidator<RegisterBuildingCommand>
 {
-    public RegisterBuildingCommandValidator()
+    public RegisterBuildingCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.GovernorateCode)
-            .NotEmpty().WithMessage("Governorate code is required")
-            .Length(2).WithMessage("Governorate code must be exactly 2 digits")
-            .Matches(@"^\d{2}$").WithMessage("Governorate code must contain only digits");
+            .NotEmpty().WithMessage(L("Governorate_Required"))
+            .Length(2).WithMessage(L("Governorate_Exactly2Digits"))
+            .Matches(@"^\d{2}$").WithMessage(L("Governorate_DigitsOnly"));
 
         RuleFor(x => x.DistrictCode)
-            .NotEmpty().WithMessage("District code is required")
-            .Length(2).WithMessage("District code must be exactly 2 digits")
-            .Matches(@"^\d{2}$").WithMessage("District code must contain only digits");
+            .NotEmpty().WithMessage(L("District_Required"))
+            .Length(2).WithMessage(L("District_Exactly2Digits"))
+            .Matches(@"^\d{2}$").WithMessage(L("District_DigitsOnly"));
 
         RuleFor(x => x.SubDistrictCode)
-            .NotEmpty().WithMessage("Sub-district code is required")
-            .Length(2).WithMessage("Sub-district code must be exactly 2 digits")
-            .Matches(@"^\d{2}$").WithMessage("Sub-district code must contain only digits");
+            .NotEmpty().WithMessage(L("SubDistrict_Required"))
+            .Length(2).WithMessage(L("SubDistrict_Exactly2Digits"))
+            .Matches(@"^\d{2}$").WithMessage(L("SubDistrict_DigitsOnly"));
 
         RuleFor(x => x.CommunityCode)
-            .NotEmpty().WithMessage("Community code is required")
-            .Length(3).WithMessage("Community code must be exactly 3 digits")
-            .Matches(@"^\d{3}$").WithMessage("Community code must contain only digits");
+            .NotEmpty().WithMessage(L("Community_Required"))
+            .Length(3).WithMessage(L("Community_Exactly3Digits"))
+            .Matches(@"^\d{3}$").WithMessage(L("Community_DigitsOnly"));
 
         RuleFor(x => x.NeighborhoodCode)
-            .NotEmpty().WithMessage("Neighborhood code is required")
-            .Length(3).WithMessage("Neighborhood code must be exactly 3 digits")
-            .Matches(@"^\d{3}$").WithMessage("Neighborhood code must contain only digits");
+            .NotEmpty().WithMessage(L("Neighborhood_Required"))
+            .Length(3).WithMessage(L("Neighborhood_Exactly3Digits"))
+            .Matches(@"^\d{3}$").WithMessage(L("Neighborhood_DigitsOnly"));
 
         RuleFor(x => x.BuildingNumber)
-            .NotEmpty().WithMessage("Building number is required")
-            .Length(5).WithMessage("Building number must be exactly 5 digits")
-            .Matches(@"^\d{5}$").WithMessage("Building number must contain only digits");
+            .NotEmpty().WithMessage(L("BuildingNumber_Required"))
+            .Length(5).WithMessage(L("BuildingNumber_5Digits"))
+            .Matches(@"^\d{5}$").WithMessage(L("BuildingNumber_DigitsOnly"));
 
         // Composite Building ID validation (17 digits total)
         RuleFor(x => x)
@@ -55,16 +58,16 @@ public class RegisterBuildingCommandValidator : AbstractValidator<RegisterBuildi
                        !string.IsNullOrEmpty(x.CommunityCode) &&
                        !string.IsNullOrEmpty(x.NeighborhoodCode) &&
                        !string.IsNullOrEmpty(x.BuildingNumber))
-            .WithMessage("Composite Building ID must form exactly 17 digits (2+2+2+3+3+5)");
+            .WithMessage(L("BuildingId_CompositeFormat"));
 
 
         RuleFor(x => x.BuildingGeometryWkt)
-            .NotEmpty().WithMessage("Building geometry (WKT polygon) is required for QGIS registration");
+            .NotEmpty().WithMessage(L("Building_GeometryRequired"));
 
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrEmpty(x.Notes))
-            .WithMessage("Notes cannot exceed 2000 characters");
+            .WithMessage(L("Notes_MaxLength2000"));
     }
 }

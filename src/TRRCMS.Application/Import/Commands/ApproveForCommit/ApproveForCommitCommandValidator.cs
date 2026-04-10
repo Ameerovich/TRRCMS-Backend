@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Import.Commands.ApproveForCommit;
 
@@ -6,26 +9,26 @@ namespace TRRCMS.Application.Import.Commands.ApproveForCommit;
 /// Validator for ApproveForCommitCommand.
 /// Ensures the command has a valid package ID and consistent approval mode.
 /// </summary>
-public class ApproveForCommitCommandValidator : AbstractValidator<ApproveForCommitCommand>
+public class ApproveForCommitCommandValidator : LocalizedValidator<ApproveForCommitCommand>
 {
-    public ApproveForCommitCommandValidator()
+    public ApproveForCommitCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ImportPackageId)
             .NotEmpty()
-            .WithMessage("Import package ID is required.");
+            .WithMessage(L("ImportPackageId_Required"));
 
         // When not approving all, at least one specific record must be provided
         When(x => !x.ApproveAllValid, () =>
         {
             RuleFor(x => x.StagingRecordIds)
                 .NotNull()
-                .WithMessage("Staging record IDs are required when not approving all valid records.")
+                .WithMessage(L("StagingRecordIds_Required"))
                 .Must(ids => ids != null && ids.Count > 0)
-                .WithMessage("At least one staging record ID must be specified.");
+                .WithMessage(L("StagingRecordIds_AtLeastOne"));
 
             RuleForEach(x => x.StagingRecordIds!)
                 .NotEmpty()
-                .WithMessage("Each staging record ID must be a valid GUID.");
+                .WithMessage(L("StagingRecordId_ValidGuid"));
         });
     }
 }

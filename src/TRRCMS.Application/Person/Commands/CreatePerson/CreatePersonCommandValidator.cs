@@ -1,34 +1,37 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Persons.Commands.CreatePerson;
 
 /// <summary>
 /// Validator for CreatePersonCommand.
 /// </summary>
-public class CreatePersonCommandValidator : AbstractValidator<CreatePersonCommand>
+public class CreatePersonCommandValidator : LocalizedValidator<CreatePersonCommand>
 {
-    public CreatePersonCommandValidator(IVocabularyValidationService vocabService)
+    public CreatePersonCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.FamilyNameArabic)
             .MaximumLength(100)
-            .WithMessage("الكنية يجب ألا تتجاوز 100 حرف")
+            .WithMessage(L("LastName_MaxLength100"))
             .When(x => !string.IsNullOrEmpty(x.FamilyNameArabic));
 
         RuleFor(x => x.FirstNameArabic)
             .MaximumLength(100)
-            .WithMessage("الاسم الأول يجب ألا يتجاوز 100 حرف")
+            .WithMessage(L("FirstName_MaxLength100"))
             .When(x => !string.IsNullOrEmpty(x.FirstNameArabic));
 
         RuleFor(x => x.FatherNameArabic)
             .MaximumLength(100)
-            .WithMessage("اسم الأب يجب ألا يتجاوز 100 حرف")
+            .WithMessage(L("FatherName_MaxLength100"))
             .When(x => !string.IsNullOrEmpty(x.FatherNameArabic));
 
 
         RuleFor(x => x.MotherNameArabic)
             .MaximumLength(100)
-            .WithMessage("الاسم الأم يجب ألا يتجاوز 100 حرف")
+            .WithMessage(L("MotherName_MaxLength100"))
             .When(x => !string.IsNullOrEmpty(x.MotherNameArabic));
 
 
@@ -36,39 +39,39 @@ public class CreatePersonCommandValidator : AbstractValidator<CreatePersonComman
         RuleFor(x => x.NationalId)
             .Matches(@"^\d{11}$")
             .When(x => !string.IsNullOrEmpty(x.NationalId))
-            .WithMessage("الرقم الوطني يجب أن يكون 11 رقماً بالضبط");
+            .WithMessage(L("NationalId_Exactly11Digits"));
 
         RuleFor(x => x.DateOfBirth)
             .Must(date => date <= DateTime.UtcNow)
             .When(x => x.DateOfBirth.HasValue)
-            .WithMessage("تاريخ الميلاد لا يمكن أن يكون في المستقبل");
+            .WithMessage(L("BirthDate_NotFuture"));
 
 
         RuleFor(x => x.Email)
             .MaximumLength(255)
-            .WithMessage("البريد الالكتروني يجب ألا يتجاوز 255 حرف")
+            .WithMessage(L("PersonEmail_MaxLength255"))
             .EmailAddress()
-            .WithMessage("صيغة البريد الالكتروني غير صحيحة")
+            .WithMessage(L("PersonEmail_InvalidFormat"))
             .When(x => !string.IsNullOrEmpty(x.Email));
 
         RuleFor(x => x.MobileNumber)
             .Matches(@"^(\+963|0)9\d{8}$")
-            .WithMessage("رقم الموبايل يجب أن يكون بالصيغة السورية: 09XXXXXXXX أو 9639XXXXXXXX+")
+            .WithMessage(L("Mobile_SyrianFormat"))
             .When(x => !string.IsNullOrEmpty(x.MobileNumber));
 
         RuleFor(x => x.PhoneNumber)
             .Matches(@"^(\+963|0)\d{7,9}$")
-            .WithMessage("رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+")
+            .WithMessage(L("Landline_SyrianFormat"))
             .When(x => !string.IsNullOrEmpty(x.PhoneNumber));
 
         RuleFor(x => x.Gender)
             .Must(v => vocabService.IsValidCode("gender", (int)v!.Value))
             .When(x => x.Gender.HasValue)
-            .WithMessage("الجنس غير صالح");
+            .WithMessage(L("Gender_Invalid"));
 
         RuleFor(x => x.Nationality)
             .Must(v => vocabService.IsValidCode("nationality", (int)v!.Value))
             .When(x => x.Nationality.HasValue)
-            .WithMessage("الجنسية غير صالحة");
+            .WithMessage(L("Nationality_Invalid"));
     }
 }

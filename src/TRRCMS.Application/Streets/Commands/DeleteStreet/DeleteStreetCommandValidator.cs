@@ -1,12 +1,15 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Streets.Commands.DeleteStreet;
 
-public class DeleteStreetCommandValidator : AbstractValidator<DeleteStreetCommand>
+public class DeleteStreetCommandValidator : LocalizedValidator<DeleteStreetCommand>
 {
-    public DeleteStreetCommandValidator()
+    public DeleteStreetCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("Street ID is required.");
+            .NotEmpty().WithMessage(L("StreetId_Required"));
     }
 }

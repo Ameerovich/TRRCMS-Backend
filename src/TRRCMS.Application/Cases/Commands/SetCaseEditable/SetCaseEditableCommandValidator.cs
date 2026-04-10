@@ -1,12 +1,15 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Cases.Commands.SetCaseEditable;
 
-public class SetCaseEditableCommandValidator : AbstractValidator<SetCaseEditableCommand>
+public class SetCaseEditableCommandValidator : LocalizedValidator<SetCaseEditableCommand>
 {
-    public SetCaseEditableCommandValidator()
+    public SetCaseEditableCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.CaseId)
-            .NotEmpty().WithMessage("Case ID is required.");
+            .NotEmpty().WithMessage(L("CaseId_Required"));
     }
 }

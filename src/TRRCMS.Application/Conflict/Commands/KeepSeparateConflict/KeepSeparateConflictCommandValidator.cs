@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Conflicts.Commands.KeepSeparateConflict;
 
@@ -6,22 +9,22 @@ namespace TRRCMS.Application.Conflicts.Commands.KeepSeparateConflict;
 /// Validator for <see cref="KeepSeparateConflictCommand"/>.
 /// Enforces: conflict ID required, mandatory justification reason.
 /// </summary>
-public class KeepSeparateConflictCommandValidator : AbstractValidator<KeepSeparateConflictCommand>
+public class KeepSeparateConflictCommandValidator : LocalizedValidator<KeepSeparateConflictCommand>
 {
-    public KeepSeparateConflictCommandValidator()
+    public KeepSeparateConflictCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ConflictId)
             .NotEmpty()
-            .WithMessage("Conflict ID is required.");
+            .WithMessage(L("ConflictId_Required"));
 
         RuleFor(x => x.Reason)
             .NotEmpty()
-            .WithMessage("Justification reason is required for keep-separate decisions.")
+            .WithMessage(L("JustificationReason_RequiredKeepSeparate"))
             .MaximumLength(2000)
-            .WithMessage("Reason must not exceed 2000 characters.");
+            .WithMessage(L("Reason_MaxLength2000"));
 
         RuleFor(x => x.Notes)
             .MaximumLength(4000)
-            .WithMessage("Notes must not exceed 4000 characters.");
+            .WithMessage(L("Notes_MaxLength4000"));
     }
 }

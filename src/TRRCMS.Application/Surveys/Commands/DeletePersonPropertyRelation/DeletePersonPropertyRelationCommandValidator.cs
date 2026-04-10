@@ -1,18 +1,21 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Surveys.Commands.DeletePersonPropertyRelation;
 
 /// <summary>
 /// Validator for DeletePersonPropertyRelationCommand
 /// </summary>
-public class DeletePersonPropertyRelationCommandValidator : AbstractValidator<DeletePersonPropertyRelationCommand>
+public class DeletePersonPropertyRelationCommandValidator : LocalizedValidator<DeletePersonPropertyRelationCommand>
 {
-    public DeletePersonPropertyRelationCommandValidator()
+    public DeletePersonPropertyRelationCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
-            .NotEmpty().WithMessage("Survey ID is required");
+            .NotEmpty().WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.RelationId)
-            .NotEmpty().WithMessage("Relation ID is required");
+            .NotEmpty().WithMessage(L("RelationId_Required"));
     }
 }

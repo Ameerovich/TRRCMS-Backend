@@ -17,6 +17,9 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services.AddControllers();
 
+// ── Localization (Arabic/English error messages via Accept-Language header) ──
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -114,6 +117,14 @@ await app.SeedDatabaseAsync();
 
 // ── Middleware ────────────────────────────────────────────────────
 app.UseMiddleware<TRRCMS.WebAPI.Middleware.GlobalExceptionHandlingMiddleware>();
+
+app.UseRequestLocalization(options =>
+{
+    var supportedCultures = new[] { "en", "ar" };
+    options.SetDefaultCulture("en");
+    options.AddSupportedCultures(supportedCultures);
+    options.AddSupportedUICultures(supportedCultures);
+});
 
 if (app.Environment.IsDevelopment())
 {

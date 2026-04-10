@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Import.Commands.DetectDuplicates;
 
@@ -6,12 +9,12 @@ namespace TRRCMS.Application.Import.Commands.DetectDuplicates;
 /// Validator for DetectDuplicatesCommand.
 /// Business rule checks (package exists, correct status) are in the handler.
 /// </summary>
-public class DetectDuplicatesCommandValidator : AbstractValidator<DetectDuplicatesCommand>
+public class DetectDuplicatesCommandValidator : LocalizedValidator<DetectDuplicatesCommand>
 {
-    public DetectDuplicatesCommandValidator()
+    public DetectDuplicatesCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ImportPackageId)
             .NotEmpty()
-            .WithMessage("Import package ID is required");
+            .WithMessage(L("ImportPackageId_Required"));
     }
 }

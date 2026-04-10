@@ -1,22 +1,25 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Conflicts.Commands.EscalateConflict;
 
 /// <summary>
 /// Validator for <see cref="EscalateConflictCommand"/>.
 /// </summary>
-public class EscalateConflictCommandValidator : AbstractValidator<EscalateConflictCommand>
+public class EscalateConflictCommandValidator : LocalizedValidator<EscalateConflictCommand>
 {
-    public EscalateConflictCommandValidator()
+    public EscalateConflictCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ConflictId)
             .NotEmpty()
-            .WithMessage("Conflict ID is required.");
+            .WithMessage(L("ConflictId_Required"));
 
         RuleFor(x => x.Reason)
             .NotEmpty()
-            .WithMessage("Escalation reason is required.")
+            .WithMessage(L("EscalationReason_Required"))
             .MaximumLength(2000)
-            .WithMessage("Escalation reason must not exceed 2000 characters.");
+            .WithMessage(L("EscalationReason_MaxLength2000"));
     }
 }

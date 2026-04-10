@@ -1,25 +1,28 @@
-﻿using FluentValidation;
+using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Resources;
 
 namespace TRRCMS.Application.Users.Commands.GrantPermissions;
 
 /// <summary>
 /// Validator for GrantPermissionsCommand
 /// </summary>
-public class GrantPermissionsCommandValidator : AbstractValidator<GrantPermissionsCommand>
+public class GrantPermissionsCommandValidator : LocalizedValidator<GrantPermissionsCommand>
 {
-    public GrantPermissionsCommandValidator()
+    public GrantPermissionsCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required");
+            .NotEmpty().WithMessage(L("UserId_Required"));
 
         RuleFor(x => x.Permissions)
-            .NotEmpty().WithMessage("At least one permission must be specified")
+            .NotEmpty().WithMessage(L("Permission_AtLeastOne"))
             .Must(permissions => permissions != null && permissions.Count > 0)
-            .WithMessage("Permission list cannot be empty");
+            .WithMessage(L("Permission_ListNotEmpty"));
 
         RuleFor(x => x.GrantReason)
-            .NotEmpty().WithMessage("Grant reason is required")
-            .MinimumLength(10).WithMessage("Grant reason must be at least 10 characters")
-            .MaximumLength(500).WithMessage("Grant reason cannot exceed 500 characters");
+            .NotEmpty().WithMessage(L("GrantReason_Required"))
+            .MinimumLength(10).WithMessage(L("GrantReason_MinLength10"))
+            .MaximumLength(500).WithMessage(L("GrantReason_MaxLength500"));
     }
 }
