@@ -35,9 +35,9 @@ public class StagingIdentificationDocumentConfiguration : IEntityTypeConfigurati
             .IsRequired()
             .HasComment("Original Person UUID from .uhc");
 
-        builder.Property(e => e.DocumentType).IsRequired();
+        builder.Property(e => e.DocumentType);
 
-        builder.Property(e => e.Description).IsRequired().HasMaxLength(500);
+        builder.Property(e => e.Description).HasMaxLength(500);
         builder.Property(e => e.OriginalFileName).IsRequired().HasMaxLength(255);
         builder.Property(e => e.FilePath).IsRequired().HasMaxLength(1000);
         builder.Property(e => e.FileSizeBytes).IsRequired();

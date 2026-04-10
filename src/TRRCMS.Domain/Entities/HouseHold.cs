@@ -4,96 +4,67 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Domain.Entities;
 
 /// <summary>
-/// Household entity - family/group occupying a property unit
-/// Includes demographic composition breakdown by gender
+/// Household entity — family/group occupying a property unit.
+/// Canonical field shape (v1.9): ungendered age/disability counts, nullable composition, occupancy start date.
 /// </summary>
 public class Household : BaseAuditableEntity
 {
-    /// <summary>
-    /// Foreign key to property unit
-    /// </summary>
+    /// <summary>Foreign key to property unit.</summary>
     public Guid PropertyUnitId { get; private set; }
-    /// <summary>
-    /// Household size (total number of members) - عدد الأفراد
-    /// </summary>
+
+    /// <summary>Total household members (عدد الأفراد) — required, 1–50.</summary>
     public int HouseholdSize { get; private set; }
 
-    /// <summary>
-    /// Occupancy type (نوع الإشغال) - OwnerOccupied, TenantOccupied, FamilyOccupied, etc.
-    /// </summary>
-    public OccupancyType? OccupancyType { get; private set; }
+    /// <summary>Total males across all ages (عدد الذكور).</summary>
+    public int? MaleCount { get; private set; }
 
-    /// <summary>
-    /// Occupancy nature (طبيعة الإشغال) - LegalFormal, Informal, Customary, etc.
-    /// </summary>
+    /// <summary>Total females across all ages (عدد الإناث).</summary>
+    public int? FemaleCount { get; private set; }
+
+    /// <summary>Number of adults (عدد البالغين).</summary>
+    public int? AdultCount { get; private set; }
+
+    /// <summary>Number of children (عدد الأطفال).</summary>
+    public int? ChildCount { get; private set; }
+
+    /// <summary>Number of elderly (عدد كبار السن).</summary>
+    public int? ElderlyCount { get; private set; }
+
+    /// <summary>Number of persons with disabilities (عدد ذوي الإعاقة).</summary>
+    public int? DisabledCount { get; private set; }
+
+    /// <summary>Occupancy nature (طبيعة الإشغال) — LegalFormal, Informal, Customary, etc.</summary>
     public OccupancyNature? OccupancyNature { get; private set; }
-    /// <summary>
-    /// Number of adult males - عدد البالغين الذكور
-    /// </summary>
-    public int MaleCount { get; private set; }
 
-    /// <summary>
-    /// Number of adult females - عدد البالغين الإناث
-    /// </summary>
-    public int FemaleCount { get; private set; }
-    /// <summary>
-    /// Number of male children under 18 - عدد الأطفال الذكور (أقل من 18)
-    /// </summary>
-    public int MaleChildCount { get; private set; }
+    /// <summary>Date the household started occupying this unit (UTC).</summary>
+    public DateTime? OccupancyStartDate { get; private set; }
 
-    /// <summary>
-    /// Number of female children under 18 - عدد الأطفال الإناث (أقل من 18)
-    /// </summary>
-    public int FemaleChildCount { get; private set; }
-    /// <summary>
-    /// Number of male elderly over 65 - عدد كبار السن الذكور (أكثر من 65)
-    /// </summary>
-    public int MaleElderlyCount { get; private set; }
-
-    /// <summary>
-    /// Number of female elderly over 65 - عدد كبار السن الإناث (أكثر من 65)
-    /// </summary>
-    public int FemaleElderlyCount { get; private set; }
-    /// <summary>
-    /// Number of male persons with disabilities - عدد المعاقين الذكور
-    /// </summary>
-    public int MaleDisabledCount { get; private set; }
-
-    /// <summary>
-    /// Number of female persons with disabilities - عدد المعاقين الإناث
-    /// </summary>
-    public int FemaleDisabledCount { get; private set; }
-    /// <summary>
-    /// Household notes - ملاحظات
-    /// </summary>
+    /// <summary>Household notes (ملاحظات).</summary>
     public string? Notes { get; private set; }
-    public int ChildCount { get; private set; }
-    public int ElderlyCount { get; private set; }
-    public int PersonsWithDisabilitiesCount { get; private set; }
+
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
     public virtual ICollection<Person> Members { get; private set; }
+
     private Household() : base()
     {
         Members = new List<Person>();
     }
 
     /// <summary>
-    /// Create new household with full composition (for frontend form)
+    /// Create a new household with the canonical v1.9 composition.
     /// </summary>
     public static Household Create(
         Guid propertyUnitId,
         int householdSize,
-        int maleCount,
-        int femaleCount,
-        int maleChildCount,
-        int femaleChildCount,
-        int maleElderlyCount,
-        int femaleElderlyCount,
-        int maleDisabledCount,
-        int femaleDisabledCount,
-        string? notes,
-        OccupancyType? occupancyType,
+        int? maleCount,
+        int? femaleCount,
+        int? adultCount,
+        int? childCount,
+        int? elderlyCount,
+        int? disabledCount,
         OccupancyNature? occupancyNature,
+        DateTime? occupancyStartDate,
+        string? notes,
         Guid createdByUserId)
     {
         var household = new Household
@@ -102,89 +73,64 @@ public class Household : BaseAuditableEntity
             HouseholdSize = householdSize,
             MaleCount = maleCount,
             FemaleCount = femaleCount,
-            MaleChildCount = maleChildCount,
-            FemaleChildCount = femaleChildCount,
-            MaleElderlyCount = maleElderlyCount,
-            FemaleElderlyCount = femaleElderlyCount,
-            MaleDisabledCount = maleDisabledCount,
-            FemaleDisabledCount = femaleDisabledCount,
-            Notes = notes,
-            OccupancyType = occupancyType,
+            AdultCount = adultCount,
+            ChildCount = childCount,
+            ElderlyCount = elderlyCount,
+            DisabledCount = disabledCount,
             OccupancyNature = occupancyNature,
-            // Auto-calculate computed totals
-            ChildCount = maleChildCount + femaleChildCount,
-            ElderlyCount = maleElderlyCount + femaleElderlyCount,
-            PersonsWithDisabilitiesCount = maleDisabledCount + femaleDisabledCount
+            OccupancyStartDate = occupancyStartDate,
+            Notes = notes
         };
 
         household.MarkAsCreated(createdByUserId);
         return household;
     }
 
-    /// <summary>
-    /// Update the property unit this household belongs to
-    /// </summary>
+    /// <summary>Update the property unit this household belongs to.</summary>
     public void UpdatePropertyUnit(Guid propertyUnitId, Guid modifiedByUserId)
     {
         PropertyUnitId = propertyUnitId;
         MarkAsModified(modifiedByUserId);
     }
 
-    /// <summary>
-    /// Update basic info
-    /// </summary>
+    /// <summary>Update basic info (size, notes, occupancy nature, occupancy start date).</summary>
     public void UpdateBasicInfo(
         int householdSize,
         string? notes,
-        OccupancyType? occupancyType,
         OccupancyNature? occupancyNature,
+        DateTime? occupancyStartDate,
         Guid modifiedByUserId)
     {
         HouseholdSize = householdSize;
         Notes = notes;
-        OccupancyType = occupancyType;
         OccupancyNature = occupancyNature;
+        OccupancyStartDate = occupancyStartDate;
         MarkAsModified(modifiedByUserId);
     }
 
-    /// <summary>
-    /// Update full composition (for frontend form)
-    /// </summary>
+    /// <summary>Update full composition (all counts are nullable).</summary>
     public void UpdateComposition(
-        int maleCount,
-        int femaleCount,
-        int maleChildCount,
-        int femaleChildCount,
-        int maleElderlyCount,
-        int femaleElderlyCount,
-        int maleDisabledCount,
-        int femaleDisabledCount,
+        int? maleCount,
+        int? femaleCount,
+        int? adultCount,
+        int? childCount,
+        int? elderlyCount,
+        int? disabledCount,
         Guid modifiedByUserId)
     {
         MaleCount = maleCount;
         FemaleCount = femaleCount;
-        MaleChildCount = maleChildCount;
-        FemaleChildCount = femaleChildCount;
-        MaleElderlyCount = maleElderlyCount;
-        FemaleElderlyCount = femaleElderlyCount;
-        MaleDisabledCount = maleDisabledCount;
-        FemaleDisabledCount = femaleDisabledCount;
-
-        // Update computed totals
-        ChildCount = maleChildCount + femaleChildCount;
-        ElderlyCount = maleElderlyCount + femaleElderlyCount;
-        PersonsWithDisabilitiesCount = maleDisabledCount + femaleDisabledCount;
-
+        AdultCount = adultCount;
+        ChildCount = childCount;
+        ElderlyCount = elderlyCount;
+        DisabledCount = disabledCount;
         MarkAsModified(modifiedByUserId);
     }
 
-    /// <summary>
-    /// Update notes
-    /// </summary>
+    /// <summary>Update notes only.</summary>
     public void UpdateNotes(string? notes, Guid modifiedByUserId)
     {
         Notes = notes;
         MarkAsModified(modifiedByUserId);
     }
-
 }

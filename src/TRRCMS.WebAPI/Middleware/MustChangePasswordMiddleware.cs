@@ -1,6 +1,6 @@
 using System.Globalization;
 using Microsoft.Extensions.Localization;
-using TRRCMS.WebAPI.Resources;
+using TRRCMS.WebAPI;
 
 namespace TRRCMS.WebAPI.Middleware;
 

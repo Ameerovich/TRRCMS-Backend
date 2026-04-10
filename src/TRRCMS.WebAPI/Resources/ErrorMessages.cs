@@ -1,4 +1,4 @@
-namespace TRRCMS.WebAPI.Resources;
+namespace TRRCMS.WebAPI;
 
 /// <summary>
 /// Marker class for IStringLocalizer resource resolution.

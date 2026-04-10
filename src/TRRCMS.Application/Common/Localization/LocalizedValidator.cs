@@ -1,6 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
-using TRRCMS.Application.Resources;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Common.Localization;
 

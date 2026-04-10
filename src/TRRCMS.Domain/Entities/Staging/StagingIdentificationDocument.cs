@@ -13,10 +13,10 @@ public class StagingIdentificationDocument : BaseStagingEntity
     public Guid OriginalPersonId { get; private set; }
 
     /// <summary>Document type (PersonalIdPhoto, FamilyRecord, Photo).</summary>
-    public DocumentType DocumentType { get; private set; }
+    public DocumentType? DocumentType { get; private set; }
 
     /// <summary>Description of the document.</summary>
-    public string Description { get; private set; }
+    public string? Description { get; private set; }
 
     /// <summary>Original file name as it appeared on the tablet.</summary>
     public string OriginalFileName { get; private set; }
@@ -51,7 +51,6 @@ public class StagingIdentificationDocument : BaseStagingEntity
     /// <summary>EF Core constructor.</summary>
     private StagingIdentificationDocument() : base()
     {
-        Description = string.Empty;
         OriginalFileName = string.Empty;
         FilePath = string.Empty;
         MimeType = string.Empty;
@@ -64,8 +63,8 @@ public class StagingIdentificationDocument : BaseStagingEntity
         Guid importPackageId,
         Guid originalEntityId,
         Guid originalPersonId,
-        DocumentType documentType,
-        string description,
+        DocumentType? documentType,
+        string? description,
         string originalFileName,
         string filePath,
         long fileSizeBytes,

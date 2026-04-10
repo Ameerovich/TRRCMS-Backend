@@ -9,8 +9,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Surveys.Commands.UpdateHouseholdInSurvey;
 
 /// <summary>
-/// Handler for UpdateHouseholdInSurveyCommand
-/// Updates household details in the context of a survey
+/// Handler for UpdateHouseholdInSurveyCommand (canonical v1.9 shape).
 /// </summary>
 public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouseholdInSurveyCommand, HouseholdDto>
 {
@@ -33,18 +32,15 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
 
     public async Task<HouseholdDto> Handle(UpdateHouseholdInSurveyCommand request, CancellationToken cancellationToken)
     {
-        // Get current user
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
-        // Get and validate survey
         var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken);
         if (survey == null)
         {
             throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
         }
 
-        // Verify ownership
         if (survey.FieldCollectorId != currentUserId)
         {
             var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
@@ -52,20 +48,17 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
                 throw new UnauthorizedAccessException("You can only update households for your own surveys");
         }
 
-        // Verify survey is in Draft status
         if (survey.Status != SurveyStatus.Draft)
         {
             throw new ValidationException($"Cannot update households for survey in {survey.Status} status. Only Draft surveys can be modified.");
         }
 
-        // Get household
         var household = await _unitOfWork.Households.GetByIdAsync(request.HouseholdId, cancellationToken);
         if (household == null)
         {
             throw new NotFoundException($"Household with ID {request.HouseholdId} not found");
         }
 
-        // Update property unit if provided
         if (request.PropertyUnitId.HasValue && request.PropertyUnitId.Value != household.PropertyUnitId)
         {
             var newPropertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(request.PropertyUnitId.Value, cancellationToken);
@@ -74,7 +67,6 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
                 throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
             }
 
-            // Verify property unit belongs to the survey's building
             if (newPropertyUnit.BuildingId != survey.BuildingId)
             {
                 throw new ValidationException(
@@ -84,77 +76,75 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             household.UpdatePropertyUnit(request.PropertyUnitId.Value, currentUserId);
         }
 
-        // Track old values for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             household.PropertyUnitId,
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
-            household.MaleChildCount,
-            household.FemaleChildCount,
-            household.MaleElderlyCount,
-            household.FemaleElderlyCount,
-            household.MaleDisabledCount,
-            household.FemaleDisabledCount,
+            household.AdultCount,
+            household.ChildCount,
+            household.ElderlyCount,
+            household.DisabledCount,
+            household.OccupancyNature,
+            household.OccupancyStartDate,
             household.Notes
         });
 
-        // Update basic info if provided
+        // Update basic info if any basic field provided
         if (request.HouseholdSize.HasValue ||
             request.Notes != null ||
-            request.OccupancyType.HasValue ||
-            request.OccupancyNature.HasValue)
+            request.OccupancyNature.HasValue ||
+            request.OccupancyStartDate.HasValue)
         {
             household.UpdateBasicInfo(
                 householdSize: request.HouseholdSize ?? household.HouseholdSize,
                 notes: request.Notes ?? household.Notes,
-                occupancyType: request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : household.OccupancyType,
-                occupancyNature: request.OccupancyNature.HasValue ? (OccupancyNature)request.OccupancyNature.Value : household.OccupancyNature,
+                occupancyNature: request.OccupancyNature.HasValue
+                    ? (OccupancyNature)request.OccupancyNature.Value
+                    : household.OccupancyNature,
+                occupancyStartDate: request.OccupancyStartDate ?? household.OccupancyStartDate,
                 modifiedByUserId: currentUserId
             );
         }
 
-        // Update composition if any field provided
-        if (request.MaleCount.HasValue || request.FemaleCount.HasValue ||
-            request.MaleChildCount.HasValue || request.FemaleChildCount.HasValue ||
-            request.MaleElderlyCount.HasValue || request.FemaleElderlyCount.HasValue ||
-            request.MaleDisabledCount.HasValue || request.FemaleDisabledCount.HasValue)
+        // Update composition if any count provided
+        if (request.MaleCount.HasValue ||
+            request.FemaleCount.HasValue ||
+            request.AdultCount.HasValue ||
+            request.ChildCount.HasValue ||
+            request.ElderlyCount.HasValue ||
+            request.DisabledCount.HasValue)
         {
             household.UpdateComposition(
                 maleCount: request.MaleCount ?? household.MaleCount,
                 femaleCount: request.FemaleCount ?? household.FemaleCount,
-                maleChildCount: request.MaleChildCount ?? household.MaleChildCount,
-                femaleChildCount: request.FemaleChildCount ?? household.FemaleChildCount,
-                maleElderlyCount: request.MaleElderlyCount ?? household.MaleElderlyCount,
-                femaleElderlyCount: request.FemaleElderlyCount ?? household.FemaleElderlyCount,
-                maleDisabledCount: request.MaleDisabledCount ?? household.MaleDisabledCount,
-                femaleDisabledCount: request.FemaleDisabledCount ?? household.FemaleDisabledCount,
+                adultCount: request.AdultCount ?? household.AdultCount,
+                childCount: request.ChildCount ?? household.ChildCount,
+                elderlyCount: request.ElderlyCount ?? household.ElderlyCount,
+                disabledCount: request.DisabledCount ?? household.DisabledCount,
                 modifiedByUserId: currentUserId
             );
         }
 
-        // Save changes
         await _unitOfWork.Households.UpdateAsync(household, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Track new values
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             household.PropertyUnitId,
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
-            household.MaleChildCount,
-            household.FemaleChildCount,
-            household.MaleElderlyCount,
-            household.FemaleElderlyCount,
-            household.MaleDisabledCount,
-            household.FemaleDisabledCount,
+            household.AdultCount,
+            household.ChildCount,
+            household.ElderlyCount,
+            household.DisabledCount,
+            household.OccupancyNature,
+            household.OccupancyStartDate,
             household.Notes
         });
 
-        // Audit logging
         var householdIdentifier = $"Household {household.Id.ToString()[..8]}";
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
@@ -168,10 +158,8 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             cancellationToken: cancellationToken
         );
 
-        // Get property unit for DTO
         var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(household.PropertyUnitId, cancellationToken);
 
-        // Map to DTO
         var result = _mapper.Map<HouseholdDto>(household);
         result.PropertyUnitIdentifier = propertyUnit?.UnitIdentifier;
 

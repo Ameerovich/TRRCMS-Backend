@@ -2,7 +2,7 @@ using FluentValidation;
 using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
-using TRRCMS.Application.Resources;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.PropertyUnits.Queries.GetAllPropertyUnits;
 

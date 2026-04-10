@@ -4,73 +4,40 @@ using TRRCMS.Application.Households.Dtos;
 namespace TRRCMS.Application.Households.Commands.CreateHousehold;
 
 /// <summary>
-/// Command to create a new household
-/// Matches frontend form: تسجيل الأسرة
+/// Command to create a new household (canonical v1.9 shape).
 /// </summary>
 public class CreateHouseholdCommand : IRequest<HouseholdDto>
 {
-    /// <summary>
-    /// Property unit ID this household belongs to (required)
-    /// </summary>
+    /// <summary>Property unit ID this household belongs to (required)</summary>
     public Guid PropertyUnitId { get; set; }
 
-    // ==================== BASIC INFORMATION ====================
-
-    /// <summary>
-    /// Total household size (عدد الأفراد) - required
-    /// </summary>
+    /// <summary>Total household size (عدد الأفراد) — required, 1–50</summary>
     public int HouseholdSize { get; set; }
 
-    /// <summary>
-    /// Notes/observations (ملاحظات)
-    /// </summary>
+    /// <summary>Total males across all ages (عدد الذكور)</summary>
+    public int? MaleCount { get; set; }
+
+    /// <summary>Total females across all ages (عدد الإناث)</summary>
+    public int? FemaleCount { get; set; }
+
+    /// <summary>Number of adults (عدد البالغين)</summary>
+    public int? AdultCount { get; set; }
+
+    /// <summary>Number of children (عدد الأطفال)</summary>
+    public int? ChildCount { get; set; }
+
+    /// <summary>Number of elderly (عدد كبار السن)</summary>
+    public int? ElderlyCount { get; set; }
+
+    /// <summary>Number of persons with disabilities (عدد ذوي الإعاقة)</summary>
+    public int? DisabledCount { get; set; }
+
+    /// <summary>Occupancy nature enum code (optional)</summary>
+    public int? OccupancyNature { get; set; }
+
+    /// <summary>Date the household started occupying this unit (UTC)</summary>
+    public DateTime? OccupancyStartDate { get; set; }
+
+    /// <summary>Notes/observations (ملاحظات)</summary>
     public string? Notes { get; set; }
-
-    // ==================== ADULTS COMPOSITION ====================
-
-    /// <summary>
-    /// Number of adult males (عدد البالغين الذكور)
-    /// </summary>
-    public int MaleCount { get; set; }
-
-    /// <summary>
-    /// Number of adult females (عدد البالغين الإناث)
-    /// </summary>
-    public int FemaleCount { get; set; }
-
-    // ==================== CHILDREN COMPOSITION ====================
-
-    /// <summary>
-    /// Number of male children under 18 (عدد الأطفال الذكور - أقل من 18)
-    /// </summary>
-    public int MaleChildCount { get; set; }
-
-    /// <summary>
-    /// Number of female children under 18 (عدد الأطفال الإناث - أقل من 18)
-    /// </summary>
-    public int FemaleChildCount { get; set; }
-
-    // ==================== ELDERLY COMPOSITION ====================
-
-    /// <summary>
-    /// Number of male elderly over 65 (عدد كبار السن الذكور - أكثر من 65)
-    /// </summary>
-    public int MaleElderlyCount { get; set; }
-
-    /// <summary>
-    /// Number of female elderly over 65 (عدد كبار السن الإناث - أكثر من 65)
-    /// </summary>
-    public int FemaleElderlyCount { get; set; }
-
-    // ==================== DISABLED COMPOSITION ====================
-
-    /// <summary>
-    /// Number of male persons with disabilities (عدد المعاقين الذكور)
-    /// </summary>
-    public int MaleDisabledCount { get; set; }
-
-    /// <summary>
-    /// Number of female persons with disabilities (عدد المعاقين الإناث)
-    /// </summary>
-    public int FemaleDisabledCount { get; set; }
 }

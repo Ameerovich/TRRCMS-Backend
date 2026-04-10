@@ -73,21 +73,19 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
             throw new NotFoundException($"Property unit with ID {propertyUnitId} not found");
         }
 
-        // Create household with full composition
+        // Create household with canonical v1.9 composition
         var household = Household.Create(
             propertyUnitId: propertyUnitId.Value,
             householdSize: request.HouseholdSize,
             maleCount: request.MaleCount,
             femaleCount: request.FemaleCount,
-            maleChildCount: request.MaleChildCount,
-            femaleChildCount: request.FemaleChildCount,
-            maleElderlyCount: request.MaleElderlyCount,
-            femaleElderlyCount: request.FemaleElderlyCount,
-            maleDisabledCount: request.MaleDisabledCount,
-            femaleDisabledCount: request.FemaleDisabledCount,
-            notes: request.Notes,
-            occupancyType: request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : (OccupancyType?)null,
+            adultCount: request.AdultCount,
+            childCount: request.ChildCount,
+            elderlyCount: request.ElderlyCount,
+            disabledCount: request.DisabledCount,
             occupancyNature: request.OccupancyNature.HasValue ? (OccupancyNature)request.OccupancyNature.Value : (OccupancyNature?)null,
+            occupancyStartDate: request.OccupancyStartDate,
+            notes: request.Notes,
             createdByUserId: currentUserId
         );
 

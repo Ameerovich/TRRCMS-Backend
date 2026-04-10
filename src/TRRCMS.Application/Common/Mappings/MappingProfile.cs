@@ -88,25 +88,17 @@ public class MappingProfile : Profile
        .ForMember(dest => dest.HouseholdSize, opt => opt.MapFrom(src => src.HouseholdSize))
        .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
 
-       // Occupancy information (NEW FOR OFFICE SURVEY)
-       .ForMember(dest => dest.OccupancyType, opt => opt.MapFrom(src => src.OccupancyType.HasValue ? (int?)src.OccupancyType : null))
+       // Occupancy information
        .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? (int?)src.OccupancyNature : null))
+       .ForMember(dest => dest.OccupancyStartDate, opt => opt.MapFrom(src => src.OccupancyStartDate))
 
-       // Adults composition
+       // Composition (canonical v1.9 — ungendered)
        .ForMember(dest => dest.MaleCount, opt => opt.MapFrom(src => src.MaleCount))
        .ForMember(dest => dest.FemaleCount, opt => opt.MapFrom(src => src.FemaleCount))
-
-       // Children composition
-       .ForMember(dest => dest.MaleChildCount, opt => opt.MapFrom(src => src.MaleChildCount))
-       .ForMember(dest => dest.FemaleChildCount, opt => opt.MapFrom(src => src.FemaleChildCount))
-
-       // Elderly composition
-       .ForMember(dest => dest.MaleElderlyCount, opt => opt.MapFrom(src => src.MaleElderlyCount))
-       .ForMember(dest => dest.FemaleElderlyCount, opt => opt.MapFrom(src => src.FemaleElderlyCount))
-
-       // Disabled composition
-       .ForMember(dest => dest.MaleDisabledCount, opt => opt.MapFrom(src => src.MaleDisabledCount))
-       .ForMember(dest => dest.FemaleDisabledCount, opt => opt.MapFrom(src => src.FemaleDisabledCount))
+       .ForMember(dest => dest.AdultCount, opt => opt.MapFrom(src => src.AdultCount))
+       .ForMember(dest => dest.ChildCount, opt => opt.MapFrom(src => src.ChildCount))
+       .ForMember(dest => dest.ElderlyCount, opt => opt.MapFrom(src => src.ElderlyCount))
+       .ForMember(dest => dest.DisabledCount, opt => opt.MapFrom(src => src.DisabledCount))
 
        // Audit fields
        .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
@@ -136,7 +128,7 @@ public class MappingProfile : Profile
 
         // IdentificationDocument mappings
         CreateMap<IdentificationDocument, TRRCMS.Application.IdentificationDocuments.Dtos.IdentificationDocumentDto>()
-            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => (int)src.DocumentType))
+            .ForMember(dest => dest.DocumentType, opt => opt.MapFrom(src => src.DocumentType.HasValue ? (int?)src.DocumentType.Value : null))
             .ForMember(dest => dest.IsExpired, opt => opt.MapFrom(src => src.IsExpired()));
 
         // Claim mappings

@@ -16,33 +16,43 @@ namespace TRRCMS.WebAPI.Controllers;
 /// <remarks>
 /// Manages household records as part of the tenure rights survey process.
 /// تسجيل الأسرة - إدارة بيانات الأسر
-/// 
+///
 /// **What is a Household?**
 /// A household represents a group of people living together in a property unit.
 /// It captures demographic composition for humanitarian and planning purposes.
-/// 
+///
 /// **Household vs Person:**
-/// - **Household**: Group demographics (counts by gender, age, disability)
+/// - **Household**: Group demographics (ungendered counts)
 /// - **Person**: Individual identity and documents
 /// - A household belongs to one PropertyUnit
 /// - Individual persons can be registered separately and linked
-/// 
-/// **Demographic Breakdown (تكوين الأسرة):**
-/// 
-/// | Category | Male Field | Female Field | Age Range |
-/// |----------|------------|--------------|-----------|
-/// | Adults (البالغين) | maleCount | femaleCount | 18-64 years |
-/// | Children (الأطفال) | maleChildCount | femaleChildCount | Under 18 |
-/// | Elderly (كبار السن) | maleElderlyCount | femaleElderlyCount | 65+ years |
-/// | Disabled (المعاقين) | maleDisabledCount | femaleDisabledCount | Any age |
-/// 
-/// **Note:** Disabled counts are additional flags, not mutually exclusive with age categories.
-/// 
+///
+/// **Demographic Composition (تكوين الأسرة) — canonical v1.9 shape:**
+///
+/// | Field | Description |
+/// |-------|-------------|
+/// | householdSize | **Required.** Total household members, 1–50 |
+/// | maleCount | Total males, all ages |
+/// | femaleCount | Total females, all ages |
+/// | adultCount | Number of adults |
+/// | childCount | Number of children |
+/// | elderlyCount | Number of elderly |
+/// | disabledCount | Number of persons with disabilities |
+/// | occupancyNature | Occupancy nature enum code (LegalFormal/Informal/Customary/…) |
+/// | occupancyStartDate | ISO-8601 UTC date the household started occupying this unit |
+/// | notes | Free-text notes, ≤ 2000 chars |
+///
+/// All count fields except `householdSize` are **optional and nullable**.
+/// Validation is **upper-bound only** — gaps are allowed:
+/// - `maleCount + femaleCount ≤ householdSize`
+/// - `adultCount + childCount + elderlyCount ≤ householdSize`
+/// - `disabledCount ≤ householdSize`
+///
 /// **Permissions:**
 /// - This controller uses Survey permissions (no separate Household permissions)
 /// - View: Surveys_ViewAll (7004)
 /// - Edit: Surveys_EditAll (7006)
-/// 
+///
 /// **For Field Collectors:**
 /// Use the survey-specific endpoint instead:
 /// `POST /api/v1/Surveys/{surveyId}/households`
@@ -68,66 +78,68 @@ public class HouseholdsController : ControllerBase
     /// <remarks>
     /// Creates a new household record within a property unit.
     /// تسجيل الأسرة - تسجيل تفاصيل الإشغال
-    /// 
+    ///
     /// **Use Case**: Record household occupancy during field survey
     ///
     /// **Required Permission**: Surveys_EditAll (7006) - CanEditAllSurveys policy
-    /// 
+    ///
     /// **Note**: For field collectors working within a survey context, use:
     /// `POST /api/v1/Surveys/{surveyId}/households` instead.
-    /// 
+    ///
     /// **Required Fields:**
     /// - `propertyUnitId`: The property unit this household occupies
-    /// - `headOfHouseholdName`: Name of the head of household (رب الأسرة)
-    /// - `householdSize`: Total number of people in household
-    /// 
-    /// **Optional Demographic Fields:**
-    /// - `maleCount` / `femaleCount`: Adult counts (ages 18-64)
-    /// - `maleChildCount` / `femaleChildCount`: Children under 18
-    /// - `maleElderlyCount` / `femaleElderlyCount`: Elderly 65+
-    /// - `maleDisabledCount` / `femaleDisabledCount`: Persons with disabilities
-    /// 
-    /// **Validation:**
-    /// - Sum of demographic counts should equal `householdSize`
+    /// - `householdSize`: Total number of people in household, 1–50
+    ///
+    /// **Optional Fields (all nullable):**
+    /// - `maleCount` / `femaleCount`: Total males / females across all ages
+    /// - `adultCount`: Number of adults
+    /// - `childCount`: Number of children
+    /// - `elderlyCount`: Number of elderly
+    /// - `disabledCount`: Number of persons with disabilities
+    /// - `occupancyNature`: Occupancy nature enum code
+    /// - `occupancyStartDate`: ISO-8601 UTC datetime
+    /// - `notes`: Free text, ≤ 2000 chars
+    ///
+    /// **Validation (upper-bound only, gaps allowed):**
+    /// - `maleCount + femaleCount ≤ householdSize`
+    /// - `adultCount + childCount + elderlyCount ≤ householdSize`
+    /// - `disabledCount ≤ householdSize`
     /// - PropertyUnit must exist
-    /// 
+    ///
     /// **Example Request:**
     /// ```json
     /// {
     ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-    ///   "headOfHouseholdName": "أحمد محمد علي الخالد",
     ///   "householdSize": 6,
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 2,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 1,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 3,
+    ///   "adultCount": 2,
+    ///   "childCount": 3,
+    ///   "elderlyCount": 1,
+    ///   "disabledCount": 0,
+    ///   "occupancyNature": 1,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "أسرة مكونة من الأب والأم وثلاثة أطفال والجد"
     /// }
     /// ```
-    /// 
+    ///
     /// **Example Response:**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "propertyUnitIdentifier": "Unit-101",
-    ///   "headOfHouseholdName": "أحمد محمد علي الخالد",
-    ///   "headOfHouseholdPersonId": null,
     ///   "householdSize": 6,
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 2,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 1,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 3,
+    ///   "adultCount": 2,
+    ///   "childCount": 3,
+    ///   "elderlyCount": 1,
+    ///   "disabledCount": 0,
+    ///   "occupancyNature": 1,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "أسرة مكونة من الأب والأم وثلاثة أطفال والجد",
-    ///   "createdAtUtc": "2026-01-31T10:00:00Z",
+    ///   "createdAtUtc": "2026-04-10T10:00:00Z",
     ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
     ///   "lastModifiedAtUtc": null,
     ///   "lastModifiedBy": null,
@@ -162,44 +174,40 @@ public class HouseholdsController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Updates household details. Only provided fields will be updated (partial update supported).
-    /// 
+    ///
     /// **Use Case**: Correct demographic data, update after family changes
-    /// 
+    ///
     /// **Required Permission**: Surveys_EditAll (7006) - CanEditAllSurveys policy
-    /// 
-    /// **Updatable Fields (all optional):**
-    /// - `headOfHouseholdName`: Change head of household
-    /// - `householdSize`: Update total count
-    /// - All demographic counts (male/female × adult/child/elderly/disabled)
-    /// - `notes`: Update observations
-    /// 
+    ///
+    /// **Updatable Fields (all optional, nullable):**
+    /// - `householdSize`, `notes`
+    /// - `maleCount`, `femaleCount`, `adultCount`, `childCount`, `elderlyCount`, `disabledCount`
+    /// - `occupancyNature` (enum code), `occupancyStartDate` (UTC)
+    ///
     /// **Note:** `propertyUnitId` cannot be changed after creation.
     /// To move a household, delete and recreate.
-    /// 
-    /// **Example Request - Update after new baby:**
+    ///
+    /// **Example Request - partial update (only occupancy start date):**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///   "householdSize": 7,
-    ///   "maleChildCount": 3,
-    ///   "notes": "ولد طفل ذكر جديد - تم التحديث"
+    ///   "occupancyStartDate": "2024-01-15T00:00:00Z"
     /// }
     /// ```
-    /// 
-    /// **Example Request - Full update:**
+    ///
+    /// **Example Request - full update:**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
-    ///   "headOfHouseholdName": "محمد أحمد علي الخالد",
     ///   "householdSize": 5,
-    ///   "maleCount": 2,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 1,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 0,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 2,
+    ///   "adultCount": 2,
+    ///   "childCount": 2,
+    ///   "elderlyCount": 1,
+    ///   "disabledCount": 0,
+    ///   "occupancyNature": 1,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "انتقل الجد إلى سكن آخر، انضم أخ رب الأسرة"
     /// }
     /// ```
@@ -236,40 +244,31 @@ public class HouseholdsController : ControllerBase
     /// Get household by ID
     /// </summary>
     /// <remarks>
-    /// Retrieves detailed information about a specific household including
-    /// full demographic breakdown.
-    /// 
+    /// Retrieves detailed information about a specific household.
+    ///
     /// **Use Case**: View household details, verify demographic data
-    /// 
+    ///
     /// **Required Permission**: Surveys_ViewAll (7004) - CanViewAllSurveys policy
-    /// 
-    /// **Response includes:**
-    /// - Household identification (ID, property unit link)
-    /// - Head of household name and optional person link
-    /// - Complete demographic breakdown by gender and age
-    /// - Notes and full audit trail
-    /// 
+    ///
     /// **Example Response:**
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "propertyUnitIdentifier": "Unit-101",
-    ///   "headOfHouseholdName": "أحمد محمد علي الخالد",
-    ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "householdSize": 6,
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 2,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 1,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 3,
+    ///   "adultCount": 2,
+    ///   "childCount": 3,
+    ///   "elderlyCount": 1,
+    ///   "disabledCount": 0,
+    ///   "occupancyNature": 1,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "أسرة مكونة من الأب والأم وثلاثة أطفال والجد",
-    ///   "createdAtUtc": "2026-01-31T10:00:00Z",
+    ///   "createdAtUtc": "2026-04-10T10:00:00Z",
     ///   "createdBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
-    ///   "lastModifiedAtUtc": "2026-01-31T14:30:00Z",
+    ///   "lastModifiedAtUtc": "2026-04-10T14:30:00Z",
     ///   "lastModifiedBy": "fd9dc9d5-9757-44b9-b14a-0cbe4715ede5",
     ///   "isDeleted": false,
     ///   "deletedAtUtc": null,
@@ -326,33 +325,31 @@ public class HouseholdsController : ControllerBase
     ///     "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///     "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///     "propertyUnitIdentifier": "Unit-101",
-    ///     "headOfHouseholdName": "أحمد محمد علي",
     ///     "householdSize": 6,
-    ///     "maleCount": 1,
-    ///     "femaleCount": 1,
-    ///     "maleChildCount": 2,
-    ///     "femaleChildCount": 1,
-    ///     "maleElderlyCount": 1,
-    ///     "femaleElderlyCount": 0,
-    ///     "maleDisabledCount": 0,
-    ///     "femaleDisabledCount": 0,
-    ///     "createdAtUtc": "2026-01-31T10:00:00Z"
+    ///     "maleCount": 3,
+    ///     "femaleCount": 3,
+    ///     "adultCount": 2,
+    ///     "childCount": 3,
+    ///     "elderlyCount": 1,
+    ///     "disabledCount": 0,
+    ///     "occupancyNature": 1,
+    ///     "occupancyStartDate": "2023-09-01T00:00:00Z",
+    ///     "createdAtUtc": "2026-04-10T10:00:00Z"
     ///   },
     ///   {
     ///     "id": "8f540bbc-6ee2-5b9b-c7d5-376119f64c97",
     ///     "propertyUnitId": "4gb96g75-6828-5673-c4gd-3d074g77bgb7",
     ///     "propertyUnitIdentifier": "Unit-102",
-    ///     "headOfHouseholdName": "محمد خالد أحمد",
     ///     "householdSize": 4,
-    ///     "maleCount": 1,
-    ///     "femaleCount": 1,
-    ///     "maleChildCount": 1,
-    ///     "femaleChildCount": 1,
-    ///     "maleElderlyCount": 0,
-    ///     "femaleElderlyCount": 0,
-    ///     "maleDisabledCount": 0,
-    ///     "femaleDisabledCount": 0,
-    ///     "createdAtUtc": "2026-01-31T11:30:00Z"
+    ///     "maleCount": 2,
+    ///     "femaleCount": 2,
+    ///     "adultCount": 2,
+    ///     "childCount": 2,
+    ///     "elderlyCount": 0,
+    ///     "disabledCount": 0,
+    ///     "occupancyNature": 2,
+    ///     "occupancyStartDate": null,
+    ///     "createdAtUtc": "2026-04-10T11:30:00Z"
     ///   }
     /// ]
     /// ```

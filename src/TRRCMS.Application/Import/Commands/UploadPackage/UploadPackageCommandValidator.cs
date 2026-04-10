@@ -3,7 +3,7 @@ using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using TRRCMS.Application.Common.Localization;
 using TRRCMS.Application.Import.Models;
-using TRRCMS.Application.Resources;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Import.Commands.UploadPackage;
 

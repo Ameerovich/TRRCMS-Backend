@@ -1,134 +1,62 @@
-﻿namespace TRRCMS.Application.Households.Dtos;
+namespace TRRCMS.Application.Households.Dtos;
 
 /// <summary>
-/// Simplified Household DTO - matches frontend form fields
-/// تسجيل الأسرة - تسجيل تفاصيل الإشغال
+/// Household DTO (canonical v1.9 shape) — ungendered composition counts.
 /// </summary>
 public class HouseholdDto
 {
     // ==================== IDENTIFIERS ====================
 
-    /// <summary>
-    /// Unique identifier (GUID)
-    /// </summary>
+    /// <summary>Unique identifier (GUID)</summary>
     public Guid Id { get; set; }
 
-    /// <summary>
-    /// Parent property unit ID
-    /// </summary>
+    /// <summary>Parent property unit ID</summary>
     public Guid PropertyUnitId { get; set; }
 
-    /// <summary>
-    /// Property unit identifier (for display)
-    /// </summary>
+    /// <summary>Property unit identifier (for display)</summary>
     public string? PropertyUnitIdentifier { get; set; }
 
     // ==================== BASIC INFORMATION ====================
 
-    /// <summary>
-    /// Total household size (عدد الأفراد)
-    /// </summary>
+    /// <summary>Total household size (عدد الأفراد) — required</summary>
     public int HouseholdSize { get; set; }
 
-    // ==================== OCCUPANCY INFORMATION (NEW FOR OFFICE SURVEY) ====================
-
-    /// <summary>
-    /// Occupancy type (نوع الإشغال) - Returned as integer: OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
-    /// </summary>
-    public int? OccupancyType { get; set; }
-
-    /// <summary>
-    /// Occupancy nature (طبيعة الإشغال) - Returned as integer: LegalFormal=1, Informal=2, Customary=3, etc.
-    /// </summary>
+    /// <summary>Occupancy nature (طبيعة الإشغال) — int enum code</summary>
     public int? OccupancyNature { get; set; }
 
-    /// <summary>
-    /// Notes/observations (ادخل ملاحظاتك)
-    /// </summary>
+    /// <summary>Date the household started occupying this unit (UTC)</summary>
+    public DateTime? OccupancyStartDate { get; set; }
+
+    /// <summary>Notes/observations (ملاحظات)</summary>
     public string? Notes { get; set; }
 
-    // ==================== ADULTS COMPOSITION (تكوين الأسرة - البالغين) ====================
+    // ==================== COMPOSITION (all ungendered, all optional) ====================
 
-    /// <summary>
-    /// Number of adult males (عدد البالغين الذكور)
-    /// </summary>
-    public int MaleCount { get; set; }
+    /// <summary>Total males across all ages (عدد الذكور)</summary>
+    public int? MaleCount { get; set; }
 
-    /// <summary>
-    /// Number of adult females (عدد البالغين الإناث)
-    /// </summary>
-    public int FemaleCount { get; set; }
+    /// <summary>Total females across all ages (عدد الإناث)</summary>
+    public int? FemaleCount { get; set; }
 
-    // ==================== CHILDREN COMPOSITION (تكوين الأسرة - الأطفال) ====================
+    /// <summary>Number of adults (عدد البالغين)</summary>
+    public int? AdultCount { get; set; }
 
-    /// <summary>
-    /// Number of male children under 18 (عدد الأطفال الذكور - أقل من 18)
-    /// </summary>
-    public int MaleChildCount { get; set; }
+    /// <summary>Number of children (عدد الأطفال)</summary>
+    public int? ChildCount { get; set; }
 
-    /// <summary>
-    /// Number of female children under 18 (عدد الأطفال الإناث - أقل من 18)
-    /// </summary>
-    public int FemaleChildCount { get; set; }
+    /// <summary>Number of elderly (عدد كبار السن)</summary>
+    public int? ElderlyCount { get; set; }
 
-    // ==================== ELDERLY COMPOSITION (تكوين الأسرة - كبار السن) ====================
-
-    /// <summary>
-    /// Number of male elderly over 65 (عدد كبار السن الذكور - أكثر من 65)
-    /// </summary>
-    public int MaleElderlyCount { get; set; }
-
-    /// <summary>
-    /// Number of female elderly over 65 (عدد كبار السن الإناث - أكثر من 65)
-    /// </summary>
-    public int FemaleElderlyCount { get; set; }
-
-    // ==================== DISABLED COMPOSITION (تكوين الأسرة - المعاقين) ====================
-
-    /// <summary>
-    /// Number of male persons with disabilities (عدد المعاقين الذكور)
-    /// </summary>
-    public int MaleDisabledCount { get; set; }
-
-    /// <summary>
-    /// Number of female persons with disabilities (عدد المعاقين الإناث)
-    /// </summary>
-    public int FemaleDisabledCount { get; set; }
+    /// <summary>Number of persons with disabilities (عدد ذوي الإعاقة)</summary>
+    public int? DisabledCount { get; set; }
 
     // ==================== AUDIT FIELDS ====================
 
-    /// <summary>
-    /// Creation timestamp
-    /// </summary>
     public DateTime CreatedAtUtc { get; set; }
-
-    /// <summary>
-    /// Created by user ID
-    /// </summary>
     public Guid CreatedBy { get; set; }
-
-    /// <summary>
-    /// Last modification timestamp
-    /// </summary>
     public DateTime? LastModifiedAtUtc { get; set; }
-
-    /// <summary>
-    /// Last modified by user ID
-    /// </summary>
     public Guid? LastModifiedBy { get; set; }
-
-    /// <summary>
-    /// Soft delete flag
-    /// </summary>
     public bool IsDeleted { get; set; }
-
-    /// <summary>
-    /// Deletion timestamp
-    /// </summary>
     public DateTime? DeletedAtUtc { get; set; }
-
-    /// <summary>
-    /// Deleted by user ID
-    /// </summary>
     public Guid? DeletedBy { get; set; }
 }

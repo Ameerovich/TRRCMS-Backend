@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Localization;
-using TRRCMS.Application.Resources;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Landmarks.Commands.BulkRegisterLandmarks;
 

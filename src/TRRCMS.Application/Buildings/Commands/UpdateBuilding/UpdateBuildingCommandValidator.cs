@@ -2,7 +2,7 @@ using FluentValidation;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
 using Microsoft.Extensions.Localization;
-using TRRCMS.Application.Resources;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 

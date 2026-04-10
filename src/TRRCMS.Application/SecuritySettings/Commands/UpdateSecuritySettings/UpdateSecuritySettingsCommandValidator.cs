@@ -1,7 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Localization;
-using TRRCMS.Application.Resources;
+using TRRCMS.Application;
 using TRRCMS.Domain.ValueObjects;
 
 namespace TRRCMS.Application.SecuritySettings.Commands.UpdateSecuritySettings;

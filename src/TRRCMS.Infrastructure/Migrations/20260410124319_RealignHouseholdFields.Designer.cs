@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410124319_RealignHouseholdFields")]
+    partial class RealignHouseholdFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1534,7 +1537,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasComment("عدد الإناث - Total females (all ages)");
 
                     b.Property<int>("HouseholdSize")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
+                        .HasDefaultValue(0)
                         .HasComment("عدد الأفراد - Total household size");
 
                     b.Property<bool>("IsDeleted")
@@ -1608,6 +1613,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -1621,7 +1627,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int?>("DocumentType")
+                    b.Property<int>("DocumentType")
                         .HasColumnType("integer");
 
                     b.Property<string>("FileHash")
@@ -3295,6 +3301,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -3308,7 +3315,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int?>("DocumentType")
+                    b.Property<int>("DocumentType")
                         .HasColumnType("integer");
 
                     b.Property<string>("FileHash")

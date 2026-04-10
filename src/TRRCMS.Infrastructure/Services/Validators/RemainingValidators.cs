@@ -133,10 +133,10 @@ public class HouseholdStructureValidator : IStagingValidator
             var errs = new List<string>();
             var warns = new List<string>();
 
-            // Male + Female should equal total (or at least not exceed)
-            var genderTotal = h.MaleCount + h.FemaleCount;
-            if (genderTotal > 0 && genderTotal != h.HouseholdSize)
-                warns.Add($"MaleCount({h.MaleCount}) + FemaleCount({h.FemaleCount}) = {genderTotal} ≠ HouseholdSize({h.HouseholdSize})");
+            // Upper-bound check: Male + Female should not exceed household size (gaps allowed)
+            var genderTotal = (h.MaleCount ?? 0) + (h.FemaleCount ?? 0);
+            if (genderTotal > h.HouseholdSize)
+                warns.Add($"MaleCount({h.MaleCount}) + FemaleCount({h.FemaleCount}) = {genderTotal} > HouseholdSize({h.HouseholdSize})");
 
             // Check actual person count matches declared size
             if (personsByHousehold.TryGetValue(h.OriginalEntityId, out var members))

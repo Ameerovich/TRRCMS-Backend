@@ -9,7 +9,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Households.Commands.UpdateHousehold;
 
 /// <summary>
-/// Handler for updating a household
+/// Handler for updating a household (canonical v1.9 shape).
 /// </summary>
 public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdCommand, HouseholdDto>
 {
@@ -37,80 +37,79 @@ public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdComm
     {
         var userId = _currentUserService.UserId ?? Guid.NewGuid();
 
-        // Get household
         var household = await _householdRepository.GetByIdAsync(request.Id, cancellationToken);
         if (household == null)
         {
             throw new NotFoundException($"Household with ID {request.Id} not found");
         }
 
-        // Track old values for audit
         var oldValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
-            household.MaleChildCount,
-            household.FemaleChildCount,
-            household.MaleElderlyCount,
-            household.FemaleElderlyCount,
-            household.MaleDisabledCount,
-            household.FemaleDisabledCount,
+            household.AdultCount,
+            household.ChildCount,
+            household.ElderlyCount,
+            household.DisabledCount,
+            household.OccupancyNature,
+            household.OccupancyStartDate,
             household.Notes
         });
 
-        // Update basic info if provided
+        // Update basic info if any basic field provided
         if (request.HouseholdSize.HasValue ||
-            request.Notes != null)
+            request.Notes != null ||
+            request.OccupancyNature.HasValue ||
+            request.OccupancyStartDate.HasValue)
         {
             household.UpdateBasicInfo(
                 householdSize: request.HouseholdSize ?? household.HouseholdSize,
                 notes: request.Notes ?? household.Notes,
-                occupancyType: null, // Not supported in UpdateHousehold command
-                occupancyNature: null, // Not supported in UpdateHousehold command
+                occupancyNature: request.OccupancyNature.HasValue
+                    ? (OccupancyNature)request.OccupancyNature.Value
+                    : household.OccupancyNature,
+                occupancyStartDate: request.OccupancyStartDate ?? household.OccupancyStartDate,
                 modifiedByUserId: userId
             );
         }
 
-        // Update composition if any field provided
-        if (request.MaleCount.HasValue || request.FemaleCount.HasValue ||
-            request.MaleChildCount.HasValue || request.FemaleChildCount.HasValue ||
-            request.MaleElderlyCount.HasValue || request.FemaleElderlyCount.HasValue ||
-            request.MaleDisabledCount.HasValue || request.FemaleDisabledCount.HasValue)
+        // Update composition if any count field provided
+        if (request.MaleCount.HasValue ||
+            request.FemaleCount.HasValue ||
+            request.AdultCount.HasValue ||
+            request.ChildCount.HasValue ||
+            request.ElderlyCount.HasValue ||
+            request.DisabledCount.HasValue)
         {
             household.UpdateComposition(
                 maleCount: request.MaleCount ?? household.MaleCount,
                 femaleCount: request.FemaleCount ?? household.FemaleCount,
-                maleChildCount: request.MaleChildCount ?? household.MaleChildCount,
-                femaleChildCount: request.FemaleChildCount ?? household.FemaleChildCount,
-                maleElderlyCount: request.MaleElderlyCount ?? household.MaleElderlyCount,
-                femaleElderlyCount: request.FemaleElderlyCount ?? household.FemaleElderlyCount,
-                maleDisabledCount: request.MaleDisabledCount ?? household.MaleDisabledCount,
-                femaleDisabledCount: request.FemaleDisabledCount ?? household.FemaleDisabledCount,
+                adultCount: request.AdultCount ?? household.AdultCount,
+                childCount: request.ChildCount ?? household.ChildCount,
+                elderlyCount: request.ElderlyCount ?? household.ElderlyCount,
+                disabledCount: request.DisabledCount ?? household.DisabledCount,
                 modifiedByUserId: userId
             );
         }
 
-        // Save changes
         await _householdRepository.UpdateAsync(household, cancellationToken);
         await _householdRepository.SaveChangesAsync(cancellationToken);
 
-        // Track new values for audit
         var newValues = System.Text.Json.JsonSerializer.Serialize(new
         {
             household.HouseholdSize,
             household.MaleCount,
             household.FemaleCount,
-            household.MaleChildCount,
-            household.FemaleChildCount,
-            household.MaleElderlyCount,
-            household.FemaleElderlyCount,
-            household.MaleDisabledCount,
-            household.FemaleDisabledCount,
+            household.AdultCount,
+            household.ChildCount,
+            household.ElderlyCount,
+            household.DisabledCount,
+            household.OccupancyNature,
+            household.OccupancyStartDate,
             household.Notes
         });
 
-        // Audit logging
         var householdIdentifier = $"Household {household.Id.ToString()[..8]}";
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Update,
@@ -124,10 +123,8 @@ public class UpdateHouseholdCommandHandler : IRequestHandler<UpdateHouseholdComm
             cancellationToken: cancellationToken
         );
 
-        // Get property unit for DTO
         var propertyUnit = await _propertyUnitRepository.GetByIdAsync(household.PropertyUnitId, cancellationToken);
 
-        // Map to DTO
         var result = _mapper.Map<HouseholdDto>(household);
         result.PropertyUnitIdentifier = propertyUnit?.UnitIdentifier;
 

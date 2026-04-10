@@ -1,12 +1,14 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Localization;
-using TRRCMS.Application.Resources;
+using TRRCMS.Application;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Households.Commands.UpdateHousehold;
 
 /// <summary>
-/// Validator for UpdateHouseholdCommand
+/// Validator for UpdateHouseholdCommand — all fields optional (canonical v1.9 shape).
+/// Upper-bound only rules.
 /// </summary>
 public class UpdateHouseholdCommandValidator : LocalizedValidator<UpdateHouseholdCommand>
 {
@@ -14,88 +16,68 @@ public class UpdateHouseholdCommandValidator : LocalizedValidator<UpdateHousehol
     {
         RuleFor(x => x.Id)
             .NotEmpty()
-            .WithMessage(L("HouseholdId_Required"));
+            .WithMessage(L("HouseholdId_Invalid"));
 
-        RuleFor(x => x.HouseholdSize)
-            .GreaterThan(0)
-            .When(x => x.HouseholdSize.HasValue)
-            .WithMessage(L("HouseholdSize_AtLeast1"))
-            .LessThanOrEqualTo(50)
-            .When(x => x.HouseholdSize.HasValue)
-            .WithMessage(L("HouseholdSize_Max50"));
+        RuleFor(x => x.HouseholdSize!.Value)
+            .GreaterThan(0).WithMessage(L("HouseholdSize_AtLeast1"))
+            .LessThanOrEqualTo(50).WithMessage(L("HouseholdSize_Max50"))
+            .When(x => x.HouseholdSize.HasValue);
 
-        // Adults
-        RuleFor(x => x.MaleCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.MaleCount.HasValue)
-            .WithMessage(L("AdultMale_NonNegative"))
-            .LessThanOrEqualTo(50)
-            .When(x => x.MaleCount.HasValue)
-            .WithMessage(L("AdultMale_Max50"));
+        RuleFor(x => x.MaleCount!.Value)
+            .GreaterThanOrEqualTo(0).WithMessage(L("Male_NonNegative"))
+            .LessThanOrEqualTo(50).WithMessage(L("Male_Max50"))
+            .When(x => x.MaleCount.HasValue);
 
-        RuleFor(x => x.FemaleCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.FemaleCount.HasValue)
-            .WithMessage(L("AdultFemale_NonNegative"))
-            .LessThanOrEqualTo(50)
-            .When(x => x.FemaleCount.HasValue)
-            .WithMessage(L("AdultFemale_Max50"));
+        RuleFor(x => x.FemaleCount!.Value)
+            .GreaterThanOrEqualTo(0).WithMessage(L("Female_NonNegative"))
+            .LessThanOrEqualTo(50).WithMessage(L("Female_Max50"))
+            .When(x => x.FemaleCount.HasValue);
 
-        // Children
-        RuleFor(x => x.MaleChildCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.MaleChildCount.HasValue)
-            .WithMessage(L("ChildrenMale_NonNegative"))
-            .LessThanOrEqualTo(30)
-            .When(x => x.MaleChildCount.HasValue)
-            .WithMessage(L("ChildrenMale_Max30"));
+        RuleFor(x => x.AdultCount!.Value)
+            .GreaterThanOrEqualTo(0).WithMessage(L("AdultCount_NonNegative"))
+            .LessThanOrEqualTo(50).WithMessage(L("AdultCount_Max50"))
+            .When(x => x.AdultCount.HasValue);
 
-        RuleFor(x => x.FemaleChildCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.FemaleChildCount.HasValue)
-            .WithMessage(L("ChildrenFemale_NonNegative"))
-            .LessThanOrEqualTo(30)
-            .When(x => x.FemaleChildCount.HasValue)
-            .WithMessage(L("ChildrenFemale_Max30"));
+        RuleFor(x => x.ChildCount!.Value)
+            .GreaterThanOrEqualTo(0).WithMessage(L("ChildCount_NonNegative"))
+            .LessThanOrEqualTo(50).WithMessage(L("ChildCount_Max50"))
+            .When(x => x.ChildCount.HasValue);
 
-        // Elderly
-        RuleFor(x => x.MaleElderlyCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.MaleElderlyCount.HasValue)
-            .WithMessage(L("ElderlyMale_NonNegative"))
-            .LessThanOrEqualTo(20)
-            .When(x => x.MaleElderlyCount.HasValue)
-            .WithMessage(L("ElderlyMale_Max20"));
+        RuleFor(x => x.ElderlyCount!.Value)
+            .GreaterThanOrEqualTo(0).WithMessage(L("ElderlyCount_NonNegative"))
+            .LessThanOrEqualTo(50).WithMessage(L("ElderlyCount_Max50"))
+            .When(x => x.ElderlyCount.HasValue);
 
-        RuleFor(x => x.FemaleElderlyCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.FemaleElderlyCount.HasValue)
-            .WithMessage(L("ElderlyFemale_NonNegative"))
-            .LessThanOrEqualTo(20)
-            .When(x => x.FemaleElderlyCount.HasValue)
-            .WithMessage(L("ElderlyFemale_Max20"));
+        RuleFor(x => x.DisabledCount!.Value)
+            .GreaterThanOrEqualTo(0).WithMessage(L("DisabledCount_NonNegative"))
+            .LessThanOrEqualTo(50).WithMessage(L("DisabledCount_Max50"))
+            .When(x => x.DisabledCount.HasValue);
 
-        // Disabled
-        RuleFor(x => x.MaleDisabledCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.MaleDisabledCount.HasValue)
-            .WithMessage(L("DisabledMale_NonNegative"))
-            .LessThanOrEqualTo(20)
-            .When(x => x.MaleDisabledCount.HasValue)
-            .WithMessage(L("DisabledMale_Max20"));
+        // Cross-field checks — only when HouseholdSize is provided.
+        RuleFor(x => x)
+            .Must(x => (x.MaleCount ?? 0) + (x.FemaleCount ?? 0) <= x.HouseholdSize!.Value)
+            .WithMessage(L("Gender_SumExceedsHouseholdSize"))
+            .When(x => x.HouseholdSize.HasValue && (x.MaleCount.HasValue || x.FemaleCount.HasValue));
 
-        RuleFor(x => x.FemaleDisabledCount)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.FemaleDisabledCount.HasValue)
-            .WithMessage(L("DisabledFemale_NonNegative"))
-            .LessThanOrEqualTo(20)
-            .When(x => x.FemaleDisabledCount.HasValue)
-            .WithMessage(L("DisabledFemale_Max20"));
+        RuleFor(x => x)
+            .Must(x => (x.AdultCount ?? 0) + (x.ChildCount ?? 0) + (x.ElderlyCount ?? 0) <= x.HouseholdSize!.Value)
+            .WithMessage(L("Age_SumExceedsHouseholdSize"))
+            .When(x => x.HouseholdSize.HasValue &&
+                       (x.AdultCount.HasValue || x.ChildCount.HasValue || x.ElderlyCount.HasValue));
 
-        // Notes
+        RuleFor(x => x)
+            .Must(x => (x.DisabledCount ?? 0) <= x.HouseholdSize!.Value)
+            .WithMessage(L("Disabled_ExceedsHouseholdSize"))
+            .When(x => x.HouseholdSize.HasValue && x.DisabledCount.HasValue);
+
+        RuleFor(x => x.OccupancyNature!.Value)
+            .Must(v => Enum.IsDefined(typeof(OccupancyNature), v))
+            .WithMessage(L("OccupancyNature_Invalid"))
+            .When(x => x.OccupancyNature.HasValue);
+
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
-            .When(x => x.Notes != null)
+            .When(x => !string.IsNullOrEmpty(x.Notes))
             .WithMessage(L("Notes_MaxLength2000"));
     }
 }

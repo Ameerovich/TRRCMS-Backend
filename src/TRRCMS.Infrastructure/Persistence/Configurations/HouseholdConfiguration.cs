@@ -5,17 +5,14 @@ using TRRCMS.Domain.Entities;
 namespace TRRCMS.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// EF Core configuration for Household entity
-/// Updated to include gender-specific composition fields for frontend form
+/// EF Core configuration for Household entity (canonical v1.9 shape).
 /// </summary>
 public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
 {
     public void Configure(EntityTypeBuilder<Household> builder)
     {
-        // Table name
         builder.ToTable("Households");
 
-        // Primary key
         builder.HasKey(h => h.Id);
 
         builder.Property(h => h.PropertyUnitId)
@@ -24,76 +21,44 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
 
         builder.Property(h => h.HouseholdSize)
             .IsRequired()
-            .HasDefaultValue(0)
             .HasComment("عدد الأفراد - Total household size");
 
-        builder.Property(h => h.OccupancyType)
+        builder.Property(h => h.MaleCount)
             .IsRequired(false)
-            .HasComment("نوع الإشغال - Occupancy type enum stored as integer");
+            .HasComment("عدد الذكور - Total males (all ages)");
+
+        builder.Property(h => h.FemaleCount)
+            .IsRequired(false)
+            .HasComment("عدد الإناث - Total females (all ages)");
+
+        builder.Property(h => h.AdultCount)
+            .IsRequired(false)
+            .HasComment("عدد البالغين - Number of adults");
+
+        builder.Property(h => h.ChildCount)
+            .IsRequired(false)
+            .HasComment("عدد الأطفال - Number of children");
+
+        builder.Property(h => h.ElderlyCount)
+            .IsRequired(false)
+            .HasComment("عدد كبار السن - Number of elderly");
+
+        builder.Property(h => h.DisabledCount)
+            .IsRequired(false)
+            .HasComment("عدد ذوي الإعاقة - Number of persons with disabilities");
 
         builder.Property(h => h.OccupancyNature)
             .IsRequired(false)
             .HasComment("طبيعة الإشغال - Occupancy nature enum stored as integer");
 
-        builder.Property(h => h.MaleCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد البالغين الذكور - Number of adult males");
-
-        builder.Property(h => h.FemaleCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد البالغين الإناث - Number of adult females");
-
-        builder.Property(h => h.MaleChildCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد الأطفال الذكور (أقل من 18) - Number of male children under 18");
-
-        builder.Property(h => h.FemaleChildCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد الأطفال الإناث (أقل من 18) - Number of female children under 18");
-
-        builder.Property(h => h.MaleElderlyCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد كبار السن الذكور (أكثر من 65) - Number of male elderly over 65");
-
-        builder.Property(h => h.FemaleElderlyCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد كبار السن الإناث (أكثر من 65) - Number of female elderly over 65");
-
-        builder.Property(h => h.MaleDisabledCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد المعاقين الذكور - Number of male persons with disabilities");
-
-        builder.Property(h => h.FemaleDisabledCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("عدد المعاقين الإناث - Number of female persons with disabilities");
+        builder.Property(h => h.OccupancyStartDate)
+            .IsRequired(false)
+            .HasComment("تاريخ بداية الإشغال - Date the household started occupying this unit (UTC)");
 
         builder.Property(h => h.Notes)
             .IsRequired(false)
             .HasMaxLength(2000)
             .HasComment("ملاحظات - Household notes");
-
-        builder.Property(h => h.ChildCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of children (2-12 years) - legacy total");
-
-        builder.Property(h => h.ElderlyCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Number of elderly (65+ years) - legacy total");
-
-        builder.Property(h => h.PersonsWithDisabilitiesCount)
-            .IsRequired()
-            .HasDefaultValue(0)
-            .HasComment("Total persons with disabilities - legacy total");
 
         builder.Property(h => h.CreatedAtUtc)
             .IsRequired()
@@ -128,21 +93,17 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .IsRowVersion()
             .HasComment("Concurrency token");
 
-        // Index for property unit lookups
         builder.HasIndex(h => h.PropertyUnitId)
             .HasDatabaseName("IX_Household_PropertyUnitId");
 
-        // Index for soft delete queries
         builder.HasIndex(h => h.IsDeleted)
             .HasDatabaseName("IX_Household_IsDeleted");
 
-        // Relationship to PropertyUnit (Many-to-One)
         builder.HasOne(h => h.PropertyUnit)
             .WithMany()
             .HasForeignKey(h => h.PropertyUnitId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Relationship to Members (One-to-Many)
         builder.HasMany(h => h.Members)
             .WithOne(p => p.Household)
             .HasForeignKey(p => p.HouseholdId)

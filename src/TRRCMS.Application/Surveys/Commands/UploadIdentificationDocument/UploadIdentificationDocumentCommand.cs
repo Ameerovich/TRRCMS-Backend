@@ -26,6 +26,11 @@ public class UploadIdentificationDocumentCommand : IRequest<IdentificationDocume
     public IFormFile File { get; set; } = null!;
 
     /// <summary>
+    /// Document type (optional - vocabulary code from document_type: 1=PersonalIdPhoto, 2=FamilyRecord, 3=Photo)
+    /// </summary>
+    public int? DocumentType { get; set; }
+
+    /// <summary>
     /// Document description (optional - e.g., "National ID Card", "Passport", "Birth Certificate")
     /// </summary>
     public string? Description { get; set; }

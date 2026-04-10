@@ -1,4 +1,4 @@
-namespace TRRCMS.Application.Resources;
+namespace TRRCMS.Application;
 
 /// <summary>
 /// Marker class for IStringLocalizer&lt;ValidationMessages&gt; DI resolution.

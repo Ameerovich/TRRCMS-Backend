@@ -722,15 +722,13 @@ public class CommitService : ICommitService
                     householdSize: staging.HouseholdSize,
                     maleCount: staging.MaleCount,
                     femaleCount: staging.FemaleCount,
-                    maleChildCount: staging.MaleChildCount,
-                    femaleChildCount: staging.FemaleChildCount,
-                    maleElderlyCount: staging.MaleElderlyCount,
-                    femaleElderlyCount: staging.FemaleElderlyCount,
-                    maleDisabledCount: staging.MaleDisabledCount,
-                    femaleDisabledCount: staging.FemaleDisabledCount,
-                    notes: staging.Notes,
-                    occupancyType: staging.OccupancyType.HasValue ? (OccupancyType)staging.OccupancyType.Value : null,
+                    adultCount: staging.AdultCount,
+                    childCount: staging.ChildCount,
+                    elderlyCount: staging.ElderlyCount,
+                    disabledCount: staging.DisabledCount,
                     occupancyNature: staging.OccupancyNature.HasValue ? (OccupancyNature)staging.OccupancyNature.Value : null,
+                    occupancyStartDate: staging.OccupancyStartDate,
+                    notes: staging.Notes,
                     createdByUserId: userId);
 
                 await _unitOfWork.Households.AddAsync(household, ct);

@@ -126,6 +126,9 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
             idDoc.UpdateFileInfo(filePath, request.File.FileName, request.File.Length, mimeType, fileHash, currentUserId);
         }
 
+        if (request.DocumentType.HasValue)
+            idDoc.UpdateDocumentType((DocumentType)request.DocumentType.Value, currentUserId);
+
         if (request.Description != null)
             idDoc.UpdateDescription(request.Description, currentUserId);
 
@@ -143,6 +146,7 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
         var changedFields = new List<string>();
         if (request.PersonId.HasValue) changedFields.Add("PersonId");
         if (request.File != null) changedFields.Add("File");
+        if (request.DocumentType.HasValue) changedFields.Add("DocumentType");
         if (request.Description != null) changedFields.Add("Description");
         if (request.DocumentIssuedDate.HasValue) changedFields.Add("DocumentIssuedDate");
         if (request.DocumentExpiryDate.HasValue) changedFields.Add("DocumentExpiryDate");

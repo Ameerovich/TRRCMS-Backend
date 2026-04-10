@@ -225,7 +225,7 @@ public class DataConsistencyValidator : IStagingValidator
 
         if (h.OriginalPropertyUnitId == Guid.Empty) errors.Add("OriginalPropertyUnitId is required");
         if (h.HouseholdSize <= 0) errors.Add("HouseholdSize must be > 0");
-        if (h.MaleCount < 0 || h.FemaleCount < 0) errors.Add("Gender counts cannot be negative");
+        if ((h.MaleCount ?? 0) < 0 || (h.FemaleCount ?? 0) < 0) errors.Add("Gender counts cannot be negative");
 
         return (errors, warnings);
     }
@@ -278,7 +278,7 @@ public class DataConsistencyValidator : IStagingValidator
         var warnings = new List<string>();
 
         if (d.OriginalPersonId == Guid.Empty) errors.Add("OriginalPersonId is required");
-        if (!_vocabService.IsValidCode("document_type", (int)d.DocumentType)) errors.Add($"Invalid DocumentType: {d.DocumentType}");
+        if (d.DocumentType.HasValue && !_vocabService.IsValidCode("document_type", (int)d.DocumentType.Value)) errors.Add($"Invalid DocumentType: {d.DocumentType.Value}");
         if (string.IsNullOrWhiteSpace(d.OriginalFileName)) errors.Add("OriginalFileName is required");
         if (d.FileSizeBytes <= 0) warnings.Add("FileSizeBytes is 0 or negative");
 

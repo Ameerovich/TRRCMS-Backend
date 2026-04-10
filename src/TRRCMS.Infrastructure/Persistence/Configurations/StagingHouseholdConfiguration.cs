@@ -7,7 +7,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Infrastructure.Persistence.Configurations.Staging;
 
 /// <summary>
-/// EF Core configuration for StagingHousehold entity.
+/// EF Core configuration for StagingHousehold entity (canonical v1.9 shape).
 /// Mirrors the Household production table in an isolated staging area.
 /// </summary>
 public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHousehold>
@@ -16,7 +16,6 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
     {
         builder.ToTable("StagingHouseholds");
 
-        // Primary Key
         builder.HasKey(h => h.Id);
 
         builder.Property(h => h.ImportPackageId)
@@ -55,54 +54,30 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
             .IsRequired();
 
         builder.Property(h => h.MaleCount)
-            .IsRequired()
-            .HasDefaultValue(0);
+            .IsRequired(false);
 
         builder.Property(h => h.FemaleCount)
-            .IsRequired()
-            .HasDefaultValue(0);
+            .IsRequired(false);
 
-        builder.Property(h => h.MaleChildCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.FemaleChildCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.MaleElderlyCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.FemaleElderlyCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.MaleDisabledCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.FemaleDisabledCount)
-            .IsRequired()
-            .HasDefaultValue(0);
+        builder.Property(h => h.AdultCount)
+            .IsRequired(false);
 
         builder.Property(h => h.ChildCount)
-            .IsRequired()
-            .HasDefaultValue(0);
+            .IsRequired(false);
 
         builder.Property(h => h.ElderlyCount)
-            .IsRequired()
-            .HasDefaultValue(0);
+            .IsRequired(false);
 
-        builder.Property(h => h.PersonsWithDisabilitiesCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
-        builder.Property(h => h.OccupancyType)
-            .HasComment("OccupancyType enum");
+        builder.Property(h => h.DisabledCount)
+            .IsRequired(false);
 
         builder.Property(h => h.OccupancyNature)
+            .IsRequired(false)
             .HasComment("OccupancyNature enum");
+
+        builder.Property(h => h.OccupancyStartDate)
+            .IsRequired(false)
+            .HasComment("Date the household started occupying this unit (UTC)");
 
         builder.Property(h => h.Notes)
             .HasMaxLength(2000);
@@ -125,7 +100,6 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
             .IsUnique()
             .HasDatabaseName("IX_StagingHouseholds_ImportPackageId_OriginalEntityId");
 
-        // For cross-entity validation: find households by their property unit
         builder.HasIndex(h => new { h.ImportPackageId, h.OriginalPropertyUnitId })
             .HasDatabaseName("IX_StagingHouseholds_ImportPackageId_OriginalPropertyUnitId");
     }
