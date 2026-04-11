@@ -61,4 +61,36 @@
   <data name="Message_PasswordChangeRequired" xml:space="preserve">
     <value>يجب عليك تغيير كلمة المرور قبل الوصول إلى الموارد الأخرى.</value>
   </data>
+
+  <!-- Authentication (401) messages (Arabic) -->
+  <data name="Title_Unauthorized" xml:space="preserve">
+    <value>غير مصرح</value>
+  </data>
+  <data name="Message_InvalidCredentials" xml:space="preserve">
+    <value>اسم المستخدم أو كلمة المرور غير صحيحة.</value>
+  </data>
+  <data name="Message_AccountLocked" xml:space="preserve">
+    <value>تم قفل الحساب بسبب محاولات دخول فاشلة متعددة. يرجى المحاولة مجدداً بعد {0} دقائق.</value>
+  </data>
+  <data name="Message_AccountLockedNoCountdown" xml:space="preserve">
+    <value>الحساب مقفل.</value>
+  </data>
+  <data name="Message_AccountInactive" xml:space="preserve">
+    <value>الحساب غير مفعّل. يرجى التواصل مع المسؤول.</value>
+  </data>
+  <data name="Message_PasswordExpired" xml:space="preserve">
+    <value>انتهت صلاحية كلمة المرور. يرجى التواصل مع المسؤول لإعادة تعيينها.</value>
+  </data>
+  <data name="Message_InvalidRefreshToken" xml:space="preserve">
+    <value>رمز التحديث غير صالح أو منتهي الصلاحية.</value>
+  </data>
+  <data name="Message_RefreshTokenExpired" xml:space="preserve">
+    <value>انتهت صلاحية رمز التحديث. يرجى تسجيل الدخول مجدداً.</value>
+  </data>
+  <data name="Message_MustChangePassword" xml:space="preserve">
+    <value>يجب تغيير كلمة المرور قبل المتابعة. يرجى تسجيل الدخول وتغيير كلمة المرور.</value>
+  </data>
+  <data name="Message_CurrentPasswordIncorrect" xml:space="preserve">
+    <value>كلمة المرور الحالية غير صحيحة.</value>
+  </data>
 </root>

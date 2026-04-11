@@ -18,7 +18,15 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services.AddControllers();
 
 // ── Localization (Arabic/English error messages via Accept-Language header) ──
-builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+// NOTE: Do NOT set ResourcesPath here. The ErrorMessages marker class lives at
+// namespace TRRCMS.WebAPI (flat), and has a sibling ErrorMessages.cs next to
+// Resources/ErrorMessages.resx. The .NET SDK's EmbeddedResourceUseDependentUponConvention
+// embeds the .resx under the class's namespace — TRRCMS.WebAPI.ErrorMessages.resources —
+// not the folder path. Setting ResourcesPath = "Resources" would make
+// ResourceManagerStringLocalizerFactory probe a different stream name that does not
+// exist, causing every IStringLocalizer<ErrorMessages> lookup to silently fall back to
+// returning the key name (e.g. "Title_ValidationFailed") instead of the resolved value.
+builder.Services.AddLocalization();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -116,8 +124,9 @@ var app = builder.Build();
 await app.SeedDatabaseAsync();
 
 // ── Middleware ────────────────────────────────────────────────────
-app.UseMiddleware<TRRCMS.WebAPI.Middleware.GlobalExceptionHandlingMiddleware>();
-
+// IMPORTANT: UseRequestLocalization must run BEFORE GlobalExceptionHandlingMiddleware
+// so that CultureInfo.CurrentUICulture is set from the Accept-Language header before
+// any exception bubbles up to the global handler's localization logic.
 app.UseRequestLocalization(options =>
 {
     var supportedCultures = new[] { "en", "ar" };
@@ -125,6 +134,8 @@ app.UseRequestLocalization(options =>
     options.AddSupportedCultures(supportedCultures);
     options.AddSupportedUICultures(supportedCultures);
 });
+
+app.UseMiddleware<TRRCMS.WebAPI.Middleware.GlobalExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

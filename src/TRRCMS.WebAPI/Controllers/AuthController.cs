@@ -157,27 +157,13 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
-        try
-        {
-            var command = new LoginCommand(request.Username, request.Password, request.DeviceId);
-            var response = await _mediator.Send(command);
+        var command = new LoginCommand(request.Username, request.Password, request.DeviceId);
+        var response = await _mediator.Send(command);
 
-            _logger.LogInformation("User {Username} logged in successfully from device {DeviceId}",
-                request.Username, request.DeviceId ?? "unknown");
+        _logger.LogInformation("User {Username} logged in successfully from device {DeviceId}",
+            request.Username, request.DeviceId ?? "unknown");
 
-            return Ok(response);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning("Failed login attempt for username {Username}: {Message}",
-                request.Username, ex.Message);
-            return Unauthorized(new ErrorResponse
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "Unauthorized",
-                Message = ex.Message
-            });
-        }
+        return Ok(response);
     }
 
     /// <summary>
@@ -230,26 +216,13 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<RefreshTokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
     {
-        try
-        {
-            var command = new RefreshTokenCommand(request.RefreshToken, request.DeviceId);
-            var response = await _mediator.Send(command);
+        var command = new RefreshTokenCommand(request.RefreshToken, request.DeviceId);
+        var response = await _mediator.Send(command);
 
-            _logger.LogInformation("Token refreshed successfully from device {DeviceId}",
-                request.DeviceId ?? "unknown");
+        _logger.LogInformation("Token refreshed successfully from device {DeviceId}",
+            request.DeviceId ?? "unknown");
 
-            return Ok(response);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            _logger.LogWarning("Failed token refresh: {Message}", ex.Message);
-            return Unauthorized(new ErrorResponse
-            {
-                Status = StatusCodes.Status401Unauthorized,
-                Title = "Unauthorized",
-                Message = ex.Message
-            });
-        }
+        return Ok(response);
     }
 
     /// <summary>
