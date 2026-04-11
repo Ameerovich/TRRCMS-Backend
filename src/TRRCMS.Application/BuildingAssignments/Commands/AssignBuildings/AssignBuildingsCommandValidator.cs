@@ -1,53 +1,56 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.BuildingAssignments.Commands.AssignBuildings;
 
 /// <summary>
 /// Validator for AssignBuildingsCommand
 /// </summary>
-public class AssignBuildingsCommandValidator : AbstractValidator<AssignBuildingsCommand>
+public class AssignBuildingsCommandValidator : LocalizedValidator<AssignBuildingsCommand>
 {
-    public AssignBuildingsCommandValidator()
+    public AssignBuildingsCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.FieldCollectorId)
             .NotEmpty()
-            .WithMessage("Field collector ID is required");
+            .WithMessage(L("FieldCollectorId_Required"));
 
         RuleFor(x => x.Buildings)
             .NotEmpty()
-            .WithMessage("At least one building must be specified for assignment");
+            .WithMessage(L("Assignment_AtLeastOneBuilding"));
 
         RuleFor(x => x.Buildings)
             .Must(buildings => buildings.Count <= 100)
-            .WithMessage("Cannot assign more than 100 buildings at once");
+            .WithMessage(L("Assignment_Max100Buildings"));
 
         RuleForEach(x => x.Buildings).ChildRules(building =>
         {
             building.RuleFor(b => b.BuildingId)
                 .NotEmpty()
-                .WithMessage("Building ID is required");
+                .WithMessage(L("BuildingId_Required"));
 
             building.RuleFor(b => b.RevisitReason)
                 .NotEmpty()
                 .When(b => b.PropertyUnitIdsForRevisit?.Any() == true)
-                .WithMessage("Revisit reason is required when property units are specified for revisit");
+                .WithMessage(L("RevisitReason_Required"));
 
             building.RuleFor(b => b.PropertyUnitIdsForRevisit)
                 .Must(units => units == null || units.Count <= 50)
-                .WithMessage("Cannot specify more than 50 property units for revisit");
+                .WithMessage(L("Revisit_Max50Units"));
         });
 
         RuleFor(x => x.Priority)
             .Must(p => p == "Normal" || p == "High" || p == "Urgent")
-            .WithMessage("Priority must be Normal, High, or Urgent");
+            .WithMessage(L("Priority_Invalid"));
 
         RuleFor(x => x.TargetCompletionDate)
             .GreaterThan(DateTime.UtcNow.Date)
             .When(x => x.TargetCompletionDate.HasValue)
-            .WithMessage("Target completion date must be in the future");
+            .WithMessage(L("TargetDate_MustBeFuture"));
 
         RuleFor(x => x.AssignmentNotes)
             .MaximumLength(2000)
-            .WithMessage("Assignment notes cannot exceed 2000 characters");
+            .WithMessage(L("AssignmentNotes_MaxLength2000"));
     }
 }

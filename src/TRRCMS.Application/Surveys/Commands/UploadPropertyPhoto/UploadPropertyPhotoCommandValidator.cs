@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
 
@@ -6,7 +9,7 @@ namespace TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
 /// Validator for UploadPropertyPhotoCommand
 /// Enhanced with file size limits and allowed image MIME types
 /// </summary>
-public class UploadPropertyPhotoCommandValidator : AbstractValidator<UploadPropertyPhotoCommand>
+public class UploadPropertyPhotoCommandValidator : LocalizedValidator<UploadPropertyPhotoCommand>
 {
     /// <summary>
     /// Maximum photo file size: 10 MB
@@ -18,42 +21,42 @@ public class UploadPropertyPhotoCommandValidator : AbstractValidator<UploadPrope
         "image/jpeg", "image/png", "image/gif", "image/webp", "image/tiff"
     };
 
-    public UploadPropertyPhotoCommandValidator()
+    public UploadPropertyPhotoCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.File)
             .NotNull()
-            .WithMessage("File is required");
+            .WithMessage(L("File_Required"));
 
         // File size validation
         RuleFor(x => x.File)
             .Must(file => file.Length <= MaxFileSizeBytes)
             .When(x => x.File != null)
-            .WithMessage($"Photo file size cannot exceed {MaxFileSizeBytes / (1024 * 1024)} MB");
+            .WithMessage(L("PhotoFile_SizeExceedsMax", MaxFileSizeBytes / (1024 * 1024)));
 
         RuleFor(x => x.File)
             .Must(file => file.Length > 0)
             .When(x => x.File != null)
-            .WithMessage("Photo file cannot be empty");
+            .WithMessage(L("PhotoFile_Empty"));
 
         // MIME type validation - photos only
         RuleFor(x => x.File)
             .Must(file => AllowedImageMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
             .When(x => x.File != null)
-            .WithMessage("Only image files are allowed (JPEG, PNG, GIF, WebP, TIFF)");
+            .WithMessage(L("File_TypeNotAllowed_ImageOnly"));
 
         RuleFor(x => x.Description)
             .NotEmpty()
-            .WithMessage("Description is required")
+            .WithMessage(L("Description_Required"))
             .MaximumLength(500)
-            .WithMessage("Description cannot exceed 500 characters");
+            .WithMessage(L("Description_MaxLength500"));
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))
-            .WithMessage("Notes cannot exceed 1000 characters");
+            .WithMessage(L("Notes_MaxLength1000"));
     }
 }

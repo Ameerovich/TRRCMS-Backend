@@ -1,17 +1,20 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.AdministrativeDivisions.Commands.ImportAdministrativeHierarchy;
 
-public class ImportAdministrativeHierarchyCommandValidator : AbstractValidator<ImportAdministrativeHierarchyCommand>
+public class ImportAdministrativeHierarchyCommandValidator : LocalizedValidator<ImportAdministrativeHierarchyCommand>
 {
-    public ImportAdministrativeHierarchyCommandValidator()
+    public ImportAdministrativeHierarchyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.JsonContent)
-            .NotEmpty().WithMessage("JSON content is required.")
+            .NotEmpty().WithMessage(L("JsonContent_Required"))
             .Must(json => json.TrimStart().StartsWith("[") || json.TrimStart().StartsWith("{"))
-            .WithMessage("Content must be valid JSON (must start with [ or {).");
+            .WithMessage(L("JsonContent_InvalidFormat"));
 
         RuleFor(x => x.ImportedByUserId)
-            .NotEmpty().WithMessage("Imported by user ID is required.");
+            .NotEmpty().WithMessage(L("ImportedByUserId_Required"));
     }
 }

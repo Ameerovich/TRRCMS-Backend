@@ -1,12 +1,15 @@
 using FluentValidation;
+using TRRCMS.Application.Common.Localization;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Buildings.Commands.ToggleBuildingLock;
 
-public class ToggleBuildingLockCommandValidator : AbstractValidator<ToggleBuildingLockCommand>
+public class ToggleBuildingLockCommandValidator : LocalizedValidator<ToggleBuildingLockCommand>
 {
-    public ToggleBuildingLockCommandValidator()
+    public ToggleBuildingLockCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.BuildingId)
-            .NotEmpty().WithMessage("Building ID is required.");
+            .NotEmpty().WithMessage(L("Building_ToggleLockRequired"));
     }
 }

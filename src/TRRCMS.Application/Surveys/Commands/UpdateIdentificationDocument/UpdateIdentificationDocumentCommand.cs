@@ -31,6 +31,11 @@ public class UpdateIdentificationDocumentCommand : IRequest<IdentificationDocume
     public IFormFile? File { get; set; }
 
     /// <summary>
+    /// Document type (optional - vocabulary code from document_type: 1=PersonalIdPhoto, 2=FamilyRecord, 3=Photo)
+    /// </summary>
+    public int? DocumentType { get; set; }
+
+    /// <summary>
     /// Document description
     /// </summary>
     public string? Description { get; set; }

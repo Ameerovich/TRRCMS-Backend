@@ -10,7 +10,7 @@ using TRRCMS.Domain.Enums;
 namespace TRRCMS.Application.Households.Commands.CreateHousehold;
 
 /// <summary>
-/// Handler for creating a new household
+/// Handler for creating a new household (canonical v1.9 shape).
 /// </summary>
 public class CreateHouseholdCommandHandler : IRequestHandler<CreateHouseholdCommand, HouseholdDto>
 {
@@ -38,36 +38,30 @@ public class CreateHouseholdCommandHandler : IRequestHandler<CreateHouseholdComm
     {
         var userId = _currentUserService.UserId ?? Guid.NewGuid();
 
-        // Validate property unit exists
         var propertyUnit = await _propertyUnitRepository.GetByIdAsync(request.PropertyUnitId, cancellationToken);
         if (propertyUnit == null)
         {
             throw new NotFoundException($"Property unit with ID {request.PropertyUnitId} not found");
         }
 
-        // Create household with full composition
         var household = Household.Create(
             propertyUnitId: request.PropertyUnitId,
             householdSize: request.HouseholdSize,
             maleCount: request.MaleCount,
             femaleCount: request.FemaleCount,
-            maleChildCount: request.MaleChildCount,
-            femaleChildCount: request.FemaleChildCount,
-            maleElderlyCount: request.MaleElderlyCount,
-            femaleElderlyCount: request.FemaleElderlyCount,
-            maleDisabledCount: request.MaleDisabledCount,
-            femaleDisabledCount: request.FemaleDisabledCount,
+            adultCount: request.AdultCount,
+            childCount: request.ChildCount,
+            elderlyCount: request.ElderlyCount,
+            disabledCount: request.DisabledCount,
+            occupancyNature: request.OccupancyNature.HasValue ? (OccupancyNature)request.OccupancyNature.Value : null,
+            occupancyStartDate: request.OccupancyStartDate,
             notes: request.Notes,
-            occupancyType: null, // Not supported in CreateHousehold command (use CreateHouseholdInSurvey instead)
-            occupancyNature: null, // Not supported in CreateHousehold command (use CreateHouseholdInSurvey instead)
             createdByUserId: userId
         );
 
-        // Save to database
         await _householdRepository.AddAsync(household, cancellationToken);
         await _householdRepository.SaveChangesAsync(cancellationToken);
 
-        // Audit logging
         var householdIdentifier = $"Household {household.Id.ToString()[..8]}";
         await _auditService.LogActionAsync(
             actionType: AuditActionType.Create,
@@ -80,13 +74,18 @@ public class CreateHouseholdCommandHandler : IRequestHandler<CreateHouseholdComm
             {
                 household.HouseholdSize,
                 household.MaleCount,
-                household.FemaleCount
+                household.FemaleCount,
+                household.AdultCount,
+                household.ChildCount,
+                household.ElderlyCount,
+                household.DisabledCount,
+                household.OccupancyNature,
+                household.OccupancyStartDate
             }),
             changedFields: "New Household",
             cancellationToken: cancellationToken
         );
 
-        // Map to DTO
         var result = _mapper.Map<HouseholdDto>(household);
         result.PropertyUnitIdentifier = propertyUnit.UnitIdentifier;
 

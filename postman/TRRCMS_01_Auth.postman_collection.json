@@ -294,9 +294,54 @@
 						"description": "Logout current user. Client should discard tokens."
 					},
 					"response": []
+				},
+				{
+					"name": "Change Password (First Login)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Password changed successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    console.log('✅ Password changed. Login again with the new password.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{currentUserId}}\",\n  \"currentPassword\": \"Test@123\",\n  \"newPassword\": \"NewPass@123\",\n  \"confirmPassword\": \"NewPass@123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/Auth/change-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"Auth",
+								"change-password"
+							]
+						},
+						"description": "Change password for the current user.\n\n**When to use:**\n- After first login when `mustChangePassword: true`\n- The restricted token (10 min) only allows this endpoint and logout\n- After success, login again with the new password to get a full-access token\n\n**Password policy:**\n- Minimum 8 characters\n- At least 1 uppercase, 1 lowercase, 1 digit, 1 special character\n- Must be different from current password\n\n**Flow:**\n1. Login → get restricted token + `mustChangePassword: true`\n2. Call this endpoint with the restricted token\n3. Login again with new password → full-access token"
+					},
+					"response": []
 				}
 			],
-			"description": "Authentication endpoints. Run login first to get token.\n\n**Token Lifetimes:**\n- Access Token: 15 minutes\n- Refresh Token: 7 days"
+			"description": "Authentication endpoints. Run login first to get token.\n\n**Token Lifetimes:**\n- Access Token: 15 minutes\n- Refresh Token: 7 days\n\n**First Login Flow:**\nNew users must change password before accessing other endpoints.\n1. Login → `mustChangePassword: true`, restricted token (10 min)\n2. Call Change Password with restricted token\n3. Login again with new password → full-access token"
 		}
 	]
 }

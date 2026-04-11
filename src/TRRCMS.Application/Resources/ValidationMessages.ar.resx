@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- ── Common / Shared ─────────────────────────────────────────── -->
+  <data name="SurveyId_Required"><value>معرف المسح مطلوب</value></data>
+  <data name="BuildingId_Required"><value>معرف البناء مطلوب</value></data>
+  <data name="PropertyUnitId_Required"><value>معرف الوحدة العقارية مطلوب</value></data>
+  <data name="PersonId_Required"><value>معرف الشخص مطلوب</value></data>
+  <data name="HouseholdId_Required"><value>معرف الأسرة مطلوب</value></data>
+  <data name="EvidenceId_Required"><value>معرف المستند مطلوب</value></data>
+  <data name="RelationId_Required"><value>معرف العلاقة مطلوب</value></data>
+  <data name="ClaimId_Required"><value>معرف المطالبة مطلوب</value></data>
+  <data name="CaseId_Required"><value>معرف القضية مطلوب.</value></data>
+  <data name="ConflictId_Required"><value>معرف التعارض مطلوب.</value></data>
+  <data name="ImportPackageId_Required"><value>معرف حزمة الاستيراد مطلوب.</value></data>
+  <data name="AssignmentId_Required"><value>معرف التكليف مطلوب</value></data>
+  <data name="VocabularyId_Required"><value>معرف القاموس مطلوب</value></data>
+  <data name="LandmarkId_Required"><value>معرف المعلم مطلوب.</value></data>
+  <data name="StreetId_Required"><value>معرف الشارع مطلوب.</value></data>
+  <data name="UserId_Required"><value>معرف المستخدم مطلوب</value></data>
+  <data name="File_Required"><value>الملف مطلوب</value></data>
+  <data name="Description_Required"><value>الوصف مطلوب</value></data>
+  <data name="PersonPropertyRelationId_Required"><value>معرف علاقة الشخص بالعقار مطلوب</value></data>
+  <data name="Notes_MaxLength2000"><value>الملاحظات لا يمكن أن تتجاوز 2000 حرف</value></data>
+  <data name="Notes_MaxLength1000"><value>الملاحظات لا يمكن أن تتجاوز 1000 حرف</value></data>
+  <data name="Notes_MaxLength4000"><value>الملاحظات يجب ألا تتجاوز 4000 حرف.</value></data>
+  <data name="Description_MaxLength500"><value>الوصف لا يمكن أن يتجاوز 500 حرف</value></data>
+  <data name="Description_MaxLength2000"><value>الوصف يجب ألا يتجاوز 2000 حرف</value></data>
+  <data name="ExpiryDate_AfterIssue"><value>تاريخ الانتهاء يجب أن يكون بعد تاريخ الإصدار</value></data>
+  <data name="IssueDate_NotFuture"><value>تاريخ إصدار الوثيقة لا يمكن أن يكون في المستقبل</value></data>
+  <data name="File_Empty"><value>ملف الوثيقة لا يمكن أن يكون فارغاً</value></data>
+  <data name="File_SizeExceedsMax"><value>حجم الملف لا يمكن أن يتجاوز {0} ميغابايت</value></data>
+  <data name="File_SizeGreaterThanZero"><value>حجم الملف يجب أن يكون أكبر من 0</value></data>
+  <data name="File_TypeNotAllowed_ImagePdf"><value>يُسمح فقط بملفات الصور وPDF (JPEG، PNG، GIF، WebP، TIFF، PDF)</value></data>
+  <data name="File_TypeNotAllowed_ImageOnly"><value>يُسمح فقط بملفات الصور (JPEG، PNG، GIF، WebP، TIFF)</value></data>
+  <data name="File_TypeNotAllowed_Full"><value>يُسمح فقط بملفات الصور وPDF ومستندات Word والتسجيلات الصوتية (JPEG، PNG، GIF، WebP، TIFF، PDF، DOC، DOCX، MP3، WAV، OGG، M4A)</value></data>
+  <data name="File_TypeNotAllowed_Evidence"><value>نوع الملف غير مسموح. الأنواع المقبولة: JPEG، PNG، GIF، WebP، TIFF، PDF، DOC، DOCX</value></data>
+  <data name="FileName_Required"><value>اسم الملف الأصلي مطلوب</value></data>
+  <data name="FileName_MaxLength255"><value>اسم الملف لا يمكن أن يتجاوز 255 حرف</value></data>
+  <data name="FilePath_Required"><value>مسار الملف مطلوب</value></data>
+  <data name="FilePath_MaxLength1000"><value>مسار الملف لا يمكن أن يتجاوز 1000 حرف</value></data>
+  <data name="MimeType_Required"><value>نوع MIME مطلوب</value></data>
+  <data name="FileHash_InvalidSha256"><value>تجزئة الملف يجب أن تكون سلسلة SHA-256 سداسية عشرية صالحة (64 حرف)</value></data>
+  <data name="IssuingAuthority_MaxLength200"><value>جهة الإصدار لا يمكن أن تتجاوز 200 حرف</value></data>
+  <data name="DocumentRef_MaxLength100"><value>رقم مرجع الوثيقة لا يمكن أن يتجاوز 100 حرف</value></data>
+  <data name="LinkReason_MaxLength500"><value>سبب الربط لا يمكن أن يتجاوز 500 حرف</value></data>
+
+  <!-- ── Auth ───────────────────────────────────────────────────── -->
+  <data name="Username_Required"><value>اسم المستخدم مطلوب</value></data>
+  <data name="Username_MaxLength50"><value>اسم المستخدم لا يمكن أن يتجاوز 50 حرف</value></data>
+  <data name="Username_Length3to50"><value>اسم المستخدم يجب أن يكون بين 3 و50 حرف</value></data>
+  <data name="Username_InvalidChars"><value>اسم المستخدم يمكن أن يحتوي فقط على أحرف وأرقام وشرطات سفلية</value></data>
+  <data name="Password_Required"><value>كلمة المرور مطلوبة</value></data>
+  <data name="Password_MaxLength128"><value>كلمة المرور لا يمكن أن تتجاوز 128 حرف</value></data>
+  <data name="Password_MinLength8"><value>كلمة المرور يجب أن تكون 8 أحرف على الأقل</value></data>
+  <data name="Password_RequireUpper"><value>كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل</value></data>
+  <data name="Password_RequireLower"><value>كلمة المرور يجب أن تحتوي على حرف صغير واحد على الأقل</value></data>
+  <data name="Password_RequireDigit"><value>كلمة المرور يجب أن تحتوي على رقم واحد على الأقل</value></data>
+  <data name="Password_RequireSpecial"><value>كلمة المرور يجب أن تحتوي على رمز خاص واحد على الأقل</value></data>
+  <data name="PasswordConfirm_Required"><value>تأكيد كلمة المرور مطلوب</value></data>
+  <data name="PasswordConfirm_Mismatch"><value>تأكيد كلمة المرور لا يتطابق مع كلمة المرور الجديدة</value></data>
+  <data name="Password_MustDiffer"><value>كلمة المرور الجديدة يجب أن تختلف عن كلمة المرور الحالية</value></data>
+  <data name="CurrentPassword_Required"><value>كلمة المرور الحالية مطلوبة</value></data>
+  <data name="ModifiedByUserId_Required"><value>معرف المستخدم المعدِّل مطلوب</value></data>
+  <data name="RefreshToken_Required"><value>رمز التحديث مطلوب</value></data>
+  <data name="DeviceId_MaxLength100"><value>معرف الجهاز لا يمكن أن يتجاوز 100 حرف</value></data>
+
+  <!-- ── Users ──────────────────────────────────────────────────── -->
+  <data name="FullNameAr_Required"><value>الاسم الكامل بالعربية مطلوب</value></data>
+  <data name="FullNameAr_MaxLength200"><value>الاسم الكامل بالعربية لا يمكن أن يتجاوز 200 حرف</value></data>
+  <data name="FullNameEn_MaxLength200"><value>الاسم الكامل بالإنجليزية لا يمكن أن يتجاوز 200 حرف</value></data>
+  <data name="Email_Required"><value>البريد الإلكتروني مطلوب</value></data>
+  <data name="Email_InvalidFormat"><value>صيغة البريد الإلكتروني غير صحيحة</value></data>
+  <data name="Email_MaxLength100"><value>البريد الإلكتروني لا يمكن أن يتجاوز 100 حرف</value></data>
+  <data name="Phone_SyrianFormat"><value>رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+</value></data>
+  <data name="UserRole_Invalid"><value>دور المستخدم غير صالح</value></data>
+  <data name="Organization_MaxLength100"><value>المنظمة لا يمكن أن تتجاوز 100 حرف</value></data>
+  <data name="JobTitle_MaxLength100"><value>المسمى الوظيفي لا يمكن أن يتجاوز 100 حرف</value></data>
+  <data name="EmployeeId_MaxLength50"><value>رقم الموظف لا يمكن أن يتجاوز 50 حرف</value></data>
+  <data name="User_RequireAccess"><value>يجب أن يكون لدى المستخدم صلاحية وصول للموبايل أو سطح المكتب على الأقل</value></data>
+  <data name="Deactivation_ReasonRequired"><value>سبب إلغاء التفعيل مطلوب</value></data>
+  <data name="Deactivation_ReasonMinLength10"><value>سبب إلغاء التفعيل يجب أن يكون 10 أحرف على الأقل</value></data>
+  <data name="Deactivation_ReasonMaxLength500"><value>سبب إلغاء التفعيل لا يمكن أن يتجاوز 500 حرف</value></data>
+  <data name="Permission_AtLeastOne"><value>يجب تحديد صلاحية واحدة على الأقل</value></data>
+  <data name="Permission_ListNotEmpty"><value>قائمة الصلاحيات لا يمكن أن تكون فارغة</value></data>
+  <data name="Permission_Invalid"><value>قيمة الصلاحية غير صالحة</value></data>
+  <data name="GrantReason_Required"><value>سبب المنح مطلوب</value></data>
+  <data name="GrantReason_MinLength10"><value>سبب المنح يجب أن يكون 10 أحرف على الأقل</value></data>
+  <data name="GrantReason_MaxLength500"><value>سبب المنح لا يمكن أن يتجاوز 500 حرف</value></data>
+  <data name="RevokeReason_Required"><value>سبب السحب مطلوب</value></data>
+  <data name="RevokeReason_MinLength10"><value>سبب السحب يجب أن يكون 10 أحرف على الأقل</value></data>
+  <data name="RevokeReason_MaxLength500"><value>سبب السحب لا يمكن أن يتجاوز 500 حرف</value></data>
+
+  <!-- ── Buildings (1/2) ────────────────────────────────────────── -->
+  <data name="Governorate_Required"><value>رمز المحافظة مطلوب</value></data>
+  <data name="Governorate_2Digits"><value>رمز المحافظة يجب أن يكون رقمين</value></data>
+  <data name="Governorate_DigitsOnly"><value>رمز المحافظة يجب أن يحتوي على أرقام فقط</value></data>
+  <data name="District_Required"><value>رمز المنطقة مطلوب</value></data>
+  <data name="District_2Digits"><value>رمز المنطقة يجب أن يكون رقمين</value></data>
+  <data name="District_DigitsOnly"><value>رمز المنطقة يجب أن يحتوي على أرقام فقط</value></data>
+  <data name="SubDistrict_Required"><value>رمز الناحية مطلوب</value></data>
+  <data name="SubDistrict_2Digits"><value>رمز الناحية يجب أن يكون رقمين</value></data>
+  <data name="SubDistrict_DigitsOnly"><value>رمز الناحية يجب أن يحتوي على أرقام فقط</value></data>
+  <data name="Community_Required"><value>رمز القرية مطلوب</value></data>
+  <data name="Community_3Digits"><value>رمز القرية يجب أن يكون 3 أرقام</value></data>
+  <data name="Community_DigitsOnly"><value>رمز القرية يجب أن يحتوي على أرقام فقط</value></data>
+  <data name="Neighborhood_Required"><value>رمز الحي مطلوب</value></data>
+  <data name="Neighborhood_3Digits"><value>رمز الحي يجب أن يكون 3 أرقام</value></data>
+  <data name="Neighborhood_DigitsOnly"><value>رمز الحي يجب أن يحتوي على أرقام فقط</value></data>
+  <data name="BuildingNumber_Required"><value>رقم البناء مطلوب</value></data>
+  <data name="BuildingNumber_5Digits"><value>رقم البناء يجب أن يكون 5 أرقام</value></data>
+  <data name="BuildingNumber_DigitsOnly"><value>رقم البناء يجب أن يحتوي على أرقام فقط</value></data>
+  <data name="BuildingId_CompositeFormat"><value>معرف البناء المركب يجب أن يتكون من 17 رقماً بالضبط (2+2+2+3+3+5)</value></data>
+  <data name="BuildingType_Invalid"><value>نوع البناء غير صالح</value></data>
+  <data name="BuildingStatus_Invalid"><value>حالة البناء غير صالحة</value></data>
+  <data name="PropertyUnits_NonNegative"><value>عدد الوحدات العقارية لا يمكن أن يكون سالباً</value></data>
+  <data name="PropertyUnits_Max500"><value>عدد الوحدات العقارية لا يمكن أن يتجاوز 500</value></data>
+  <data name="Apartments_NonNegative"><value>عدد الشقق لا يمكن أن يكون سالباً</value></data>
+  <data name="Apartments_Max500"><value>عدد الشقق لا يمكن أن يتجاوز 500</value></data>
+  <data name="Shops_NonNegative"><value>عدد المحلات لا يمكن أن يكون سالباً</value></data>
+  <data name="Shops_Max200"><value>عدد المحلات لا يمكن أن يتجاوز 200</value></data>
+  <data name="Units_SumExceedsTotal"><value>مجموع الشقق والمحلات لا يمكن أن يتجاوز إجمالي عدد الوحدات العقارية</value></data>
+
+  <!-- ── Buildings (2/2) ────────────────────────────────────────── -->
+  <data name="Latitude_SyriaBounds"><value>خط العرض يجب أن يكون بين 32.0 و37.5 (حدود سوريا)</value></data>
+  <data name="Longitude_SyriaBounds"><value>خط الطول يجب أن يكون بين 35.5 و42.5 (حدود سوريا)</value></data>
+  <data name="Longitude_SyriaBounds36"><value>خط الطول يجب أن يكون بين 36.0 و42.5 (حدود سوريا)</value></data>
+  <data name="LatLng_BothRequired"><value>يجب توفير خط العرض وخط الطول معاً</value></data>
+  <data name="Building_GeometryRequired"><value>هندسة البناء (مضلع WKT) مطلوبة للتسجيل في QGIS</value></data>
+  <data name="Building_ToggleLockRequired"><value>معرف البناء مطلوب.</value></data>
+  <data name="GeometryWkt_MaxLength10000"><value>هندسة WKT يجب ألا تتجاوز 10,000 حرف</value></data>
+  <data name="GeometryWkt_InvalidFormat"><value>هندسة WKT يجب أن تكون بصيغة صالحة (POINT، POLYGON، إلخ)</value></data>
+  <data name="GeometryOrLatLng_Required"><value>يجب توفير GeometryWkt أو خط العرض/الطول</value></data>
+  <data name="NorthEastLat_SyriaBounds"><value>خط عرض الشمال الشرقي يجب أن يكون بين 32.0 و37.5</value></data>
+  <data name="SouthWestLat_SyriaBounds"><value>خط عرض الجنوب الغربي يجب أن يكون بين 32.0 و37.5</value></data>
+  <data name="NorthEastLng_SyriaBounds"><value>خط طول الشمال الشرقي يجب أن يكون بين 36.0 و42.5</value></data>
+  <data name="SouthWestLng_SyriaBounds"><value>خط طول الجنوب الغربي يجب أن يكون بين 36.0 و42.5</value></data>
+  <data name="NorthEastLat_GreaterThanSouthWest"><value>خط عرض الشمال الشرقي يجب أن يكون أكبر من خط عرض الجنوب الغربي</value></data>
+  <data name="NorthEastLng_GreaterThanSouthWest"><value>خط طول الشمال الشرقي يجب أن يكون أكبر من خط طول الجنوب الغربي</value></data>
+  <data name="MaxResults_GreaterThanZero"><value>الحد الأقصى للنتائج يجب أن يكون أكبر من 0</value></data>
+  <data name="MaxResults_Max50000"><value>الحد الأقصى للنتائج لا يمكن أن يتجاوز 50,000 لأسباب تتعلق بالأداء</value></data>
+  <data name="PolygonOrCoords_Required"><value>يجب توفير PolygonWkt أو الإحداثيات (3 نقاط على الأقل)</value></data>
+  <data name="PolygonWkt_InvalidFormat"><value>PolygonWkt يجب أن يكون بصيغة POLYGON WKT صالحة</value></data>
+  <data name="PolygonWkt_MaxLength10000"><value>PolygonWkt يجب ألا يتجاوز 10,000 حرف</value></data>
+  <data name="Polygon_MinPoints3"><value>المضلع يجب أن يحتوي على 3 نقاط إحداثية على الأقل</value></data>
+  <data name="Polygon_MaxPoints10000"><value>المضلع لا يمكن أن يتجاوز 10,000 نقطة إحداثية</value></data>
+  <data name="Coordinate_Exactly2Values"><value>كل إحداثية يجب أن تكون مصفوفة من قيمتين بالضبط [خط الطول، خط العرض]</value></data>
+  <data name="Coordinate_SyriaRange"><value>الإحداثيات يجب أن تكون ضمن النطاقات الصالحة (خط الطول: 35.0-43.0، خط العرض: 32.0-37.5 لسوريا)</value></data>
+  <data name="Page_AtLeast1"><value>رقم الصفحة يجب أن يكون 1 على الأقل</value></data>
+  <data name="PageSize_Between1And1000"><value>حجم الصفحة يجب أن يكون بين 1 و1000</value></data>
+  <data name="PageSize_Between1And100"><value>حجم الصفحة يجب أن يكون بين 1 و100</value></data>
+  <data name="Governorate_Exactly2Digits"><value>رمز المحافظة يجب أن يكون رقمين بالضبط</value></data>
+  <data name="District_Exactly2Digits"><value>رمز المنطقة يجب أن يكون رقمين بالضبط</value></data>
+  <data name="SubDistrict_Exactly2Digits"><value>رمز الناحية يجب أن يكون رقمين بالضبط</value></data>
+  <data name="Community_Exactly3Digits"><value>رمز القرية يجب أن يكون 3 أرقام بالضبط</value></data>
+  <data name="Neighborhood_Exactly3Digits"><value>رمز الحي يجب أن يكون 3 أرقام بالضبط</value></data>
+  <data name="BuildingId_DigitsOnly"><value>معرف البناء يجب أن يحتوي على أرقام فقط</value></data>
+  <data name="BuildingId_MaxLength17"><value>معرف البناء لا يمكن أن يتجاوز 17 رقم</value></data>
+  <data name="BuildingNumber_MaxLength5"><value>رقم البناء لا يمكن أن يتجاوز 5 أرقام</value></data>
+  <data name="SortField_Invalid"><value>حقل الترتيب يجب أن يكون أحد: buildingId، createdDate، status، buildingType</value></data>
+  <data name="District_RequiresGovernorate"><value>رمز المنطقة يتطلب تحديد رمز المحافظة</value></data>
+  <data name="SubDistrict_RequiresDistrict"><value>رمز الناحية يتطلب تحديد رمز المنطقة</value></data>
+  <data name="Community_RequiresSubDistrict"><value>رمز القرية يتطلب تحديد رمز الناحية</value></data>
+
+  <!-- ── PropertyUnits ──────────────────────────────────────────── -->
+  <data name="UnitId_Required"><value>معرف الوحدة مطلوب</value></data>
+  <data name="UnitId_MaxLength50"><value>معرف الوحدة يجب ألا يتجاوز 50 حرف</value></data>
+  <data name="UnitType_Range1to5"><value>نوع الوحدة يجب أن يكون بين 1 و5</value></data>
+  <data name="UnitStatus_ValidValue"><value>الحالة يجب أن تكون قيمة صالحة (1-6 أو 99)</value></data>
+  <data name="FloorNumber_Range"><value>رقم الطابق يجب أن يكون بين -5 و200</value></data>
+  <data name="Area_GreaterThanZero"><value>المساحة يجب أن تكون أكبر من 0</value></data>
+  <data name="Rooms_Range0to100"><value>عدد الغرف يجب أن يكون بين 0 و100</value></data>
+  <data name="UnitType_Invalid"><value>قيمة نوع الوحدة العقارية غير صالحة</value></data>
+  <data name="UnitStatus_Invalid"><value>قيمة حالة الوحدة العقارية غير صالحة</value></data>
+
+  <!-- ── Person ─────────────────────────────────────────────────── -->
+  <data name="LastName_MaxLength100"><value>الكنية يجب ألا تتجاوز 100 حرف</value></data>
+  <data name="FirstName_MaxLength100"><value>الاسم الأول يجب ألا يتجاوز 100 حرف</value></data>
+  <data name="FatherName_MaxLength100"><value>اسم الأب يجب ألا يتجاوز 100 حرف</value></data>
+  <data name="MotherName_MaxLength100"><value>اسم الأم يجب ألا يتجاوز 100 حرف</value></data>
+  <data name="FirstName_Required"><value>الاسم الأول مطلوب</value></data>
+  <data name="FatherName_Required"><value>اسم الأب مطلوب</value></data>
+  <data name="LastName_Required"><value>الكنية مطلوبة</value></data>
+  <data name="MotherName_Required"><value>اسم الأم مطلوب</value></data>
+  <data name="NationalId_Exactly11Digits"><value>الرقم الوطني يجب أن يكون 11 رقماً بالضبط</value></data>
+  <data name="BirthDate_NotFuture"><value>تاريخ الميلاد لا يمكن أن يكون في المستقبل</value></data>
+  <data name="PersonEmail_MaxLength255"><value>البريد الإلكتروني يجب ألا يتجاوز 255 حرف</value></data>
+  <data name="PersonEmail_InvalidFormat"><value>صيغة البريد الإلكتروني غير صحيحة</value></data>
+  <data name="Mobile_SyrianFormat"><value>رقم الموبايل يجب أن يكون بالصيغة السورية: 09XXXXXXXX أو 9639XXXXXXXX+</value></data>
+  <data name="Landline_SyrianFormat"><value>رقم الهاتف يجب أن يكون بالصيغة السورية: 0XXXXXXXXX أو 963XXXXXXXXX+</value></data>
+  <data name="Gender_Invalid"><value>الجنس غير صالح</value></data>
+  <data name="Nationality_Invalid"><value>الجنسية غير صالحة</value></data>
+  <data name="HouseholdRelation_Invalid"><value>علاقة الشخص برب الأسرة غير صالحة</value></data>
+  <data name="HouseholdId_Invalid"><value>معرف الأسرة غير صالح</value></data>
+
+  <!-- ── Household ───────────────────────────────────────────────── -->
+  <data name="HouseholdSize_AtLeast1"><value>عدد أفراد الأسرة يجب أن يكون 1 على الأقل</value></data>
+  <data name="HouseholdSize_Max50"><value>عدد أفراد الأسرة يجب ألا يتجاوز 50</value></data>
+  <data name="Male_NonNegative"><value>عدد الذكور لا يمكن أن يكون سالباً</value></data>
+  <data name="Male_Max50"><value>عدد الذكور يجب ألا يتجاوز 50</value></data>
+  <data name="Female_NonNegative"><value>عدد الإناث لا يمكن أن يكون سالباً</value></data>
+  <data name="Female_Max50"><value>عدد الإناث يجب ألا يتجاوز 50</value></data>
+  <data name="AdultCount_NonNegative"><value>عدد البالغين لا يمكن أن يكون سالباً</value></data>
+  <data name="AdultCount_Max50"><value>عدد البالغين يجب ألا يتجاوز 50</value></data>
+  <data name="ChildCount_NonNegative"><value>عدد الأطفال لا يمكن أن يكون سالباً</value></data>
+  <data name="ChildCount_Max50"><value>عدد الأطفال يجب ألا يتجاوز 50</value></data>
+  <data name="ElderlyCount_NonNegative"><value>عدد كبار السن لا يمكن أن يكون سالباً</value></data>
+  <data name="ElderlyCount_Max50"><value>عدد كبار السن يجب ألا يتجاوز 50</value></data>
+  <data name="DisabledCount_NonNegative"><value>عدد ذوي الإعاقة لا يمكن أن يكون سالباً</value></data>
+  <data name="DisabledCount_Max50"><value>عدد ذوي الإعاقة يجب ألا يتجاوز 50</value></data>
+  <data name="Gender_SumExceedsHouseholdSize"><value>مجموع الذكور والإناث لا يمكن أن يتجاوز حجم الأسرة</value></data>
+  <data name="Age_SumExceedsHouseholdSize"><value>مجموع البالغين والأطفال وكبار السن لا يمكن أن يتجاوز حجم الأسرة</value></data>
+  <data name="Disabled_ExceedsHouseholdSize"><value>عدد ذوي الإعاقة لا يمكن أن يتجاوز حجم الأسرة</value></data>
+  <data name="OccupancyType_Invalid"><value>نوع الإشغال غير صالح</value></data>
+  <data name="OccupancyNature_Invalid"><value>طبيعة الإشغال غير صالحة</value></data>
+
+  <!-- ── Surveys ────────────────────────────────────────────────── -->
+  <data name="SurveyDate_Required"><value>تاريخ المسح مطلوب</value></data>
+  <data name="SurveyDate_NotFuture"><value>تاريخ المسح لا يمكن أن يكون في المستقبل</value></data>
+  <data name="OfficeLocation_MaxLength200"><value>موقع المكتب لا يمكن أن يتجاوز 200 حرف</value></data>
+  <data name="RegistrationNumber_MaxLength50"><value>رقم التسجيل لا يمكن أن يتجاوز 50 حرف</value></data>
+  <data name="AppointmentRef_MaxLength50"><value>مرجع الموعد لا يمكن أن يتجاوز 50 حرف</value></data>
+  <data name="ContactPhone_MaxLength20"><value>هاتف التواصل لا يمكن أن يتجاوز 20 حرف</value></data>
+  <data name="ContactPhone_InvalidChars"><value>هاتف التواصل يحتوي على أحرف غير صالحة</value></data>
+  <data name="ContactEmail_MaxLength100"><value>البريد الإلكتروني للتواصل لا يمكن أن يتجاوز 100 حرف</value></data>
+  <data name="ContactEmail_Invalid"><value>البريد الإلكتروني للتواصل ليس عنوان بريد إلكتروني صالح</value></data>
+  <data name="Duration_GreaterThanZero"><value>المدة يجب أن تكون أكبر من 0 دقيقة</value></data>
+  <data name="Duration_Max480"><value>المدة لا يمكن أن تتجاوز 480 دقيقة (8 ساعات)</value></data>
+  <data name="Duration_Max1440"><value>المدة لا يمكن أن تتجاوز 1440 دقيقة (24 ساعة)</value></data>
+  <data name="FinalNotes_MaxLength2000"><value>الملاحظات النهائية لا يمكن أن تتجاوز 2000 حرف</value></data>
+  <data name="GpsFormat_Invalid"><value>إحداثيات GPS يجب أن تكون بصيغة 'خط العرض,خط الطول' (مثال: '36.2021,37.1343')</value></data>
+  <data name="PhotoFile_SizeExceedsMax"><value>حجم ملف الصورة لا يمكن أن يتجاوز {0} ميغابايت</value></data>
+  <data name="PhotoFile_Empty"><value>ملف الصورة لا يمكن أن يكون فارغاً</value></data>
+  <data name="DocFile_SizeExceedsMax"><value>حجم ملف الوثيقة لا يمكن أن يتجاوز {0} ميغابايت</value></data>
+  <data name="CancellationReason_Required"><value>سبب الإلغاء مطلوب.</value></data>
+  <data name="Reason_MaxLength500"><value>السبب يجب ألا يتجاوز 500 حرف.</value></data>
+  <data name="RevertReason_Required"><value>سبب الإرجاع إلى المسودة مطلوب.</value></data>
+  <data name="EvidenceType_Invalid"><value>نوع المستند غير صالح</value></data>
+
+  <!-- ── Relations &amp; Claims ─────────────────────────────────── -->
+  <data name="RelationType_Invalid"><value>نوع العلاقة غير صالح</value></data>
+  <data name="RelationType_InvalidWithValues"><value>نوع العلاقة غير صالح. القيم الصالحة: مالك، شاغل، مستأجر، ضيف، وارث، أخرى</value></data>
+  <data name="RelationType_InvalidClaim"><value>نوع العلاقة غير صالح. مالك=1، شاغل=2، مستأجر=3، ضيف=4، وارث=5، أخرى=99.</value></data>
+  <data name="OwnershipShare_Required"><value>حصة الملكية مطلوبة لنوع العلاقة "مالك"</value></data>
+  <data name="OwnershipShare_GreaterThanZero"><value>حصة الملكية يجب أن تكون أكبر من 0</value></data>
+  <data name="OwnershipShare_Max2400"><value>حصة الملكية لا يمكن أن تتجاوز 2400</value></data>
+  <data name="ContractDetails_MaxLength1000"><value>تفاصيل العقد يجب ألا تتجاوز 1000 حرف</value></data>
+  <data name="TenureContractType_Invalid"><value>نوع عقد الحيازة غير صالح.</value></data>
+  <data name="TenureContractDetails_MaxLength1000"><value>تفاصيل عقد الحيازة يجب ألا تتجاوز 1000 حرف</value></data>
+  <data name="EvidenceIdNotEmpty"><value>معرف المستند يجب ألا يكون فارغاً</value></data>
+  <data name="EvidenceRelationIdNotEmpty"><value>معرف علاقة المستند يجب ألا يكون فارغاً</value></data>
+  <data name="ClaimReason_Required"><value>سبب التعديل مطلوب لأغراض التدقيق</value></data>
+  <data name="ClaimReason_MinLength10"><value>السبب يجب أن يكون 10 أحرف على الأقل</value></data>
+  <data name="ClaimReason_MaxLength500"><value>السبب يجب ألا يتجاوز 500 حرف</value></data>
+  <data name="EvidenceDescription_Required"><value>وصف المستند مطلوب</value></data>
+
+  <!-- ── Conflict ───────────────────────────────────────────────── -->
+  <data name="EscalationReason_Required"><value>سبب التصعيد مطلوب.</value></data>
+  <data name="EscalationReason_MaxLength2000"><value>سبب التصعيد يجب ألا يتجاوز 2000 حرف.</value></data>
+  <data name="JustificationReason_RequiredKeepSeparate"><value>سبب التبرير مطلوب لقرارات الإبقاء منفصلين.</value></data>
+  <data name="JustificationReason_RequiredMerge"><value>سبب التبرير مطلوب لقرارات الدمج.</value></data>
+  <data name="ResolutionReason_Required"><value>سبب الحل مطلوب.</value></data>
+  <data name="ResolutionReason_MaxLength2000"><value>سبب الحل يجب ألا يتجاوز 2000 حرف.</value></data>
+  <data name="ResolutionNotes_MaxLength4000"><value>ملاحظات الحل يجب ألا تتجاوز 4000 حرف.</value></data>
+  <data name="ConflictAction_Invalid"><value>الإجراء يجب أن يكون أحد: {0}.</value></data>
+  <data name="Reason_MaxLength2000"><value>السبب يجب ألا يتجاوز 2000 حرف.</value></data>
+
+  <!-- ── Import ────────────────────────────────────────────────── -->
+  <data name="UhcFile_Required"><value>الملف مطلوب (حزمة .uhc)</value></data>
+  <data name="FileName_Required_Import"><value>اسم الملف مطلوب</value></data>
+  <data name="UhcFile_ExtensionOnly"><value>يُقبل فقط ملفات حزمة .uhc</value></data>
+  <data name="File_CannotBeEmpty"><value>الملف لا يمكن أن يكون فارغاً</value></data>
+  <data name="ImportMethod_Required"><value>طريقة الاستيراد مطلوبة</value></data>
+  <data name="ImportMethod_Invalid"><value>طريقة الاستيراد يجب أن تكون Manual أو NetworkSync أو WatchedFolder أو Sync</value></data>
+  <data name="StagingRecordIds_Required"><value>معرفات سجلات التدريج مطلوبة عند عدم الموافقة على جميع السجلات الصالحة.</value></data>
+  <data name="StagingRecordIds_AtLeastOne"><value>يجب تحديد معرف سجل تدريج واحد على الأقل.</value></data>
+  <data name="StagingRecordId_ValidGuid"><value>كل معرف سجل تدريج يجب أن يكون GUID صالح.</value></data>
+  <data name="CancellationReason_Required_Import"><value>سبب الإلغاء مطلوب.</value></data>
+  <data name="CancellationReason_MaxLength1000"><value>سبب الإلغاء يجب ألا يتجاوز 1000 حرف.</value></data>
+  <data name="QuarantineReason_Required"><value>سبب الحجر مطلوب.</value></data>
+  <data name="QuarantineReason_MaxLength1000"><value>سبب الحجر يجب ألا يتجاوز 1000 حرف.</value></data>
+  <data name="ResetReason_Required"><value>سبب إعادة التعيين مطلوب لسجل التدقيق.</value></data>
+  <data name="ResetReason_MaxLength500"><value>السبب لا يمكن أن يتجاوز 500 حرف.</value></data>
+
+  <!-- ── BuildingAssignments ────────────────────────────────────── -->
+  <data name="FieldCollectorId_Required"><value>معرف جامع البيانات الميداني مطلوب</value></data>
+  <data name="Assignment_AtLeastOneBuilding"><value>يجب تحديد بناء واحد على الأقل للتكليف</value></data>
+  <data name="Assignment_Max100Buildings"><value>لا يمكن تكليف أكثر من 100 بناء في وقت واحد</value></data>
+  <data name="RevisitReason_Required"><value>سبب إعادة الزيارة مطلوب عند تحديد وحدات عقارية لإعادة الزيارة</value></data>
+  <data name="Revisit_Max50Units"><value>لا يمكن تحديد أكثر من 50 وحدة عقارية لإعادة الزيارة</value></data>
+  <data name="Priority_Invalid"><value>الأولوية يجب أن تكون عادية أو عالية أو عاجلة</value></data>
+  <data name="TargetDate_MustBeFuture"><value>تاريخ الإنجاز المستهدف يجب أن يكون في المستقبل</value></data>
+  <data name="AssignmentNotes_MaxLength2000"><value>ملاحظات التكليف لا يمكن أن تتجاوز 2000 حرف</value></data>
+  <data name="CancellationReason_Assignment_Required"><value>سبب الإلغاء مطلوب</value></data>
+  <data name="CancellationReason_Assignment_MaxLength1000"><value>سبب الإلغاء لا يمكن أن يتجاوز 1000 حرف</value></data>
+
+  <!-- ── Sync ───────────────────────────────────────────────────── -->
+  <data name="SyncSessionId_Required"><value>معرف جلسة المزامنة مطلوب.</value></data>
+  <data name="AssignmentIds_NotNull"><value>معرفات التكليفات يجب ألا تكون فارغة.</value></data>
+  <data name="AssignmentIds_AtLeastOne"><value>يجب توفير معرف تكليف واحد على الأقل.</value></data>
+  <data name="AssignmentIds_MaxCount"><value>الحد الأقصى {0} معرف تكليف يمكن الإقرار بها لكل طلب.</value></data>
+  <data name="AssignmentId_ValidGuid"><value>كل معرف تكليف يجب أن يكون GUID صالح وغير فارغ.</value></data>
+
+  <!-- ── Vocabularies ───────────────────────────────────────────── -->
+  <data name="VocabName_Required"><value>اسم القاموس مطلوب</value></data>
+  <data name="VocabName_MaxLength100"><value>اسم القاموس يجب ألا يتجاوز 100 حرف</value></data>
+  <data name="VocabName_InvalidChars"><value>اسم القاموس يجب أن يبدأ بحرف ويحتوي فقط على أحرف وأرقام وشرطات سفلية</value></data>
+  <data name="VocabDisplayNameAr_Required"><value>الاسم المعروض بالعربية مطلوب</value></data>
+  <data name="VocabDisplayNameAr_MaxLength200"><value>الاسم المعروض بالعربية يجب ألا يتجاوز 200 حرف</value></data>
+  <data name="VocabDisplayNameEn_MaxLength200"><value>الاسم المعروض بالإنجليزية يجب ألا يتجاوز 200 حرف</value></data>
+  <data name="VocabCategory_MaxLength100"><value>الفئة يجب ألا تتجاوز 100 حرف</value></data>
+  <data name="VocabValues_AtLeastOne"><value>مطلوب قيمة واحدة للقاموس على الأقل</value></data>
+  <data name="VocabValueCode_NonNegative"><value>رمز القيمة يجب أن يكون غير سالب</value></data>
+  <data name="VocabValueLabelAr_Required"><value>التسمية بالعربية مطلوبة لكل قيمة</value></data>
+  <data name="VocabValues_UniqueCodes"><value>قيم القاموس يجب أن تكون بأرقام فريدة</value></data>
+  <data name="VocabVersionType_Required"><value>نوع الإصدار مطلوب</value></data>
+  <data name="VocabVersionType_Invalid"><value>نوع الإصدار يجب أن يكون 'minor' أو 'major' أو 'patch'</value></data>
+  <data name="VocabChangeLog_Required"><value>سجل التغييرات مطلوب</value></data>
+  <data name="VocabChangeLog_MaxLength2000"><value>سجل التغييرات يجب ألا يتجاوز 2000 حرف</value></data>
+  <data name="VocabImport_AtLeastOne"><value>يجب توفير قاموس واحد على الأقل للاستيراد.</value></data>
+  <data name="VocabImport_DuplicateNames"><value>أسماء قواميس مكررة في دفعة الاستيراد.</value></data>
+  <data name="VocabValueLabelAr_MaxLength200"><value>التسمية بالعربية يجب ألا تتجاوز 200 حرف.</value></data>
+  <data name="VocabValueLabelEn_MaxLength200"><value>التسمية بالإنجليزية يجب ألا تتجاوز 200 حرف.</value></data>
+  <data name="VocabDisplayOrder_NonNegative"><value>ترتيب العرض يجب أن يكون غير سالب.</value></data>
+
+  <!-- ── Landmarks &amp; Streets ───────────────────────────────── -->
+  <data name="Identifier_PositiveInteger"><value>المعرف يجب أن يكون عدداً صحيحاً موجباً</value></data>
+  <data name="LandmarkName_Required"><value>اسم المعلم مطلوب</value></data>
+  <data name="LandmarkName_MaxLength500"><value>اسم المعلم لا يمكن أن يتجاوز 500 حرف</value></data>
+  <data name="LandmarkName_MaxLength200"><value>اسم المعلم لا يمكن أن يتجاوز 200 حرف.</value></data>
+  <data name="LandmarkType_Range1to10"><value>نوع المعلم يجب أن يكون بين 1 و10</value></data>
+  <data name="LandmarkGeometry_Required"><value>هندسة الموقع (نقطة WKT) مطلوبة لتسجيل المعلم</value></data>
+  <data name="Landmark_AtLeastOne"><value>مطلوب معلم واحد على الأقل.</value></data>
+  <data name="SvgContent_Required"><value>محتوى SVG مطلوب.</value></data>
+  <data name="SvgContent_InvalidTag"><value>المحتوى يجب أن يكون SVG صالح (يجب أن يحتوي على وسم svg).</value></data>
+  <data name="SvgContent_Max100KB"><value>محتوى SVG يجب ألا يتجاوز 100 كيلوبايت.</value></data>
+  <data name="StreetName_Required"><value>اسم الشارع مطلوب</value></data>
+  <data name="StreetName_MaxLength500"><value>اسم الشارع لا يمكن أن يتجاوز 500 حرف</value></data>
+  <data name="StreetName_MaxLength200"><value>اسم الشارع لا يمكن أن يتجاوز 200 حرف.</value></data>
+  <data name="StreetGeometry_Required"><value>هندسة الشارع (خط WKT) مطلوبة لتسجيل الشارع</value></data>
+  <data name="Street_AtLeastOne"><value>مطلوب شارع واحد على الأقل.</value></data>
+  <data name="StreetGeometry_BulkRequired"><value>الهندسة (خط WKT) مطلوبة.</value></data>
+  <data name="LandmarkGeometry_BulkRequired"><value>هندسة الموقع (نقطة WKT) مطلوبة.</value></data>
+
+  <!-- ── AdminDivisions &amp; SecuritySettings ──────────────────── -->
+  <data name="JsonContent_Required"><value>محتوى JSON مطلوب.</value></data>
+  <data name="JsonContent_InvalidFormat"><value>المحتوى يجب أن يكون JSON صالح (يجب أن يبدأ بـ [ أو {).</value></data>
+  <data name="ImportedByUserId_Required"><value>معرف المستخدم المستورد مطلوب.</value></data>
+  <data name="PasswordPolicy_MinLength"><value>الحد الأدنى لطول كلمة المرور يجب أن يكون بين {0} و{1}.</value></data>
+  <data name="PasswordPolicy_ExpiryDays"><value>انتهاء صلاحية كلمة المرور يجب أن يكون بين 0 (معطّل) و{0} يوم.</value></data>
+  <data name="PasswordPolicy_ReuseHistory"><value>سجل إعادة استخدام كلمة المرور يجب أن يكون بين 0 (معطّل) و{0}.</value></data>
+  <data name="PasswordPolicy_MinLengthNoComplexity"><value>عند عدم تعيين متطلبات التعقيد، الحد الأدنى لطول كلمة المرور يجب أن يكون 12 حرف على الأقل.</value></data>
+  <data name="Session_Timeout"><value>مهلة الجلسة يجب أن تكون بين {0} و{1} دقيقة.</value></data>
+  <data name="Session_MaxFailedAttempts"><value>الحد الأقصى لمحاولات تسجيل الدخول الفاشلة يجب أن يكون بين {0} و{1}.</value></data>
+  <data name="Session_LockoutDuration"><value>مدة الحظر يجب أن تكون بين {0} و{1} دقيقة.</value></data>
+  <data name="Auth_AtLeastOneMethod"><value>يجب تفعيل طريقة مصادقة واحدة على الأقل. تعطيل جميع الطرق سيؤدي إلى حظر جميع المستخدمين.</value></data>
+  <data name="IpAllowlist_NotEmpty"><value>قائمة IP المسموح بها لا يمكن أن تكون فارغة عند تفعيل التطبيق. سيؤدي ذلك إلى حظر جميع وصول المسؤولين.</value></data>
+  <data name="IpAllowlist_InvalidEntries"><value>قائمة IP المسموح بها تحتوي على عناوين IP أو تدوين CIDR غير صالحة.</value></data>
+  <data name="IpDenylist_InvalidEntries"><value>قائمة IP المحظورة تحتوي على عناوين IP أو تدوين CIDR غير صالحة.</value></data>
+  <data name="AllowedEnv_NotEmpty"><value>البيئات المسموح بها لا يمكن أن تكون فارغة عند تفعيل القيود.</value></data>
+  <data name="ChangeDescription_MaxLength1000"><value>وصف التغيير لا يمكن أن يتجاوز 1000 حرف.</value></data>
+
+  <!-- ── Evidence (standalone) ─────────────────────────────────── -->
+  <data name="EvidenceType_NotRecognized"><value>قيمة نوع المستند ليست عضواً معترفاً به في التعداد</value></data>
+
+</root>

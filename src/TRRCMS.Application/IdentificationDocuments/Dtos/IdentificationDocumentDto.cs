@@ -7,8 +7,8 @@ public class IdentificationDocumentDto
 {
     public Guid Id { get; set; }
     public Guid PersonId { get; set; }
-    public int DocumentType { get; set; }
-    public string Description { get; set; } = string.Empty;
+    public int? DocumentType { get; set; }
+    public string? Description { get; set; }
 
     // File info
     public string OriginalFileName { get; set; } = string.Empty;

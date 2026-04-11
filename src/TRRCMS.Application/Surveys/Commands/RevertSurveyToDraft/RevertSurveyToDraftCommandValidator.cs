@@ -1,16 +1,19 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Surveys.Commands.RevertSurveyToDraft;
 
-public class RevertSurveyToDraftCommandValidator : AbstractValidator<RevertSurveyToDraftCommand>
+public class RevertSurveyToDraftCommandValidator : LocalizedValidator<RevertSurveyToDraftCommand>
 {
-    public RevertSurveyToDraftCommandValidator()
+    public RevertSurveyToDraftCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
-            .NotEmpty().WithMessage("Survey ID is required.");
+            .NotEmpty().WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.Reason)
-            .NotEmpty().WithMessage("A reason for reverting to draft is required.")
-            .MaximumLength(500).WithMessage("Reason must not exceed 500 characters.");
+            .NotEmpty().WithMessage(L("RevertReason_Required"))
+            .MaximumLength(500).WithMessage(L("Reason_MaxLength500"));
     }
 }

@@ -4,78 +4,32 @@ using TRRCMS.Application.Households.Dtos;
 namespace TRRCMS.Application.Surveys.Commands.CreateHouseholdInSurvey;
 
 /// <summary>
-/// Command to create a household in the context of a field survey
-/// Matches frontend form: تسجيل الأسرة
+/// Command to create a household in the context of a survey (canonical v1.9 shape).
 /// </summary>
 public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
 {
-    /// <summary>
-    /// Survey ID this household is being created for (required)
-    /// </summary>
+    /// <summary>Survey ID this household is being created for (required)</summary>
     public Guid SurveyId { get; set; }
 
-    /// <summary>
-    /// Property unit ID (if not using survey's linked property unit)
-    /// </summary>
+    /// <summary>Property unit ID (if not using survey's linked property unit)</summary>
     public Guid? PropertyUnitId { get; set; }
 
-    /// <summary>
-    /// Total household size (عدد الأفراد) - required
-    /// </summary>
+    /// <summary>Total household size (عدد الأفراد) — required, 1–50</summary>
     public int HouseholdSize { get; set; }
 
-    /// <summary>
-    /// Notes/observations (ملاحظات)
-    /// </summary>
+    /// <summary>Notes/observations (ملاحظات)</summary>
     public string? Notes { get; set; }
 
-    /// <summary>
-    /// Occupancy type (نوع الإشغال) - Enum: 1=OwnerOccupied, 2=TenantOccupied, etc.
-    /// </summary>
-    public int? OccupancyType { get; set; }
-
-    /// <summary>
-    /// Occupancy nature (طبيعة الإشغال) - Enum: 1=LegalFormal, 2=Informal, 3=Customary, etc.
-    /// </summary>
+    /// <summary>Occupancy nature enum code</summary>
     public int? OccupancyNature { get; set; }
 
-    /// <summary>
-    /// Number of adult males (عدد البالغين الذكور)
-    /// </summary>
-    public int MaleCount { get; set; }
+    /// <summary>Date the household started occupying this unit (UTC)</summary>
+    public DateTime? OccupancyStartDate { get; set; }
 
-    /// <summary>
-    /// Number of adult females (عدد البالغين الإناث)
-    /// </summary>
-    public int FemaleCount { get; set; }
-
-    /// <summary>
-    /// Number of male children under 18 (عدد الأطفال الذكور - أقل من 18)
-    /// </summary>
-    public int MaleChildCount { get; set; }
-
-    /// <summary>
-    /// Number of female children under 18 (عدد الأطفال الإناث - أقل من 18)
-    /// </summary>
-    public int FemaleChildCount { get; set; }
-
-    /// <summary>
-    /// Number of male elderly over 65 (عدد كبار السن الذكور - أكثر من 65)
-    /// </summary>
-    public int MaleElderlyCount { get; set; }
-
-    /// <summary>
-    /// Number of female elderly over 65 (عدد كبار السن الإناث - أكثر من 65)
-    /// </summary>
-    public int FemaleElderlyCount { get; set; }
-
-    /// <summary>
-    /// Number of male persons with disabilities (عدد المعاقين الذكور)
-    /// </summary>
-    public int MaleDisabledCount { get; set; }
-
-    /// <summary>
-    /// Number of female persons with disabilities (عدد المعاقين الإناث)
-    /// </summary>
-    public int FemaleDisabledCount { get; set; }
+    public int? MaleCount { get; set; }
+    public int? FemaleCount { get; set; }
+    public int? AdultCount { get; set; }
+    public int? ChildCount { get; set; }
+    public int? ElderlyCount { get; set; }
+    public int? DisabledCount { get; set; }
 }

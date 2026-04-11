@@ -1,5 +1,8 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.PropertyUnits.Queries.GetAllPropertyUnits;
 
@@ -7,20 +10,20 @@ namespace TRRCMS.Application.PropertyUnits.Queries.GetAllPropertyUnits;
 /// Validator for GetAllPropertyUnitsQuery
 /// Validates filter parameters against vocabulary codes
 /// </summary>
-public class GetAllPropertyUnitsQueryValidator : AbstractValidator<GetAllPropertyUnitsQuery>
+public class GetAllPropertyUnitsQueryValidator : LocalizedValidator<GetAllPropertyUnitsQuery>
 {
-    public GetAllPropertyUnitsQueryValidator(IVocabularyValidationService vocabService)
+    public GetAllPropertyUnitsQueryValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         // Validate UnitType if provided
         RuleFor(x => x.UnitType)
             .Must(v => vocabService.IsValidCode("property_unit_type", v!.Value))
             .When(x => x.UnitType.HasValue)
-            .WithMessage("Invalid property unit type value");
+            .WithMessage(L("UnitType_Invalid"));
 
         // Validate Status if provided
         RuleFor(x => x.Status)
             .Must(v => vocabService.IsValidCode("property_unit_status", v!.Value))
             .When(x => x.Status.HasValue)
-            .WithMessage("Invalid property unit status value");
+            .WithMessage(L("UnitStatus_Invalid"));
     }
 }

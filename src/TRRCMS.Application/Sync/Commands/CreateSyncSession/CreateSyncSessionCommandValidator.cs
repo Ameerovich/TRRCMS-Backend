@@ -1,10 +1,13 @@
-﻿using FluentValidation;
+using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Sync.Commands.CreateSyncSession;
 
-public sealed class CreateSyncSessionCommandValidator : AbstractValidator<CreateSyncSessionCommand>
+public sealed class CreateSyncSessionCommandValidator : LocalizedValidator<CreateSyncSessionCommand>
 {
-    public CreateSyncSessionCommandValidator()
+    public CreateSyncSessionCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Data.FieldCollectorId).NotEmpty();
         RuleFor(x => x.Data.DeviceId).NotEmpty().MaximumLength(64);

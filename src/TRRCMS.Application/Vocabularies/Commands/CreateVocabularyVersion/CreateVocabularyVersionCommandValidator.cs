@@ -1,40 +1,43 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Vocabularies.Commands.CreateVocabularyVersion;
 
-public class CreateVocabularyVersionCommandValidator : AbstractValidator<CreateVocabularyVersionCommand>
+public class CreateVocabularyVersionCommandValidator : LocalizedValidator<CreateVocabularyVersionCommand>
 {
     private static readonly string[] ValidVersionTypes = { "minor", "major", "patch" };
 
-    public CreateVocabularyVersionCommandValidator()
+    public CreateVocabularyVersionCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.VocabularyId)
-            .NotEmpty().WithMessage("Vocabulary ID is required");
+            .NotEmpty().WithMessage(L("VocabularyId_Required"));
 
         RuleFor(x => x.VersionType)
-            .NotEmpty().WithMessage("Version type is required")
+            .NotEmpty().WithMessage(L("VocabVersionType_Required"))
             .Must(vt => ValidVersionTypes.Contains(vt.ToLowerInvariant()))
-            .WithMessage("Version type must be 'minor', 'major', or 'patch'")
+            .WithMessage(L("VocabVersionType_Invalid"))
             .When(x => !string.IsNullOrWhiteSpace(x.VersionType));
 
         RuleFor(x => x.ChangeLog)
-            .NotEmpty().WithMessage("Change log is required")
-            .MaximumLength(2000).WithMessage("Change log must not exceed 2000 characters");
+            .NotEmpty().WithMessage(L("VocabChangeLog_Required"))
+            .MaximumLength(2000).WithMessage(L("VocabChangeLog_MaxLength2000"));
 
         RuleFor(x => x.Values)
-            .NotEmpty().WithMessage("At least one vocabulary value is required");
+            .NotEmpty().WithMessage(L("VocabValues_AtLeastOne"));
 
         RuleForEach(x => x.Values).ChildRules(value =>
         {
             value.RuleFor(v => v.Code)
-                .GreaterThanOrEqualTo(0).WithMessage("Value code must be non-negative");
+                .GreaterThanOrEqualTo(0).WithMessage(L("VocabValueCode_NonNegative"));
 
             value.RuleFor(v => v.LabelArabic)
-                .NotEmpty().WithMessage("Arabic label is required for each value");
+                .NotEmpty().WithMessage(L("VocabValueLabelAr_Required"));
         });
 
         RuleFor(x => x.Values)
-            .Must(HaveUniqueCodes).WithMessage("Vocabulary values must have unique codes")
+            .Must(HaveUniqueCodes).WithMessage(L("VocabValues_UniqueCodes"))
             .When(x => x.Values is { Count: > 0 });
     }
 

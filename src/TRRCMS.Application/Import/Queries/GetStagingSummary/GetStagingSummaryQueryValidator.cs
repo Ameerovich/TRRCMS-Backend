@@ -1,13 +1,16 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Import.Queries.GetStagingSummary;
 
-public class GetStagingSummaryQueryValidator : AbstractValidator<GetStagingSummaryQuery>
+public class GetStagingSummaryQueryValidator : LocalizedValidator<GetStagingSummaryQuery>
 {
-    public GetStagingSummaryQueryValidator()
+    public GetStagingSummaryQueryValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ImportPackageId)
             .NotEmpty()
-            .WithMessage("Import package ID is required");
+            .WithMessage(L("ImportPackageId_Required"));
     }
 }

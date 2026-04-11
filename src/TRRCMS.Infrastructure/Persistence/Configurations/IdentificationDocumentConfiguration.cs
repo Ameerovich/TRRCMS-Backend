@@ -13,8 +13,8 @@ public class IdentificationDocumentConfiguration : IEntityTypeConfiguration<Iden
         builder.HasKey(d => d.Id);
 
         builder.Property(d => d.PersonId).IsRequired();
-        builder.Property(d => d.DocumentType).IsRequired();
-        builder.Property(d => d.Description).IsRequired().HasMaxLength(500);
+        builder.Property(d => d.DocumentType);
+        builder.Property(d => d.Description).HasMaxLength(500);
         builder.Property(d => d.OriginalFileName).IsRequired().HasMaxLength(255);
         builder.Property(d => d.FilePath).IsRequired().HasMaxLength(500);
         builder.Property(d => d.FileSizeBytes).IsRequired();

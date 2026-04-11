@@ -1,12 +1,15 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Vocabularies.Commands.ActivateVocabulary;
 
-public class ActivateVocabularyCommandValidator : AbstractValidator<ActivateVocabularyCommand>
+public class ActivateVocabularyCommandValidator : LocalizedValidator<ActivateVocabularyCommand>
 {
-    public ActivateVocabularyCommandValidator()
+    public ActivateVocabularyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("Vocabulary ID is required");
+            .NotEmpty().WithMessage(L("VocabularyId_Required"));
     }
 }

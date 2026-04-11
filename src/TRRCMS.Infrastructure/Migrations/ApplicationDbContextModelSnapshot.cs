@@ -1497,11 +1497,13 @@ namespace TRRCMS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("ChildCount")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int?>("AdultCount")
                         .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("Number of children (2-12 years) - legacy total");
+                        .HasComment("عدد البالغين - Number of adults");
+
+                    b.Property<int?>("ChildCount")
+                        .HasColumnType("integer")
+                        .HasComment("عدد الأطفال - Number of children");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -1519,40 +1521,20 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasComment("User who deleted this record");
 
-                    b.Property<int>("ElderlyCount")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int?>("DisabledCount")
                         .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("Number of elderly (65+ years) - legacy total");
+                        .HasComment("عدد ذوي الإعاقة - Number of persons with disabilities");
 
-                    b.Property<int>("FemaleChildCount")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int?>("ElderlyCount")
                         .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد الأطفال الإناث (أقل من 18) - Number of female children under 18");
+                        .HasComment("عدد كبار السن - Number of elderly");
 
-                    b.Property<int>("FemaleCount")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int?>("FemaleCount")
                         .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد البالغين الإناث - Number of adult females");
-
-                    b.Property<int>("FemaleDisabledCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد المعاقين الإناث - Number of female persons with disabilities");
-
-                    b.Property<int>("FemaleElderlyCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد كبار السن الإناث (أكثر من 65) - Number of female elderly over 65");
+                        .HasComment("عدد الإناث - Total females (all ages)");
 
                     b.Property<int>("HouseholdSize")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(0)
                         .HasComment("عدد الأفراد - Total household size");
 
                     b.Property<bool>("IsDeleted")
@@ -1569,29 +1551,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasComment("User who last modified this record");
 
-                    b.Property<int>("MaleChildCount")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int?>("MaleCount")
                         .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد الأطفال الذكور (أقل من 18) - Number of male children under 18");
-
-                    b.Property<int>("MaleCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد البالغين الذكور - Number of adult males");
-
-                    b.Property<int>("MaleDisabledCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد المعاقين الذكور - Number of male persons with disabilities");
-
-                    b.Property<int>("MaleElderlyCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("عدد كبار السن الذكور (أكثر من 65) - Number of male elderly over 65");
+                        .HasComment("عدد الذكور - Total males (all ages)");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
@@ -1602,15 +1564,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasComment("طبيعة الإشغال - Occupancy nature enum stored as integer");
 
-                    b.Property<int?>("OccupancyType")
-                        .HasColumnType("integer")
-                        .HasComment("نوع الإشغال - Occupancy type enum stored as integer");
-
-                    b.Property<int>("PersonsWithDisabilitiesCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasComment("Total persons with disabilities - legacy total");
+                    b.Property<DateTime?>("OccupancyStartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("تاريخ بداية الإشغال - Date the household started occupying this unit (UTC)");
 
                     b.Property<Guid>("PropertyUnitId")
                         .HasColumnType("uuid")
@@ -1652,7 +1608,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -1666,7 +1621,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("DocumentType")
+                    b.Property<int?>("DocumentType")
                         .HasColumnType("integer");
 
                     b.Property<string>("FileHash")
@@ -2974,7 +2929,7 @@ namespace TRRCMS.Infrastructure.Migrations
 
                     b.Property<decimal?>("OwnershipShare")
                         .HasColumnType("numeric")
-                        .HasComment("Ownership percentage (0-100)");
+                        .HasComment("Ownership share out of 2400");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -3238,38 +3193,23 @@ namespace TRRCMS.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<int>("ChildCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    b.Property<int?>("AdultCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ChildCount")
+                        .HasColumnType("integer");
 
                     b.Property<Guid?>("CommittedEntityId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("ElderlyCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    b.Property<int?>("DisabledCount")
+                        .HasColumnType("integer");
 
-                    b.Property<int>("FemaleChildCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    b.Property<int?>("ElderlyCount")
+                        .HasColumnType("integer");
 
-                    b.Property<int>("FemaleCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("FemaleDisabledCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("FemaleElderlyCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    b.Property<int?>("FemaleCount")
+                        .HasColumnType("integer");
 
                     b.Property<int>("HouseholdSize")
                         .HasColumnType("integer");
@@ -3282,25 +3222,8 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
-                    b.Property<int>("MaleChildCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("MaleCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("MaleDisabledCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("MaleElderlyCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    b.Property<int?>("MaleCount")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
@@ -3310,9 +3233,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasComment("OccupancyNature enum");
 
-                    b.Property<int?>("OccupancyType")
-                        .HasColumnType("integer")
-                        .HasComment("OccupancyType enum");
+                    b.Property<DateTime?>("OccupancyStartDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasComment("Date the household started occupying this unit (UTC)");
 
                     b.Property<Guid>("OriginalEntityId")
                         .HasColumnType("uuid");
@@ -3320,11 +3243,6 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<Guid>("OriginalPropertyUnitId")
                         .HasColumnType("uuid")
                         .HasComment("Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits");
-
-                    b.Property<int>("PersonsWithDisabilitiesCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -3377,7 +3295,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
@@ -3391,7 +3308,7 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<int>("DocumentType")
+                    b.Property<int?>("DocumentType")
                         .HasColumnType("integer");
 
                     b.Property<string>("FileHash")
@@ -3654,8 +3571,9 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasComment("Original PropertyUnit UUID from .uhc — not a FK to production PropertyUnits");
 
                     b.Property<decimal?>("OwnershipShare")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasComment("Ownership share out of 2400 (traditional inheritance denominator); matches production precision");
 
                     b.Property<int>("RelationType")
                         .HasColumnType("integer");

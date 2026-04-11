@@ -73,7 +73,7 @@ public class StagingClaimConfiguration : IEntityTypeConfiguration<StagingClaim>
         builder.Property(c => c.TenureContractType);
 
         builder.Property(c => c.OwnershipShare)
-            .HasComment("Ownership percentage (0-100)");
+            .HasComment("Ownership share out of 2400");
 
         builder.Property(c => c.ClaimDescription)
             .HasMaxLength(4000);

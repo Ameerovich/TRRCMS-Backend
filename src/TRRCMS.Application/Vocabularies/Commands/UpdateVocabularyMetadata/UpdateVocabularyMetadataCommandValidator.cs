@@ -1,28 +1,31 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Vocabularies.Commands.UpdateVocabularyMetadata;
 
-public class UpdateVocabularyMetadataCommandValidator : AbstractValidator<UpdateVocabularyMetadataCommand>
+public class UpdateVocabularyMetadataCommandValidator : LocalizedValidator<UpdateVocabularyMetadataCommand>
 {
-    public UpdateVocabularyMetadataCommandValidator()
+    public UpdateVocabularyMetadataCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("Vocabulary ID is required");
+            .NotEmpty().WithMessage(L("VocabularyId_Required"));
 
         RuleFor(x => x.DisplayNameArabic)
-            .NotEmpty().WithMessage("Arabic display name is required")
-            .MaximumLength(200).WithMessage("Arabic display name must not exceed 200 characters");
+            .NotEmpty().WithMessage(L("VocabDisplayNameAr_Required"))
+            .MaximumLength(200).WithMessage(L("VocabDisplayNameAr_MaxLength200"));
 
         RuleFor(x => x.DisplayNameEnglish)
-            .MaximumLength(200).WithMessage("English display name must not exceed 200 characters")
+            .MaximumLength(200).WithMessage(L("VocabDisplayNameEn_MaxLength200"))
             .When(x => x.DisplayNameEnglish is not null);
 
         RuleFor(x => x.Description)
-            .MaximumLength(2000).WithMessage("Description must not exceed 2000 characters")
+            .MaximumLength(2000).WithMessage(L("Description_MaxLength2000"))
             .When(x => x.Description is not null);
 
         RuleFor(x => x.Category)
-            .MaximumLength(100).WithMessage("Category must not exceed 100 characters")
+            .MaximumLength(100).WithMessage(L("VocabCategory_MaxLength100"))
             .When(x => x.Category is not null);
     }
 }

@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 
@@ -6,7 +9,7 @@ namespace TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 /// Validator for UploadIdentificationDocumentCommand
 /// Enhanced with file size limits and allowed MIME types for ID documents
 /// </summary>
-public class UploadIdentificationDocumentCommandValidator : AbstractValidator<UploadIdentificationDocumentCommand>
+public class UploadIdentificationDocumentCommandValidator : LocalizedValidator<UploadIdentificationDocumentCommand>
 {
     /// <summary>
     /// Maximum document file size: 15 MB
@@ -19,65 +22,65 @@ public class UploadIdentificationDocumentCommandValidator : AbstractValidator<Up
         "application/pdf"
     };
 
-    public UploadIdentificationDocumentCommandValidator()
+    public UploadIdentificationDocumentCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.PersonId)
             .NotEmpty()
-            .WithMessage("Person ID is required");
+            .WithMessage(L("PersonId_Required"));
 
         RuleFor(x => x.File)
             .NotNull()
-            .WithMessage("File is required");
+            .WithMessage(L("File_Required"));
 
         // File size validation
         RuleFor(x => x.File)
             .Must(file => file.Length <= MaxFileSizeBytes)
             .When(x => x.File != null)
-            .WithMessage($"Document file size cannot exceed {MaxFileSizeBytes / (1024 * 1024)} MB");
+            .WithMessage(L("DocFile_SizeExceedsMax", MaxFileSizeBytes / (1024 * 1024)));
 
         RuleFor(x => x.File)
             .Must(file => file.Length > 0)
             .When(x => x.File != null)
-            .WithMessage("Document file cannot be empty");
+            .WithMessage(L("File_Empty"));
 
         // MIME type validation - images and PDFs for ID documents
         RuleFor(x => x.File)
             .Must(file => AllowedMimeTypes.Contains(file.ContentType.ToLowerInvariant()))
             .When(x => x.File != null)
-            .WithMessage("Only image files and PDFs are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF)");
+            .WithMessage(L("File_TypeNotAllowed_ImagePdf"));
 
         RuleFor(x => x.Description)
             .MaximumLength(500)
             .When(x => !string.IsNullOrEmpty(x.Description))
-            .WithMessage("Description cannot exceed 500 characters");
+            .WithMessage(L("Description_MaxLength500"));
 
         RuleFor(x => x.DocumentExpiryDate)
             .GreaterThan(x => x.DocumentIssuedDate)
             .When(x => x.DocumentIssuedDate.HasValue && x.DocumentExpiryDate.HasValue)
-            .WithMessage("Expiry date must be after issue date");
+            .WithMessage(L("ExpiryDate_AfterIssue"));
 
         RuleFor(x => x.DocumentIssuedDate)
             .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
             .When(x => x.DocumentIssuedDate.HasValue)
-            .WithMessage("Document issue date cannot be in the future");
+            .WithMessage(L("IssueDate_NotFuture"));
 
         RuleFor(x => x.IssuingAuthority)
             .MaximumLength(200)
             .When(x => !string.IsNullOrWhiteSpace(x.IssuingAuthority))
-            .WithMessage("Issuing authority cannot exceed 200 characters");
+            .WithMessage(L("IssuingAuthority_MaxLength200"));
 
         RuleFor(x => x.DocumentReferenceNumber)
             .MaximumLength(100)
             .When(x => !string.IsNullOrWhiteSpace(x.DocumentReferenceNumber))
-            .WithMessage("Document reference number cannot exceed 100 characters");
+            .WithMessage(L("DocumentRef_MaxLength100"));
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))
-            .WithMessage("Notes cannot exceed 1000 characters");
+            .WithMessage(L("Notes_MaxLength1000"));
     }
 }

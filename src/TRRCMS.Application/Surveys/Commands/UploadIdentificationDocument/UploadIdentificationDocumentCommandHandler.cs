@@ -103,8 +103,8 @@ public class UploadIdentificationDocumentCommandHandler : IRequestHandler<Upload
         var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
 
         var idDoc = IdentificationDocument.Create(
-            documentType: DocumentType.PersonalIdPhoto,
-            description: request.Description ?? request.File.FileName,
+            documentType: request.DocumentType.HasValue ? (DocumentType)request.DocumentType.Value : (DocumentType?)null,
+            description: request.Description,
             originalFileName: request.File.FileName,
             filePath: filePath,
             fileSizeBytes: request.File.Length,

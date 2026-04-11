@@ -1,5 +1,8 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Evidences.Commands.CreateEvidence;
 
@@ -7,7 +10,7 @@ namespace TRRCMS.Application.Evidences.Commands.CreateEvidence;
 /// Validator for CreateEvidenceCommand
 /// Validates evidence creation with file metadata and linked entity rules
 /// </summary>
-public class CreateEvidenceCommandValidator : AbstractValidator<CreateEvidenceCommand>
+public class CreateEvidenceCommandValidator : LocalizedValidator<CreateEvidenceCommand>
 {
     /// <summary>
     /// Maximum file size: 25 MB
@@ -22,71 +25,71 @@ public class CreateEvidenceCommandValidator : AbstractValidator<CreateEvidenceCo
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     };
 
-    public CreateEvidenceCommandValidator(IVocabularyValidationService vocabService)
+    public CreateEvidenceCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         // ==================== REQUIRED FIELDS ====================
 
         RuleFor(x => x.EvidenceType)
-            .IsInEnum().WithMessage("Evidence type value is not a recognized enum member")
+            .IsInEnum().WithMessage(L("EvidenceType_NotRecognized"))
             .Must(v => vocabService.IsValidCode("evidence_type", (int)v))
-            .WithMessage("Invalid evidence type");
+            .WithMessage(L("EvidenceType_NotRecognized"));
 
         RuleFor(x => x.Description)
-            .NotEmpty().WithMessage("Description is required")
-            .MaximumLength(500).WithMessage("Description cannot exceed 500 characters");
+            .NotEmpty().WithMessage(L("Description_Required"))
+            .MaximumLength(500).WithMessage(L("Description_MaxLength500"));
 
         RuleFor(x => x.OriginalFileName)
-            .NotEmpty().WithMessage("Original file name is required")
-            .MaximumLength(255).WithMessage("File name cannot exceed 255 characters");
+            .NotEmpty().WithMessage(L("FileName_Required"))
+            .MaximumLength(255).WithMessage(L("FileName_MaxLength255"));
 
         RuleFor(x => x.FilePath)
-            .NotEmpty().WithMessage("File path is required")
-            .MaximumLength(1000).WithMessage("File path cannot exceed 1000 characters");
+            .NotEmpty().WithMessage(L("FilePath_Required"))
+            .MaximumLength(1000).WithMessage(L("FilePath_MaxLength1000"));
 
         RuleFor(x => x.FileSizeBytes)
-            .GreaterThan(0).WithMessage("File size must be greater than 0")
+            .GreaterThan(0).WithMessage(L("File_SizeGreaterThanZero"))
             .LessThanOrEqualTo(MaxFileSizeBytes)
-            .WithMessage($"File size cannot exceed {MaxFileSizeBytes / (1024 * 1024)} MB");
+            .WithMessage(L("File_SizeExceedsMax", MaxFileSizeBytes / (1024 * 1024)));
 
         RuleFor(x => x.MimeType)
-            .NotEmpty().WithMessage("MIME type is required")
+            .NotEmpty().WithMessage(L("MimeType_Required"))
             .Must(mime => AllowedMimeTypes.Contains(mime.ToLowerInvariant()))
-            .WithMessage("File type not allowed. Accepted types: JPEG, PNG, GIF, WebP, TIFF, PDF, DOC, DOCX");
+            .WithMessage(L("File_TypeNotAllowed_Evidence"));
 
         // ==================== HASH VALIDATION ====================
 
         RuleFor(x => x.FileHash)
             .Matches(@"^[a-fA-F0-9]{64}$")
             .When(x => !string.IsNullOrWhiteSpace(x.FileHash))
-            .WithMessage("File hash must be a valid SHA-256 hex string (64 characters)");
+            .WithMessage(L("FileHash_InvalidSha256"));
 
         // ==================== DATE VALIDATIONS ====================
 
         RuleFor(x => x.DocumentIssuedDate)
             .LessThanOrEqualTo(DateTime.UtcNow.AddDays(1))
             .When(x => x.DocumentIssuedDate.HasValue)
-            .WithMessage("Document issue date cannot be in the future");
+            .WithMessage(L("IssueDate_NotFuture"));
 
         RuleFor(x => x.DocumentExpiryDate)
             .GreaterThan(x => x.DocumentIssuedDate)
             .When(x => x.DocumentIssuedDate.HasValue && x.DocumentExpiryDate.HasValue)
-            .WithMessage("Expiry date must be after issue date");
+            .WithMessage(L("ExpiryDate_AfterIssue"));
 
         // ==================== OPTIONAL TEXT FIELDS ====================
 
         RuleFor(x => x.IssuingAuthority)
             .MaximumLength(200)
             .When(x => !string.IsNullOrWhiteSpace(x.IssuingAuthority))
-            .WithMessage("Issuing authority cannot exceed 200 characters");
+            .WithMessage(L("IssuingAuthority_MaxLength200"));
 
         RuleFor(x => x.DocumentReferenceNumber)
             .MaximumLength(100)
             .When(x => !string.IsNullOrWhiteSpace(x.DocumentReferenceNumber))
-            .WithMessage("Document reference number cannot exceed 100 characters");
+            .WithMessage(L("DocumentRef_MaxLength100"));
 
         RuleFor(x => x.Notes)
             .MaximumLength(1000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))
-            .WithMessage("Notes cannot exceed 1000 characters");
+            .WithMessage(L("Notes_MaxLength1000"));
     }
 }

@@ -1,29 +1,32 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Surveys.Commands.LinkEvidenceToRelation;
 
 /// <summary>
 /// Validator for LinkEvidenceToRelationCommand
 /// </summary>
-public class LinkEvidenceToRelationCommandValidator : AbstractValidator<LinkEvidenceToRelationCommand>
+public class LinkEvidenceToRelationCommandValidator : LocalizedValidator<LinkEvidenceToRelationCommand>
 {
-    public LinkEvidenceToRelationCommandValidator()
+    public LinkEvidenceToRelationCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.EvidenceId)
             .NotEmpty()
-            .WithMessage("Evidence ID is required");
+            .WithMessage(L("EvidenceId_Required"));
 
         RuleFor(x => x.PersonPropertyRelationId)
             .NotEmpty()
-            .WithMessage("Person-property relation ID is required");
+            .WithMessage(L("PersonPropertyRelationId_Required"));
 
         RuleFor(x => x.LinkReason)
             .MaximumLength(500)
             .When(x => !string.IsNullOrWhiteSpace(x.LinkReason))
-            .WithMessage("Link reason cannot exceed 500 characters");
+            .WithMessage(L("LinkReason_MaxLength500"));
     }
 }

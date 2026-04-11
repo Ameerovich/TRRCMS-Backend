@@ -1,13 +1,16 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Persons.Commands.DeletePerson;
 
-public class DeletePersonCommandValidator : AbstractValidator<DeletePersonCommand>
+public class DeletePersonCommandValidator : LocalizedValidator<DeletePersonCommand>
 {
-    public DeletePersonCommandValidator()
+    public DeletePersonCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.PersonId)
             .NotEmpty()
-            .WithMessage("Person ID is required");
+            .WithMessage(L("PersonId_Required"));
     }
 }

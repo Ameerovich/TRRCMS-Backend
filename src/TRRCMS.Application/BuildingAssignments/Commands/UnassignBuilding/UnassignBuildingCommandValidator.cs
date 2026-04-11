@@ -1,22 +1,25 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.BuildingAssignments.Commands.UnassignBuilding;
 
 /// <summary>
 /// Validator for UnassignBuildingCommand
 /// </summary>
-public class UnassignBuildingCommandValidator : AbstractValidator<UnassignBuildingCommand>
+public class UnassignBuildingCommandValidator : LocalizedValidator<UnassignBuildingCommand>
 {
-    public UnassignBuildingCommandValidator()
+    public UnassignBuildingCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.AssignmentId)
             .NotEmpty()
-            .WithMessage("Assignment ID is required");
+            .WithMessage(L("AssignmentId_Required"));
 
         RuleFor(x => x.CancellationReason)
             .NotEmpty()
-            .WithMessage("Cancellation reason is required")
+            .WithMessage(L("CancellationReason_Assignment_Required"))
             .MaximumLength(1000)
-            .WithMessage("Cancellation reason cannot exceed 1000 characters");
+            .WithMessage(L("CancellationReason_Assignment_MaxLength1000"));
     }
 }

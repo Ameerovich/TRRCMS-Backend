@@ -1,16 +1,19 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Import.Commands.CancelPackage;
 
-public class CancelPackageCommandValidator : AbstractValidator<CancelPackageCommand>
+public class CancelPackageCommandValidator : LocalizedValidator<CancelPackageCommand>
 {
-    public CancelPackageCommandValidator()
+    public CancelPackageCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ImportPackageId)
-            .NotEmpty().WithMessage("ImportPackageId is required.");
+            .NotEmpty().WithMessage(L("ImportPackageId_Required"));
 
         RuleFor(x => x.Reason)
-            .NotEmpty().WithMessage("Cancellation reason is required.")
-            .MaximumLength(1000).WithMessage("Cancellation reason must not exceed 1000 characters.");
+            .NotEmpty().WithMessage(L("CancellationReason_Required_Import"))
+            .MaximumLength(1000).WithMessage(L("CancellationReason_MaxLength1000"));
     }
 }

@@ -1,25 +1,28 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Streets.Commands.BulkRegisterStreets;
 
-public class BulkRegisterStreetsCommandValidator : AbstractValidator<BulkRegisterStreetsCommand>
+public class BulkRegisterStreetsCommandValidator : LocalizedValidator<BulkRegisterStreetsCommand>
 {
-    public BulkRegisterStreetsCommandValidator()
+    public BulkRegisterStreetsCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Streets)
-            .NotEmpty().WithMessage("At least one street is required.");
+            .NotEmpty().WithMessage(L("Street_AtLeastOne"));
 
         RuleForEach(x => x.Streets).ChildRules(item =>
         {
             item.RuleFor(x => x.Identifier)
-                .GreaterThan(0).WithMessage("Identifier must be a positive integer.");
+                .GreaterThan(0).WithMessage(L("Identifier_PositiveInteger"));
 
             item.RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Street name is required.")
-                .MaximumLength(200).WithMessage("Street name cannot exceed 200 characters.");
+                .NotEmpty().WithMessage(L("StreetName_Required"))
+                .MaximumLength(200).WithMessage(L("StreetName_MaxLength200"));
 
             item.RuleFor(x => x.GeometryWkt)
-                .NotEmpty().WithMessage("Geometry (WKT linestring) is required.");
+                .NotEmpty().WithMessage(L("StreetGeometry_BulkRequired"));
         });
     }
 }

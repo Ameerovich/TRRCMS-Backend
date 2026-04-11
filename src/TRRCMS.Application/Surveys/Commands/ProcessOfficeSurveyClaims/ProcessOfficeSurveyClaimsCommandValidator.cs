@@ -1,4 +1,7 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Surveys.Commands.ProcessOfficeSurveyClaims;
 
@@ -6,25 +9,25 @@ namespace TRRCMS.Application.Surveys.Commands.ProcessOfficeSurveyClaims;
 /// Validator for ProcessOfficeSurveyClaimsCommand.
 /// Same validation rules as the original FinalizeOfficeSurveyCommandValidator.
 /// </summary>
-public class ProcessOfficeSurveyClaimsCommandValidator : AbstractValidator<ProcessOfficeSurveyClaimsCommand>
+public class ProcessOfficeSurveyClaimsCommandValidator : LocalizedValidator<ProcessOfficeSurveyClaimsCommand>
 {
-    public ProcessOfficeSurveyClaimsCommandValidator()
+    public ProcessOfficeSurveyClaimsCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.FinalNotes)
             .MaximumLength(2000)
             .When(x => !string.IsNullOrWhiteSpace(x.FinalNotes))
-            .WithMessage("Final notes cannot exceed 2000 characters");
+            .WithMessage(L("FinalNotes_MaxLength2000"));
 
         RuleFor(x => x.DurationMinutes)
             .GreaterThan(0)
             .When(x => x.DurationMinutes.HasValue)
-            .WithMessage("Duration must be greater than 0 minutes")
+            .WithMessage(L("Duration_GreaterThanZero"))
             .LessThanOrEqualTo(1440) // Max 24 hours
             .When(x => x.DurationMinutes.HasValue)
-            .WithMessage("Duration cannot exceed 1440 minutes (24 hours)");
+            .WithMessage(L("Duration_Max1440"));
     }
 }

@@ -1057,21 +1057,17 @@ public class SurveysController : ControllerBase
     ///     "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///     "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///     "propertyUnitIdentifier": "1A",
-    ///     "headOfHouseholdName": "أحمد محمد الخالد",
-    ///     "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///     "householdSize": 5,
-    ///     "occupancyType": 1,
+    ///     "maleCount": 3,
+    ///     "femaleCount": 2,
+    ///     "adultCount": 2,
+    ///     "childCount": 3,
+    ///     "elderlyCount": 0,
+    ///     "disabledCount": 0,
     ///     "occupancyNature": 1,
-    ///     "maleCount": 1,
-    ///     "femaleCount": 1,
-    ///     "maleChildCount": 2,
-    ///     "femaleChildCount": 1,
-    ///     "maleElderlyCount": 0,
-    ///     "femaleElderlyCount": 0,
-    ///     "maleDisabledCount": 0,
-    ///     "femaleDisabledCount": 0,
+    ///     "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///     "notes": "أسرة من خمسة أفراد",
-    ///     "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///     "createdAtUtc": "2026-04-10T10:00:00Z",
     ///     "isDeleted": false
     ///   }
     /// ]
@@ -1112,55 +1108,55 @@ public class SurveysController : ControllerBase
     ///
     /// **Required Permission**: CanEditOwnSurveys
     ///
-    /// **Request Fields**:
-    /// - `householdSize` (required): عدد الأفراد (1-50)
-    /// - `occupancyType` (optional): نوع الإشغال - **send as integer**: 1=OwnerOccupied, 2=TenantOccupied, 3=FamilyOccupied, 4=MixedOccupancy, 5=Vacant, 6=TemporarySeasonal, 7=CommercialUse, 8=Abandoned, 9=Disputed, 99=Unknown
+    /// **Request Fields** (canonical v1.9 shape):
+    /// - `householdSize` (required): عدد الأفراد (1–50)
+    /// - `maleCount` / `femaleCount` (optional): total males / females across all ages
+    /// - `adultCount` (optional): عدد البالغين
+    /// - `childCount` (optional): عدد الأطفال
+    /// - `elderlyCount` (optional): عدد كبار السن
+    /// - `disabledCount` (optional): عدد ذوي الإعاقة
     /// - `occupancyNature` (optional): طبيعة الإشغال - **send as integer**: 1=LegalFormal, 2=Informal, 3=Customary, 4=TemporaryEmergency, 5=Authorized, 6=Unauthorized, 7=PendingRegularization, 8=Contested, 99=Unknown
+    /// - `occupancyStartDate` (optional): ISO-8601 UTC datetime
     /// - `notes` (optional): ملاحظات
-    /// - `maleCount` / `femaleCount`: عدد البالغين
-    /// - `maleChildCount` / `femaleChildCount`: عدد الأطفال (أقل من 18)
-    /// - `maleElderlyCount` / `femaleElderlyCount`: عدد كبار السن (أكثر من 65)
-    /// - `maleDisabledCount` / `femaleDisabledCount`: عدد المعاقين
     ///
-    /// **Example Request** (occupancyType/occupancyNature sent as integers):
+    /// **Validation (upper-bound only):**
+    /// - `maleCount + femaleCount ≤ householdSize`
+    /// - `adultCount + childCount + elderlyCount ≤ householdSize`
+    /// - `disabledCount ≤ householdSize`
+    ///
+    /// **Example Request**:
     /// ```json
     /// {
     ///   "householdSize": 5,
-    ///   "occupancyType": 1,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 2,
+    ///   "adultCount": 2,
+    ///   "childCount": 3,
+    ///   "elderlyCount": 0,
+    ///   "disabledCount": 0,
     ///   "occupancyNature": 1,
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 2,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 0,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "أسرة من خمسة أفراد"
     /// }
     /// ```
     ///
-    /// **Example Response** (occupancyType/occupancyNature returned as integers):
+    /// **Example Response**:
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "propertyUnitIdentifier": "1A",
-    ///   "headOfHouseholdName": null,
-    ///   "headOfHouseholdPersonId": null,
     ///   "householdSize": 5,
-    ///   "occupancyType": 1,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 2,
+    ///   "adultCount": 2,
+    ///   "childCount": 3,
+    ///   "elderlyCount": 0,
+    ///   "disabledCount": 0,
     ///   "occupancyNature": 1,
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 2,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 0,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "أسرة من خمسة أفراد",
-    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "createdAtUtc": "2026-04-10T10:00:00Z",
     ///   "isDeleted": false
     /// }
     /// ```
@@ -1215,21 +1211,17 @@ public class SurveysController : ControllerBase
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "propertyUnitIdentifier": "1A",
-    ///   "headOfHouseholdName": "أحمد محمد الخالد",
-    ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "householdSize": 5,
-    ///   "occupancyType": 1,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 2,
+    ///   "adultCount": 2,
+    ///   "childCount": 3,
+    ///   "elderlyCount": 0,
+    ///   "disabledCount": 0,
     ///   "occupancyNature": 1,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "أسرة من خمسة أفراد",
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 2,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 0,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
-    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
+    ///   "createdAtUtc": "2026-04-10T10:00:00Z",
     ///   "lastModifiedAtUtc": null,
     ///   "isDeleted": false
     /// }
@@ -1284,46 +1276,38 @@ public class SurveysController : ControllerBase
     /// **Updateable Fields** (all optional - only provided fields are updated):
     /// - `householdSize`: عدد الأفراد
     /// - `notes`: ملاحظات
-    /// - `occupancyType`: نوع الإشغال - **send as integer**: 1=OwnerOccupied, 2=TenantOccupied, 3=FamilyOccupied, 4=MixedOccupancy, 5=Vacant, 6=TemporarySeasonal, 7=CommercialUse, 8=Abandoned, 9=Disputed, 99=Unknown
-    /// - `occupancyNature`: طبيعة الإشغال - **send as integer**: 1=LegalFormal, 2=Informal, 3=Customary, 4=TemporaryEmergency, 5=Authorized, 6=Unauthorized, 7=PendingRegularization, 8=Contested, 99=Unknown
-    /// - `maleCount` / `femaleCount`: عدد البالغين
-    /// - `maleChildCount` / `femaleChildCount`: عدد الأطفال (أقل من 18)
-    /// - `maleElderlyCount` / `femaleElderlyCount`: عدد كبار السن (أكثر من 65)
-    /// - `maleDisabledCount` / `femaleDisabledCount`: عدد المعاقين
+    /// - `maleCount`, `femaleCount`, `adultCount`, `childCount`, `elderlyCount`, `disabledCount`
+    /// - `occupancyNature`: **send as integer**: 1=LegalFormal, 2=Informal, 3=Customary, 4=TemporaryEmergency, 5=Authorized, 6=Unauthorized, 7=PendingRegularization, 8=Contested, 99=Unknown
+    /// - `occupancyStartDate`: ISO-8601 UTC datetime
     ///
-    /// **Example Request** (occupancyType/occupancyNature sent as integers):
+    /// **Example Request**:
     /// ```json
     /// {
     ///   "householdSize": 6,
-    ///   "occupancyType": 2,
+    ///   "childCount": 3,
     ///   "occupancyNature": 2,
-    ///   "maleChildCount": 3,
     ///   "notes": "ولد طفل ذكر جديد"
     /// }
     /// ```
     ///
-    /// **Example Response** (occupancyType/occupancyNature returned as integers):
+    /// **Example Response**:
     /// ```json
     /// {
     ///   "id": "7e439aab-5dd1-4a8a-b6c4-265008e53b86",
     ///   "propertyUnitId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     ///   "propertyUnitIdentifier": "1A",
-    ///   "headOfHouseholdName": "أحمد محمد الخالد",
-    ///   "headOfHouseholdPersonId": "7bc92e51-8234-4123-a1bc-9d852f33bcd7",
     ///   "householdSize": 6,
-    ///   "occupancyType": 2,
+    ///   "maleCount": 3,
+    ///   "femaleCount": 3,
+    ///   "adultCount": 2,
+    ///   "childCount": 3,
+    ///   "elderlyCount": 1,
+    ///   "disabledCount": 0,
     ///   "occupancyNature": 2,
-    ///   "maleCount": 1,
-    ///   "femaleCount": 1,
-    ///   "maleChildCount": 3,
-    ///   "femaleChildCount": 1,
-    ///   "maleElderlyCount": 0,
-    ///   "femaleElderlyCount": 0,
-    ///   "maleDisabledCount": 0,
-    ///   "femaleDisabledCount": 0,
+    ///   "occupancyStartDate": "2023-09-01T00:00:00Z",
     ///   "notes": "ولد طفل ذكر جديد",
-    ///   "createdAtUtc": "2026-02-14T10:00:00Z",
-    ///   "lastModifiedAtUtc": "2026-02-14T12:00:00Z",
+    ///   "createdAtUtc": "2026-04-10T10:00:00Z",
+    ///   "lastModifiedAtUtc": "2026-04-10T12:00:00Z",
     ///   "isDeleted": false
     /// }
     /// ```

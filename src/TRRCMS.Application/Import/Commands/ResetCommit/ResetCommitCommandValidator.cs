@@ -1,16 +1,19 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Import.Commands.ResetCommit;
 
-public class ResetCommitCommandValidator : AbstractValidator<ResetCommitCommand>
+public class ResetCommitCommandValidator : LocalizedValidator<ResetCommitCommand>
 {
-    public ResetCommitCommandValidator()
+    public ResetCommitCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.ImportPackageId)
-            .NotEmpty().WithMessage("Import package ID is required.");
+            .NotEmpty().WithMessage(L("ImportPackageId_Required"));
 
         RuleFor(x => x.Reason)
-            .NotEmpty().WithMessage("Reset reason is required for audit trail.")
-            .MaximumLength(500).WithMessage("Reason cannot exceed 500 characters.");
+            .NotEmpty().WithMessage(L("ResetReason_Required"))
+            .MaximumLength(500).WithMessage(L("ResetReason_MaxLength500"));
     }
 }

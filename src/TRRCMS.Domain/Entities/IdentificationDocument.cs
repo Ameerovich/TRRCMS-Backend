@@ -17,12 +17,12 @@ public class IdentificationDocument : BaseAuditableEntity
     /// <summary>
     /// Document type (نوع الوثيقة)
     /// </summary>
-    public DocumentType DocumentType { get; private set; }
+    public DocumentType? DocumentType { get; private set; }
 
     /// <summary>
     /// Description of the document
     /// </summary>
-    public string Description { get; private set; }
+    public string? Description { get; private set; }
 
     // File information
     public string OriginalFileName { get; private set; }
@@ -43,16 +43,14 @@ public class IdentificationDocument : BaseAuditableEntity
 
     private IdentificationDocument() : base()
     {
-        DocumentType = DocumentType.PersonalIdPhoto;
-        Description = string.Empty;
         OriginalFileName = string.Empty;
         FilePath = string.Empty;
         MimeType = string.Empty;
     }
 
     public static IdentificationDocument Create(
-        DocumentType documentType,
-        string description,
+        DocumentType? documentType,
+        string? description,
         string originalFileName,
         string filePath,
         long fileSizeBytes,
@@ -108,13 +106,13 @@ public class IdentificationDocument : BaseAuditableEntity
         MarkAsModified(modifiedByUserId);
     }
 
-    public void UpdateDocumentType(DocumentType documentType, Guid modifiedByUserId)
+    public void UpdateDocumentType(DocumentType? documentType, Guid modifiedByUserId)
     {
         DocumentType = documentType;
         MarkAsModified(modifiedByUserId);
     }
 
-    public void UpdateDescription(string description, Guid modifiedByUserId)
+    public void UpdateDescription(string? description, Guid modifiedByUserId)
     {
         Description = description;
         MarkAsModified(modifiedByUserId);

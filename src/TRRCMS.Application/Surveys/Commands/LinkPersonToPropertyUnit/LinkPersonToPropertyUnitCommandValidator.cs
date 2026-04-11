@@ -1,51 +1,54 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 
-public class LinkPersonToPropertyUnitCommandValidator : AbstractValidator<LinkPersonToPropertyUnitCommand>
+public class LinkPersonToPropertyUnitCommandValidator : LocalizedValidator<LinkPersonToPropertyUnitCommand>
 {
-    public LinkPersonToPropertyUnitCommandValidator(IVocabularyValidationService vocabService)
+    public LinkPersonToPropertyUnitCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
-            .WithMessage("Survey ID is required");
+            .WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.PersonId)
             .NotEmpty()
-            .WithMessage("Person ID is required");
+            .WithMessage(L("PersonId_Required"));
 
         RuleFor(x => x.PropertyUnitId)
             .NotEmpty()
-            .WithMessage("Property Unit ID is required");
+            .WithMessage(L("PropertyUnitId_Required"));
 
         // RelationType enum validation (int field)
         RuleFor(x => x.RelationType)
             .Must(v => vocabService.IsValidCode("relation_type", v))
-            .WithMessage("Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other");
+            .WithMessage(L("RelationType_InvalidWithValues"));
 
         // OccupancyType enum validation (optional int field)
         RuleFor(x => x.OccupancyType)
             .Must(v => vocabService.IsValidCode("occupancy_type", v!.Value))
             .When(x => x.OccupancyType.HasValue)
-            .WithMessage("Invalid occupancy type");
+            .WithMessage(L("OccupancyType_Invalid"));
 
         // Ownership share required for Owner
         RuleFor(x => x.OwnershipShare)
             .NotNull()
             .When(x => x.RelationType == (int)RelationType.Owner)
-            .WithMessage("Ownership share is required for Owner relation type");
+            .WithMessage(L("OwnershipShare_Required"));
 
         RuleFor(x => x.OwnershipShare)
             .GreaterThan(0)
             .When(x => x.RelationType == (int)RelationType.Owner && x.OwnershipShare.HasValue)
-            .WithMessage("Ownership share must be greater than 0 for Owner relation type");
+            .WithMessage(L("OwnershipShare_GreaterThanZero"));
 
         RuleFor(x => x.OwnershipShare)
             .LessThanOrEqualTo(2400)
             .When(x => x.OwnershipShare.HasValue)
-            .WithMessage("Ownership share cannot exceed 2400");
+            .WithMessage(L("OwnershipShare_Max2400"));
 
         // Text field max lengths
         RuleFor(x => x.ContractDetails)

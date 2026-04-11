@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- Titles (Arabic) -->
+  <data name="Title_ValidationFailed" xml:space="preserve">
+    <value>فشل التحقق من صحة البيانات</value>
+  </data>
+  <data name="Title_NotFound" xml:space="preserve">
+    <value>غير موجود</value>
+  </data>
+  <data name="Title_Forbidden" xml:space="preserve">
+    <value>غير مصرح</value>
+  </data>
+  <data name="Title_Conflict" xml:space="preserve">
+    <value>تعارض في البيانات</value>
+  </data>
+  <data name="Title_BadRequest" xml:space="preserve">
+    <value>طلب غير صالح</value>
+  </data>
+  <data name="Title_InternalServerError" xml:space="preserve">
+    <value>خطأ داخلي في الخادم</value>
+  </data>
+  <data name="Title_PasswordChangeRequired" xml:space="preserve">
+    <value>تغيير كلمة المرور مطلوب</value>
+  </data>
+
+  <!-- Generic messages per error category (Arabic) -->
+  <data name="Message_ValidationFailed_WithErrors" xml:space="preserve">
+    <value>حدث خطأ أو أكثر في التحقق من صحة البيانات. يرجى مراجعة حقل الأخطاء للتفاصيل.</value>
+  </data>
+  <data name="Message_ValidationFailed" xml:space="preserve">
+    <value>فشل التحقق من صحة الطلب. يرجى مراجعة البيانات المدخلة والمحاولة مجدداً.</value>
+  </data>
+  <data name="Message_NotFound" xml:space="preserve">
+    <value>لم يتم العثور على العنصر المطلوب.</value>
+  </data>
+  <data name="Message_Forbidden" xml:space="preserve">
+    <value>ليس لديك صلاحية لتنفيذ هذا الإجراء.</value>
+  </data>
+  <data name="Message_Conflict" xml:space="preserve">
+    <value>تعذّر إتمام العملية بسبب تعارض مع الحالة الراهنة للعنصر.</value>
+  </data>
+  <data name="Message_BadRequest" xml:space="preserve">
+    <value>تعذّر فهم الطلب. يرجى التحقق من البيانات المدخلة والمحاولة مجدداً.</value>
+  </data>
+  <data name="Message_InternalServerError_Production" xml:space="preserve">
+    <value>حدث خطأ غير متوقع. يرجى المحاولة مجدداً لاحقاً.</value>
+  </data>
+  <data name="Message_PasswordChangeRequired" xml:space="preserve">
+    <value>يجب عليك تغيير كلمة المرور قبل الوصول إلى الموارد الأخرى.</value>
+  </data>
+</root>

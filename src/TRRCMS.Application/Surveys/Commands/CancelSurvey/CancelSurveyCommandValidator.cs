@@ -1,16 +1,19 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Surveys.Commands.CancelSurvey;
 
-public class CancelSurveyCommandValidator : AbstractValidator<CancelSurveyCommand>
+public class CancelSurveyCommandValidator : LocalizedValidator<CancelSurveyCommand>
 {
-    public CancelSurveyCommandValidator()
+    public CancelSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
-            .NotEmpty().WithMessage("Survey ID is required.");
+            .NotEmpty().WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.Reason)
-            .NotEmpty().WithMessage("Cancellation reason is required.")
-            .MaximumLength(500).WithMessage("Reason must not exceed 500 characters.");
+            .NotEmpty().WithMessage(L("CancellationReason_Required"))
+            .MaximumLength(500).WithMessage(L("Reason_MaxLength500"));
     }
 }

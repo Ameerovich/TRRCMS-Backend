@@ -1,22 +1,25 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Landmarks.Commands.RegisterLandmark;
 
-public class RegisterLandmarkCommandValidator : AbstractValidator<RegisterLandmarkCommand>
+public class RegisterLandmarkCommandValidator : LocalizedValidator<RegisterLandmarkCommand>
 {
-    public RegisterLandmarkCommandValidator()
+    public RegisterLandmarkCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.Identifier)
-            .GreaterThan(0).WithMessage("Identifier must be a positive integer");
+            .GreaterThan(0).WithMessage(L("Identifier_PositiveInteger"));
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Landmark name is required")
-            .MaximumLength(500).WithMessage("Landmark name cannot exceed 500 characters");
+            .NotEmpty().WithMessage(L("LandmarkName_Required"))
+            .MaximumLength(500).WithMessage(L("LandmarkName_MaxLength500"));
 
         RuleFor(x => x.Type)
-            .InclusiveBetween(1, 10).WithMessage("Landmark type must be between 1 and 10");
+            .InclusiveBetween(1, 10).WithMessage(L("LandmarkType_Range1to10"));
 
         RuleFor(x => x.LocationWkt)
-            .NotEmpty().WithMessage("Location geometry (WKT point) is required for landmark registration");
+            .NotEmpty().WithMessage(L("LandmarkGeometry_Required"));
     }
 }

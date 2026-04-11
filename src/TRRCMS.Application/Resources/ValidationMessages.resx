@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter</value></resheader>
+
+  <!-- ── Common / Shared ─────────────────────────────────────────── -->
+  <data name="SurveyId_Required"><value>Survey ID is required</value></data>
+  <data name="BuildingId_Required"><value>Building ID is required</value></data>
+  <data name="PropertyUnitId_Required"><value>Property unit ID is required</value></data>
+  <data name="PersonId_Required"><value>Person ID is required</value></data>
+  <data name="HouseholdId_Required"><value>Household ID is required</value></data>
+  <data name="EvidenceId_Required"><value>Evidence ID is required</value></data>
+  <data name="RelationId_Required"><value>Relation ID is required</value></data>
+  <data name="ClaimId_Required"><value>Claim ID is required</value></data>
+  <data name="CaseId_Required"><value>Case ID is required.</value></data>
+  <data name="ConflictId_Required"><value>Conflict ID is required.</value></data>
+  <data name="ImportPackageId_Required"><value>Import package ID is required.</value></data>
+  <data name="AssignmentId_Required"><value>Assignment ID is required</value></data>
+  <data name="VocabularyId_Required"><value>Vocabulary ID is required</value></data>
+  <data name="LandmarkId_Required"><value>Landmark ID is required.</value></data>
+  <data name="StreetId_Required"><value>Street ID is required.</value></data>
+  <data name="UserId_Required"><value>User ID is required</value></data>
+  <data name="File_Required"><value>File is required</value></data>
+  <data name="Description_Required"><value>Description is required</value></data>
+  <data name="PersonPropertyRelationId_Required"><value>Person-property relation ID is required</value></data>
+  <data name="Notes_MaxLength2000"><value>Notes cannot exceed 2000 characters</value></data>
+  <data name="Notes_MaxLength1000"><value>Notes cannot exceed 1000 characters</value></data>
+  <data name="Notes_MaxLength4000"><value>Notes must not exceed 4000 characters.</value></data>
+  <data name="Description_MaxLength500"><value>Description cannot exceed 500 characters</value></data>
+  <data name="Description_MaxLength2000"><value>Description must not exceed 2000 characters</value></data>
+  <data name="ExpiryDate_AfterIssue"><value>Expiry date must be after issue date</value></data>
+  <data name="IssueDate_NotFuture"><value>Document issue date cannot be in the future</value></data>
+  <data name="File_Empty"><value>Document file cannot be empty</value></data>
+  <data name="File_SizeExceedsMax"><value>File size cannot exceed {0} MB</value></data>
+  <data name="File_SizeGreaterThanZero"><value>File size must be greater than 0</value></data>
+  <data name="File_TypeNotAllowed_ImagePdf"><value>Only image files and PDFs are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF)</value></data>
+  <data name="File_TypeNotAllowed_ImageOnly"><value>Only image files are allowed (JPEG, PNG, GIF, WebP, TIFF)</value></data>
+  <data name="File_TypeNotAllowed_Full"><value>Only image files, PDFs, Word documents, and audio recordings are allowed (JPEG, PNG, GIF, WebP, TIFF, PDF, DOC, DOCX, MP3, WAV, OGG, M4A)</value></data>
+  <data name="File_TypeNotAllowed_Evidence"><value>File type not allowed. Accepted types: JPEG, PNG, GIF, WebP, TIFF, PDF, DOC, DOCX</value></data>
+  <data name="FileName_Required"><value>Original file name is required</value></data>
+  <data name="FileName_MaxLength255"><value>File name cannot exceed 255 characters</value></data>
+  <data name="FilePath_Required"><value>File path is required</value></data>
+  <data name="FilePath_MaxLength1000"><value>File path cannot exceed 1000 characters</value></data>
+  <data name="MimeType_Required"><value>MIME type is required</value></data>
+  <data name="FileHash_InvalidSha256"><value>File hash must be a valid SHA-256 hex string (64 characters)</value></data>
+  <data name="IssuingAuthority_MaxLength200"><value>Issuing authority cannot exceed 200 characters</value></data>
+  <data name="DocumentRef_MaxLength100"><value>Document reference number cannot exceed 100 characters</value></data>
+  <data name="LinkReason_MaxLength500"><value>Link reason cannot exceed 500 characters</value></data>
+
+  <!-- ── Auth ───────────────────────────────────────────────────── -->
+  <data name="Username_Required"><value>Username is required</value></data>
+  <data name="Username_MaxLength50"><value>Username cannot exceed 50 characters</value></data>
+  <data name="Username_Length3to50"><value>Username must be between 3 and 50 characters</value></data>
+  <data name="Username_InvalidChars"><value>Username can only contain letters, numbers, and underscores</value></data>
+  <data name="Password_Required"><value>Password is required</value></data>
+  <data name="Password_MaxLength128"><value>Password cannot exceed 128 characters</value></data>
+  <data name="Password_MinLength8"><value>Password must be at least 8 characters</value></data>
+  <data name="Password_RequireUpper"><value>Password must contain at least one uppercase letter</value></data>
+  <data name="Password_RequireLower"><value>Password must contain at least one lowercase letter</value></data>
+  <data name="Password_RequireDigit"><value>Password must contain at least one digit</value></data>
+  <data name="Password_RequireSpecial"><value>Password must contain at least one special character</value></data>
+  <data name="PasswordConfirm_Required"><value>Password confirmation is required</value></data>
+  <data name="PasswordConfirm_Mismatch"><value>Password confirmation does not match new password</value></data>
+  <data name="Password_MustDiffer"><value>New password must be different from current password</value></data>
+  <data name="CurrentPassword_Required"><value>Current password is required</value></data>
+  <data name="ModifiedByUserId_Required"><value>Modified by user ID is required</value></data>
+  <data name="RefreshToken_Required"><value>Refresh token is required</value></data>
+  <data name="DeviceId_MaxLength100"><value>Device ID cannot exceed 100 characters</value></data>
+
+  <!-- ── Users ──────────────────────────────────────────────────── -->
+  <data name="FullNameAr_Required"><value>Full name in Arabic is required</value></data>
+  <data name="FullNameAr_MaxLength200"><value>Full name in Arabic cannot exceed 200 characters</value></data>
+  <data name="FullNameEn_MaxLength200"><value>Full name in English cannot exceed 200 characters</value></data>
+  <data name="Email_Required"><value>Email is required</value></data>
+  <data name="Email_InvalidFormat"><value>Invalid email format</value></data>
+  <data name="Email_MaxLength100"><value>Email cannot exceed 100 characters</value></data>
+  <data name="Phone_SyrianFormat"><value>Phone number must be in Syrian format: 0XXXXXXXXX or +963XXXXXXXXX</value></data>
+  <data name="UserRole_Invalid"><value>Invalid user role</value></data>
+  <data name="Organization_MaxLength100"><value>Organization cannot exceed 100 characters</value></data>
+  <data name="JobTitle_MaxLength100"><value>Job title cannot exceed 100 characters</value></data>
+  <data name="EmployeeId_MaxLength50"><value>Employee ID cannot exceed 50 characters</value></data>
+  <data name="User_RequireAccess"><value>User must have at least mobile or desktop access</value></data>
+  <data name="Deactivation_ReasonRequired"><value>Deactivation reason is required</value></data>
+  <data name="Deactivation_ReasonMinLength10"><value>Deactivation reason must be at least 10 characters</value></data>
+  <data name="Deactivation_ReasonMaxLength500"><value>Deactivation reason cannot exceed 500 characters</value></data>
+  <data name="Permission_AtLeastOne"><value>At least one permission must be specified</value></data>
+  <data name="Permission_ListNotEmpty"><value>Permission list cannot be empty</value></data>
+  <data name="Permission_Invalid"><value>Invalid permission value</value></data>
+  <data name="GrantReason_Required"><value>Grant reason is required</value></data>
+  <data name="GrantReason_MinLength10"><value>Grant reason must be at least 10 characters</value></data>
+  <data name="GrantReason_MaxLength500"><value>Grant reason cannot exceed 500 characters</value></data>
+  <data name="RevokeReason_Required"><value>Revoke reason is required</value></data>
+  <data name="RevokeReason_MinLength10"><value>Revoke reason must be at least 10 characters</value></data>
+  <data name="RevokeReason_MaxLength500"><value>Revoke reason cannot exceed 500 characters</value></data>
+
+  <!-- ── Buildings ──────────────────────────────────────────────── -->
+  <data name="Governorate_Required"><value>Governorate code is required</value></data>
+  <data name="Governorate_2Digits"><value>Governorate code must be 2 digits</value></data>
+  <data name="Governorate_DigitsOnly"><value>Governorate code must contain only digits</value></data>
+  <data name="District_Required"><value>District code is required</value></data>
+  <data name="District_2Digits"><value>District code must be 2 digits</value></data>
+  <data name="District_DigitsOnly"><value>District code must contain only digits</value></data>
+  <data name="SubDistrict_Required"><value>Sub-district code is required</value></data>
+  <data name="SubDistrict_2Digits"><value>Sub-district code must be 2 digits</value></data>
+  <data name="SubDistrict_DigitsOnly"><value>Sub-district code must contain only digits</value></data>
+  <data name="Community_Required"><value>Community code is required</value></data>
+  <data name="Community_3Digits"><value>Community code must be 3 digits</value></data>
+  <data name="Community_DigitsOnly"><value>Community code must contain only digits</value></data>
+  <data name="Neighborhood_Required"><value>Neighborhood code is required</value></data>
+  <data name="Neighborhood_3Digits"><value>Neighborhood code must be 3 digits</value></data>
+  <data name="Neighborhood_DigitsOnly"><value>Neighborhood code must contain only digits</value></data>
+  <data name="BuildingNumber_Required"><value>Building number is required</value></data>
+  <data name="BuildingNumber_5Digits"><value>Building number must be 5 digits</value></data>
+  <data name="BuildingNumber_DigitsOnly"><value>Building number must contain only digits</value></data>
+  <data name="BuildingId_CompositeFormat"><value>Composite Building ID must form exactly 17 digits (2+2+2+3+3+5)</value></data>
+  <data name="BuildingType_Invalid"><value>Invalid building type</value></data>
+  <data name="BuildingStatus_Invalid"><value>Invalid building status</value></data>
+  <data name="PropertyUnits_NonNegative"><value>Number of property units cannot be negative</value></data>
+  <data name="PropertyUnits_Max500"><value>Number of property units cannot exceed 500</value></data>
+  <data name="Apartments_NonNegative"><value>Number of apartments cannot be negative</value></data>
+  <data name="Apartments_Max500"><value>Number of apartments cannot exceed 500</value></data>
+  <data name="Shops_NonNegative"><value>Number of shops cannot be negative</value></data>
+  <data name="Shops_Max200"><value>Number of shops cannot exceed 200</value></data>
+  <data name="Units_SumExceedsTotal"><value>Sum of apartments and shops cannot exceed total number of property units</value></data>
+  <data name="Latitude_SyriaBounds"><value>Latitude must be between 32.0 and 37.5 (Syria bounds)</value></data>
+  <data name="Longitude_SyriaBounds"><value>Longitude must be between 35.5 and 42.5 (Syria bounds)</value></data>
+  <data name="Longitude_SyriaBounds36"><value>Longitude must be between 36.0 and 42.5 (Syria bounds)</value></data>
+  <data name="LatLng_BothRequired"><value>Both latitude and longitude must be provided together</value></data>
+  <data name="Building_GeometryRequired"><value>Building geometry (WKT polygon) is required for QGIS registration</value></data>
+  <data name="Building_ToggleLockRequired"><value>Building ID is required.</value></data>
+  <data name="GeometryWkt_MaxLength10000"><value>Geometry WKT must not exceed 10,000 characters</value></data>
+  <data name="GeometryWkt_InvalidFormat"><value>Geometry WKT must be in valid format (POINT, POLYGON, etc.)</value></data>
+  <data name="GeometryOrLatLng_Required"><value>Either GeometryWkt or Latitude/Longitude must be provided</value></data>
+  <data name="NorthEastLat_SyriaBounds"><value>NorthEast Latitude must be between 32.0 and 37.5</value></data>
+  <data name="SouthWestLat_SyriaBounds"><value>SouthWest Latitude must be between 32.0 and 37.5</value></data>
+  <data name="NorthEastLng_SyriaBounds"><value>NorthEast Longitude must be between 36.0 and 42.5</value></data>
+  <data name="SouthWestLng_SyriaBounds"><value>SouthWest Longitude must be between 36.0 and 42.5</value></data>
+  <data name="NorthEastLat_GreaterThanSouthWest"><value>NorthEast Latitude must be greater than SouthWest Latitude</value></data>
+  <data name="NorthEastLng_GreaterThanSouthWest"><value>NorthEast Longitude must be greater than SouthWest Longitude</value></data>
+  <data name="MaxResults_GreaterThanZero"><value>MaxResults must be greater than 0</value></data>
+  <data name="MaxResults_Max50000"><value>MaxResults cannot exceed 50,000 for performance reasons</value></data>
+  <data name="PolygonOrCoords_Required"><value>Either PolygonWkt or Coordinates (minimum 3 points) must be provided</value></data>
+  <data name="PolygonWkt_InvalidFormat"><value>PolygonWkt must be a valid POLYGON WKT format</value></data>
+  <data name="PolygonWkt_MaxLength10000"><value>PolygonWkt must not exceed 10,000 characters</value></data>
+  <data name="Polygon_MinPoints3"><value>Polygon must have at least 3 coordinate points</value></data>
+  <data name="Polygon_MaxPoints10000"><value>Polygon cannot exceed 10,000 coordinate points</value></data>
+  <data name="Coordinate_Exactly2Values"><value>Each coordinate must be an array of exactly 2 values [longitude, latitude]</value></data>
+  <data name="Coordinate_SyriaRange"><value>Coordinates must be within valid ranges (longitude: 35.0-43.0, latitude: 32.0-37.5 for Syria)</value></data>
+  <data name="Page_AtLeast1"><value>Page must be at least 1</value></data>
+  <data name="PageSize_Between1And1000"><value>Page size must be between 1 and 1000</value></data>
+  <data name="PageSize_Between1And100"><value>Page size must be between 1 and 100</value></data>
+  <data name="Governorate_Exactly2Digits"><value>Governorate code must be exactly 2 digits</value></data>
+  <data name="District_Exactly2Digits"><value>District code must be exactly 2 digits</value></data>
+  <data name="SubDistrict_Exactly2Digits"><value>Sub-district code must be exactly 2 digits</value></data>
+  <data name="Community_Exactly3Digits"><value>Community code must be exactly 3 digits</value></data>
+  <data name="Neighborhood_Exactly3Digits"><value>Neighborhood code must be exactly 3 digits</value></data>
+  <data name="BuildingId_DigitsOnly"><value>Building ID must contain only digits</value></data>
+  <data name="BuildingId_MaxLength17"><value>Building ID cannot exceed 17 digits</value></data>
+  <data name="BuildingNumber_MaxLength5"><value>Building number cannot exceed 5 digits</value></data>
+  <data name="SortField_Invalid"><value>Sort field must be one of: buildingId, createdDate, status, buildingType</value></data>
+  <data name="District_RequiresGovernorate"><value>District code requires Governorate code to be specified</value></data>
+  <data name="SubDistrict_RequiresDistrict"><value>Sub-district code requires District code to be specified</value></data>
+  <data name="Community_RequiresSubDistrict"><value>Community code requires Sub-district code to be specified</value></data>
+
+  <!-- ── PropertyUnits ──────────────────────────────────────────── -->
+  <data name="UnitId_Required"><value>Unit identifier is required</value></data>
+  <data name="UnitId_MaxLength50"><value>Unit identifier must not exceed 50 characters</value></data>
+  <data name="UnitType_Range1to5"><value>Unit type must be between 1 and 5</value></data>
+  <data name="UnitStatus_ValidValue"><value>Status must be a valid value (1-6 or 99)</value></data>
+  <data name="FloorNumber_Range"><value>Floor number must be between -5 and 200</value></data>
+  <data name="Area_GreaterThanZero"><value>Area must be greater than 0</value></data>
+  <data name="Rooms_Range0to100"><value>Number of rooms must be between 0 and 100</value></data>
+  <data name="UnitType_Invalid"><value>Invalid property unit type value</value></data>
+  <data name="UnitStatus_Invalid"><value>Invalid property unit status value</value></data>
+
+  <!-- ── Person ─────────────────────────────────────────────────── -->
+  <data name="LastName_MaxLength100"><value>Last name must not exceed 100 characters</value></data>
+  <data name="FirstName_MaxLength100"><value>First name must not exceed 100 characters</value></data>
+  <data name="FatherName_MaxLength100"><value>Father name must not exceed 100 characters</value></data>
+  <data name="MotherName_MaxLength100"><value>Mother name must not exceed 100 characters</value></data>
+  <data name="FirstName_Required"><value>First name is required</value></data>
+  <data name="FatherName_Required"><value>Father name is required</value></data>
+  <data name="LastName_Required"><value>Last name is required</value></data>
+  <data name="MotherName_Required"><value>Mother name is required</value></data>
+  <data name="NationalId_Exactly11Digits"><value>National ID must be exactly 11 digits</value></data>
+  <data name="BirthDate_NotFuture"><value>Birth date cannot be in the future</value></data>
+  <data name="PersonEmail_MaxLength255"><value>Email must not exceed 255 characters</value></data>
+  <data name="PersonEmail_InvalidFormat"><value>Invalid email format</value></data>
+  <data name="Mobile_SyrianFormat"><value>Mobile number must be in Syrian format: 09XXXXXXXX or +9639XXXXXXXX</value></data>
+  <data name="Landline_SyrianFormat"><value>Landline number must be in Syrian format: 0XXXXXXXXX or +963XXXXXXXXX</value></data>
+  <data name="Gender_Invalid"><value>Invalid gender</value></data>
+  <data name="Nationality_Invalid"><value>Invalid nationality</value></data>
+  <data name="HouseholdRelation_Invalid"><value>Invalid household relation type</value></data>
+  <data name="HouseholdId_Invalid"><value>Invalid household ID</value></data>
+
+  <!-- ── Household ───────────────────────────────────────────────── -->
+  <data name="HouseholdSize_AtLeast1"><value>Household size must be at least 1</value></data>
+  <data name="HouseholdSize_Max50"><value>Household size must not exceed 50</value></data>
+  <data name="Male_NonNegative"><value>Male count cannot be negative</value></data>
+  <data name="Male_Max50"><value>Male count must not exceed 50</value></data>
+  <data name="Female_NonNegative"><value>Female count cannot be negative</value></data>
+  <data name="Female_Max50"><value>Female count must not exceed 50</value></data>
+  <data name="AdultCount_NonNegative"><value>Adult count cannot be negative</value></data>
+  <data name="AdultCount_Max50"><value>Adult count must not exceed 50</value></data>
+  <data name="ChildCount_NonNegative"><value>Child count cannot be negative</value></data>
+  <data name="ChildCount_Max50"><value>Child count must not exceed 50</value></data>
+  <data name="ElderlyCount_NonNegative"><value>Elderly count cannot be negative</value></data>
+  <data name="ElderlyCount_Max50"><value>Elderly count must not exceed 50</value></data>
+  <data name="DisabledCount_NonNegative"><value>Disabled count cannot be negative</value></data>
+  <data name="DisabledCount_Max50"><value>Disabled count must not exceed 50</value></data>
+  <data name="Gender_SumExceedsHouseholdSize"><value>Sum of male and female counts cannot exceed household size</value></data>
+  <data name="Age_SumExceedsHouseholdSize"><value>Sum of adult, child, and elderly counts cannot exceed household size</value></data>
+  <data name="Disabled_ExceedsHouseholdSize"><value>Disabled count cannot exceed household size</value></data>
+  <data name="OccupancyType_Invalid"><value>Invalid occupancy type</value></data>
+  <data name="OccupancyNature_Invalid"><value>Invalid occupancy nature</value></data>
+
+  <!-- ── Surveys ────────────────────────────────────────────────── -->
+  <data name="SurveyDate_Required"><value>Survey date is required</value></data>
+  <data name="SurveyDate_NotFuture"><value>Survey date cannot be in the future</value></data>
+  <data name="OfficeLocation_MaxLength200"><value>Office location cannot exceed 200 characters</value></data>
+  <data name="RegistrationNumber_MaxLength50"><value>Registration number cannot exceed 50 characters</value></data>
+  <data name="AppointmentRef_MaxLength50"><value>Appointment reference cannot exceed 50 characters</value></data>
+  <data name="ContactPhone_MaxLength20"><value>Contact phone cannot exceed 20 characters</value></data>
+  <data name="ContactPhone_InvalidChars"><value>Contact phone contains invalid characters</value></data>
+  <data name="ContactEmail_MaxLength100"><value>Contact email cannot exceed 100 characters</value></data>
+  <data name="ContactEmail_Invalid"><value>Contact email is not a valid email address</value></data>
+  <data name="Duration_GreaterThanZero"><value>Duration must be greater than 0 minutes</value></data>
+  <data name="Duration_Max480"><value>Duration cannot exceed 480 minutes (8 hours)</value></data>
+  <data name="Duration_Max1440"><value>Duration cannot exceed 1440 minutes (24 hours)</value></data>
+  <data name="FinalNotes_MaxLength2000"><value>Final notes cannot exceed 2000 characters</value></data>
+  <data name="GpsFormat_Invalid"><value>GPS coordinates must be in format 'latitude,longitude' (e.g., '36.2021,37.1343')</value></data>
+  <data name="PhotoFile_SizeExceedsMax"><value>Photo file size cannot exceed {0} MB</value></data>
+  <data name="PhotoFile_Empty"><value>Photo file cannot be empty</value></data>
+  <data name="DocFile_SizeExceedsMax"><value>Document file size cannot exceed {0} MB</value></data>
+  <data name="CancellationReason_Required"><value>Cancellation reason is required.</value></data>
+  <data name="Reason_MaxLength500"><value>Reason must not exceed 500 characters.</value></data>
+  <data name="RevertReason_Required"><value>A reason for reverting to draft is required.</value></data>
+  <data name="EvidenceType_Invalid"><value>Invalid evidence type</value></data>
+
+  <!-- ── Relations &amp; Claims ─────────────────────────────────── -->
+  <data name="RelationType_Invalid"><value>Invalid relation type</value></data>
+  <data name="RelationType_InvalidWithValues"><value>Invalid relation type. Valid values: Owner, Occupant, Tenant, Guest, Heir, Other</value></data>
+  <data name="RelationType_InvalidClaim"><value>Invalid relation type. Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99.</value></data>
+  <data name="OwnershipShare_Required"><value>Ownership share is required for Owner relation type</value></data>
+  <data name="OwnershipShare_GreaterThanZero"><value>Ownership share must be greater than 0</value></data>
+  <data name="OwnershipShare_Max2400"><value>Ownership share cannot exceed 2400</value></data>
+  <data name="ContractDetails_MaxLength1000"><value>Contract details must not exceed 1000 characters</value></data>
+  <data name="TenureContractType_Invalid"><value>Invalid tenure contract type.</value></data>
+  <data name="TenureContractDetails_MaxLength1000"><value>Tenure contract details must not exceed 1000 characters</value></data>
+  <data name="EvidenceIdNotEmpty"><value>Evidence ID must not be empty</value></data>
+  <data name="EvidenceRelationIdNotEmpty"><value>EvidenceRelation ID must not be empty</value></data>
+  <data name="ClaimReason_Required"><value>Reason for modification is required for audit purposes</value></data>
+  <data name="ClaimReason_MinLength10"><value>Reason must be at least 10 characters</value></data>
+  <data name="ClaimReason_MaxLength500"><value>Reason must not exceed 500 characters</value></data>
+  <data name="EvidenceDescription_Required"><value>Evidence description is required</value></data>
+
+  <!-- ── Conflict ───────────────────────────────────────────────── -->
+  <data name="EscalationReason_Required"><value>Escalation reason is required.</value></data>
+  <data name="EscalationReason_MaxLength2000"><value>Escalation reason must not exceed 2000 characters.</value></data>
+  <data name="JustificationReason_RequiredKeepSeparate"><value>Justification reason is required for keep-separate decisions.</value></data>
+  <data name="JustificationReason_RequiredMerge"><value>Justification reason is required for merge decisions.</value></data>
+  <data name="ResolutionReason_Required"><value>Resolution reason is required.</value></data>
+  <data name="ResolutionReason_MaxLength2000"><value>Resolution reason must not exceed 2000 characters.</value></data>
+  <data name="ResolutionNotes_MaxLength4000"><value>Resolution notes must not exceed 4000 characters.</value></data>
+  <data name="ConflictAction_Invalid"><value>Action must be one of: {0}.</value></data>
+  <data name="Reason_MaxLength2000"><value>Reason must not exceed 2000 characters.</value></data>
+
+  <!-- ── Import ────────────────────────────────────────────────── -->
+  <data name="UhcFile_Required"><value>File is required (.uhc package)</value></data>
+  <data name="FileName_Required_Import"><value>File name is required</value></data>
+  <data name="UhcFile_ExtensionOnly"><value>Only .uhc package files are accepted</value></data>
+  <data name="File_CannotBeEmpty"><value>File cannot be empty</value></data>
+  <data name="ImportMethod_Required"><value>Import method is required</value></data>
+  <data name="ImportMethod_Invalid"><value>Import method must be Manual, NetworkSync, WatchedFolder, or Sync</value></data>
+  <data name="StagingRecordIds_Required"><value>Staging record IDs are required when not approving all valid records.</value></data>
+  <data name="StagingRecordIds_AtLeastOne"><value>At least one staging record ID must be specified.</value></data>
+  <data name="StagingRecordId_ValidGuid"><value>Each staging record ID must be a valid GUID.</value></data>
+  <data name="CancellationReason_Required_Import"><value>Cancellation reason is required.</value></data>
+  <data name="CancellationReason_MaxLength1000"><value>Cancellation reason must not exceed 1000 characters.</value></data>
+  <data name="QuarantineReason_Required"><value>Quarantine reason is required.</value></data>
+  <data name="QuarantineReason_MaxLength1000"><value>Quarantine reason must not exceed 1000 characters.</value></data>
+  <data name="ResetReason_Required"><value>Reset reason is required for audit trail.</value></data>
+  <data name="ResetReason_MaxLength500"><value>Reason cannot exceed 500 characters.</value></data>
+
+  <!-- ── BuildingAssignments ────────────────────────────────────── -->
+  <data name="FieldCollectorId_Required"><value>Field collector ID is required</value></data>
+  <data name="Assignment_AtLeastOneBuilding"><value>At least one building must be specified for assignment</value></data>
+  <data name="Assignment_Max100Buildings"><value>Cannot assign more than 100 buildings at once</value></data>
+  <data name="RevisitReason_Required"><value>Revisit reason is required when property units are specified for revisit</value></data>
+  <data name="Revisit_Max50Units"><value>Cannot specify more than 50 property units for revisit</value></data>
+  <data name="Priority_Invalid"><value>Priority must be Normal, High, or Urgent</value></data>
+  <data name="TargetDate_MustBeFuture"><value>Target completion date must be in the future</value></data>
+  <data name="AssignmentNotes_MaxLength2000"><value>Assignment notes cannot exceed 2000 characters</value></data>
+  <data name="CancellationReason_Assignment_Required"><value>Cancellation reason is required</value></data>
+  <data name="CancellationReason_Assignment_MaxLength1000"><value>Cancellation reason cannot exceed 1000 characters</value></data>
+
+  <!-- ── Sync ───────────────────────────────────────────────────── -->
+  <data name="SyncSessionId_Required"><value>SyncSessionId is required.</value></data>
+  <data name="AssignmentIds_NotNull"><value>AssignmentIds must not be null.</value></data>
+  <data name="AssignmentIds_AtLeastOne"><value>At least one assignment ID must be provided.</value></data>
+  <data name="AssignmentIds_MaxCount"><value>A maximum of {0} assignment IDs may be acknowledged per request.</value></data>
+  <data name="AssignmentId_ValidGuid"><value>Each assignment ID must be a valid non-empty GUID.</value></data>
+
+  <!-- ── Vocabularies ───────────────────────────────────────────── -->
+  <data name="VocabName_Required"><value>Vocabulary name is required</value></data>
+  <data name="VocabName_MaxLength100"><value>Vocabulary name must not exceed 100 characters</value></data>
+  <data name="VocabName_InvalidChars"><value>Vocabulary name must start with a letter and contain only letters, numbers, and underscores</value></data>
+  <data name="VocabDisplayNameAr_Required"><value>Arabic display name is required</value></data>
+  <data name="VocabDisplayNameAr_MaxLength200"><value>Arabic display name must not exceed 200 characters</value></data>
+  <data name="VocabDisplayNameEn_MaxLength200"><value>English display name must not exceed 200 characters</value></data>
+  <data name="VocabCategory_MaxLength100"><value>Category must not exceed 100 characters</value></data>
+  <data name="VocabValues_AtLeastOne"><value>At least one vocabulary value is required</value></data>
+  <data name="VocabValueCode_NonNegative"><value>Value code must be non-negative</value></data>
+  <data name="VocabValueLabelAr_Required"><value>Arabic label is required for each value</value></data>
+  <data name="VocabValues_UniqueCodes"><value>Vocabulary values must have unique codes</value></data>
+  <data name="VocabVersionType_Required"><value>Version type is required</value></data>
+  <data name="VocabVersionType_Invalid"><value>Version type must be 'minor', 'major', or 'patch'</value></data>
+  <data name="VocabChangeLog_Required"><value>Change log is required</value></data>
+  <data name="VocabChangeLog_MaxLength2000"><value>Change log must not exceed 2000 characters</value></data>
+  <data name="VocabImport_AtLeastOne"><value>At least one vocabulary must be provided for import.</value></data>
+  <data name="VocabImport_DuplicateNames"><value>Duplicate vocabulary names in import batch.</value></data>
+  <data name="VocabValueLabelAr_MaxLength200"><value>Arabic label must not exceed 200 characters.</value></data>
+  <data name="VocabValueLabelEn_MaxLength200"><value>English label must not exceed 200 characters.</value></data>
+  <data name="VocabDisplayOrder_NonNegative"><value>Display order must be non-negative.</value></data>
+
+  <!-- ── Landmarks &amp; Streets ───────────────────────────────── -->
+  <data name="Identifier_PositiveInteger"><value>Identifier must be a positive integer</value></data>
+  <data name="LandmarkName_Required"><value>Landmark name is required</value></data>
+  <data name="LandmarkName_MaxLength500"><value>Landmark name cannot exceed 500 characters</value></data>
+  <data name="LandmarkName_MaxLength200"><value>Landmark name cannot exceed 200 characters.</value></data>
+  <data name="LandmarkType_Range1to10"><value>Landmark type must be between 1 and 10</value></data>
+  <data name="LandmarkGeometry_Required"><value>Location geometry (WKT point) is required for landmark registration</value></data>
+  <data name="Landmark_AtLeastOne"><value>At least one landmark is required.</value></data>
+  <data name="SvgContent_Required"><value>SVG content is required.</value></data>
+  <data name="SvgContent_InvalidTag"><value>Content must be valid SVG (must contain svg tag).</value></data>
+  <data name="SvgContent_Max100KB"><value>SVG content must not exceed 100KB.</value></data>
+  <data name="StreetName_Required"><value>Street name is required</value></data>
+  <data name="StreetName_MaxLength500"><value>Street name cannot exceed 500 characters</value></data>
+  <data name="StreetName_MaxLength200"><value>Street name cannot exceed 200 characters.</value></data>
+  <data name="StreetGeometry_Required"><value>Street geometry (WKT linestring) is required for street registration</value></data>
+  <data name="Street_AtLeastOne"><value>At least one street is required.</value></data>
+  <data name="StreetGeometry_BulkRequired"><value>Geometry (WKT linestring) is required.</value></data>
+  <data name="LandmarkGeometry_BulkRequired"><value>Location geometry (WKT point) is required.</value></data>
+
+  <!-- ── AdminDivisions &amp; SecuritySettings ──────────────────── -->
+  <data name="JsonContent_Required"><value>JSON content is required.</value></data>
+  <data name="JsonContent_InvalidFormat"><value>Content must be valid JSON (must start with [ or {).</value></data>
+  <data name="ImportedByUserId_Required"><value>Imported by user ID is required.</value></data>
+  <data name="PasswordPolicy_MinLength"><value>Password minimum length must be between {0} and {1}.</value></data>
+  <data name="PasswordPolicy_ExpiryDays"><value>Password expiry must be between 0 (disabled) and {0} days.</value></data>
+  <data name="PasswordPolicy_ReuseHistory"><value>Password reuse history must be between 0 (disabled) and {0}.</value></data>
+  <data name="PasswordPolicy_MinLengthNoComplexity"><value>When no complexity requirements are set, minimum password length must be at least 12 characters.</value></data>
+  <data name="Session_Timeout"><value>Session timeout must be between {0} and {1} minutes.</value></data>
+  <data name="Session_MaxFailedAttempts"><value>Maximum failed login attempts must be between {0} and {1}.</value></data>
+  <data name="Session_LockoutDuration"><value>Lockout duration must be between {0} and {1} minutes.</value></data>
+  <data name="Auth_AtLeastOneMethod"><value>At least one authentication method must be enabled. Disabling all methods would lock out all users.</value></data>
+  <data name="IpAllowlist_NotEmpty"><value>IP allowlist cannot be empty when enforcement is enabled. This would block all admin access.</value></data>
+  <data name="IpAllowlist_InvalidEntries"><value>IP allowlist contains invalid IP addresses or CIDR notation.</value></data>
+  <data name="IpDenylist_InvalidEntries"><value>IP denylist contains invalid IP addresses or CIDR notation.</value></data>
+  <data name="AllowedEnv_NotEmpty"><value>Allowed environments cannot be empty when restriction is enabled.</value></data>
+  <data name="ChangeDescription_MaxLength1000"><value>Change description cannot exceed 1000 characters.</value></data>
+
+  <!-- ── Evidence (standalone) ─────────────────────────────────── -->
+  <data name="EvidenceType_NotRecognized"><value>Evidence type value is not a recognized enum member</value></data>
+
+</root>

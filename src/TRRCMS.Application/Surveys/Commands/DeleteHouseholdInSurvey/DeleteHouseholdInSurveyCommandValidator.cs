@@ -1,15 +1,18 @@
 using FluentValidation;
+using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application;
 
 namespace TRRCMS.Application.Surveys.Commands.DeleteHouseholdInSurvey;
 
-public class DeleteHouseholdInSurveyCommandValidator : AbstractValidator<DeleteHouseholdInSurveyCommand>
+public class DeleteHouseholdInSurveyCommandValidator : LocalizedValidator<DeleteHouseholdInSurveyCommand>
 {
-    public DeleteHouseholdInSurveyCommandValidator()
+    public DeleteHouseholdInSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
-            .NotEmpty().WithMessage("Survey ID is required.");
+            .NotEmpty().WithMessage(L("SurveyId_Required"));
 
         RuleFor(x => x.HouseholdId)
-            .NotEmpty().WithMessage("Household ID is required.");
+            .NotEmpty().WithMessage(L("HouseholdId_Required"));
     }
 }
