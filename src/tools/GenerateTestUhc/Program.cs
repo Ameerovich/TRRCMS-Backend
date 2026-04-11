@@ -1,20 +1,30 @@
 // =============================================================================
-// GenerateTestUhc — Creates a realistic .uhc test package for TRRCMS (v1.7)
+// GenerateTestUhc — Creates a realistic .uhc test package for TRRCMS (v1.9)
 //
 // The .uhc file is a renamed SQLite database containing:
 //   - manifest table (key-value metadata)
-//   - 10 data tables: surveys, buildings, building_documents, property_units,
+//   - 11 data tables: surveys, buildings, building_documents, property_units,
 //     persons, households, person_property_relations, claims, evidences,
-//     identification_documents
+//     evidence_relations (M:N junction), identification_documents
+//
+// v1.9 changes (current):
+//   - households: per-gender age/disability columns removed; adult_count,
+//     disabled_count, occupancy_start_date added. MaleCount/FemaleCount now
+//     mean total male/female across all ages (were adult-only).
+//   - household_size is now computed from linked persons so
+//     HouseholdStructureValidator stays clean.
+//   - manifest.vocab_versions is now empty ({}) — the server treats a missing
+//     dictionary as "no declared dependencies", removing the stale
+//     version-drift warnings the test generator used to produce.
+//
+// v1.8 changes:
+//   - evidence_relations junction table (M:N evidence ↔ person_property_relation)
 //
 // v1.7 changes:
-//   - New identification_documents table (ID docs separated from evidence)
+//   - identification_documents table (personal ID docs separated from evidence)
 //   - evidences: person_id removed, evidence_type values 1,5 removed
-//   - persons: relationship_to_head removed from schema
-//   - households: occupancy_type removed from schema
-//   - Audio files accepted as evidence (voice recordings)
-//   - SurveyStatus: Obstructed(4) added (was Interrupted)
-//   - Randomized values per run for realistic testing
+//   - persons: relationship_to_head removed
+//   - SurveyStatus: Obstructed(4) replaces Interrupted
 //
 // Usage:
 //   cd tools/GenerateTestUhc
@@ -71,34 +81,75 @@ var buildingDocId1  = DeriveGuid(packageId, "building_doc_1");
 
 // ── Randomized values for this run ────────────────────────────────────────────
 var buildingNumber  = rng.Next(1, 100000).ToString("D5");
-var unitName1       = $"شقة {rng.Next(1, 100)}";
-var unitName2       = $"شقة {rng.Next(1, 100)}";
+// Guarantee the two unit identifiers are unique within the same building —
+// BuildingUnitCodeValidator (level 8) rejects duplicate unit identifiers per building.
+var unitNum1        = rng.Next(1, 100);
+int unitNum2;
+do { unitNum2 = rng.Next(1, 100); } while (unitNum2 == unitNum1);
+var unitName1       = $"شقة {unitNum1}";
+var unitName2       = $"شقة {unitNum2}";
 var baseLat         = 36.2021 + RandomLatOffset();
 var baseLon         = 37.1343 + RandomLonOffset();
+
+// Year-of-birth range: 1955–2005 → ages 21–71 in 2026 → can be adult or elderly (>=60)
+// but never child. The generator never produces children, so child_count is always 0.
+int RandomYob() => rng.Next(1955, 2006);
+int AgeFromYob(int yob) => DateTime.UtcNow.Year - yob;
+bool IsElderly(int yob) => AgeFromYob(yob) >= 60;
 
 // Person 1 - Owner (contact person)
 var p1First = RandomName(arabicFirstNames); var p1Family = RandomName(arabicFamilyNames);
 var p1Father = RandomName(arabicFatherNames); var p1Mother = RandomName(arabicMotherNames);
-var p1NatId = RandomNationalId(); var p1Gender = RandomGender();
+var p1NatId = RandomNationalId(); var p1Gender = RandomGender(); var p1Yob = RandomYob();
 
 // Person 2 - Spouse of P1
 var p2First = RandomName(arabicFirstNames); var p2Family = RandomName(arabicFamilyNames);
 var p2Father = RandomName(arabicFatherNames); var p2Mother = RandomName(arabicMotherNames);
-var p2NatId = RandomNationalId(); var p2Gender = p1Gender == 1 ? 2 : 1;
+var p2NatId = RandomNationalId(); var p2Gender = p1Gender == 1 ? 2 : 1; var p2Yob = RandomYob();
 
 // Person 3 - Non-owner (tenant/occupant/heir)
 var p3First = RandomName(arabicFirstNames); var p3Family = RandomName(arabicFamilyNames);
 var p3Father = RandomName(arabicFatherNames); var p3Mother = RandomName(arabicMotherNames);
-var p3NatId = RandomNationalId(); var p3Gender = RandomGender();
+var p3NatId = RandomNationalId(); var p3Gender = RandomGender(); var p3Yob = RandomYob();
 
 // Person 4 - Spouse of P3
 var p4First = RandomName(arabicFirstNames); var p4Family = RandomName(arabicFamilyNames);
 var p4Father = RandomName(arabicFatherNames); var p4Mother = RandomName(arabicMotherNames);
-var p4Gender = p3Gender == 1 ? 2 : 1;
+var p4Gender = p3Gender == 1 ? 2 : 1; var p4Yob = RandomYob();
+
+// Household composition — derived from the 2 linked persons per household so
+// HouseholdStructureValidator never fires a "declared size X but Y linked" warning
+// and the upper-bound cross-field rules are guaranteed to pass.
+int GenderCount(int[] genders, int target) => genders.Count(g => g == target);
+int ElderlyCount(int[] yobs) => yobs.Count(IsElderly);
+
+var hh1Genders = new[] { p1Gender, p2Gender };
+var hh1Yobs    = new[] { p1Yob, p2Yob };
+var hh1Size    = 2;
+var hh1Male    = GenderCount(hh1Genders, 1);
+var hh1Female  = GenderCount(hh1Genders, 2);
+var hh1Elderly = ElderlyCount(hh1Yobs);
+var hh1Adult   = hh1Size - hh1Elderly; // no children in generator
+var hh1Disabled = rng.Next(0, 2);       // 0 or 1
+
+var hh2Genders = new[] { p3Gender, p4Gender };
+var hh2Yobs    = new[] { p3Yob, p4Yob };
+var hh2Size    = 2;
+var hh2Male    = GenderCount(hh2Genders, 1);
+var hh2Female  = GenderCount(hh2Genders, 2);
+var hh2Elderly = ElderlyCount(hh2Yobs);
+var hh2Adult   = hh2Size - hh2Elderly;
+var hh2Disabled = rng.Next(0, 2);
+
+// Occupancy start dates — random date 1-5 years in the past (UTC, ISO-8601)
+string RandomOccupancyStartDate() =>
+    DateTime.UtcNow.AddDays(-rng.Next(365, 365 * 5)).ToString("o");
+var hh1OccupancyStart = RandomOccupancyStartDate();
+var hh2OccupancyStart = RandomOccupancyStartDate();
 
 // Relation types: P1=Owner(1), P3=random non-owner
 var relation2Type = new[] { 2, 3, 4, 5 }[rng.Next(4)]; // Occupant, Tenant, Guest, Heir
-var ownershipShare = rng.Next(100, 2401); // 100-2400
+var ownershipShare = rng.Next(100, 2401); // 100-2400 (out of 2400 — Islamic inheritance shares)
 var surveyStatus = RandomSurveyStatus();
 var evidenceType = RandomEvidenceType();
 var docType = RandomDocumentType();
@@ -112,7 +163,7 @@ var collectorUserId = Guid.Parse("00000000-0000-0000-0000-000000000000");
 var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "test-package.uhc");
 if (File.Exists(outputPath)) File.Delete(outputPath);
 
-Console.WriteLine("=== TRRCMS Test .uhc Package Generator (v1.7) ===\n");
+Console.WriteLine("=== TRRCMS Test .uhc Package Generator (v1.9) ===\n");
 
 string contentChecksum;
 
@@ -135,21 +186,17 @@ using (var conn = new SqliteConnection(connStr))
             value TEXT
         );");
 
-    var vocabVersions = @"{
-        ""ownership_type"": ""1.0.0"",
-        ""document_type"": ""1.0.0"",
-        ""building_type"": ""1.0.0"",
-        ""property_unit_type"": ""1.0.0"",
-        ""claim_type"": ""1.0.0"",
-        ""relation_type"": ""1.0.0"",
-        ""evidence_type"": ""1.0.0""
-    }";
+    // Empty vocab_versions — the test generator intentionally declares no pinned
+    // vocabulary versions so it never produces version-drift warnings when the
+    // server's vocabularies get bumped. Real mobile clients pin their vocabs here
+    // so the server can detect when they're out of date.
+    var vocabVersions = "{}";
 
     // Insert manifest with placeholder checksum — will be updated after data tables are populated
     var manifest = new Dictionary<string, string>
     {
         ["package_id"]                = packageId.ToString(),
-        ["schema_version"]            = "1.8.0",
+        ["schema_version"]            = "1.9.0",
         ["created_utc"]               = DateTime.UtcNow.ToString("o"),
         ["device_id"]                 = "TABLET-TEST-001",
         ["app_version"]               = "1.0.0",
@@ -350,7 +397,7 @@ using (var conn = new SqliteConnection(connStr))
         );",
         ("@id", personId1.ToString()), ("@family", p1Family), ("@first", p1First),
         ("@father", p1Father), ("@mother", p1Mother), ("@natid", p1NatId),
-        ("@yob", rng.Next(1960, 1995).ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
+        ("@yob", p1Yob.ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
         ("@gender", p1Gender.ToString()), ("@nat", RandomNationality().ToString()),
         ("@hid", householdId1.ToString()));
 
@@ -363,7 +410,7 @@ using (var conn = new SqliteConnection(connStr))
         );",
         ("@id", personId2.ToString()), ("@family", p2Family), ("@first", p2First),
         ("@father", p2Father), ("@mother", p2Mother), ("@natid", p2NatId),
-        ("@yob", rng.Next(1965, 1998).ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
+        ("@yob", p2Yob.ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
         ("@gender", p2Gender.ToString()), ("@nat", RandomNationality().ToString()),
         ("@hid", householdId1.ToString()));
 
@@ -376,7 +423,7 @@ using (var conn = new SqliteConnection(connStr))
         );",
         ("@id", personId3.ToString()), ("@family", p3Family), ("@first", p3First),
         ("@father", p3Father), ("@mother", p3Mother), ("@natid", p3NatId),
-        ("@yob", rng.Next(1970, 1998).ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
+        ("@yob", p3Yob.ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
         ("@gender", p3Gender.ToString()), ("@nat", RandomNationality().ToString()),
         ("@hid", householdId2.ToString()));
 
@@ -389,56 +436,61 @@ using (var conn = new SqliteConnection(connStr))
         );",
         ("@id", personId4.ToString()), ("@family", p4Family), ("@first", p4First),
         ("@father", p4Father), ("@mother", p4Mother),
-        ("@yob", rng.Next(1970, 2000).ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
+        ("@yob", p4Yob.ToString()), ("@phone", $"+963-9{rng.Next(10,100)}-{rng.Next(100000,999999)}"),
         ("@gender", p4Gender.ToString()), ("@nat", RandomNationality().ToString()),
         ("@hid", householdId2.ToString()));
 
     // ── 6. HOUSEHOLDS TABLE ────────────────────────────────────────────────────
-    // v1.7: occupancy_type removed from schema
+    // v1.9 shape:
+    //   - Dropped: occupancy_type, male_child_count, female_child_count,
+    //     male_elderly_count, female_elderly_count, male_disabled_count,
+    //     female_disabled_count
+    //   - Added:   adult_count, disabled_count, occupancy_start_date
+    //   - Renamed semantic: male_count/female_count now mean totals across all
+    //     ages (they were adult-only before v1.9)
     Execute(conn, @"
         CREATE TABLE households (
             id                          TEXT PRIMARY KEY,
             property_unit_id            TEXT NOT NULL,
             household_size              INTEGER NOT NULL,
-            male_count                  INTEGER DEFAULT 0,
-            female_count                INTEGER DEFAULT 0,
-            male_child_count            INTEGER DEFAULT 0,
-            female_child_count          INTEGER DEFAULT 0,
-            male_elderly_count          INTEGER DEFAULT 0,
-            female_elderly_count        INTEGER DEFAULT 0,
-            male_disabled_count         INTEGER DEFAULT 0,
-            female_disabled_count       INTEGER DEFAULT 0,
+            male_count                  INTEGER,
+            female_count                INTEGER,
+            adult_count                 INTEGER,
+            child_count                 INTEGER,
+            elderly_count               INTEGER,
+            disabled_count              INTEGER,
             occupancy_nature            INTEGER,
+            occupancy_start_date        TEXT,
             notes                       TEXT
         );");
 
-    var mc1 = rng.Next(1, 3); var fc1 = rng.Next(1, 3);
-    var mcc1 = rng.Next(0, 3); var fcc1 = rng.Next(0, 3);
-    var hs1 = mc1 + fc1 + mcc1 + fcc1;
+    // Household 1 — derived from linked persons P1 + P2 (always size=2, 1M+1F)
     Execute(conn, @"
         INSERT INTO households VALUES (
             @id, @uid, @size,
-            @mc, @fc, @mcc, @fcc, 0, 0, 0, 0,
-            @on, 'عائلة مقيمة'
+            @mc, @fc, @adult, @child, @elderly, @disabled,
+            @on, @osd, 'عائلة مقيمة'
         );",
         ("@id", householdId1.ToString()), ("@uid", unitId1.ToString()),
-        ("@size", hs1.ToString()), ("@mc", mc1.ToString()), ("@fc", fc1.ToString()),
-        ("@mcc", mcc1.ToString()), ("@fcc", fcc1.ToString()),
-        ("@on", occNature1.ToString()));
+        ("@size", hh1Size.ToString()),
+        ("@mc", hh1Male.ToString()), ("@fc", hh1Female.ToString()),
+        ("@adult", hh1Adult.ToString()), ("@child", "0"),
+        ("@elderly", hh1Elderly.ToString()), ("@disabled", hh1Disabled.ToString()),
+        ("@on", occNature1.ToString()), ("@osd", hh1OccupancyStart));
 
-    var mc2 = rng.Next(1, 3); var fc2 = rng.Next(1, 3);
-    var mcc2 = rng.Next(0, 2); var fcc2 = rng.Next(0, 2);
-    var hs2 = mc2 + fc2 + mcc2 + fcc2;
+    // Household 2 — derived from linked persons P3 + P4 (always size=2, 1M+1F)
     Execute(conn, @"
         INSERT INTO households VALUES (
             @id, @uid, @size,
-            @mc, @fc, @mcc, @fcc, 0, 0, 0, 0,
-            @on, 'عائلة نازحة'
+            @mc, @fc, @adult, @child, @elderly, @disabled,
+            @on, @osd, 'عائلة نازحة'
         );",
         ("@id", householdId2.ToString()), ("@uid", unitId2.ToString()),
-        ("@size", hs2.ToString()), ("@mc", mc2.ToString()), ("@fc", fc2.ToString()),
-        ("@mcc", mcc2.ToString()), ("@fcc", fcc2.ToString()),
-        ("@on", occNature2.ToString()));
+        ("@size", hh2Size.ToString()),
+        ("@mc", hh2Male.ToString()), ("@fc", hh2Female.ToString()),
+        ("@adult", hh2Adult.ToString()), ("@child", "0"),
+        ("@elderly", hh2Elderly.ToString()), ("@disabled", hh2Disabled.ToString()),
+        ("@on", occNature2.ToString()), ("@osd", hh2OccupancyStart));
 
     // ── 7. PERSON_PROPERTY_RELATIONS TABLE ─────────────────────────────────────
     // Columns aligned with StagingPersonPropertyRelation entity
@@ -647,17 +699,19 @@ var statusNames = new Dictionary<int, string> { {1,"Draft"}, {3,"Finalized"}, {4
 
 Console.WriteLine($"  File:     {outputPath}");
 Console.WriteLine($"  Size:     {fileSize:N0} bytes ({fileSize / 1024.0:F1} KB)");
-Console.WriteLine($"  Schema:   v1.8.0");
+Console.WriteLine($"  Schema:   v1.9.0");
 Console.WriteLine($"  PackageId: {packageId}");
 Console.WriteLine($"  Checksum:  {contentChecksum}");
 Console.WriteLine();
 Console.WriteLine("=== Randomized Data ===");
 Console.WriteLine($"  Building:   14-14-01-010-011-{buildingNumber} ({baseLat:F4}, {baseLon:F4})");
 Console.WriteLine($"  Units:      {unitName1} (floor {floor1}), {unitName2} (floor {floor2})");
-Console.WriteLine($"  Person 1:   {p1First} {p1Family} (ID: {p1NatId}, Gender: {p1Gender}) — Owner, ContactPerson");
-Console.WriteLine($"  Person 2:   {p2First} {p2Family} (ID: {p2NatId}, Gender: {p2Gender}) — Spouse of P1");
-Console.WriteLine($"  Person 3:   {p3First} {p3Family} (ID: {p3NatId}, Gender: {p3Gender}) — {relationTypeNames.GetValueOrDefault(relation2Type, "Other")}");
-Console.WriteLine($"  Person 4:   {p4First} {p4Family} (Gender: {p4Gender}) — Spouse of P3");
+Console.WriteLine($"  Person 1:   {p1First} {p1Family} (ID: {p1NatId}, Gender: {p1Gender}, Age: {AgeFromYob(p1Yob)}) — Owner, ContactPerson");
+Console.WriteLine($"  Person 2:   {p2First} {p2Family} (ID: {p2NatId}, Gender: {p2Gender}, Age: {AgeFromYob(p2Yob)}) — Spouse of P1");
+Console.WriteLine($"  Person 3:   {p3First} {p3Family} (ID: {p3NatId}, Gender: {p3Gender}, Age: {AgeFromYob(p3Yob)}) — {relationTypeNames.GetValueOrDefault(relation2Type, "Other")}");
+Console.WriteLine($"  Person 4:   {p4First} {p4Family} (Gender: {p4Gender}, Age: {AgeFromYob(p4Yob)}) — Spouse of P3");
+Console.WriteLine($"  Household 1: size={hh1Size}, M={hh1Male}/F={hh1Female}, adult={hh1Adult}/elderly={hh1Elderly}/disabled={hh1Disabled}");
+Console.WriteLine($"  Household 2: size={hh2Size}, M={hh2Male}/F={hh2Female}, adult={hh2Adult}/elderly={hh2Elderly}/disabled={hh2Disabled}");
 Console.WriteLine($"  Claim 1:    OwnershipClaim (share: {ownershipShare}/2400) by P1");
 Console.WriteLine($"  Claim 2:    OccupancyClaim by P3 (relation: {relationTypeNames.GetValueOrDefault(relation2Type, "Other")})");
 Console.WriteLine($"  Evidence:   type={evidenceType} (tenure doc), linked to 2 relations via junction table");

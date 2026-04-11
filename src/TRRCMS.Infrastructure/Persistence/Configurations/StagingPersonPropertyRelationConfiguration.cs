@@ -59,7 +59,8 @@ public class StagingPersonPropertyRelationConfiguration : IEntityTypeConfigurati
             .IsRequired();
 
         builder.Property(r => r.OwnershipShare)
-            .HasPrecision(5, 2);
+            .HasPrecision(18, 4)
+            .HasComment("Ownership share out of 2400 (traditional inheritance denominator); matches production precision");
 
         builder.Property(r => r.ContractDetails)
             .HasMaxLength(2000);
