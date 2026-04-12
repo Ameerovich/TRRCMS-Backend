@@ -18,7 +18,8 @@ namespace TRRCMS.WebAPI.Middleware;
 ///   ArgumentException / ArgumentNull    → 400 Bad Request
 ///   NotFoundException                   → 404 Not Found
 ///   KeyNotFoundException                → 404 Not Found
-///   UnauthorizedAccessException         → 403 Forbidden
+///   InvalidCredentialsException         → 401 Unauthorized (authentication failure — resource-key localized)
+///   UnauthorizedAccessException         → 403 Forbidden    (authorization failure)
 ///   ConflictException                   → 409 Conflict     (business rule / state conflict)
 ///   InvalidOperationException           → 409 Conflict     (domain state violation)
 ///   Everything else                     → 500 Internal Server Error
@@ -135,6 +136,18 @@ public class GlobalExceptionHandlingMiddleware
                     Title = L("Title_NotFound"),
                     Message = isArabic ? L("Message_NotFound") : keyNotFoundEx.Message,
                     Detail = isArabic ? keyNotFoundEx.Message : null
+                }),
+
+            InvalidCredentialsException credEx => (
+                HttpStatusCode.Unauthorized,
+                new ErrorResponse
+                {
+                    Status = (int)HttpStatusCode.Unauthorized,
+                    Title = L("Title_Unauthorized"),
+                    Message = isArabic
+                        ? string.Format(_localizer[credEx.LocalizationKey].Value, credEx.LocalizationArgs)
+                        : credEx.Message,
+                    Detail = isArabic ? credEx.Message : null
                 }),
 
             UnauthorizedAccessException unauthorizedEx => (

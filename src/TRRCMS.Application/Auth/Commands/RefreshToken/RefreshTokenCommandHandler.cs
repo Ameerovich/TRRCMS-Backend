@@ -1,6 +1,8 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Auth.Dtos;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Auth.Commands.RefreshToken;
@@ -13,15 +15,18 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
         IUserRepository userRepository,
         ITokenService tokenService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<RefreshTokenCommandHandler> logger)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<RefreshTokenResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
@@ -31,31 +36,47 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
 
         if (user == null)
         {
-            throw new UnauthorizedAccessException("Invalid or expired refresh token.");
+            _logger.LogWarning("Refresh token rejected: no user for token (device {DeviceId})",
+                request.DeviceId ?? "unknown");
+            throw new InvalidCredentialsException(
+                "Message_InvalidRefreshToken",
+                "Invalid or expired refresh token.");
         }
 
         // Step 2: Validate refresh token expiry
         if (user.RefreshTokenExpiryDate == null || user.RefreshTokenExpiryDate < DateTime.UtcNow)
         {
-            throw new UnauthorizedAccessException("Refresh token has expired. Please login again.");
+            _logger.LogWarning("Refresh token expired for user {UserId} (device {DeviceId})",
+                user.Id, request.DeviceId ?? "unknown");
+            throw new InvalidCredentialsException(
+                "Message_RefreshTokenExpired",
+                "Refresh token has expired. Please login again.");
         }
 
         // Step 3: Check if account is still active
         if (!user.IsActive)
         {
-            throw new UnauthorizedAccessException("Account is inactive.");
+            _logger.LogWarning("Refresh rejected for inactive user {UserId}", user.Id);
+            throw new InvalidCredentialsException(
+                "Message_AccountInactive",
+                "Account is inactive. Please contact your administrator.");
         }
 
         // Step 4: Check if account is locked
         if (user.IsLockedOut && !user.IsLockoutExpired())
         {
-            throw new UnauthorizedAccessException("Account is locked.");
+            _logger.LogWarning("Refresh rejected for locked user {UserId}", user.Id);
+            throw new InvalidCredentialsException(
+                "Message_AccountLockedNoCountdown",
+                "Account is locked.");
         }
 
         // Step 4b: Block refresh if user must change password
         if (user.MustChangePassword)
         {
-            throw new UnauthorizedAccessException(
+            _logger.LogWarning("Refresh rejected for user {UserId}: must change password", user.Id);
+            throw new InvalidCredentialsException(
+                "Message_MustChangePassword",
                 "You must change your password before continuing. Please login and change your password.");
         }
 

@@ -1,6 +1,8 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Auth.Dtos;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.Auth.Commands.Login;
@@ -14,17 +16,20 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<LoginCommandHandler> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -34,7 +39,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
 
         if (user == null)
         {
-            throw new UnauthorizedAccessException("Invalid username or password.");
+            _logger.LogWarning("Failed login attempt for unknown username {Username}", request.Username);
+            throw new InvalidCredentialsException(
+                "Message_InvalidCredentials",
+                "Invalid username or password.");
         }
 
         // Step 2: Check if account is locked
@@ -44,9 +52,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             if (!user.IsLockoutExpired())
             {
                 var remainingTime = user.LockoutEndDate!.Value - DateTime.UtcNow;
-                throw new UnauthorizedAccessException(
-                    $"Account is locked due to multiple failed login attempts. " +
-                    $"Please try again in {remainingTime.Minutes} minutes.");
+                _logger.LogWarning(
+                    "Failed login attempt for locked account {Username}, remaining lockout minutes: {Minutes}",
+                    request.Username, remainingTime.Minutes);
+                throw new InvalidCredentialsException(
+                    "Message_AccountLocked",
+                    $"Account is locked due to multiple failed login attempts. Please try again in {remainingTime.Minutes} minutes.",
+                    remainingTime.Minutes);
             }
             else
             {
@@ -60,7 +72,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         // Step 3: Check if account is active
         if (!user.IsActive)
         {
-            throw new UnauthorizedAccessException("Account is inactive. Please contact your administrator.");
+            _logger.LogWarning("Failed login attempt for inactive account {Username}", request.Username);
+            throw new InvalidCredentialsException(
+                "Message_AccountInactive",
+                "Account is inactive. Please contact your administrator.");
         }
 
         // Step 4: Verify password
@@ -76,7 +91,10 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             await _userRepository.UpdateAsync(user, cancellationToken);
             await _userRepository.SaveChangesAsync(cancellationToken);
 
-            throw new UnauthorizedAccessException("Invalid username or password.");
+            _logger.LogWarning("Failed login attempt for username {Username}: wrong password", request.Username);
+            throw new InvalidCredentialsException(
+                "Message_InvalidCredentials",
+                "Invalid username or password.");
         }
 
         // Step 5: Check if user must change password (first login)
@@ -113,7 +131,9 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         // Step 6: Check if password is expired
         if (user.IsPasswordExpired())
         {
-            throw new UnauthorizedAccessException(
+            _logger.LogWarning("Failed login attempt for username {Username}: password expired", request.Username);
+            throw new InvalidCredentialsException(
+                "Message_PasswordExpired",
                 "Your password has expired. Please contact your administrator to reset it.");
         }
 

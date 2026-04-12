@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 
@@ -11,13 +12,16 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly ILogger<ChangePasswordCommandHandler> _logger;
 
     public ChangePasswordCommandHandler(
         IUserRepository userRepository,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        ILogger<ChangePasswordCommandHandler> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _logger = logger;
     }
 
     public async Task<bool> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
@@ -50,7 +54,10 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         if (!isCurrentPasswordValid)
         {
-            throw new UnauthorizedAccessException("Current password is incorrect.");
+            _logger.LogWarning("Password change rejected for user {UserId}: current password incorrect", request.UserId);
+            throw new InvalidCredentialsException(
+                "Message_CurrentPasswordIncorrect",
+                "Current password is incorrect.");
         }
 
         // Step 5: Ensure new password is different from current password
