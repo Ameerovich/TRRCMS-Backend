@@ -301,7 +301,7 @@ public class User : BaseAuditableEntity
     /// <summary>
     /// Record failed login attempt
     /// </summary>
-    public void RecordFailedLogin(int maxAttempts = 5, int lockoutMinutes = 30)
+    public void RecordFailedLogin(int maxAttempts, int lockoutMinutes)
     {
         FailedLoginAttempts++;
         LastFailedLoginDate = DateTime.UtcNow;

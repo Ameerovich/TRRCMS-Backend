@@ -16,6 +16,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
+    private readonly ISecurityPolicyRepository _securityPolicyRepository;
     private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
@@ -23,12 +24,14 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IConfiguration configuration,
+        ISecurityPolicyRepository securityPolicyRepository,
         ILogger<LoginCommandHandler> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _configuration = configuration;
+        _securityPolicyRepository = securityPolicyRepository;
         _logger = logger;
     }
 
@@ -86,8 +89,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
 
         if (!isPasswordValid)
         {
-            // Record failed login attempt
-            user.RecordFailedLogin();
+            // Record failed login attempt using active security policy lockout settings
+            var policy = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
+            int maxAttempts = policy?.SessionLockoutPolicy.MaxFailedLoginAttempts ?? 5;
+            int lockoutMinutes = policy?.SessionLockoutPolicy.LockoutDurationMinutes ?? 30;
+            user.RecordFailedLogin(maxAttempts, lockoutMinutes);
             await _userRepository.UpdateAsync(user, cancellationToken);
             await _userRepository.SaveChangesAsync(cancellationToken);
 
