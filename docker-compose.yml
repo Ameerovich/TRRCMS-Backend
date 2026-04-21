@@ -74,6 +74,27 @@ services:
       retries: 3
       start_period: 60s
 
+  # ============================================
+  # Adminer — Web-based Database UI
+  # ============================================
+  adminer:
+    image: adminer:latest
+    container_name: trrcms-adminer
+    restart: unless-stopped
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+
+    ports:
+      - "8081:8080"
+
+    networks:
+      - trrcms-network
+
 # ============================================
 # Named Volumes
 # ============================================
