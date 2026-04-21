@@ -1,7 +1,7 @@
 # TRRCMS Mobile Sync Integration Guide
 
-**Version:** 1.6.1
-**Last Updated:** April 1, 2026
+**Version:** 1.9
+**Last Updated:** April 10, 2026
 **Audience:** Mobile (Flutter/Android) Development Team
 **Backend Contact:** TRRCMS Backend Team
 **System:** Tenure Rights Registration & Claims Management System (TRRCMS)
@@ -21,6 +21,60 @@
 9. [Package Assembly Workflow](#9-package-assembly-workflow)
 10. [Error Handling & Edge Cases](#10-error-handling--edge-cases)
 11. [Checklist Before First Sync](#11-checklist-before-first-sync)
+
+---
+
+## Changelog — v1.9 (April 10, 2026)
+
+> **Mobile team: review all items marked with `>>> CHANGED v1.9` in this document.**
+> Search for `>>> CHANGED v1.9` to find every updated section.
+
+| Change | Section | Impact |
+|--------|---------|--------|
+| `households` field realignment — removed 6 gendered age/disability columns (`male_child_count`, `female_child_count`, `male_elderly_count`, `female_elderly_count`, `male_disabled_count`, `female_disabled_count`); added `adult_count`, `disabled_count`, `occupancy_start_date`; `male_count`/`female_count` now mean total of all ages (was adult-only) | 3.2, 8, 11 | **BREAKING** — mobile must ship v1.9 package format |
+| `identification_documents` — `document_type` and `description` are now optional. Only `id`, `person_id`, and `original_file_name` are required. | 3.2, 8, 11 | Non-breaking — server accepts packages without these fields |
+| `manifest.schema_version` updated to `1.9.0` | 3.1 | Update your manifest value |
+
+---
+
+## Changelog — v1.8 (April 5, 2026)
+
+> **Mobile team: review all items marked with `>>> CHANGED v1.8` in this document.**
+> Search for `>>> CHANGED v1.8` to find every updated section.
+
+| Change | Section | Impact |
+|--------|---------|--------|
+| New `evidence_relations` junction table — many-to-many evidence-to-relation links | 3.2, 7, 8, 11 | One evidence can link to multiple person-property relations |
+| `survey_status` value 4 renamed from `Interrupted` to `Obstructed` (معرقل) | 6 | Label change — integer code unchanged |
+| Vocabulary seeder now marks removed enum values as `isDeprecated: true` | 6 | Filter deprecated values from dropdowns |
+| `manifest.schema_version` updated to `1.8.0` | 3.1 | Update your manifest value |
+| New `evidence_relation_count` manifest key | 3.1 | Count of rows in `evidence_relations` table |
+| `evidences.person_property_relation_id` kept as backward-compatible fallback | 3.2 | Junction table takes priority if present; direct FK used as fallback |
+| `claims.tenure_contract_type` — new optional column | 3.2, 8 | Vocabulary code for tenure arrangement type |
+| `identification_documents` now fully staged and committed via import pipeline | 3.2, 8 | ID docs in .uhc are imported to production |
+| `OwnershipShare` validated as 0–2400 (Syrian cadastral) across all endpoints | 3.2, 8 | Was inconsistent across validators |
+| Backward-compat: `evidences.person_id`, `persons.relationship_to_head`, `households.occupancy_type` still accepted | 3.2 | Deprecated but not rejected — for older .uhc packages |
+
+---
+
+## Changelog — v1.7 (April 4, 2026)
+
+> **Mobile team: review all items marked with `>>> CHANGED v1.7` in this document.**
+> Search for `>>> CHANGED v1.7` to find every updated section.
+
+| Change | Section | Impact |
+|--------|---------|--------|
+| New `identification_documents` table — ID docs are separate from evidence | 3.2, 7, 8, 11 | **BREAKING** — ID documents must go in the new table, not in `evidences` |
+| `evidences.person_id` column removed | 3.2, 7, 8 | **BREAKING** — evidence no longer links directly to persons |
+| `EvidenceType` values 1 (IdentificationDocument) and 5 (Photo) removed | 6 | **BREAKING** — do not use these codes in `evidences.evidence_type` |
+| New `document_type` vocabulary for identification documents | 6 | Use codes: 1=PersonalIdPhoto, 2=FamilyRecord, 3=Photo |
+| Audio files (.mp3, .wav, .ogg, .m4a) accepted in evidence attachments | 3.2, 11 | Evidence can now contain voice recordings |
+| `survey_status` — value `4` is `Obstructed` (معرقل) — owner/occupant refused cooperation | 6 | Valid status code for surveys |
+| `occupancy_type` removed from households, `relationship_to_head` removed from persons | 3.2, 8, 11 | **BREAKING** — do NOT include these columns in the .uhc package |
+| `surveys.reference_code` — new format | 3.2, 8, 11 | Generate as `SRV-{DeviceId}-{YYYYMMDDHHmmss}` at survey creation time |
+| `manifest.schema_version` updated to `1.7.0` | 3.1 | (now `1.8.0` — see v1.8 changelog above) |
+| New `identification_document_count` manifest key | 3.1 | Count of rows in `identification_documents` table |
+| `attachments` table now accepts `identification_document_id` | 3.2, 8 | New FK column for ID document blobs |
 
 ---
 
@@ -265,8 +319,9 @@ A `.uhc` file is a **renamed SQLite 3 database** containing:
 | `person_property_relations` | Yes | Person-to-property linkages |
 | `claims` | Yes | Tenure rights claims |
 | `surveys` | Yes | Survey session records |
-| `evidences` | Yes | Evidence/document metadata |
-| `attachments` | No | Binary blobs for evidence files and building documents |
+| `evidences` | Yes | Tenure evidence/document metadata |
+| `identification_documents` | No | `>>> CHANGED v1.7` — Personal identification document metadata (separate from evidence) |
+| `attachments` | No | Binary blobs for evidence, identification document, and building document files |
 
 **Tables may be empty** (zero rows) but must exist in the database. The server gracefully skips tables with no rows or missing optional tables.
 
@@ -290,7 +345,7 @@ CREATE TABLE manifest (
 | Key | Example Value | Description |
 |---|---|---|
 | `package_id` | `a1b2c3d4-...` | Unique UUID for this package (server extracts this automatically) |
-| `schema_version` | `1.6.0` | Schema version of the .uhc format. `>>> CHANGED v1.6` — was `1.5.0` |
+| `schema_version` | `1.9.0` | Schema version of the .uhc format. `>>> CHANGED v1.9` — was `1.8.0` |
 | `created_utc` | `2026-02-23T09:45:00Z` | ISO-8601 UTC creation timestamp |
 | `device_id` | `TABLET-FIELD-001` | Device identifier |
 | `app_version` | `1.0.0` | Tablet application version |
@@ -311,6 +366,8 @@ CREATE TABLE manifest (
 | `relation_count` | Number of rows in `person_property_relations` table |
 | `claim_count` | Number of rows in `claims` table |
 | `document_count` | Number of rows in `evidences` table |
+| `identification_document_count` | `>>> CHANGED v1.7` — Number of rows in `identification_documents` table |
+| `evidence_relation_count` | `>>> CHANGED v1.8` — Number of rows in `evidence_relations` table |
 | `total_attachment_size_bytes` | Sum of all attachment file sizes |
 
 **Optional keys:**
@@ -400,31 +457,34 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `gender` | INTEGER | No | Enum code: `1` = Male, `2` = Female |
 | `nationality` | INTEGER | No | Enum code: `1` = Syrian, `2` = Palestinian, `3` = Iraqi, `99` = Other |
 | `household_id` | TEXT (UUID) | No | FK → `households.id` |
-| `relationship_to_head` | INTEGER | No | Enum code: `1` = Head, `2` = Spouse, `3` = Son, `4` = Daughter, `5` = Father, `6` = Mother, `7` = Brother, `8` = Sister, `99` = Other |
 | `is_contact_person` | INTEGER | No | `1` if this person is the contact person for the survey, `0` otherwise (default: `0`) |
+
+> `>>> CHANGED v1.7` — `relationship_to_head` column removed from the .uhc schema. The server ignores it if present. Desktop may still use it via API, but the mobile app should NOT include this column.
 
 > **Contact Person:** When a survey is initiated, the first person added is typically marked as the contact person (`is_contact_person = 1`). The server links this person to the survey via the `contact_person_id` field on the `surveys` table. Only one person per survey should be marked as the contact person.
 
 #### `households`
 
-> `>>> CHANGED v1.6` — Removed `head_of_household_name` and `head_of_household_person_id` columns. The head of household is now identified by the person with `relationship_to_head = 1` (Head) in the `persons` table.
+> `>>> CHANGED v1.6` — Removed `head_of_household_name` and `head_of_household_person_id` columns.
+> `>>> CHANGED v1.9` — Removed 6 gendered age/disability columns. Added `adult_count`, `disabled_count`, `occupancy_start_date`. `male_count`/`female_count` now represent **total members of that gender across all ages** (was adult-only in v1.8).
 
 | Column | SQLite Type | Required | Description |
 |---|---|---|---|
 | `id` | TEXT (UUID) | Yes | Primary key |
 | `property_unit_id` | TEXT (UUID) | Yes | FK → `property_units.id` |
 | `household_size` | INTEGER | Yes | Total household members |
-| `male_count` | INTEGER | No | Male members (default: 0) |
-| `female_count` | INTEGER | No | Female members (default: 0) |
-| `male_child_count` | INTEGER | No | Male children (default: 0) |
-| `female_child_count` | INTEGER | No | Female children (default: 0) |
-| `male_elderly_count` | INTEGER | No | Male elderly (default: 0) |
-| `female_elderly_count` | INTEGER | No | Female elderly (default: 0) |
-| `male_disabled_count` | INTEGER | No | Male disabled (default: 0) |
-| `female_disabled_count` | INTEGER | No | Female disabled (default: 0) |
-| `occupancy_type` | INTEGER | No | `>>> CHANGED v1.6` — Vocabulary code from `occupancy_type` |
-| `occupancy_nature` | INTEGER | No | `>>> CHANGED v1.6` — Vocabulary code from `occupancy_nature` |
+| `male_count` | INTEGER | No | `>>> CHANGED v1.9` — Total males (all ages). Was adult-only in v1.8. |
+| `female_count` | INTEGER | No | `>>> CHANGED v1.9` — Total females (all ages). Was adult-only in v1.8. |
+| `adult_count` | INTEGER | No | `>>> NEW v1.9` — Number of adults |
+| `child_count` | INTEGER | No | `>>> CHANGED v1.9` — Total children, ungendered (replaces `male_child_count` + `female_child_count`) |
+| `elderly_count` | INTEGER | No | `>>> CHANGED v1.9` — Total elderly, ungendered (replaces `male_elderly_count` + `female_elderly_count`) |
+| `disabled_count` | INTEGER | No | `>>> NEW v1.9` — Total persons with disabilities, ungendered (replaces `male_disabled_count` + `female_disabled_count`) |
+| `occupancy_nature` | INTEGER | No | Vocabulary code from `occupancy_nature` |
+| `occupancy_start_date` | TEXT | No | `>>> NEW v1.9` — ISO-8601 datetime (UTC) when the household started occupying this unit |
 | `notes` | TEXT | No | Additional notes |
+
+> `>>> CHANGED v1.9` — **Removed columns** (do NOT include in v1.9 packages): `male_child_count`, `female_child_count`, `male_elderly_count`, `female_elderly_count`, `male_disabled_count`, `female_disabled_count`.
+> `>>> CHANGED v1.7` — `occupancy_type` removed. The server ignores it if present.
 
 #### `person_property_relations`
 
@@ -434,7 +494,7 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `person_id` | TEXT (UUID) | Yes | FK → `persons.id` |
 | `property_unit_id` | TEXT (UUID) | Yes | FK → `property_units.id` |
 | `relation_type` | INTEGER | Yes | Vocabulary code from `relation_type` |
-| `ownership_share` | REAL | No | Ownership percentage (0.0–100.0) |
+| `ownership_share` | REAL | No | Ownership share in Syrian cadastral units (0–2400). `>>> CHANGED v1.8` |
 | `occupancy_type` | INTEGER | No | `>>> CHANGED v1.6` — Vocabulary code from `occupancy_type` |
 | `has_evidence` | INTEGER | No | `>>> CHANGED v1.6` — `1` if evidence documents are attached, `0` otherwise (default: `0`) |
 | `notes` | TEXT | No | Additional notes |
@@ -449,7 +509,8 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `claim_source` | INTEGER | Yes | Vocabulary code from `claim_source` |
 | `primary_claimant_id` | TEXT (UUID) | Yes | FK → `persons.id` — the person making the claim. **Required.** Claims without a claimant are rejected during import. |
 | `originating_survey_id` | TEXT (UUID) | No | `>>> CHANGED v1.6` — FK → `surveys.id`. Links the claim to the survey that originated it. |
-| `ownership_share` | REAL | No | Ownership percentage (0.0–100.0) |
+| `ownership_share` | REAL | No | Ownership share in Syrian cadastral units (0–2400). `>>> CHANGED v1.8` |
+| `tenure_contract_type` | INTEGER | No | `>>> CHANGED v1.8` — Vocabulary code from `tenure_contract_type`. Optional — classifies the tenure arrangement. |
 | `claim_description` | TEXT | No | Description of the claim |
 
 #### `surveys`
@@ -465,7 +526,7 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `notes` | TEXT | No | Survey notes |
 | `field_collector_id` | TEXT (UUID) | No | UUID of the field collector (should match authenticated user) |
 | `contact_person_id` | TEXT (UUID) | No | FK → `persons.id` — the person marked as `is_contact_person = 1`. **Required for survey finalization** — surveys without a contact person cannot be finalized. |
-| `reference_code` | TEXT | No | Survey reference code. If omitted, server auto-generates one. |
+| `reference_code` | TEXT | Yes | `>>> CHANGED v1.7` — Survey reference code. Format: `SRV-{DeviceId}-{YYYYMMDDHHmmss}` (e.g., `SRV-T01-20260404091205`). Mobile must generate this at survey creation time using the tablet's device ID and UTC timestamp. Server uses it as-is if provided; generates a fallback `SRV-OFC-{timestamp}` if missing. |
 | `type` | INTEGER | No | Vocabulary code from `survey_type` |
 | `source` | INTEGER | No | Vocabulary code from `survey_source` |
 | `status` | INTEGER | No | Vocabulary code from `survey_status` |
@@ -474,18 +535,63 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 
 #### `evidences`
 
+> `>>> CHANGED v1.7` — `person_id` column removed. Evidence is now for **tenure documents only** (linked to `person_property_relations`). Identification documents go in the new `identification_documents` table.
+> `>>> CHANGED v1.7` — `evidence_type` values `1` (IdentificationDocument) and `5` (Photo) are removed. Do not use these codes.
+> `>>> CHANGED v1.7` — Audio files (.mp3, .wav, .ogg, .m4a) are now accepted as evidence attachments (voice recordings).
+
 | Column | SQLite Type | Required | Description |
 |---|---|---|---|
 | `id` | TEXT (UUID) | Yes | Primary key |
-| `evidence_type` | INTEGER | Yes | Vocabulary code from `evidence_type` |
+| `evidence_type` | INTEGER | Yes | `>>> CHANGED v1.7` — Vocabulary code from `evidence_type`. Valid codes: 2, 3, 4, 6, 7, 8, 9, 99. Values 1 and 5 are no longer valid. |
 | `description` | TEXT | Yes | Document description |
-| `original_file_name` | TEXT | Yes | Original file name (e.g., `deed_photo.jpg`) |
+| `original_file_name` | TEXT | Yes | Original file name (e.g., `deed_photo.jpg`, `testimony.mp3`) |
 | `file_path` | TEXT | No | Relative file path (server may override if blob is embedded) |
 | `file_size_bytes` | INTEGER | No | File size in bytes |
 | `file_hash` | TEXT | No | SHA-256 hash of the file content |
-| `person_id` | TEXT (UUID) | No | FK → `persons.id` |
-| `person_property_relation_id` | TEXT (UUID) | No | FK → `person_property_relations.id` |
+| `person_property_relation_id` | TEXT (UUID) | No | FK → `person_property_relations.id`. `>>> CHANGED v1.8` — Legacy fallback; prefer `evidence_relations` junction table for many-to-many. |
 | `claim_id` | TEXT (UUID) | No | FK → `claims.id` |
+| `document_issued_date` | TEXT | No | ISO-8601 date |
+| `document_expiry_date` | TEXT | No | ISO-8601 date |
+| `issuing_authority` | TEXT | No | Authority that issued the document |
+| `document_reference_number` | TEXT | No | Document reference number |
+| `notes` | TEXT | No | Additional notes |
+
+> `>>> CHANGED v1.8` **Backward compatibility note:** The server still accepts the following deprecated columns if present in the .uhc package (for older mobile app versions). New mobile builds should NOT include these columns:
+> - `evidences.person_id` — removed in v1.7, ignored if sent
+> - `persons.relationship_to_head` — removed in v1.7, ignored if sent
+> - `households.occupancy_type` — removed in v1.7, ignored if sent
+
+#### `>>> CHANGED v1.8` — `evidence_relations` (NEW)
+
+Many-to-many junction table linking evidence to person-property relations. Use this when one evidence document (e.g., ownership deed) applies to multiple relations (e.g., father as Owner, son as Heir).
+
+| Column | SQLite Type | Required | Description |
+|---|---|---|---|
+| `id` | TEXT (UUID) | Yes | Primary key |
+| `evidence_id` | TEXT (UUID) | Yes | FK → `evidences.id` |
+| `person_property_relation_id` | TEXT (UUID) | Yes | FK → `person_property_relations.id` |
+
+**Priority logic on the server:**
+- If `evidence_relations` rows exist for an evidence → server uses those (many-to-many)
+- If no `evidence_relations` rows exist → server falls back to `evidences.person_property_relation_id` (legacy 1:1)
+- Both can coexist in the same package — the junction table takes priority per evidence
+
+#### `>>> CHANGED v1.7` — `identification_documents` (NEW) / `>>> CHANGED v1.9` — fields simplified
+
+Personal identification documents linked to a Person. Separate from tenure evidence.
+
+> `>>> CHANGED v1.9` — `document_type` and `description` are now **optional**. Only `id`, `person_id`, and `original_file_name` are required. The server accepts all other columns if present but does not require them.
+
+| Column | SQLite Type | Required | Description |
+|---|---|---|---|
+| `id` | TEXT (UUID) | Yes | Primary key |
+| `person_id` | TEXT (UUID) | Yes | FK → `persons.id` |
+| `original_file_name` | TEXT | Yes | Original file name |
+| `document_type` | INTEGER | No | `>>> CHANGED v1.9` — now optional. Vocabulary code from `document_type`: 1=PersonalIdPhoto, 2=FamilyRecord, 3=Photo |
+| `description` | TEXT | No | `>>> CHANGED v1.9` — now optional. Document description |
+| `file_path` | TEXT | No | Relative file path |
+| `file_size_bytes` | INTEGER | No | File size in bytes |
+| `file_hash` | TEXT | No | SHA-256 hash of the file content |
 | `document_issued_date` | TEXT | No | ISO-8601 date |
 | `document_expiry_date` | TEXT | No | ISO-8601 date |
 | `issuing_authority` | TEXT | No | Authority that issued the document |
@@ -494,19 +600,20 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 
 #### `attachments` (Optional)
 
-Binary blobs for evidence files and building documents. The server extracts blobs from this table and stores them to disk.
+Binary blobs for evidence, identification document, and building document files. The server extracts blobs from this table and stores them to disk.
 
 ```sql
 CREATE TABLE attachments (
-    evidence_id          TEXT,  -- FK → evidences.id (for evidence file blobs)
-    building_document_id TEXT,  -- FK → building_documents.id (for building document blobs)
-    data                 BLOB NOT NULL  -- Raw file bytes
+    evidence_id                TEXT,  -- FK → evidences.id (for tenure evidence blobs)
+    identification_document_id TEXT,  -- >>> CHANGED v1.7 — FK → identification_documents.id (for ID document blobs)
+    building_document_id       TEXT,  -- FK → building_documents.id (for building document blobs)
+    data                       BLOB NOT NULL  -- Raw file bytes
 );
 ```
 
-Each row should have **either** `evidence_id` or `building_document_id` set (not both). The server queries this table by the appropriate ID to extract the file.
+Each row should have **one of** `evidence_id`, `identification_document_id`, or `building_document_id` set (not multiple). The server queries this table by the appropriate ID to extract the file.
 
-> **BLOB Required:** All evidence files and building document files **must** be embedded as BLOBs in this table. Tablet file paths (e.g., SD card paths) are not accessible on the server — records with no matching BLOB will result in missing files. The server logs a warning for any evidence or building document without a corresponding BLOB in the attachments table.
+> **BLOB Required:** All evidence files, identification document files, and building document files **must** be embedded as BLOBs in this table. Tablet file paths (e.g., SD card paths) are not accessible on the server — records with no matching BLOB will result in missing files.
 
 ---
 
@@ -626,20 +733,71 @@ Each element in the `assignments` array has this structure:
   "communityName": "حلب المدينة",
   "neighborhoodName": "الجميلية",
 
+  "buildingType": 1,
+  "buildingStatus": 1,
+  "numberOfPropertyUnits": 12,
+  "numberOfApartments": 10,
+  "numberOfShops": 2,
   "notes": null,
+
+  "buildingGeometryWkt": "POLYGON ((37.15 36.20, 37.16 36.20, 37.16 36.21, 37.15 36.21, 37.15 36.20))",
+  "latitude": 36.205,
+  "longitude": 37.155,
 
   "propertyUnits": [
     {
-      "id": "unit-guid",
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       "unitIdentifier": "شقة 1",
-      "floorNumber": 1,
+      "floorNumber": 2,
       "unitType": 1,
       "status": 1,
       "areaSquareMeters": 120.5
+    },
+    {
+      "id": "7bc94a12-1234-4abc-beef-9d8e7f6a5b4c",
+      "unitIdentifier": "محل 1",
+      "floorNumber": 0,
+      "unitType": 2,
+      "status": 2,
+      "areaSquareMeters": null
     }
   ]
 }
 ```
+
+#### Building Attribute Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `buildingType` | `int` | `1` Residential (سكني) · `2` Commercial (تجاري) · `3` Mixed-Use (مختلط) · `4` Industrial (صناعي) |
+| `buildingStatus` | `int` | `1` Intact (سليم) · `2` Minor Damage (أضرار طفيفة) · `3` Moderate Damage (أضرار متوسطة) · `4` Major Damage (أضرار كبيرة) · `5` Severely Damaged (أضرار شديدة) · `6` Destroyed (مدمر) · `7` Under Construction (قيد الإنشاء) · `8` Abandoned (مهجور) · `99` Unknown (غير معروف) |
+| `numberOfPropertyUnits` | `int` | Total registered units in the building — maps to `number_of_property_units` in mobile DB |
+| `numberOfApartments` | `int` | Residential apartment count — maps to `number_of_apartments` in mobile DB |
+| `numberOfShops` | `int` | Commercial shop count — maps to `number_of_shops` in mobile DB |
+| `notes` | `string \| null` | General building notes / description |
+
+#### Property Unit Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | `guid` | Server-side unit ID — use this to correlate collected survey data in the `.uhc` upload |
+| `unitIdentifier` | `string` | Human-readable label, e.g. `"شقة 1"`, `"محل 3"` |
+| `floorNumber` | `int \| null` | Floor number; `null` if unknown. Ground floor = `0` |
+| `unitType` | `int` | `1` Apartment (شقة سكنية) · `2` Shop (محل تجاري) · `3` Office (مكتب) · `4` Warehouse (مستودع) · `5` Other (أخرى) |
+| `status` | `int` | `1` Occupied (مشغول) · `2` Vacant (شاغر) · `3` Damaged (متضرر) · `4` Under Renovation (قيد الترميم) · `5` Uninhabitable (غير صالح للسكن) · `6` Locked (مغلق) · `99` Unknown (غير معروف) |
+| `areaSquareMeters` | `decimal \| null` | Unit area in m²; `null` if not yet measured |
+
+> **Note:** `propertyUnits` is always an array — never `null`. It is `[]` when the building has no registered units yet.
+
+#### Spatial Fields
+
+| Field | Type | Description |
+|---|---|---|
+| `buildingGeometryWkt` | `string \| null` | Full building polygon (or point) in WKT format. Use this to render the building footprint on the map. `null` if no geometry has been registered yet. |
+| `latitude` | `number \| null` | Centroid latitude (decimal degrees, WGS-84). For polygon buildings this is computed automatically from the polygon centroid; for point-only buildings it is the recorded GPS coordinate. |
+| `longitude` | `number \| null` | Centroid longitude (decimal degrees, WGS-84). |
+
+> **Map rendering guidance:** Use `buildingGeometryWkt` to draw the polygon footprint when available. Fall back to the `latitude`/`longitude` pin when only coordinates exist. When both are `null`, the building has no spatial data yet — show a placeholder or omit from the map layer.
 
 ### Using Assignment Data in the .uhc
 
@@ -649,6 +807,7 @@ When the tablet creates a `.uhc` package from collected survey data:
 2. Use the property unit details to pre-populate `property_units` rows.
 3. The `assignmentId` is for acknowledgement only — it does **not** go into the `.uhc` file.
 4. For `isRevisit: true`, `unitsForRevisit` contains a JSON array of unit UUIDs. Only survey those specific units.
+5. `buildingGeometryWkt`, `latitude`, and `longitude` are read-only reference data for map display — they are **not** included in the `.uhc` upload.
 
 ---
 
@@ -678,10 +837,11 @@ The following vocabulary names are used as integer codes in the `.uhc` data tabl
 | `property_unit_status` | `property_units` | `status` |
 | `relation_type` | `person_property_relations` | `relation_type` |
 | `claim_source` | `claims` | `claim_source` |
-| `evidence_type` | `evidences` | `evidence_type` |
+| `evidence_type` | `evidences` | `evidence_type` | `>>> CHANGED v1.7` — values 1 and 5 removed |
+| `document_type` | `identification_documents` | `document_type` | `>>> CHANGED v1.7` — new vocabulary for ID documents |
 | `survey_type` | `surveys` | `type` |
 | `survey_source` | `surveys` | `source` |
-| `survey_status` | `surveys` | `status` |
+| `survey_status` | `surveys` | `status` | `>>> CHANGED v1.8` — value `4` renamed to `Obstructed` (معرقل, was Interrupted). Owner/occupant refused cooperation. |
 | `occupancy_type` | `households`, `person_property_relations` | `occupancy_type` | `>>> CHANGED v1.6` |
 | `occupancy_nature` | `households` | `occupancy_nature` | `>>> CHANGED v1.6` |
 | `claim_type` | `claims` | `claim_type` | `>>> CHANGED v1.6` — was TEXT, now INTEGER vocabulary code |
@@ -723,14 +883,18 @@ buildings
 persons
   ├── is_contact_person = 1   (marks this person as the survey contact)
   ├── households              (household_id → households.id — on persons table)
+  ├── identification_documents (person_id → persons.id) [>>> CHANGED v1.7 — new table]
   ├── person_property_relations (person_id → persons.id)
   │                           (property_unit_id → property_units.id)
   ├── claims                  (primary_claimant_id → persons.id) [REQUIRED]
   │                           (originating_survey_id → surveys.id) [optional, >>> CHANGED v1.6]
   ├── surveys                 (contact_person_id → persons.id) [required for finalization]
-  └── evidences               (person_id → persons.id)
-                               (claim_id → claims.id)
-                               (person_property_relation_id → person_property_relations.id)
+  └── evidences               (claim_id → claims.id) [>>> CHANGED v1.7 — person_id removed]
+                               (person_property_relation_id → person_property_relations.id) [legacy fallback]
+
+evidence_relations            [>>> CHANGED v1.8 — NEW many-to-many junction]
+  ├── evidence_id              → evidences.id
+  └── person_property_relation_id → person_property_relations.id
 ```
 
 **Important:** All UUID foreign keys must match existing `id` values within the same `.uhc` package. Generate all IDs client-side before inserting rows.
@@ -809,26 +973,25 @@ CREATE TABLE persons (
     gender                INTEGER,
     nationality           INTEGER,
     household_id          TEXT REFERENCES households(id),
-    relationship_to_head  INTEGER,
+    -- >>> CHANGED v1.7: relationship_to_head removed from .uhc schema
     is_contact_person     INTEGER DEFAULT 0
 );
 
--- >>> CHANGED v1.6: added occupancy_type, occupancy_nature; removed head_of_household_name, head_of_household_person_id
+-- >>> CHANGED v1.9: removed gendered age/disability columns; added adult_count, disabled_count, occupancy_start_date
+-- >>> CHANGED v1.6: added occupancy_nature; removed head_of_household_name, head_of_household_person_id
 CREATE TABLE households (
-    id                           TEXT PRIMARY KEY,
-    property_unit_id             TEXT NOT NULL REFERENCES property_units(id),
-    household_size               INTEGER NOT NULL,
-    male_count                   INTEGER DEFAULT 0,
-    female_count                 INTEGER DEFAULT 0,
-    male_child_count             INTEGER DEFAULT 0,
-    female_child_count           INTEGER DEFAULT 0,
-    male_elderly_count           INTEGER DEFAULT 0,
-    female_elderly_count         INTEGER DEFAULT 0,
-    male_disabled_count          INTEGER DEFAULT 0,
-    female_disabled_count        INTEGER DEFAULT 0,
-    occupancy_type               INTEGER,          -- >>> CHANGED v1.6
-    occupancy_nature             INTEGER,           -- >>> CHANGED v1.6
-    notes                        TEXT
+    id                    TEXT PRIMARY KEY,
+    property_unit_id      TEXT NOT NULL REFERENCES property_units(id),
+    household_size        INTEGER NOT NULL,
+    male_count            INTEGER,          -- >>> CHANGED v1.9: total males all ages (was adult-only)
+    female_count          INTEGER,          -- >>> CHANGED v1.9: total females all ages (was adult-only)
+    adult_count           INTEGER,          -- >>> NEW v1.9
+    child_count           INTEGER,          -- >>> CHANGED v1.9: ungendered total (replaces male/female_child_count)
+    elderly_count         INTEGER,          -- >>> CHANGED v1.9: ungendered total (replaces male/female_elderly_count)
+    disabled_count        INTEGER,          -- >>> NEW v1.9: ungendered total (replaces male/female_disabled_count)
+    occupancy_nature      INTEGER,
+    occupancy_start_date  TEXT,             -- >>> NEW v1.9: ISO-8601 UTC move-in date
+    notes                 TEXT
 );
 
 -- >>> CHANGED v1.6: added occupancy_type, has_evidence
@@ -852,6 +1015,7 @@ CREATE TABLE claims (
     primary_claimant_id   TEXT NOT NULL REFERENCES persons(id),
     originating_survey_id TEXT REFERENCES surveys(id), -- >>> CHANGED v1.6
     ownership_share       REAL,
+    tenure_contract_type  INTEGER,                -- >>> CHANGED v1.8: vocabulary code from tenure_contract_type
     claim_description     TEXT
 );
 
@@ -866,21 +1030,21 @@ CREATE TABLE surveys (
     notes                    TEXT,
     field_collector_id       TEXT,
     contact_person_id        TEXT REFERENCES persons(id),
-    reference_code           TEXT,
+    reference_code           TEXT,              -- >>> CHANGED v1.7: format SRV-{DeviceId}-{YYYYMMDDHHmmss}
     type                     INTEGER,
     source                   INTEGER,
     status                   INTEGER
 );
 
+-- >>> CHANGED v1.7: removed person_id column; evidence is for tenure documents only
 CREATE TABLE evidences (
     id                            TEXT PRIMARY KEY,
-    evidence_type                 INTEGER NOT NULL,
+    evidence_type                 INTEGER NOT NULL,  -- >>> CHANGED v1.7: values 1,5 removed
     description                   TEXT NOT NULL,
     original_file_name            TEXT NOT NULL,
     file_path                     TEXT,
     file_size_bytes               INTEGER,
     file_hash                     TEXT,
-    person_id                     TEXT REFERENCES persons(id),
     person_property_relation_id   TEXT REFERENCES person_property_relations(id),
     claim_id                      TEXT REFERENCES claims(id),
     document_issued_date          TEXT,
@@ -890,11 +1054,38 @@ CREATE TABLE evidences (
     notes                         TEXT
 );
 
--- Required when evidence or building document files exist
+-- >>> CHANGED v1.8: NEW many-to-many junction for evidence-to-relation links
+CREATE TABLE evidence_relations (
+    id                          TEXT PRIMARY KEY,
+    evidence_id                 TEXT NOT NULL REFERENCES evidences(id),
+    person_property_relation_id TEXT NOT NULL REFERENCES person_property_relations(id)
+);
+
+-- >>> CHANGED v1.7: NEW table for personal identification documents
+-- >>> CHANGED v1.9: document_type and description are now optional (NOT NULL removed)
+CREATE TABLE identification_documents (
+    id                            TEXT PRIMARY KEY,
+    person_id                     TEXT NOT NULL REFERENCES persons(id),
+    original_file_name            TEXT NOT NULL,
+    document_type                 INTEGER,          -- optional: vocabulary: document_type (1=PersonalIdPhoto, 2=FamilyRecord, 3=Photo)
+    description                   TEXT,             -- optional: document description
+    file_path                     TEXT,
+    file_size_bytes               INTEGER,
+    file_hash                     TEXT,
+    document_issued_date          TEXT,
+    document_expiry_date          TEXT,
+    issuing_authority             TEXT,
+    document_reference_number     TEXT,
+    notes                         TEXT
+);
+
+-- Required when evidence, identification document, or building document files exist
+-- >>> CHANGED v1.7: added identification_document_id column
 CREATE TABLE attachments (
-    evidence_id          TEXT REFERENCES evidences(id),
-    building_document_id TEXT REFERENCES building_documents(id),
-    data                 BLOB NOT NULL
+    evidence_id                TEXT REFERENCES evidences(id),
+    identification_document_id TEXT REFERENCES identification_documents(id),
+    building_document_id       TEXT REFERENCES building_documents(id),
+    data                       BLOB NOT NULL
 );
 ```
 
@@ -914,6 +1105,7 @@ When the tablet is ready to export collected data:
    - Mark exactly one person per survey as is_contact_person = 1
    - Set contact_person_id on the survey to that person's id
    - Embed all evidence and building document files as BLOBs in the attachments table
+   - `>>> CHANGED v1.8` — Populate `evidence_relations` table for evidence linked to multiple relations
 4. Compute the content checksum (Section 4) over the data tables
 5. Insert manifest key-value pairs, including:
    - package_id = {newly generated UUID}
@@ -953,7 +1145,8 @@ When the tablet is ready to export collected data:
 - [ ] `>>> CHANGED v1.6.1` — Handle `refreshToken: null` when `mustChangePassword` is true — do not attempt token refresh
 - [ ] `>>> CHANGED v1.6.1` — Handle 403 response with `"error": "PasswordChangeRequired"` on any sync endpoint — redirect to password change
 - [ ] Can create sync session (Step 1)
-- [ ] SQLite database creation with all 11 tables (manifest + 9 data + attachments)
+- [ ] `>>> CHANGED v1.9` — `households` table uses new field shape: `adult_count`, `child_count`, `elderly_count`, `disabled_count`, `occupancy_start_date`; **no** gendered age/disability columns (`male_child_count` etc. are removed); `male_count`/`female_count` now total all ages
+- [ ] `>>> CHANGED v1.8` — SQLite database creation with all 13 tables (manifest + 11 data + attachments) — includes `identification_documents` and `evidence_relations` tables
 - [ ] Content checksum implementation matches server algorithm
 - [ ] Vocabulary codes stored as integers in data tables
 - [ ] `>>> CHANGED v1.6` — `gender`, `nationality`, `relationship_to_head` populated from downloaded vocabularies (no longer hardcoded)
@@ -965,9 +1158,21 @@ When the tablet is ready to export collected data:
 - [ ] `>>> CHANGED v1.6` — `households` no longer have `head_of_household_name` or `head_of_household_person_id` — do NOT include these columns
 - [ ] Every claim has a valid `primary_claimant_id` (required, not nullable)
 - [ ] All UUID foreign keys are consistent within the package
-- [ ] All evidence and building document files embedded as BLOBs in `attachments` table
+- [ ] `>>> CHANGED v1.7` — Identification documents go in `identification_documents` table (NOT in `evidences`)
+- [ ] `>>> CHANGED v1.7` — `evidences` table does NOT have `person_id` column — evidence links only via `person_property_relation_id`
+- [ ] `>>> CHANGED v1.7` — `evidence_type` codes 1 (IdentificationDocument) and 5 (Photo) are NOT used in `evidences`
+- [ ] `>>> CHANGED v1.7` — `identification_documents` use `document_type` vocabulary codes (1=PersonalIdPhoto, 2=FamilyRecord, 3=Photo) — `>>> CHANGED v1.9` — now optional, do NOT treat as required
+- [ ] `>>> CHANGED v1.7` — Audio files (.mp3, .wav, .ogg, .m4a) can be embedded as evidence BLOBs for voice recordings
+- [ ] `>>> CHANGED v1.7` — `attachments` table has `identification_document_id` column for ID doc blobs
+- [ ] `>>> CHANGED v1.7` — `occupancy_type` removed from households table, `relationship_to_head` removed from persons table — do NOT include these columns
+- [ ] `>>> CHANGED v1.7` — `surveys.reference_code` generated at survey creation as `SRV-{DeviceId}-{YYYYMMDDHHmmss}` (e.g., `SRV-T01-20260404091205`)
+- [ ] `>>> CHANGED v1.8` — `evidence_relations` junction table populated when one evidence links to multiple relations
+- [ ] `>>> CHANGED v1.8` — `survey_status` value 4 is `Obstructed` (معرقل) — not Interrupted
+- [ ] `>>> CHANGED v1.8` — Vocabulary entries with `isDeprecated: true` are hidden from new data entry dropdowns
+- [ ] `>>> CHANGED v1.9` — `identification_documents` only requires `id`, `person_id`, `original_file_name` — `document_type` and `description` are optional, do NOT treat them as required
+- [ ] All evidence, identification document, and building document files embedded as BLOBs in `attachments` table
 - [ ] `.uhc` file extension on the upload
-- [ ] Manifest table populated with all required keys (including `building_document_count`), `schema_version` = `1.6.0`
+- [ ] Manifest table populated with all required keys (including `building_document_count`, `identification_document_count`, `evidence_relation_count`), `schema_version` = `1.9.0`
 - [ ] `manifest.checksum` contains the correct content checksum (server verifies automatically)
 - [ ] `is_contact_person` flag set on the correct person per survey
 - [ ] `contact_person_id` on survey points to the person with `is_contact_person = 1`
