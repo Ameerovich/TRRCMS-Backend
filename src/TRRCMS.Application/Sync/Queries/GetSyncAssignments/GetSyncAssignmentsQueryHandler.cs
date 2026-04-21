@@ -194,6 +194,11 @@ public sealed class GetSyncAssignmentsQueryHandler
             NeighborhoodName     = building.NeighborhoodName,
 
             // Building attributes
+            BuildingType         = building.BuildingType,
+            BuildingStatus       = building.Status,
+            NumberOfPropertyUnits = building.NumberOfPropertyUnits,
+            NumberOfApartments   = building.NumberOfApartments,
+            NumberOfShops        = building.NumberOfShops,
             Notes                = building.Notes,
 
             // Spatial data

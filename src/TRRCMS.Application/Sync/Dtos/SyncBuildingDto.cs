@@ -1,3 +1,5 @@
+using TRRCMS.Domain.Enums;
+
 namespace TRRCMS.Application.Sync.DTOs;
 
 /// <summary>
@@ -107,6 +109,36 @@ public sealed record SyncBuildingDto
     public string NeighborhoodName { get; init; } = string.Empty;
 
     // ==================== BUILDING ATTRIBUTES ====================
+
+    /// <summary>
+    /// Building type classification (نوع البناء).
+    /// Matches the <c>building_type</c> column in the mobile SQLite DB.
+    /// </summary>
+    public BuildingType BuildingType { get; init; }
+
+    /// <summary>
+    /// Physical condition of the building (حالة البناء).
+    /// Matches the <c>building_status</c> column in the mobile SQLite DB.
+    /// </summary>
+    public BuildingStatus BuildingStatus { get; init; }
+
+    /// <summary>
+    /// Total number of property units in the building (عدد الوحدات).
+    /// Matches the <c>number_of_property_units</c> column in the mobile SQLite DB.
+    /// </summary>
+    public int NumberOfPropertyUnits { get; init; }
+
+    /// <summary>
+    /// Number of residential apartments (عدد الشقق).
+    /// Matches the <c>number_of_apartments</c> column in the mobile SQLite DB.
+    /// </summary>
+    public int NumberOfApartments { get; init; }
+
+    /// <summary>
+    /// Number of commercial shops (عدد المحلات).
+    /// Matches the <c>number_of_shops</c> column in the mobile SQLite DB.
+    /// </summary>
+    public int NumberOfShops { get; init; }
 
     /// <summary>Additional notes about the building.</summary>
     public string? Notes { get; init; }
