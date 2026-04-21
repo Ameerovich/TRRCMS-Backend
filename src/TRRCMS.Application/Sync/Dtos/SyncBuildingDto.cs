@@ -111,6 +111,28 @@ public sealed record SyncBuildingDto
     /// <summary>Additional notes about the building.</summary>
     public string? Notes { get; init; }
 
+    // ==================== SPATIAL DATA ====================
+
+    /// <summary>
+    /// Building polygon (or point) geometry in WKT format.
+    /// Null when no geometry has been registered yet.
+    /// </summary>
+    public string? BuildingGeometryWkt { get; init; }
+
+    /// <summary>
+    /// GPS latitude of the building centroid (decimal degrees).
+    /// For polygon buildings this is computed from the centroid; for
+    /// point-only buildings it is the recorded GPS coordinate.
+    /// Null when no location data exists.
+    /// </summary>
+    public decimal? Latitude { get; init; }
+
+    /// <summary>
+    /// GPS longitude of the building centroid (decimal degrees).
+    /// Null when no location data exists.
+    /// </summary>
+    public decimal? Longitude { get; init; }
+
     // ==================== PROPERTY UNITS ====================
 
     /// <summary>

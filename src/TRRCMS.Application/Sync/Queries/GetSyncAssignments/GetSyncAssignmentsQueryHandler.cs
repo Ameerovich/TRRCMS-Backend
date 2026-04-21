@@ -196,6 +196,11 @@ public sealed class GetSyncAssignmentsQueryHandler
             // Building attributes
             Notes                = building.Notes,
 
+            // Spatial data
+            BuildingGeometryWkt  = building.BuildingGeometryWkt,
+            Latitude             = building.Latitude,
+            Longitude            = building.Longitude,
+
             // Property units
             PropertyUnits = propertyUnits
         };
