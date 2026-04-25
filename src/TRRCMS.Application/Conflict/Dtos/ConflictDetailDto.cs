@@ -83,4 +83,18 @@ public class ConflictDetailDto
 
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? LastModifiedAtUtc { get; set; }
+
+    /// <summary>
+    /// Full snapshot of the first conflicting entity — always the staging row
+    /// (incoming from the .uhc package). Null only on legacy responses or
+    /// when the snapshot loader is bypassed.
+    /// </summary>
+    public ConflictEntitySnapshotDto? FirstEntity { get; set; }
+
+    /// <summary>
+    /// Full snapshot of the second conflicting entity — the production row for
+    /// cross-batch conflicts, or another staging row for *_WithinBatch conflicts.
+    /// Null only on legacy responses or when the snapshot loader is bypassed.
+    /// </summary>
+    public ConflictEntitySnapshotDto? SecondEntity { get; set; }
 }

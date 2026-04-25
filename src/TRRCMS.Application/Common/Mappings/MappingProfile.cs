@@ -12,6 +12,7 @@ using TRRCMS.Application.Landmarks.Dtos;
 using TRRCMS.Application.Streets.Dtos;
 using TRRCMS.Application.Users.Dtos;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Entities.Staging;
 
 namespace TRRCMS.Application.Common.Mappings;
 
@@ -78,6 +79,59 @@ public class MappingProfile : Profile
                     .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => src.IsDeleted))
                     .ForMember(dest => dest.DeletedAtUtc, opt => opt.MapFrom(src => src.DeletedAtUtc))
                     .ForMember(dest => dest.DeletedBy, opt => opt.MapFrom(src => src.DeletedBy));
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Staging → production DTO mappings.
+        // Used by the conflict-resolution review endpoint to render staging rows
+        // with the same shape as their production counterparts so the UI can
+        // diff field-by-field with a single per-entity-type renderer.
+        // ─────────────────────────────────────────────────────────────────────
+
+        CreateMap<StagingPerson, PersonDto>()
+            // OriginalEntityId is the logical identity that becomes the production Id on commit.
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OriginalEntityId))
+            // OriginalHouseholdId is the staging UUID — frontend renders as a reference.
+            .ForMember(dest => dest.HouseholdId, opt => opt.MapFrom(src => src.OriginalHouseholdId))
+            // Staging records use StagedAtUtc instead of CreatedAtUtc/By.
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.StagedAtUtc))
+            .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => (DateTime?)null))
+            .ForMember(dest => dest.LastModifiedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.DeletedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.DeletedBy, opt => opt.Ignore())
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.HasValue ? (int?)src.Gender : null))
+            .ForMember(dest => dest.Nationality, opt => opt.MapFrom(src => src.Nationality.HasValue ? (int?)src.Nationality : null))
+            .ForMember(dest => dest.RelationshipToHead, opt => opt.MapFrom(src => src.RelationshipToHead.HasValue ? (int?)src.RelationshipToHead : null));
+
+        CreateMap<StagingPropertyUnit, PropertyUnitDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OriginalEntityId))
+            // OriginalBuildingId is the staging UUID — frontend renders as a reference.
+            .ForMember(dest => dest.BuildingId, opt => opt.MapFrom(src => src.OriginalBuildingId))
+            .ForMember(dest => dest.BuildingNumber, opt => opt.Ignore())
+            .ForMember(dest => dest.UnitType, opt => opt.MapFrom(src => (int)src.UnitType))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.StagedAtUtc))
+            .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => (DateTime?)null));
+
+        CreateMap<StagingBuilding, BuildingDto>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.OriginalEntityId))
+            // BuildingId is nullable on staging (computed from admin codes during commit) but
+            // non-nullable on the DTO — coalesce to empty string to satisfy the contract.
+            .ForMember(dest => dest.BuildingId, opt => opt.MapFrom(src => src.BuildingId ?? string.Empty))
+            .ForMember(dest => dest.GovernorateName, opt => opt.MapFrom(src => src.GovernorateName ?? string.Empty))
+            .ForMember(dest => dest.DistrictName, opt => opt.MapFrom(src => src.DistrictName ?? string.Empty))
+            .ForMember(dest => dest.SubDistrictName, opt => opt.MapFrom(src => src.SubDistrictName ?? string.Empty))
+            .ForMember(dest => dest.CommunityName, opt => opt.MapFrom(src => src.CommunityName ?? string.Empty))
+            .ForMember(dest => dest.NeighborhoodName, opt => opt.MapFrom(src => src.NeighborhoodName ?? string.Empty))
+            .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => (int)src.BuildingType))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.BuildingDocumentIds, opt => opt.MapFrom(src => new List<Guid>()))
+            .ForMember(dest => dest.IsAssigned, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.IsLocked, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.StagedAtUtc))
+            .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => (DateTime?)null));
+
         CreateMap<Household, HouseholdDto>()
        // Identifiers
        .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))

@@ -14,11 +14,16 @@ public class GetConflictDetailsQueryHandler
     : IRequestHandler<GetConflictDetailsQuery, ConflictDetailDto>
 {
     private readonly IConflictResolutionRepository _conflictRepository;
+    private readonly IConflictEntityLoader _entityLoader;
 
-    public GetConflictDetailsQueryHandler(IConflictResolutionRepository conflictRepository)
+    public GetConflictDetailsQueryHandler(
+        IConflictResolutionRepository conflictRepository,
+        IConflictEntityLoader entityLoader)
     {
         _conflictRepository = conflictRepository
             ?? throw new ArgumentNullException(nameof(conflictRepository));
+        _entityLoader = entityLoader
+            ?? throw new ArgumentNullException(nameof(entityLoader));
     }
 
     public async Task<ConflictDetailDto> Handle(
@@ -33,7 +38,7 @@ public class GetConflictDetailsQueryHandler
                 $"Conflict resolution with ID {request.Id} not found.");
         }
 
-        return new ConflictDetailDto
+        var dto = new ConflictDetailDto
         {
             Id = conflict.Id,
             ConflictNumber = conflict.ConflictNumber,
@@ -78,5 +83,10 @@ public class GetConflictDetailsQueryHandler
             CreatedAtUtc = conflict.CreatedAtUtc,
             LastModifiedAtUtc = conflict.LastModifiedAtUtc
         };
+
+        dto.FirstEntity = await _entityLoader.LoadFirstEntityAsync(conflict, cancellationToken);
+        dto.SecondEntity = await _entityLoader.LoadSecondEntityAsync(conflict, cancellationToken);
+
+        return dto;
     }
 }
