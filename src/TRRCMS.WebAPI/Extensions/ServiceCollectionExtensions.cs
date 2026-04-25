@@ -121,6 +121,9 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<IMergeService, TRRCMS.Infrastructure.Services.Merge.PersonMergeService>();
         services.AddScoped<IMergeService, TRRCMS.Infrastructure.Services.Merge.PropertyMergeService>();
 
+        // ── Conflict review (full-entity snapshots for /conflicts/{id}/details) ───
+        services.AddScoped<IConflictEntityLoader, TRRCMS.Application.Conflicts.Services.ConflictEntityLoader>();
+
         // ── Sync ─────────────────────────────────────────────────────
         services.AddScoped<ISyncSessionRepository, SyncSessionRepository>();
         services.AddScoped<ISyncPackageStore, LocalSyncPackageStore>();
