@@ -55,6 +55,12 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories
             string? familyName,
             CancellationToken cancellationToken = default)
         {
+            // Guard: no name data means no useful filter — a full-table scan would match everyone
+            if (string.IsNullOrWhiteSpace(firstName) &&
+                string.IsNullOrWhiteSpace(fatherName) &&
+                string.IsNullOrWhiteSpace(familyName))
+                return new List<Person>();
+
             var query = _context.Persons
                 .Where(p => !p.IsDeleted);
 

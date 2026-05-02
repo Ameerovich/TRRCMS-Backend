@@ -3,8 +3,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using TRRCMS.Application.Common.Behaviors;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Mappings;
@@ -16,11 +19,18 @@ using TRRCMS.Infrastructure.Persistence;
 using TRRCMS.Infrastructure.Persistence.Repositories;
 using TRRCMS.Infrastructure.Services;
 using TRRCMS.Infrastructure.Services.Validators;
+using TRRCMS.WebAPI.Middleware;
 
 namespace TRRCMS.WebAPI.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    private static readonly JsonSerializerOptions JwtErrorJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+    };
+
     /// <summary>
     /// Registers infrastructure services: DbContext, repositories, file storage,
     /// audit, import pipeline, sync, vocabulary, and admin hierarchy seeding.
@@ -194,6 +204,70 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
                 ValidAudience = jwtAudience,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
                 ClockSkew = TimeSpan.Zero
+            };
+
+            // Default JwtBearer behavior is to write a 401 with no body and a
+            // WWW-Authenticate header. The mobile client expects every error response to
+            // include a JSON body matching ErrorResponse — these handlers serialize one
+            // for every 401/403 produced by the auth pipeline.
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = ctx =>
+                {
+                    string reasonKey = ctx.Exception is SecurityTokenExpiredException
+                        ? "Message_TokenExpired"
+                        : "Message_TokenInvalid";
+                    ctx.HttpContext.Items["JwtAuthFailureReason"] = reasonKey;
+                    return Task.CompletedTask;
+                },
+
+                OnChallenge = async ctx =>
+                {
+                    ctx.HandleResponse();
+
+                    if (ctx.Response.HasStarted)
+                        return;
+
+                    string messageKey =
+                        ctx.HttpContext.Items["JwtAuthFailureReason"] as string
+                        ?? "Message_AuthenticationRequired";
+
+                    var localizer = ctx.HttpContext.RequestServices
+                        .GetRequiredService<IStringLocalizer<ErrorMessages>>();
+                    bool isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
+
+                    var response = new ErrorResponse
+                    {
+                        Status = StatusCodes.Status401Unauthorized,
+                        Title = localizer["Title_Unauthorized"].Value,
+                        Message = localizer[messageKey].Value,
+                        Detail = isArabic ? ctx.AuthenticateFailure?.Message : null
+                    };
+
+                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.WriteAsync(JsonSerializer.Serialize(response, JwtErrorJsonOptions));
+                },
+
+                OnForbidden = async ctx =>
+                {
+                    if (ctx.Response.HasStarted)
+                        return;
+
+                    var localizer = ctx.HttpContext.RequestServices
+                        .GetRequiredService<IStringLocalizer<ErrorMessages>>();
+
+                    var response = new ErrorResponse
+                    {
+                        Status = StatusCodes.Status403Forbidden,
+                        Title = localizer["Title_Forbidden"].Value,
+                        Message = localizer["Message_Forbidden"].Value
+                    };
+
+                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    ctx.Response.ContentType = "application/json";
+                    await ctx.Response.WriteAsync(JsonSerializer.Serialize(response, JwtErrorJsonOptions));
+                }
             };
         });
 

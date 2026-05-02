@@ -5,8 +5,7 @@
 **Audience:** Mobile (Flutter/Android) Development Team
 **Backend Contact:** TRRCMS Backend Team
 **System:** Tenure Rights Registration & Claims Management System (TRRCMS)
-
----
+ٍ
 
 ## Table of Contents
 
@@ -680,8 +679,7 @@ Future<String> computeContentChecksum(Database db) async {
     for (final row in rows) {
       final parts = <String>[];
       for (final col in columns) {
-        final value = row[col];
-        parts.add('$col=${value == null ? "\\0" : value.toString()}');
+        parts.add('$col=${_stringifyForChecksum(row[col])}');
       }
       input.add(utf8.encode('${parts.join("\t")}\n'));
     }
@@ -689,6 +687,28 @@ Future<String> computeContentChecksum(Database db) async {
 
   input.close();
   return output.events.single.toString(); // lowercase hex
+}
+
+/// >>> DART FIX — server-aligned value stringifier.
+///
+/// Stringifies a SQLite cell value the same way the .NET server does.
+///
+/// Critical: Dart's `double.toString()` keeps a trailing `.0` for whole-number
+/// doubles ("1151.0"), while C#'s default `double.ToString()` drops it ("1151").
+/// REAL columns that hold integer-valued data (e.g. `ownership_share = 1151/2400`,
+/// or `area_square_meters = 100`) are stored as REAL by SQLite's type affinity
+/// and read back as `double` on both sides, so without this helper the row line
+/// would be `ownership_share=1151.0` on mobile but `ownership_share=1151` on
+/// the server — different bytes, different SHA-256, package quarantined.
+String _stringifyForChecksum(Object? value) {
+  if (value == null) return '\\0';
+  if (value is double) {
+    if (value.isFinite && value == value.truncateToDouble()) {
+      return value.toInt().toString(); // matches C# "1151" not Dart "1151.0"
+    }
+    return value.toString();
+  }
+  return value.toString();
 }
 ```
 
@@ -700,6 +720,8 @@ Future<String> computeContentChecksum(Database db) async {
 - The `\n` and `\t` in the format are actual newline and tab characters (not literal backslash-n/t).
 - String sort is **ordinal** (byte-by-byte), not locale-aware.
 - Write the resulting hex string to `manifest.checksum`. Optionally, also send it as the `Sha256Checksum` form field in Step 2 for extra verification.
+- **>>> DART FIX — Number formatting must match C#.** SQLite's REAL affinity stores numeric values as `double` regardless of whether they were inserted as ints or decimals. C# stringifies `1151.0` as `"1151"`; Dart's default stringifies the same value as `"1151.0"`. Use the `_stringifyForChecksum` helper above (or an equivalent) — *never* call `.toString()` directly on a SQLite value when building the canonical bytes. This is the most common cause of "algorithm looks right but checksum still mismatches."
+- **For the verbatim server-side C# implementation**, see [TRRCMS_Server_Checksum_Reference.md](./TRRCMS_Server_Checksum_Reference.md) — the exact bytes we hash, copied straight from `ImportService.ComputeContentChecksumAsync` on the running server.
 
 ---
 

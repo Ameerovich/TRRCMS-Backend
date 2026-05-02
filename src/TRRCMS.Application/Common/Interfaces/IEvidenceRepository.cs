@@ -16,10 +16,10 @@ public interface IEvidenceRepository
     Task<IEnumerable<Evidence>> GetCurrentVersionsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get all evidence for a survey context (by persons and property relations in survey's building)
+    /// Get all evidence for a survey context (by property relations linked to the survey's property unit)
     /// </summary>
     Task<List<Evidence>> GetBySurveyContextAsync(
-        Guid buildingId,
+        Guid propertyUnitId,
         EvidenceType? evidenceType = null,
         Guid? personId = null,
         CancellationToken cancellationToken = default);

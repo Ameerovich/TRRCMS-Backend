@@ -92,6 +92,17 @@ public class PersonMatchingService
 
         foreach (var staging in unmatchedStaging)
         {
+            // Skip composite search if no Arabic name data — avoids full-table scan
+            if (string.IsNullOrWhiteSpace(staging.FirstNameArabic) &&
+                string.IsNullOrWhiteSpace(staging.FatherNameArabic) &&
+                string.IsNullOrWhiteSpace(staging.FamilyNameArabic))
+            {
+                _logger.LogDebug(
+                    "Skipping composite search for staging person {Id} — no Arabic name data",
+                    staging.Id);
+                continue;
+            }
+
             var candidates = await _personRepository.SearchByNameAsync(
                 staging.FirstNameArabic,
                 staging.FatherNameArabic,

@@ -125,7 +125,7 @@ public class GetOfficeSurveyByIdQueryHandler : IRequestHandler<GetOfficeSurveyBy
                 r.RelationType == RelationType.Heir);
 
             // Get evidence using EvidenceType? enum (null = no filter)
-            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.BuildingId, evidenceType: null, personId: null, cancellationToken);
+            var evidence = await _evidenceRepository.GetBySurveyContextAsync(survey.PropertyUnitId ?? Guid.Empty, evidenceType: null, personId: null, cancellationToken);
             result.Evidence = _mapper.Map<List<EvidenceDto>>(evidence);
 
             result.DataSummary = new SurveyDataSummaryDto

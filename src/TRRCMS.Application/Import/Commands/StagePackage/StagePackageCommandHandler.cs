@@ -82,13 +82,15 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             ?? throw new NotFoundException(
                 $"Import package not found: {request.ImportPackageId}");
 
-        // Allow staging from Validating (fresh upload) or ValidationFailed (retry)
+        // Allow staging from Validating (fresh upload), ValidationFailed (retry),
+        // or Staging (force-retry when a previous staging attempt crashed mid-way)
         if (package.Status != ImportStatus.Validating &&
-            package.Status != ImportStatus.ValidationFailed)
+            package.Status != ImportStatus.ValidationFailed &&
+            package.Status != ImportStatus.Staging)
         {
             throw new ConflictException(
                 $"Cannot stage package with status '{package.Status}'. " +
-                $"Expected Validating or ValidationFailed.");
+                $"Expected Validating, ValidationFailed, or Staging.");
         }
 
         _logger.LogInformation(
@@ -98,7 +100,8 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         // ============================================================
         // STEP 2: If retrying, cleanup previous staging data
         // ============================================================
-        if (package.Status == ImportStatus.ValidationFailed)
+        if (package.Status == ImportStatus.ValidationFailed ||
+            package.Status == ImportStatus.Staging)
         {
             _logger.LogInformation("Retry detected — cleaning up previous staging data");
             await _stagingService.CleanupStagingAsync(package.Id, cancellationToken);
@@ -220,7 +223,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
                 {
                     // Duplicate detection failure is non-blocking — staging data is valid.
                     // The desktop team can re-trigger via POST /detect-duplicates.
-                    _logger.LogWarning(dupeEx,
+                    _logger.LogError(dupeEx,
                         "Auto-duplicate detection failed for package {PackageId}. " +
                         "Staging data is valid — detection can be re-triggered manually.",
                         package.PackageId);
@@ -231,7 +234,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             // STEP 7: Build response DTO
             // ============================================================
             var summary = await BuildSummaryDtoAsync(
-                package.Id, package.PackageNumber, package.Status.ToString(),
+                package.Id, package.PackageNumber, package.Status,
                 stagingResult, validationSummary, dupeResult, cancellationToken);
 
             return summary;
@@ -246,8 +249,10 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
                 JsonSerializer.Serialize(new { ex.Message, ex.StackTrace }),
                 userId);
 
-            await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            // Use CancellationToken.None — the original token may already be cancelled
+            // (e.g. HTTP request timeout), but we must always persist the Failed status.
+            await _unitOfWork.ImportPackages.UpdateAsync(package, CancellationToken.None);
+            await _unitOfWork.SaveChangesAsync(CancellationToken.None);
 
             throw;
         }
@@ -301,7 +306,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
     private async Task<StagingSummaryDto> BuildSummaryDtoAsync(
         Guid importPackageId,
         string packageNumber,
-        string status,
+        ImportStatus status,
         StagingResult stagingResult,
         ValidationSummary validationSummary,
         DuplicateDetectionResult? dupeResult,
@@ -311,7 +316,8 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         {
             ImportPackageId = importPackageId,
             PackageNumber = packageNumber,
-            Status = status,
+            Status = (int)status,
+            StatusName = status.ToString(),
             TotalRecords = validationSummary.TotalRecords,
             TotalValid = validationSummary.ValidCount,
             TotalInvalid = validationSummary.InvalidCount,
@@ -339,6 +345,8 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             dto.PropertyDuplicatesFound = dupeResult.PropertyDuplicatesFound;
             dto.TotalConflictsFound = dupeResult.TotalConflictsCreated;
         }
+
+        dto.DuplicateDetectionPending = !dto.DuplicateDetectionRan;
 
         // Per-entity-type counts
         dto.Buildings = await BuildEntitySummaryAsync(_buildingRepo, "Building", importPackageId, cancellationToken);

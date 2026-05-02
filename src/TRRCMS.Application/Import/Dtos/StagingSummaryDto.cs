@@ -1,3 +1,5 @@
+using TRRCMS.Domain.Enums;
+
 namespace TRRCMS.Application.Import.Dtos;
 
 /// <summary>
@@ -11,7 +13,8 @@ public class StagingSummaryDto
 
     public Guid ImportPackageId { get; set; }
     public string PackageNumber { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty;
+    public int Status { get; set; }
+    public string StatusName { get; set; } = string.Empty;
 
     // ==================== STAGING COUNTS (per entity type) ====================
 
@@ -60,6 +63,12 @@ public class StagingSummaryDto
 
     /// <summary>True if duplicate detection ran during this staging operation.</summary>
     public bool DuplicateDetectionRan { get; set; }
+
+    /// <summary>
+    /// True when staging succeeded but duplicate detection did not run or failed.
+    /// Client should call POST /detect-duplicates to advance the package.
+    /// </summary>
+    public bool DuplicateDetectionPending { get; set; }
 }
 
 /// <summary>

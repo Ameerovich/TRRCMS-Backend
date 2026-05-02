@@ -147,15 +147,29 @@ public class StagingService : IStagingService
 
         while (await reader.ReadAsync(ct))
         {
+            var govCode    = GetString(reader, "governorate_code");
+            var distCode   = GetString(reader, "district_code");
+            var subCode    = GetString(reader, "sub_district_code");
+            var commCode   = GetString(reader, "community_code");
+            var neighCode  = GetString(reader, "neighborhood_code");
+            var bldNumber  = GetString(reader, "building_number");
+
+            // Mobile app may store the entity UUID in building_id instead of the
+            // 17-digit composite code. Validate and fall back to computing from parts.
+            var rawBuildingId = GetNullableString(reader, "building_id");
+            var buildingId = IsValid17DigitCode(rawBuildingId)
+                ? rawBuildingId
+                : ComputeBuildingId(govCode, distCode, subCode, commCode, neighCode, bldNumber);
+
             var entity = StagingBuilding.Create(
                 importPackageId: packageId,
                 originalEntityId: GetGuid(reader, "id"),
-                governorateCode: GetString(reader, "governorate_code"),
-                districtCode: GetString(reader, "district_code"),
-                subDistrictCode: GetString(reader, "sub_district_code"),
-                communityCode: GetString(reader, "community_code"),
-                neighborhoodCode: GetString(reader, "neighborhood_code"),
-                buildingNumber: GetString(reader, "building_number"),
+                governorateCode: govCode,
+                districtCode: distCode,
+                subDistrictCode: subCode,
+                communityCode: commCode,
+                neighborhoodCode: neighCode,
+                buildingNumber: bldNumber,
                 buildingType: GetEnum<BuildingType>(reader, "building_type", "building_type"),
                 status: GetEnum<BuildingStatus>(reader, "building_status", "building_status"),
                 numberOfPropertyUnits: GetInt(reader, "number_of_property_units"),
@@ -165,7 +179,7 @@ public class StagingService : IStagingService
                 longitude: GetNullableDecimal(reader, "longitude"),
                 buildingGeometryWkt: GetNullableString(reader, "building_geometry_wkt"),
                 notes: GetNullableString(reader, "notes"),
-                buildingId: GetNullableString(reader, "building_id"),
+                buildingId: buildingId,
                 governorateName: GetNullableString(reader, "governorate_name"),
                 districtName: GetNullableString(reader, "district_name"),
                 subDistrictName: GetNullableString(reader, "sub_district_name"),
@@ -830,6 +844,16 @@ public class StagingService : IStagingService
         var value = reader[column];
         if (value is DBNull || value == null) return null;
         return Guid.TryParse(value.ToString(), out var result) ? result : null;
+    }
+
+    private static bool IsValid17DigitCode(string? value) =>
+        value != null && value.Length == 17 && value.All(char.IsDigit);
+
+    private static string? ComputeBuildingId(
+        string gov, string dist, string sub, string comm, string neigh, string num)
+    {
+        var computed = $"{gov}{dist}{sub}{comm}{neigh}{num}";
+        return computed.Length == 17 && computed.All(char.IsDigit) ? computed : null;
     }
 
     private static string GetString(SqliteDataReader reader, string column, string defaultValue = "")

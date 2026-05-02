@@ -93,4 +93,13 @@
   <data name="Message_CurrentPasswordIncorrect" xml:space="preserve">
     <value>Current password is incorrect.</value>
   </data>
+  <data name="Message_AuthenticationRequired" xml:space="preserve">
+    <value>Authentication required. Please login again.</value>
+  </data>
+  <data name="Message_TokenExpired" xml:space="preserve">
+    <value>Your session has expired. Please login again.</value>
+  </data>
+  <data name="Message_TokenInvalid" xml:space="preserve">
+    <value>Invalid authentication token. Please login again.</value>
+  </data>
 </root>

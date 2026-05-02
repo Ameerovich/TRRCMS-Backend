@@ -93,4 +93,13 @@
   <data name="Message_CurrentPasswordIncorrect" xml:space="preserve">
     <value>كلمة المرور الحالية غير صحيحة.</value>
   </data>
+  <data name="Message_AuthenticationRequired" xml:space="preserve">
+    <value>المصادقة مطلوبة. يرجى تسجيل الدخول مجدداً.</value>
+  </data>
+  <data name="Message_TokenExpired" xml:space="preserve">
+    <value>انتهت صلاحية الجلسة. يرجى تسجيل الدخول مجدداً.</value>
+  </data>
+  <data name="Message_TokenInvalid" xml:space="preserve">
+    <value>رمز المصادقة غير صالح. يرجى تسجيل الدخول مجدداً.</value>
+  </data>
 </root>

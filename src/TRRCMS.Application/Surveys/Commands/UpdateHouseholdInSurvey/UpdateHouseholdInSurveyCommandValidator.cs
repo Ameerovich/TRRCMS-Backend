@@ -57,18 +57,35 @@ public class UpdateHouseholdInSurveyCommandValidator : LocalizedValidator<Update
             .LessThanOrEqualTo(50).WithMessage(L("DisabledCount_Max50"))
             .When(x => x.DisabledCount.HasValue);
 
-        // Cross-field checks — only when HouseholdSize is in the request
+        // Cross-field checks — only when HouseholdSize is in the request.
+        // When both gender counts are present they must sum exactly to HouseholdSize;
+        // when only one is present the partial sum must not exceed it.
+        RuleFor(x => x)
+            .Must(x => x.MaleCount!.Value + x.FemaleCount!.Value == x.HouseholdSize!.Value)
+            .WithMessage(L("Gender_SumMustEqualHouseholdSize"))
+            .When(x => x.HouseholdSize.HasValue && x.MaleCount.HasValue && x.FemaleCount.HasValue);
+
         RuleFor(x => x)
             .Must(x => (x.MaleCount ?? 0) + (x.FemaleCount ?? 0) <= x.HouseholdSize!.Value)
             .WithMessage(L("Gender_SumExceedsHouseholdSize"))
-            .When(x => x.HouseholdSize.HasValue && (x.MaleCount.HasValue || x.FemaleCount.HasValue));
+            .When(x => x.HouseholdSize.HasValue &&
+                       (x.MaleCount.HasValue || x.FemaleCount.HasValue) &&
+                       !(x.MaleCount.HasValue && x.FemaleCount.HasValue));
+
+        // When all three age counts are present they must sum exactly to HouseholdSize;
+        // when only some are present the partial sum must not exceed it.
+        RuleFor(x => x)
+            .Must(x => x.AdultCount!.Value + x.ChildCount!.Value + x.ElderlyCount!.Value == x.HouseholdSize!.Value)
+            .WithMessage(L("Age_SumMustEqualHouseholdSize"))
+            .When(x => x.HouseholdSize.HasValue && x.AdultCount.HasValue && x.ChildCount.HasValue && x.ElderlyCount.HasValue);
 
         RuleFor(x => x)
             .Must(x => (x.AdultCount ?? 0) + (x.ChildCount ?? 0) + (x.ElderlyCount ?? 0) <= x.HouseholdSize!.Value)
             .WithMessage(L("Age_SumExceedsHouseholdSize"))
             .When(x => x.HouseholdSize.HasValue &&
-                       (x.AdultCount.HasValue || x.ChildCount.HasValue || x.ElderlyCount.HasValue))
-;
+                       (x.AdultCount.HasValue || x.ChildCount.HasValue || x.ElderlyCount.HasValue) &&
+                       !(x.AdultCount.HasValue && x.ChildCount.HasValue && x.ElderlyCount.HasValue));
+
         RuleFor(x => x)
             .Must(x => (x.DisabledCount ?? 0) <= x.HouseholdSize!.Value)
             .WithMessage(L("Disabled_ExceedsHouseholdSize"))
@@ -79,6 +96,11 @@ public class UpdateHouseholdInSurveyCommandValidator : LocalizedValidator<Update
             .Must(v => vocabService.IsValidCode("occupancy_nature", v!.Value))
             .When(x => x.OccupancyNature.HasValue)
             .WithMessage(L("OccupancyNature_Invalid"));
+
+        RuleFor(x => x.OccupancyStartDate!.Value)
+            .Must(date => date <= DateTime.UtcNow)
+            .When(x => x.OccupancyStartDate.HasValue)
+            .WithMessage(L("OccupancyStartDate_NotFuture"));
 
         RuleFor(x => x.Notes)
             .MaximumLength(2000)

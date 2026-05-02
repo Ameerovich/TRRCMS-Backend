@@ -706,6 +706,11 @@ public class CommitService : ICommitService
 
         if (approved.Count == 0) return;
 
+        // Load staging persons and relations once to resolve household memberships after each household is created.
+        // Persons are committed before households (FK order), so their production IDs are already in _idMap.
+        var stagingPersons = await _stagingPersonRepo.GetByPackageIdAsync(importPackageId, ct);
+        var stagingRelations = await _stagingRelationRepo.GetByPackageIdAsync(importPackageId, ct);
+
         for (var i = 0; i < approved.Count; i++)
         {
             var staging = approved[i];
@@ -733,12 +738,52 @@ public class CommitService : ICommitService
 
                 await _unitOfWork.Households.AddAsync(household, ct);
 
-                _idMap[staging.OriginalEntityId] = household.Id;
+                // Use TryAdd: the mobile app may reuse the PropertyUnit UUID as the Household UUID.
+                // If the key is already in _idMap (PropertyUnit mapping), preserve it — subsequent
+                // entities (Relations, Surveys, Claims) must resolve the PropertyUnit, not the Household.
+                _idMap.TryAdd(staging.OriginalEntityId, household.Id);
                 staging.SetCommittedEntityId(household.Id);
                 await _stagingHouseholdRepo.UpdateAsync(staging, ct);
 
                 report.Households.Committed++;
                 report.Households.IdMappings[staging.OriginalEntityId] = household.Id;
+
+                // Assign committed persons to this household.
+                // Primary path: StagingPerson.OriginalHouseholdId (set when mobile populates persons.household_id).
+                // Fallback: infer members from PersonPropertyRelations pointing to the same property unit,
+                // but only when there is exactly one household per unit (no ambiguity across multiple families).
+                var members = stagingPersons
+                    .Where(p => p.OriginalHouseholdId == staging.OriginalEntityId)
+                    .ToList();
+
+                if (members.Count == 0)
+                {
+                    var householdsForUnit = approved.Count(h => h.OriginalPropertyUnitId == staging.OriginalPropertyUnitId);
+                    if (householdsForUnit == 1)
+                    {
+                        var personIdsInUnit = stagingRelations
+                            .Where(r => r.OriginalPropertyUnitId == staging.OriginalPropertyUnitId)
+                            .Select(r => r.OriginalPersonId)
+                            .ToHashSet();
+
+                        members = stagingPersons
+                            .Where(p => personIdsInUnit.Contains(p.OriginalEntityId) && !p.OriginalHouseholdId.HasValue)
+                            .ToList();
+                    }
+                }
+
+                foreach (var stagingPerson in members)
+                {
+                    if (!_idMap.TryGetValue(stagingPerson.OriginalEntityId, out var prodPersonId))
+                        continue;
+
+                    var person = await _unitOfWork.Persons.GetByIdAsync(prodPersonId, ct);
+                    if (person != null)
+                    {
+                        person.AssignToHousehold(household.Id, userId);
+                        await _unitOfWork.Persons.UpdateAsync(person, ct);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -904,16 +949,34 @@ public class CommitService : ICommitService
                     staging.DurationMinutes,
                     userId);
 
-                // Resolve contact person from staging
+                // Resolve contact person from staging.
+                // Production persons committed earlier in this transaction are not yet in the DB
+                // (SaveChangesAsync runs only at the end), so GetByIdAsync would return null.
+                // Use staging person data directly to build the full name snapshot.
                 if (staging.OriginalContactPersonId.HasValue &&
                     _idMap.TryGetValue(staging.OriginalContactPersonId.Value, out var productionContactPersonId))
                 {
-                    var contactPerson = await _unitOfWork.Persons.GetByIdAsync(productionContactPersonId, ct);
-                    if (contactPerson != null)
+                    var stagingContact = await _stagingPersonRepo.GetByPackageAndOriginalIdAsync(
+                        importPackageId, staging.OriginalContactPersonId.Value, ct);
+
+                    if (stagingContact != null)
                     {
-                        survey.SetContactPerson(contactPerson.Id, contactPerson.GetContactPersonFullName(), userId);
+                        var parts = new[] {
+                            stagingContact.FirstNameArabic,
+                            stagingContact.FatherNameArabic,
+                            stagingContact.FamilyNameArabic
+                        };
+                        var fullName = string.Join(" ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+                        if (!string.IsNullOrWhiteSpace(stagingContact.MotherNameArabic))
+                            fullName += $" ({stagingContact.MotherNameArabic})";
+                        survey.SetContactPerson(productionContactPersonId, fullName, userId);
                     }
                 }
+
+                // Surveys arriving via .uhc are always finalized on the tablet before export.
+                // MarkAsFinalized requires a contact person — only call it when one was resolved.
+                if (survey.ContactPersonId.HasValue)
+                    survey.MarkAsFinalized(userId);
 
                 await _unitOfWork.Surveys.AddAsync(survey, ct);
 
