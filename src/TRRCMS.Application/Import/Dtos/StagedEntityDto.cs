@@ -33,6 +33,12 @@ public class StagedEntityDto
 
     /// <summary>For child entities: the OriginalEntityId of the parent staging entity.</summary>
     public Guid? ParentOriginalEntityId { get; init; }
+
+    /// <summary>JSON array of blocking validation error messages (null if none).</summary>
+    public string? ValidationErrors { get; init; }
+
+    /// <summary>JSON array of non-blocking validation warning messages (null if none).</summary>
+    public string? ValidationWarnings { get; init; }
 }
 
 /// <summary>

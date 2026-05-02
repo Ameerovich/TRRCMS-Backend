@@ -229,10 +229,13 @@
   <data name="DisabledCount_NonNegative"><value>عدد ذوي الإعاقة لا يمكن أن يكون سالباً</value></data>
   <data name="DisabledCount_Max50"><value>عدد ذوي الإعاقة يجب ألا يتجاوز 50</value></data>
   <data name="Gender_SumExceedsHouseholdSize"><value>مجموع الذكور والإناث لا يمكن أن يتجاوز حجم الأسرة</value></data>
+  <data name="Gender_SumMustEqualHouseholdSize"><value>عدد الذكور والإناث يجب أن يساوي إجمالي حجم الأسرة</value></data>
   <data name="Age_SumExceedsHouseholdSize"><value>مجموع البالغين والأطفال وكبار السن لا يمكن أن يتجاوز حجم الأسرة</value></data>
+  <data name="Age_SumMustEqualHouseholdSize"><value>عدد الأطفال والبالغين وكبار السن يجب أن يساوي إجمالي حجم الأسرة</value></data>
   <data name="Disabled_ExceedsHouseholdSize"><value>عدد ذوي الإعاقة لا يمكن أن يتجاوز حجم الأسرة</value></data>
   <data name="OccupancyType_Invalid"><value>نوع الإشغال غير صالح</value></data>
   <data name="OccupancyNature_Invalid"><value>طبيعة الإشغال غير صالحة</value></data>
+  <data name="OccupancyStartDate_NotFuture"><value>تاريخ بدء الإشغال لا يمكن أن يكون في المستقبل</value></data>
 
   <!-- ── Surveys ────────────────────────────────────────────────── -->
   <data name="SurveyDate_Required"><value>تاريخ المسح مطلوب</value></data>

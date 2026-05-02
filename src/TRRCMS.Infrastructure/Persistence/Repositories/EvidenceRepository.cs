@@ -85,29 +85,20 @@ public class EvidenceRepository : IEvidenceRepository
     }
 
     public async Task<List<Evidence>> GetBySurveyContextAsync(
-        Guid buildingId,
+        Guid propertyUnitId,
         EvidenceType? evidenceType = null,
         Guid? personId = null,
         CancellationToken cancellationToken = default)
     {
-        var personIds = await _context.Persons
-            .Where(p => p.HouseholdId.HasValue && !p.IsDeleted)
-            .Where(p => _context.Households
-                .Where(h => h.Id == p.HouseholdId && !h.IsDeleted)
-                .Where(h => _context.PropertyUnits
-                    .Any(pu => pu.Id == h.PropertyUnitId && pu.BuildingId == buildingId && !pu.IsDeleted))
-                .Any())
-            .Select(p => p.Id)
-            .ToListAsync(cancellationToken);
-
         var relationIds = await _context.PersonPropertyRelations
             .Where(ppr => !ppr.IsDeleted)
-            .Where(ppr => _context.PropertyUnits
-                .Any(pu => pu.Id == ppr.PropertyUnitId && pu.BuildingId == buildingId && !pu.IsDeleted))
+            .Where(ppr => ppr.PropertyUnitId == propertyUnitId)
+            .Where(ppr => !personId.HasValue || ppr.PersonId == personId.Value)
             .Select(ppr => ppr.Id)
             .ToListAsync(cancellationToken);
 
         var query = _context.Evidences
+            .Include(e => e.EvidenceRelations.Where(er => !er.IsDeleted && er.IsActive))
             .Where(e => !e.IsDeleted)
             .Where(e => e.EvidenceRelations.Any(er =>
                             er.IsActive && !er.IsDeleted

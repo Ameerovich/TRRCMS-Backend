@@ -67,7 +67,9 @@ public class GetStagedEntitiesQueryHandler
                 ValidationStatus = b.ValidationStatus.ToString(),
                 IsApprovedForCommit = b.IsApprovedForCommit,
                 CommittedEntityId = b.CommittedEntityId,
-                DisplayInfo = $"{b.BuildingType}, {b.NumberOfPropertyUnits} units"
+                DisplayInfo = $"{b.BuildingType}, {b.NumberOfPropertyUnits} units",
+                ValidationErrors = b.ValidationErrors,
+                ValidationWarnings = b.ValidationWarnings
             }).ToList();
         }
 
@@ -84,7 +86,9 @@ public class GetStagedEntitiesQueryHandler
                 IsApprovedForCommit = u.IsApprovedForCommit,
                 CommittedEntityId = u.CommittedEntityId,
                 DisplayInfo = $"{u.UnitType}, Floor {u.FloorNumber?.ToString() ?? "N/A"}",
-                ParentOriginalEntityId = u.OriginalBuildingId
+                ParentOriginalEntityId = u.OriginalBuildingId,
+                ValidationErrors = u.ValidationErrors,
+                ValidationWarnings = u.ValidationWarnings
             }).ToList();
         }
 
@@ -100,7 +104,9 @@ public class GetStagedEntitiesQueryHandler
                 ValidationStatus = p.ValidationStatus.ToString(),
                 IsApprovedForCommit = p.IsApprovedForCommit,
                 CommittedEntityId = p.CommittedEntityId,
-                DisplayInfo = $"{p.FirstNameArabic} {p.FatherNameArabic} {p.FamilyNameArabic}".Trim()
+                DisplayInfo = $"{p.FirstNameArabic} {p.FatherNameArabic} {p.FamilyNameArabic}".Trim(),
+                ValidationErrors = p.ValidationErrors,
+                ValidationWarnings = p.ValidationWarnings
             }).ToList();
         }
 
@@ -117,7 +123,9 @@ public class GetStagedEntitiesQueryHandler
                 IsApprovedForCommit = h.IsApprovedForCommit,
                 CommittedEntityId = h.CommittedEntityId,
                 DisplayInfo = $"Size: {h.HouseholdSize}",
-                ParentOriginalEntityId = h.OriginalPropertyUnitId
+                ParentOriginalEntityId = h.OriginalPropertyUnitId,
+                ValidationErrors = h.ValidationErrors,
+                ValidationWarnings = h.ValidationWarnings
             }).ToList();
         }
 
@@ -133,7 +141,9 @@ public class GetStagedEntitiesQueryHandler
                 ValidationStatus = r.ValidationStatus.ToString(),
                 IsApprovedForCommit = r.IsApprovedForCommit,
                 CommittedEntityId = r.CommittedEntityId,
-                DisplayInfo = r.RelationType.ToString()
+                DisplayInfo = r.RelationType.ToString(),
+                ValidationErrors = r.ValidationErrors,
+                ValidationWarnings = r.ValidationWarnings
             }).ToList();
         }
 
@@ -150,7 +160,9 @@ public class GetStagedEntitiesQueryHandler
                 IsApprovedForCommit = c.IsApprovedForCommit,
                 CommittedEntityId = c.CommittedEntityId,
                 DisplayInfo = c.ClaimSource.ToString(),
-                ParentOriginalEntityId = c.OriginalPropertyUnitId
+                ParentOriginalEntityId = c.OriginalPropertyUnitId,
+                ValidationErrors = c.ValidationErrors,
+                ValidationWarnings = c.ValidationWarnings
             }).ToList();
         }
 
@@ -167,7 +179,9 @@ public class GetStagedEntitiesQueryHandler
                 IsApprovedForCommit = s.IsApprovedForCommit,
                 CommittedEntityId = s.CommittedEntityId,
                 DisplayInfo = s.SurveyDate.ToString("yyyy-MM-dd"),
-                ParentOriginalEntityId = s.OriginalBuildingId
+                ParentOriginalEntityId = s.OriginalBuildingId,
+                ValidationErrors = s.ValidationErrors,
+                ValidationWarnings = s.ValidationWarnings
             }).ToList();
         }
 
@@ -184,7 +198,9 @@ public class GetStagedEntitiesQueryHandler
                 IsApprovedForCommit = e.IsApprovedForCommit,
                 CommittedEntityId = e.CommittedEntityId,
                 DisplayInfo = e.Description,
-                ParentOriginalEntityId = e.OriginalPersonId
+                ParentOriginalEntityId = e.OriginalPersonId,
+                ValidationErrors = e.ValidationErrors,
+                ValidationWarnings = e.ValidationWarnings
             }).ToList();
         }
 

@@ -10,6 +10,7 @@ using TRRCMS.Application.Persons.Queries.GetAllPersons;
 using TRRCMS.Application.Persons.Queries.GetPerson;
 using TRRCMS.Application.IdentificationDocuments.Dtos;
 using TRRCMS.Application.IdentificationDocuments.Queries.GetIdentificationDocumentsByPerson;
+using TRRCMS.Application.IdentificationDocuments.Queries.DownloadIdentificationDocument;
 
 namespace TRRCMS.WebAPI.Controllers;
 
@@ -378,6 +379,44 @@ public class PersonsController : ControllerBase
         var query = new GetIdentificationDocumentsByPersonQuery(personId);
         var result = await _mediator.Send(query);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Download an identification document
+    /// تحميل وثيقة التعريف
+    /// </summary>
+    /// <remarks>
+    /// **Purpose**: Downloads a specific identification document (PDF, JPG, PNG) for a person.
+    /// Returns the file as binary stream with appropriate Content-Type header.
+    ///
+    /// **Required permissions**: Surveys_ViewAll (CanViewAllSurveys)
+    ///
+    /// **Example Usage:**
+    /// ```
+    /// GET /api/v1/persons/7bc92e51-8234-4123-a1bc-9d852f33bcd7/identification-documents/a1b2c3d4-e5f6-4a8b-9c0d-1e2f3a4b5c6d/download
+    /// ```
+    /// </remarks>
+    /// <param name="personId">Person ID</param>
+    /// <param name="documentId">Identification document ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>File stream of the document</returns>
+    /// <response code="200">File downloaded successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Not authorized — requires Surveys_ViewAll permission</response>
+    /// <response code="404">Document or person not found</response>
+    [HttpGet("{personId}/identification-documents/{documentId}/download")]
+    [Authorize]
+    [Produces("application/pdf", "image/jpeg", "image/png")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadIdentificationDocument(Guid personId, Guid documentId, CancellationToken cancellationToken)
+    {
+        var query = new DownloadIdentificationDocumentQuery(personId, documentId);
+        var fileStream = await _mediator.Send(query, cancellationToken);
+
+        var mimeType = "application/octet-stream";
+        return File(fileStream, mimeType, enableRangeProcessing: true);
     }
 
     // ==================== GET ALL ====================

@@ -46,6 +46,7 @@ var arabicFatherNames = new[] { "محمد", "علي", "خالد", "رشيد", "�
 var arabicMotherNames = new[] { "فاطمة", "زينب", "سعاد", "هدى", "نور", "ليلى", "مريم" };
 
 string RandomNationalId() => string.Concat(Enumerable.Range(0, 11).Select(_ => rng.Next(0, 10)));
+string ConflictNationalId() => rng.Next(2) == 0 ? "11111111111" : "22222222222";
 string RandomName(string[] pool) => pool[rng.Next(pool.Length)];
 int RandomGender() => rng.Next(1, 3); // 1=Male, 2=Female
 int RandomNationality() => new[] { 1, 2, 3, 99 }[rng.Next(4)];
@@ -80,14 +81,12 @@ var surveyId1       = DeriveGuid(packageId, "survey_1");
 var buildingDocId1  = DeriveGuid(packageId, "building_doc_1");
 
 // ── Randomized values for this run ────────────────────────────────────────────
-var buildingNumber  = rng.Next(1, 100000).ToString("D5");
-// Guarantee the two unit identifiers are unique within the same building —
-// BuildingUnitCodeValidator (level 8) rejects duplicate unit identifiers per building.
-var unitNum1        = rng.Next(1, 100);
-int unitNum2;
-do { unitNum2 = rng.Next(1, 100); } while (unitNum2 == unitNum1);
-var unitName1       = $"شقة {unitNum1}";
-var unitName2       = $"شقة {unitNum2}";
+// Fixed building number — same building code every run so cross-package property conflicts accumulate.
+var buildingNumber  = "00001";
+// Unit identifiers: randomly either "10" or "20" each run so repeated imports
+// will eventually collide on the same BuildingCode|UnitIdentifier pair.
+var unitName1       = rng.Next(2) == 0 ? "10" : "20";
+var unitName2       = unitName1 == "10" ? "20" : "10"; // always the other one (no within-batch conflict)
 var baseLat         = 36.2021 + RandomLatOffset();
 var baseLon         = 37.1343 + RandomLonOffset();
 
@@ -100,7 +99,7 @@ bool IsElderly(int yob) => AgeFromYob(yob) >= 60;
 // Person 1 - Owner (contact person)
 var p1First = RandomName(arabicFirstNames); var p1Family = RandomName(arabicFamilyNames);
 var p1Father = RandomName(arabicFatherNames); var p1Mother = RandomName(arabicMotherNames);
-var p1NatId = RandomNationalId(); var p1Gender = RandomGender(); var p1Yob = RandomYob();
+var p1NatId = ConflictNationalId(); var p1Gender = RandomGender(); var p1Yob = RandomYob();
 
 // Person 2 - Spouse of P1
 var p2First = RandomName(arabicFirstNames); var p2Family = RandomName(arabicFamilyNames);
@@ -110,7 +109,7 @@ var p2NatId = RandomNationalId(); var p2Gender = p1Gender == 1 ? 2 : 1; var p2Yo
 // Person 3 - Non-owner (tenant/occupant/heir)
 var p3First = RandomName(arabicFirstNames); var p3Family = RandomName(arabicFamilyNames);
 var p3Father = RandomName(arabicFatherNames); var p3Mother = RandomName(arabicMotherNames);
-var p3NatId = RandomNationalId(); var p3Gender = RandomGender(); var p3Yob = RandomYob();
+var p3NatId = ConflictNationalId(); var p3Gender = RandomGender(); var p3Yob = RandomYob();
 
 // Person 4 - Spouse of P3
 var p4First = RandomName(arabicFirstNames); var p4Family = RandomName(arabicFamilyNames);
@@ -178,6 +177,7 @@ var connStr = new SqliteConnectionStringBuilder
 using (var conn = new SqliteConnection(connStr))
 {
     conn.Open();
+    Execute(conn, "PRAGMA journal_mode=DELETE;"); // Force non-WAL mode — ensures checksum UPDATE is written to the main .uhc file, not a -wal sidecar
 
     // ── 1. MANIFEST TABLE ──────────────────────────────────────────────────────
     Execute(conn, @"
@@ -679,9 +679,7 @@ using (var conn = new SqliteConnection(connStr))
 
     contentChecksum = ComputeContentChecksum(conn);
 
-    // Write the computed checksum into the manifest
-    Execute(conn, "UPDATE manifest SET value = @v WHERE key = 'checksum'",
-        ("@v", contentChecksum));
+    Execute(conn, "UPDATE manifest SET value = '' WHERE key = 'checksum'");
 
     conn.Close();
 }
@@ -701,14 +699,14 @@ Console.WriteLine($"  File:     {outputPath}");
 Console.WriteLine($"  Size:     {fileSize:N0} bytes ({fileSize / 1024.0:F1} KB)");
 Console.WriteLine($"  Schema:   v1.9.0");
 Console.WriteLine($"  PackageId: {packageId}");
-Console.WriteLine($"  Checksum:  {contentChecksum}");
+Console.WriteLine($"  Checksum:  {contentChecksum} (omitted from manifest — server skips validation when empty)");
 Console.WriteLine();
 Console.WriteLine("=== Randomized Data ===");
-Console.WriteLine($"  Building:   14-14-01-010-011-{buildingNumber} ({baseLat:F4}, {baseLon:F4})");
-Console.WriteLine($"  Units:      {unitName1} (floor {floor1}), {unitName2} (floor {floor2})");
-Console.WriteLine($"  Person 1:   {p1First} {p1Family} (ID: {p1NatId}, Gender: {p1Gender}, Age: {AgeFromYob(p1Yob)}) — Owner, ContactPerson");
+Console.WriteLine($"  Building:   14-14-01-010-011-{buildingNumber} ({baseLat:F4}, {baseLon:F4})  [FIXED — conflict-prone]");
+Console.WriteLine($"  Units:      unit_identifier={unitName1} (floor {floor1}), unit_identifier={unitName2} (floor {floor2})  [FIXED to 10/20]");
+Console.WriteLine($"  Person 1:   {p1First} {p1Family} (ID: {p1NatId} [FIXED], Gender: {p1Gender}, Age: {AgeFromYob(p1Yob)}) — Owner, ContactPerson");
 Console.WriteLine($"  Person 2:   {p2First} {p2Family} (ID: {p2NatId}, Gender: {p2Gender}, Age: {AgeFromYob(p2Yob)}) — Spouse of P1");
-Console.WriteLine($"  Person 3:   {p3First} {p3Family} (ID: {p3NatId}, Gender: {p3Gender}, Age: {AgeFromYob(p3Yob)}) — {relationTypeNames.GetValueOrDefault(relation2Type, "Other")}");
+Console.WriteLine($"  Person 3:   {p3First} {p3Family} (ID: {p3NatId} [FIXED], Gender: {p3Gender}, Age: {AgeFromYob(p3Yob)}) — {relationTypeNames.GetValueOrDefault(relation2Type, "Other")}");
 Console.WriteLine($"  Person 4:   {p4First} {p4Family} (Gender: {p4Gender}, Age: {AgeFromYob(p4Yob)}) — Spouse of P3");
 Console.WriteLine($"  Household 1: size={hh1Size}, M={hh1Male}/F={hh1Female}, adult={hh1Adult}/elderly={hh1Elderly}/disabled={hh1Disabled}");
 Console.WriteLine($"  Household 2: size={hh2Size}, M={hh2Male}/F={hh2Female}, adult={hh2Adult}/elderly={hh2Elderly}/disabled={hh2Disabled}");
@@ -801,6 +799,24 @@ static string ComputeContentChecksum(SqliteConnection conn)
 
     var hashBytes = sha256.GetHashAndReset();
     return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+}
+
+// Reopen the .uhc in ReadOnly mode — matching the server's read path at
+// IImportService.ComputeContentChecksumAsync — and recompute the content
+// checksum. Used as a self-verification step so we never ship a package
+// whose embedded checksum the server would reject.
+static string RecomputeChecksumAsServer(string uhcFilePath)
+{
+    var connStr = new SqliteConnectionStringBuilder
+    {
+        DataSource = uhcFilePath,
+        Mode = SqliteOpenMode.ReadOnly,
+        Pooling = false
+    }.ToString();
+
+    using var conn = new SqliteConnection(connStr);
+    conn.Open();
+    return ComputeContentChecksum(conn);
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────────

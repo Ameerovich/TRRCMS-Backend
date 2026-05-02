@@ -47,7 +47,7 @@ public class GetSurveyEvidenceQueryHandler : IRequestHandler<GetSurveyEvidenceQu
 
         // Get evidence using EvidenceType? and PersonId? filters
         var evidences = await _evidenceRepository.GetBySurveyContextAsync(
-            survey.BuildingId,
+            survey.PropertyUnitId ?? Guid.Empty,
             request.EvidenceType,
             request.PersonId,
             cancellationToken);

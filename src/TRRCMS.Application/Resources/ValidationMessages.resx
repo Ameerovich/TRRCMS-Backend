@@ -227,10 +227,13 @@
   <data name="DisabledCount_NonNegative"><value>Disabled count cannot be negative</value></data>
   <data name="DisabledCount_Max50"><value>Disabled count must not exceed 50</value></data>
   <data name="Gender_SumExceedsHouseholdSize"><value>Sum of male and female counts cannot exceed household size</value></data>
+  <data name="Gender_SumMustEqualHouseholdSize"><value>Male and female counts must add up to the total household size</value></data>
   <data name="Age_SumExceedsHouseholdSize"><value>Sum of adult, child, and elderly counts cannot exceed household size</value></data>
+  <data name="Age_SumMustEqualHouseholdSize"><value>Children, adult, and elderly counts must add up to the total household size</value></data>
   <data name="Disabled_ExceedsHouseholdSize"><value>Disabled count cannot exceed household size</value></data>
   <data name="OccupancyType_Invalid"><value>Invalid occupancy type</value></data>
   <data name="OccupancyNature_Invalid"><value>Invalid occupancy nature</value></data>
+  <data name="OccupancyStartDate_NotFuture"><value>Occupancy start date cannot be in the future</value></data>
 
   <!-- ── Surveys ────────────────────────────────────────────────── -->
   <data name="SurveyDate_Required"><value>Survey date is required</value></data>

@@ -71,7 +71,7 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
             survey.PropertyUnitId.Value, cancellationToken)).ToList();
 
         // Get all evidence for the survey context (for the data summary)
-        var allEvidence = await _unitOfWork.Evidences.GetBySurveyContextAsync(survey.BuildingId, evidenceType: null, personId: null, cancellationToken);
+        var allEvidence = await _unitOfWork.Evidences.GetBySurveyContextAsync(survey.PropertyUnitId ?? Guid.Empty, evidenceType: null, personId: null, cancellationToken);
 
         var personCount = 0;
         foreach (var household in households)

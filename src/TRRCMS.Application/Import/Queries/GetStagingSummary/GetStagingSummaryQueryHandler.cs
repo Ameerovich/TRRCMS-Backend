@@ -58,7 +58,8 @@ public class GetStagingSummaryQueryHandler : IRequestHandler<GetStagingSummaryQu
         {
             ImportPackageId = package.Id,
             PackageNumber = package.PackageNumber,
-            Status = package.Status.ToString()
+            Status = (int)package.Status,
+            StatusName = package.Status.ToString()
         };
 
         // Build per-entity-type summaries
