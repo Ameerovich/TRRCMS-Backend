@@ -1,4 +1,5 @@
 using MediatR;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Neighborhoods.Dtos;
 
@@ -12,11 +13,16 @@ public class GetNeighborhoodByCodeQueryHandler
     : IRequestHandler<GetNeighborhoodByCodeQuery, NeighborhoodDto?>
 {
     private readonly INeighborhoodRepository _neighborhoodRepository;
+    private readonly ICommunityRepository _communityRepository;
 
-    public GetNeighborhoodByCodeQueryHandler(INeighborhoodRepository neighborhoodRepository)
+    public GetNeighborhoodByCodeQueryHandler(
+        INeighborhoodRepository neighborhoodRepository,
+        ICommunityRepository communityRepository)
     {
         _neighborhoodRepository = neighborhoodRepository
             ?? throw new ArgumentNullException(nameof(neighborhoodRepository));
+        _communityRepository = communityRepository
+            ?? throw new ArgumentNullException(nameof(communityRepository));
     }
 
     public async Task<NeighborhoodDto?> Handle(
@@ -25,23 +31,46 @@ public class GetNeighborhoodByCodeQueryHandler
     {
         Domain.Entities.Neighborhood? neighborhood;
 
+        // Normalize OCHA pCodes (when provided) to raw numeric codes.
+        var (govCode, distCode, subDistCode) = OchaCommandNormalizer.ResolveAdmCodes(
+            request.GovernorateCode, request.DistrictCode, request.SubDistrictCode,
+            request.GovernoratePCode, request.DistrictPCode, request.SubDistrictPCode);
+        var neighCode = OchaCommandNormalizer.ResolveNeighborhoodCode(
+            request.NeighborhoodCode, request.NeighborhoodPCode);
+
+        var commCode = request.CommunityCode ?? string.Empty;
+        var commPCodeNorm = OchaCommandNormalizer.NormalizeCommunityPCode(request.CommunityPCode);
+        if (commPCodeNorm != null)
+        {
+            var matched = await _communityRepository.GetByExternalPCodeAsync(
+                commPCodeNorm, govCode, distCode, subDistCode, cancellationToken);
+            if (matched != null)
+            {
+                // Pin the parent hierarchy from the matched row — OCHA C-codes are flat IDs.
+                commCode = matched.Code;
+                govCode = matched.GovernorateCode;
+                distCode = matched.DistrictCode;
+                subDistCode = matched.SubDistrictCode;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         if (!string.IsNullOrWhiteSpace(request.FullCode))
         {
             neighborhood = await _neighborhoodRepository.GetByFullCodeAsync(
                 request.FullCode, cancellationToken);
         }
-        else if (!string.IsNullOrWhiteSpace(request.GovernorateCode) &&
-                 !string.IsNullOrWhiteSpace(request.DistrictCode) &&
-                 !string.IsNullOrWhiteSpace(request.SubDistrictCode) &&
-                 !string.IsNullOrWhiteSpace(request.CommunityCode) &&
-                 !string.IsNullOrWhiteSpace(request.NeighborhoodCode))
+        else if (!string.IsNullOrWhiteSpace(govCode) &&
+                 !string.IsNullOrWhiteSpace(distCode) &&
+                 !string.IsNullOrWhiteSpace(subDistCode) &&
+                 !string.IsNullOrWhiteSpace(commCode) &&
+                 !string.IsNullOrWhiteSpace(neighCode))
         {
             neighborhood = await _neighborhoodRepository.GetByCodeAsync(
-                request.GovernorateCode,
-                request.DistrictCode,
-                request.SubDistrictCode,
-                request.CommunityCode,
-                request.NeighborhoodCode,
+                govCode, distCode, subDistCode, commCode, neighCode,
                 cancellationToken);
         }
         else
@@ -51,6 +80,12 @@ public class GetNeighborhoodByCodeQueryHandler
 
         if (neighborhood == null)
             return null;
+
+        // Resolve community ExternalPCode (real OCHA C-code) for the response.
+        var communityRow = await _communityRepository.GetByCodeAsync(
+            neighborhood.GovernorateCode, neighborhood.DistrictCode, neighborhood.SubDistrictCode,
+            neighborhood.CommunityCode, cancellationToken);
+        var communityExternalPCode = communityRow?.ExternalPCode;
 
         return new NeighborhoodDto
         {
@@ -68,7 +103,12 @@ public class GetNeighborhoodByCodeQueryHandler
             BoundaryWkt = neighborhood.BoundaryWkt,
             AreaSquareKm = neighborhood.AreaSquareKm,
             ZoomLevel = neighborhood.ZoomLevel,
-            IsActive = neighborhood.IsActive
+            IsActive = neighborhood.IsActive,
+            GovernoratePCode = OchaPCodeConverter.ToGovPCode(neighborhood.GovernorateCode),
+            DistrictPCode = OchaPCodeConverter.ToDistrictPCode(neighborhood.GovernorateCode, neighborhood.DistrictCode),
+            SubDistrictPCode = OchaPCodeConverter.ToSubDistrictPCode(neighborhood.GovernorateCode, neighborhood.DistrictCode, neighborhood.SubDistrictCode),
+            CommunityPCode = OchaPCodeConverter.ToCommunityPCode(communityExternalPCode, neighborhood.CommunityCode),
+            PCode = OchaPCodeConverter.ToNeighborhoodPCode(neighborhood.NeighborhoodCode)
         };
     }
 }

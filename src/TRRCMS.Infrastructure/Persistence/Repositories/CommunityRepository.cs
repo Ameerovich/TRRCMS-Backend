@@ -64,6 +64,26 @@ public class CommunityRepository : ICommunityRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Community?> GetByExternalPCodeAsync(
+        string externalPCode,
+        string? governorateCode = null,
+        string? districtCode = null,
+        string? subDistrictCode = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Communities
+            .Where(c => !c.IsDeleted && c.ExternalPCode == externalPCode);
+
+        if (!string.IsNullOrWhiteSpace(governorateCode))
+            query = query.Where(c => c.GovernorateCode == governorateCode);
+        if (!string.IsNullOrWhiteSpace(districtCode))
+            query = query.Where(c => c.DistrictCode == districtCode);
+        if (!string.IsNullOrWhiteSpace(subDistrictCode))
+            query = query.Where(c => c.SubDistrictCode == subDistrictCode);
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Community community, CancellationToken cancellationToken = default)
     {
         await _context.Communities.AddAsync(community, cancellationToken);

@@ -16,6 +16,11 @@ public class SubDistrictDto
     public string Code { get; set; } = string.Empty;
 
     /// <summary>
+    /// UN-OCHA P-Code, e.g. "SY020000". Always derivable from GovernorateCode + DistrictCode + Code.
+    /// </summary>
+    public string PCode { get; set; } = string.Empty;
+
+    /// <summary>
     /// Parent governorate code (2 digits)
     /// </summary>
     public string GovernorateCode { get; set; } = string.Empty;

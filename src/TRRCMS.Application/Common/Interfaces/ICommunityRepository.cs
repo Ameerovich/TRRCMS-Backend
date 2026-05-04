@@ -27,6 +27,19 @@ public interface ICommunityRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Look up a community by its OCHA P-Code (Community.ExternalPCode, e.g. "C1007").
+    /// Optional parent codes scope the search; when supplied, only communities under
+    /// that parent hierarchy are returned. When parents are null/empty, the lookup is global.
+    /// Returns null if no match exists.
+    /// </summary>
+    Task<Community?> GetByExternalPCodeAsync(
+        string externalPCode,
+        string? governorateCode = null,
+        string? districtCode = null,
+        string? subDistrictCode = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Add new community
     /// </summary>
     Task AddAsync(Community community, CancellationToken cancellationToken = default);

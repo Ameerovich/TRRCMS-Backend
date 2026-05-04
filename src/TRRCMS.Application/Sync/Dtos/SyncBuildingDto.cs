@@ -91,6 +91,19 @@ public sealed record SyncBuildingDto
     /// <summary>Building number within the neighborhood — 5 digits.</summary>
     public string BuildingNumber { get; init; } = string.Empty;
 
+    // ==================== OCHA P-CODES (additive) ====================
+
+    /// <summary>Governorate OCHA P-Code, e.g. "SY02".</summary>
+    public string GovernoratePCode { get; init; } = string.Empty;
+    /// <summary>District OCHA P-Code, e.g. "SY0200".</summary>
+    public string DistrictPCode { get; init; } = string.Empty;
+    /// <summary>Sub-district OCHA P-Code, e.g. "SY020000".</summary>
+    public string SubDistrictPCode { get; init; } = string.Empty;
+    /// <summary>Community OCHA P-Code, e.g. "C1007" (sourced from Community.ExternalPCode).</summary>
+    public string CommunityPCode { get; init; } = string.Empty;
+    /// <summary>Neighborhood OCHA P-Code, e.g. "N0160".</summary>
+    public string NeighborhoodPCode { get; init; } = string.Empty;
+
     // ==================== LOCATION NAMES (ARABIC) ====================
 
     /// <summary>Governorate name in Arabic.</summary>

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using TRRCMS.Application.AdministrativeDivisions.Dtos;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Application.Households.Dtos;
 using TRRCMS.Application.Import.Dtos;
@@ -21,10 +22,18 @@ public class MappingProfile : Profile
     public MappingProfile()
     {
         // Building mappings
+        // OCHA pCodes are populated additively. CommunityPCode uses the synthetic
+        // "C{Code}" fallback by default — handlers that have access to Community.ExternalPCode
+        // (e.g. via IAdministrativeNameResolver) override with the real OCHA value.
         CreateMap<Building, BuildingDto>()
            .ForMember(dest => dest.BuildingType, opt => opt.MapFrom(src => (int)src.BuildingType))
            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
-           .ForMember(dest => dest.BuildingDocumentIds, opt => opt.MapFrom(src => src.BuildingDocuments.Select(d => d.Id).ToList()));
+           .ForMember(dest => dest.BuildingDocumentIds, opt => opt.MapFrom(src => src.BuildingDocuments.Select(d => d.Id).ToList()))
+           .ForMember(dest => dest.GovernoratePCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToGovPCode(src.GovernorateCode)))
+           .ForMember(dest => dest.DistrictPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToDistrictPCode(src.GovernorateCode, src.DistrictCode)))
+           .ForMember(dest => dest.SubDistrictPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToSubDistrictPCode(src.GovernorateCode, src.DistrictCode, src.SubDistrictCode)))
+           .ForMember(dest => dest.CommunityPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToCommunityPCode(null, src.CommunityCode)))
+           .ForMember(dest => dest.NeighborhoodPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToNeighborhoodPCode(src.NeighborhoodCode)));
 
         // BuildingDocument mappings
         CreateMap<BuildingDocument, BuildingDocumentDto>();
@@ -130,7 +139,12 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.IsAssigned, opt => opt.MapFrom(src => false))
             .ForMember(dest => dest.IsLocked, opt => opt.MapFrom(src => false))
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.StagedAtUtc))
-            .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => (DateTime?)null));
+            .ForMember(dest => dest.LastModifiedAtUtc, opt => opt.MapFrom(src => (DateTime?)null))
+            .ForMember(dest => dest.GovernoratePCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToGovPCode(src.GovernorateCode)))
+            .ForMember(dest => dest.DistrictPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToDistrictPCode(src.GovernorateCode, src.DistrictCode)))
+            .ForMember(dest => dest.SubDistrictPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToSubDistrictPCode(src.GovernorateCode, src.DistrictCode, src.SubDistrictCode)))
+            .ForMember(dest => dest.CommunityPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToCommunityPCode(null, src.CommunityCode)))
+            .ForMember(dest => dest.NeighborhoodPCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToNeighborhoodPCode(src.NeighborhoodCode)));
 
         CreateMap<Household, HouseholdDto>()
        // Identifiers
@@ -276,11 +290,16 @@ public class MappingProfile : Profile
            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
            .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()));
 
-        // Administrative Hierarchy mappings
-        CreateMap<Governorate, GovernorateDto>();
-        CreateMap<District, DistrictDto>();
-        CreateMap<SubDistrict, SubDistrictDto>();
-        CreateMap<Community, CommunityDto>();
+        // Administrative Hierarchy mappings — pCode is the OCHA wire form (SY02, SY0200, ...).
+        CreateMap<Governorate, GovernorateDto>()
+            .ForMember(dest => dest.PCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToGovPCode(src.Code)));
+        CreateMap<District, DistrictDto>()
+            .ForMember(dest => dest.PCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToDistrictPCode(src.GovernorateCode, src.Code)));
+        CreateMap<SubDistrict, SubDistrictDto>()
+            .ForMember(dest => dest.PCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToSubDistrictPCode(src.GovernorateCode, src.DistrictCode, src.Code)));
+        CreateMap<Community, CommunityDto>()
+            .ForMember(dest => dest.ExternalPCode, opt => opt.MapFrom(src => src.ExternalPCode))
+            .ForMember(dest => dest.PCode, opt => opt.MapFrom(src => OchaPCodeConverter.ToCommunityPCode(src.ExternalPCode, src.Code)));
 
         // Landmark mappings
         CreateMap<Landmark, LandmarkDto>()

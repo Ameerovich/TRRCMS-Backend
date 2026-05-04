@@ -13,52 +13,71 @@ public class CreateBuildingCommandValidator : LocalizedValidator<CreateBuildingC
 {
     public CreateBuildingCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
-        RuleFor(x => x.GovernorateCode)
-            .NotEmpty().WithMessage(L("Governorate_Required"))
-            .Length(2).WithMessage(L("Governorate_2Digits"))
-            .Matches(@"^\d{2}$").WithMessage(L("Governorate_DigitsOnly"));
+        // Raw-code format checks — only fire when the raw value is provided.
+        RuleFor(x => x.GovernorateCode!).Length(2).Matches(@"^\d{2}$")
+            .When(x => !string.IsNullOrEmpty(x.GovernorateCode))
+            .WithMessage(L("Governorate_2Digits"));
+        RuleFor(x => x.DistrictCode!).Length(2).Matches(@"^\d{2}$")
+            .When(x => !string.IsNullOrEmpty(x.DistrictCode))
+            .WithMessage(L("District_2Digits"));
+        RuleFor(x => x.SubDistrictCode!).Length(2).Matches(@"^\d{2}$")
+            .When(x => !string.IsNullOrEmpty(x.SubDistrictCode))
+            .WithMessage(L("SubDistrict_2Digits"));
+        RuleFor(x => x.CommunityCode!).Length(3).Matches(@"^\d{3}$")
+            .When(x => !string.IsNullOrEmpty(x.CommunityCode))
+            .WithMessage(L("Community_3Digits"));
+        RuleFor(x => x.NeighborhoodCode!).Length(3).Matches(@"^\d{3}$")
+            .When(x => !string.IsNullOrEmpty(x.NeighborhoodCode))
+            .WithMessage(L("Neighborhood_3Digits"));
 
-        RuleFor(x => x.DistrictCode)
-            .NotEmpty().WithMessage(L("District_Required"))
-            .Length(2).WithMessage(L("District_2Digits"))
-            .Matches(@"^\d{2}$").WithMessage(L("District_DigitsOnly"));
+        // OCHA pCode format checks — only fire when a pCode is provided.
+        RuleFor(x => x.GovernoratePCode!).Matches(@"^(?i)SY\d{2}$")
+            .When(x => !string.IsNullOrEmpty(x.GovernoratePCode))
+            .WithMessage("GovernoratePCode must look like 'SY02'.");
+        RuleFor(x => x.DistrictPCode!).Matches(@"^(?i)SY\d{4}$")
+            .When(x => !string.IsNullOrEmpty(x.DistrictPCode))
+            .WithMessage("DistrictPCode must look like 'SY0200'.");
+        RuleFor(x => x.SubDistrictPCode!).Matches(@"^(?i)SY\d{6}$")
+            .When(x => !string.IsNullOrEmpty(x.SubDistrictPCode))
+            .WithMessage("SubDistrictPCode must look like 'SY020000'.");
+        RuleFor(x => x.CommunityPCode!).Matches(@"^(?i)C\d{1,9}$")
+            .When(x => !string.IsNullOrEmpty(x.CommunityPCode))
+            .WithMessage("CommunityPCode must look like 'C1007'.");
+        RuleFor(x => x.NeighborhoodPCode!).Matches(@"^(?i)N\d{1,9}$")
+            .When(x => !string.IsNullOrEmpty(x.NeighborhoodPCode))
+            .WithMessage("NeighborhoodPCode must look like 'N0160'.");
 
-        RuleFor(x => x.SubDistrictCode)
-            .NotEmpty().WithMessage(L("SubDistrict_Required"))
-            .Length(2).WithMessage(L("SubDistrict_2Digits"))
-            .Matches(@"^\d{2}$").WithMessage(L("SubDistrict_DigitsOnly"));
-
-        RuleFor(x => x.CommunityCode)
-            .NotEmpty().WithMessage(L("Community_Required"))
-            .Length(3).WithMessage(L("Community_3Digits"))
-            .Matches(@"^\d{3}$").WithMessage(L("Community_DigitsOnly"));
-
-        RuleFor(x => x.NeighborhoodCode)
-            .NotEmpty().WithMessage(L("Neighborhood_Required"))
-            .Length(3).WithMessage(L("Neighborhood_3Digits"))
-            .Matches(@"^\d{3}$").WithMessage(L("Neighborhood_DigitsOnly"));
+        // Each level must be supplied as either raw OR pCode.
+        RuleFor(x => x).Must(x =>
+                !string.IsNullOrEmpty(x.GovernorateCode) ||
+                !string.IsNullOrEmpty(x.GovernoratePCode) ||
+                !string.IsNullOrEmpty(x.DistrictPCode) ||
+                !string.IsNullOrEmpty(x.SubDistrictPCode))
+            .WithMessage(L("Governorate_Required"));
+        RuleFor(x => x).Must(x =>
+                !string.IsNullOrEmpty(x.DistrictCode) ||
+                !string.IsNullOrEmpty(x.DistrictPCode) ||
+                !string.IsNullOrEmpty(x.SubDistrictPCode))
+            .WithMessage(L("District_Required"));
+        RuleFor(x => x).Must(x =>
+                !string.IsNullOrEmpty(x.SubDistrictCode) ||
+                !string.IsNullOrEmpty(x.SubDistrictPCode))
+            .WithMessage(L("SubDistrict_Required"));
+        RuleFor(x => x).Must(x =>
+                !string.IsNullOrEmpty(x.CommunityCode) ||
+                !string.IsNullOrEmpty(x.CommunityPCode))
+            .WithMessage(L("Community_Required"));
+        RuleFor(x => x).Must(x =>
+                !string.IsNullOrEmpty(x.NeighborhoodCode) ||
+                !string.IsNullOrEmpty(x.NeighborhoodPCode))
+            .WithMessage(L("Neighborhood_Required"));
 
         RuleFor(x => x.BuildingNumber)
             .NotEmpty().WithMessage(L("BuildingNumber_Required"))
             .Length(5).WithMessage(L("BuildingNumber_5Digits"))
             .Matches(@"^\d{5}$").WithMessage(L("BuildingNumber_DigitsOnly"));
 
-        // BuildingId = GovernorateCode(2) + DistrictCode(2) + SubDistrictCode(2)
-        //            + CommunityCode(3) + NeighborhoodCode(3) + BuildingNumber(5) = 17 digits
-        RuleFor(x => x)
-            .Must(x =>
-            {
-                var compositeId = $"{x.GovernorateCode}{x.DistrictCode}{x.SubDistrictCode}" +
-                                  $"{x.CommunityCode}{x.NeighborhoodCode}{x.BuildingNumber}";
-                return compositeId.Length == 17 && compositeId.All(char.IsDigit);
-            })
-            .When(x => !string.IsNullOrEmpty(x.GovernorateCode) &&
-                        !string.IsNullOrEmpty(x.DistrictCode) &&
-                        !string.IsNullOrEmpty(x.SubDistrictCode) &&
-                        !string.IsNullOrEmpty(x.CommunityCode) &&
-                        !string.IsNullOrEmpty(x.NeighborhoodCode) &&
-                        !string.IsNullOrEmpty(x.BuildingNumber))
-            .WithMessage(L("BuildingId_CompositeFormat"));
+        // Composite-ID format enforced by the handler after pCode normalization.
 
 
         RuleFor(x => x.BuildingType)

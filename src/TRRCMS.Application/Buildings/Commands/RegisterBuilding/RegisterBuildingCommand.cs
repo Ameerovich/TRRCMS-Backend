@@ -35,6 +35,25 @@ public record RegisterBuildingCommand : IRequest<BuildingDto>
     /// <example>00001</example>
     public string BuildingNumber { get; init; } = string.Empty;
 
+    // ────────────── OCHA P-Codes (optional — accepted alongside raw codes) ──────────────
+    // Callers may send either the raw codes above (legacy) or OCHA pCodes here. When
+    // both are provided, the pCode wins. Community is resolved by ExternalPCode lookup.
+
+    /// <summary>OCHA governorate P-Code, e.g. "SY02" (optional alternative to GovernorateCode).</summary>
+    public string? GovernoratePCode { get; init; }
+
+    /// <summary>OCHA district P-Code, e.g. "SY0200" (optional, populates Gov + Dist).</summary>
+    public string? DistrictPCode { get; init; }
+
+    /// <summary>OCHA sub-district P-Code, e.g. "SY020000" (optional, populates Gov + Dist + SubDist).</summary>
+    public string? SubDistrictPCode { get; init; }
+
+    /// <summary>OCHA community P-Code, e.g. "C1007" (optional — the system looks up Community.ExternalPCode).</summary>
+    public string? CommunityPCode { get; init; }
+
+    /// <summary>OCHA neighborhood P-Code, e.g. "N0160" (optional alternative to NeighborhoodCode).</summary>
+    public string? NeighborhoodPCode { get; init; }
+
 
     /// <summary>
     /// Building polygon geometry in WKT format (from QGIS digitization).

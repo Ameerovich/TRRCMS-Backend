@@ -32,6 +32,10 @@ public class NeighborhoodsController : ControllerBase
         [FromQuery] string? districtCode,
         [FromQuery] string? subDistrictCode,
         [FromQuery] string? communityCode,
+        [FromQuery] string? governoratePCode,
+        [FromQuery] string? districtPCode,
+        [FromQuery] string? subDistrictPCode,
+        [FromQuery] string? communityPCode,
         CancellationToken cancellationToken = default)
     {
         var query = new GetNeighborhoodsQuery
@@ -39,7 +43,11 @@ public class NeighborhoodsController : ControllerBase
             GovernorateCode = governorateCode,
             DistrictCode = districtCode,
             SubDistrictCode = subDistrictCode,
-            CommunityCode = communityCode
+            CommunityCode = communityCode,
+            GovernoratePCode = governoratePCode,
+            DistrictPCode = districtPCode,
+            SubDistrictPCode = subDistrictPCode,
+            CommunityPCode = communityPCode
         };
 
         var result = await _mediator.Send(query, cancellationToken);
@@ -88,7 +96,14 @@ public class NeighborhoodsController : ControllerBase
             BoundaryWkt = n.BoundaryWkt,
             AreaSquareKm = n.AreaSquareKm,
             ZoomLevel = n.ZoomLevel,
-            IsActive = n.IsActive
+            IsActive = n.IsActive,
+            // OCHA P-Codes (Community uses synthetic fallback in this hot path; the
+            // single-row by-codes endpoint resolves the real Community.ExternalPCode).
+            GovernoratePCode = Application.Common.OchaPCodeConverter.ToGovPCode(n.GovernorateCode),
+            DistrictPCode = Application.Common.OchaPCodeConverter.ToDistrictPCode(n.GovernorateCode, n.DistrictCode),
+            SubDistrictPCode = Application.Common.OchaPCodeConverter.ToSubDistrictPCode(n.GovernorateCode, n.DistrictCode, n.SubDistrictCode),
+            CommunityPCode = Application.Common.OchaPCodeConverter.ToCommunityPCode(null, n.CommunityCode),
+            PCode = Application.Common.OchaPCodeConverter.ToNeighborhoodPCode(n.NeighborhoodCode)
         }).ToList();
 
         return Ok(ListResponse<NeighborhoodDto>.From(dtos));

@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.AdministrativeDivisions.Dtos;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.AdministrativeDivisions.Queries.GetSubDistricts;
@@ -25,9 +26,13 @@ public class GetSubDistrictsQueryHandler : IRequestHandler<GetSubDistrictsQuery,
         GetSubDistrictsQuery request,
         CancellationToken cancellationToken)
     {
+        var (govCode, distCode, _) = OchaCommandNormalizer.ResolveAdmCodes(
+            request.GovernorateCode, request.DistrictCode, null,
+            request.GovernoratePCode, request.DistrictPCode, null);
+
         var subDistricts = await _subDistrictRepository.GetAllAsync(
-            request.GovernorateCode,
-            request.DistrictCode,
+            string.IsNullOrWhiteSpace(govCode) ? null : govCode,
+            string.IsNullOrWhiteSpace(distCode) ? null : distCode,
             cancellationToken);
 
         return _mapper.Map<List<SubDistrictDto>>(subDistricts);

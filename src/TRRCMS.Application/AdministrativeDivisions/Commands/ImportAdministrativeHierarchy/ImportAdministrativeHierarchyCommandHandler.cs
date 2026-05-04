@@ -226,6 +226,9 @@ public class ImportAdministrativeHierarchyCommandHandler
             var code = commElement.GetProperty("code").GetString() ?? string.Empty;
             var nameAr = commElement.GetProperty("name_ar").GetString() ?? string.Empty;
             var nameEn = commElement.GetProperty("name_en").GetString() ?? string.Empty;
+            var externalPCode = commElement.TryGetProperty("external_pcode", out var extProp)
+                ? extProp.GetString()
+                : null;
 
             // Check if community already exists
             if (await _communityRepository.ExistsAsync(governorateCode, districtCode, subDistrictCode, code, cancellationToken))
@@ -234,7 +237,7 @@ public class ImportAdministrativeHierarchyCommandHandler
                 return;
             }
 
-            var community = Community.Create(code, governorateCode, districtCode, subDistrictCode, nameAr, nameEn, userId);
+            var community = Community.Create(code, governorateCode, districtCode, subDistrictCode, nameAr, nameEn, userId, externalPCode);
             await _communityRepository.AddAsync(community, cancellationToken);
             result.CommunitiesImported++;
 

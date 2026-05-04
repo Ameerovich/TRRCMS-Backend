@@ -1,5 +1,6 @@
 using System.Text.Json;
 using MediatR;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Sync.DTOs;
 using TRRCMS.Domain.Entities;
@@ -33,19 +34,22 @@ public sealed class GetSyncAssignmentsQueryHandler
     private readonly IVocabularyRepository _vocabularyRepo;
     private readonly ICurrentUserService _currentUser;
     private readonly IAuditService _auditService;
+    private readonly ICommunityRepository _communityRepo;
 
     public GetSyncAssignmentsQueryHandler(
         IUnitOfWork uow,
         IBuildingAssignmentRepository assignmentRepo,
         IVocabularyRepository vocabularyRepo,
         ICurrentUserService currentUser,
-        IAuditService auditService)
+        IAuditService auditService,
+        ICommunityRepository communityRepo)
     {
         _uow = uow;
         _assignmentRepo = assignmentRepo;
         _vocabularyRepo = vocabularyRepo;
         _currentUser = currentUser;
         _auditService = auditService;
+        _communityRepo = communityRepo;
     }
 
     public async Task<SyncAssignmentPayloadDto> Handle(
@@ -89,9 +93,24 @@ public sealed class GetSyncAssignmentsQueryHandler
 
         var vocabVersionsJson = JsonSerializer.Serialize(versionMap);
 
-        // ── 6. Map assignments to DTOs ─────────────────────────────────────────────
+        // ── 6. Resolve OCHA Community ExternalPCode for each unique parent hierarchy ─
+        var distinctCommunityKeys = assignments
+            .Select(a => a.Building)
+            .Where(b => b != null)
+            .Select(b => (b!.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode))
+            .Distinct()
+            .ToList();
+        var communityPCodeMap = new Dictionary<(string, string, string, string), string?>();
+        foreach (var key in distinctCommunityKeys)
+        {
+            var c = await _communityRepo.GetByCodeAsync(
+                key.GovernorateCode, key.DistrictCode, key.SubDistrictCode, key.CommunityCode, ct);
+            communityPCodeMap[key] = c?.ExternalPCode;
+        }
+
+        // ── 7. Map assignments to DTOs ─────────────────────────────────────────────
         var assignmentDtos = assignments
-            .Select(a => MapToSyncBuildingDto(a))
+            .Select(a => MapToSyncBuildingDto(a, communityPCodeMap))
             .ToList();
 
         // ── 7. Map vocabularies to DTOs ────────────────────────────────────────────
@@ -151,7 +170,9 @@ public sealed class GetSyncAssignmentsQueryHandler
     /// Maps a <see cref="BuildingAssignment"/> (with eagerly loaded
     /// <c>Building</c> and <c>PropertyUnits</c>) to a <see cref="SyncBuildingDto"/>.
     /// </summary>
-    private static SyncBuildingDto MapToSyncBuildingDto(BuildingAssignment assignment)
+    private static SyncBuildingDto MapToSyncBuildingDto(
+        BuildingAssignment assignment,
+        IReadOnlyDictionary<(string, string, string, string), string?> communityPCodeMap)
     {
         var building = assignment.Building;
 
@@ -162,6 +183,9 @@ public sealed class GetSyncAssignmentsQueryHandler
         // For revisit assignments only include the units listed in UnitsForRevisit;
         // for full-building assignments include all property units.
         var propertyUnits = ResolvePropertyUnits(assignment, building);
+
+        var commKey = (building.GovernorateCode, building.DistrictCode, building.SubDistrictCode, building.CommunityCode);
+        communityPCodeMap.TryGetValue(commKey, out var communityExternalPCode);
 
         return new SyncBuildingDto
         {
@@ -185,6 +209,13 @@ public sealed class GetSyncAssignmentsQueryHandler
             CommunityCode        = building.CommunityCode,
             NeighborhoodCode     = building.NeighborhoodCode,
             BuildingNumber       = building.BuildingNumber,
+
+            // OCHA P-Codes
+            GovernoratePCode     = OchaPCodeConverter.ToGovPCode(building.GovernorateCode),
+            DistrictPCode        = OchaPCodeConverter.ToDistrictPCode(building.GovernorateCode, building.DistrictCode),
+            SubDistrictPCode     = OchaPCodeConverter.ToSubDistrictPCode(building.GovernorateCode, building.DistrictCode, building.SubDistrictCode),
+            CommunityPCode       = OchaPCodeConverter.ToCommunityPCode(communityExternalPCode, building.CommunityCode),
+            NeighborhoodPCode    = OchaPCodeConverter.ToNeighborhoodPCode(building.NeighborhoodCode),
 
             // Location names (Arabic)
             GovernorateName      = building.GovernorateName,

@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.BuildingAssignments.Dtos;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Models;
@@ -15,16 +16,55 @@ public class GetBuildingsForAssignmentQueryHandler
     : IRequestHandler<GetBuildingsForAssignmentQuery, BuildingsForAssignmentPagedResult>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICommunityRepository _communityRepository;
 
-    public GetBuildingsForAssignmentQueryHandler(IUnitOfWork unitOfWork)
+    public GetBuildingsForAssignmentQueryHandler(
+        IUnitOfWork unitOfWork,
+        ICommunityRepository communityRepository)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _communityRepository = communityRepository ?? throw new ArgumentNullException(nameof(communityRepository));
     }
 
     public async Task<BuildingsForAssignmentPagedResult> Handle(
-        GetBuildingsForAssignmentQuery request, 
+        GetBuildingsForAssignmentQuery request,
         CancellationToken cancellationToken)
     {
+        // Normalize OCHA pCode filters → raw numeric codes.
+        var (govCode, distCode, subDistCode) = OchaCommandNormalizer.ResolveAdmCodes(
+            request.GovernorateCode, request.DistrictCode, request.SubDistrictCode,
+            request.GovernoratePCode, request.DistrictPCode, request.SubDistrictPCode);
+        var neighCode = OchaCommandNormalizer.ResolveNeighborhoodCode(
+            request.NeighborhoodCode, request.NeighborhoodPCode);
+        var commCode = request.CommunityCode;
+        var commPCodeNorm = OchaCommandNormalizer.NormalizeCommunityPCode(request.CommunityPCode);
+        if (commPCodeNorm != null)
+        {
+            var matched = await _communityRepository.GetByExternalPCodeAsync(
+                commPCodeNorm,
+                string.IsNullOrWhiteSpace(govCode) ? null : govCode,
+                string.IsNullOrWhiteSpace(distCode) ? null : distCode,
+                string.IsNullOrWhiteSpace(subDistCode) ? null : subDistCode,
+                cancellationToken);
+            if (matched != null)
+            {
+                commCode = matched.Code;
+                govCode = matched.GovernorateCode;
+                distCode = matched.DistrictCode;
+                subDistCode = matched.SubDistrictCode;
+            }
+            else
+            {
+                return new BuildingsForAssignmentPagedResult
+                {
+                    Items = new List<BuildingForAssignmentDto>(),
+                    TotalCount = 0,
+                    Page = request.Page,
+                    PageSize = request.PageSize
+                };
+            }
+        }
+
         List<Building> buildings;
         int totalCount;
         string? polygonWkt = null;
@@ -55,20 +95,20 @@ public class GetBuildingsForAssignmentQueryHandler
             totalCount = polygonTotalCount;
 
             // Apply additional filters that aren't supported by SearchBuildingsInPolygonAsync
-            if (!string.IsNullOrWhiteSpace(request.GovernorateCode))
-                buildings = buildings.Where(b => b.GovernorateCode == request.GovernorateCode).ToList();
-            
-            if (!string.IsNullOrWhiteSpace(request.DistrictCode))
-                buildings = buildings.Where(b => b.DistrictCode == request.DistrictCode).ToList();
-            
-            if (!string.IsNullOrWhiteSpace(request.SubDistrictCode))
-                buildings = buildings.Where(b => b.SubDistrictCode == request.SubDistrictCode).ToList();
-            
-            if (!string.IsNullOrWhiteSpace(request.CommunityCode))
-                buildings = buildings.Where(b => b.CommunityCode == request.CommunityCode).ToList();
-            
-            if (!string.IsNullOrWhiteSpace(request.NeighborhoodCode))
-                buildings = buildings.Where(b => b.NeighborhoodCode == request.NeighborhoodCode).ToList();
+            if (!string.IsNullOrWhiteSpace(govCode))
+                buildings = buildings.Where(b => b.GovernorateCode == govCode).ToList();
+
+            if (!string.IsNullOrWhiteSpace(distCode))
+                buildings = buildings.Where(b => b.DistrictCode == distCode).ToList();
+
+            if (!string.IsNullOrWhiteSpace(subDistCode))
+                buildings = buildings.Where(b => b.SubDistrictCode == subDistCode).ToList();
+
+            if (!string.IsNullOrWhiteSpace(commCode))
+                buildings = buildings.Where(b => b.CommunityCode == commCode).ToList();
+
+            if (!string.IsNullOrWhiteSpace(neighCode))
+                buildings = buildings.Where(b => b.NeighborhoodCode == neighCode).ToList();
 
             if (!string.IsNullOrWhiteSpace(request.BuildingCode))
             {
@@ -82,11 +122,11 @@ public class GetBuildingsForAssignmentQueryHandler
         else
         {
             var (searchBuildings, searchTotalCount) = await _unitOfWork.Buildings.SearchBuildingsAsync(
-                governorateCode: request.GovernorateCode,
-                districtCode: request.DistrictCode,
-                subDistrictCode: request.SubDistrictCode,
-                communityCode: request.CommunityCode,
-                neighborhoodCode: request.NeighborhoodCode,
+                governorateCode: string.IsNullOrWhiteSpace(govCode) ? null : govCode,
+                districtCode: string.IsNullOrWhiteSpace(distCode) ? null : distCode,
+                subDistrictCode: string.IsNullOrWhiteSpace(subDistCode) ? null : subDistCode,
+                communityCode: string.IsNullOrWhiteSpace(commCode) ? null : commCode,
+                neighborhoodCode: string.IsNullOrWhiteSpace(neighCode) ? null : neighCode,
                 buildingId: request.BuildingCode,
                 latitude: request.Latitude,
                 longitude: request.Longitude,
@@ -139,10 +179,27 @@ public class GetBuildingsForAssignmentQueryHandler
             totalCount = buildings.Count;
         }
 
+        // Batch-resolve real OCHA Community.ExternalPCode for the result set so each
+        // DTO can carry the canonical "Cxxxx" value (not just the synthetic "C{Code}").
+        var distinctCommunityKeys = buildings
+            .Select(b => (b.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode))
+            .Distinct()
+            .ToList();
+        var communityPCodeMap = new Dictionary<(string, string, string, string), string?>();
+        foreach (var key in distinctCommunityKeys)
+        {
+            var c = await _communityRepository.GetByCodeAsync(
+                key.GovernorateCode, key.DistrictCode, key.SubDistrictCode, key.CommunityCode,
+                cancellationToken);
+            communityPCodeMap[key] = c?.ExternalPCode;
+        }
+
         var items = buildings.Select(b =>
         {
             var hasAssignment = activeAssignments.TryGetValue(b.Id, out var assignmentInfo);
-            
+            var commKey = (b.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode);
+            communityPCodeMap.TryGetValue(commKey, out var commExternalPCode);
+
             return new BuildingForAssignmentDto
             {
                 Id = b.Id,
@@ -157,6 +214,12 @@ public class GetBuildingsForAssignmentQueryHandler
                 CommunityName = b.CommunityName,
                 NeighborhoodCode = b.NeighborhoodCode,
                 NeighborhoodName = b.NeighborhoodName,
+                // OCHA P-Codes
+                GovernoratePCode = OchaPCodeConverter.ToGovPCode(b.GovernorateCode),
+                DistrictPCode = OchaPCodeConverter.ToDistrictPCode(b.GovernorateCode, b.DistrictCode),
+                SubDistrictPCode = OchaPCodeConverter.ToSubDistrictPCode(b.GovernorateCode, b.DistrictCode, b.SubDistrictCode),
+                CommunityPCode = OchaPCodeConverter.ToCommunityPCode(commExternalPCode, b.CommunityCode),
+                NeighborhoodPCode = OchaPCodeConverter.ToNeighborhoodPCode(b.NeighborhoodCode),
                 NumberOfPropertyUnits = b.NumberOfPropertyUnits,
                 BuildingType = b.BuildingType.ToString(),
                 BuildingStatus = b.Status.ToString(),

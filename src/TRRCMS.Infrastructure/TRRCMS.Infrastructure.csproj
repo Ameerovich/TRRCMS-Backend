@@ -28,4 +28,10 @@
 		<ProjectReference Include="..\TRRCMS.Application\TRRCMS.Application.csproj" />
 		<ProjectReference Include="..\TRRCMS.Domain\TRRCMS.Domain.csproj" />
 	</ItemGroup>
+
+	<!-- Embedded GIS data (Aleppo neighborhoods, sourced from city_neighbourhoods.shp).
+	     Read by SeedAleppoNeighborhoodsFromGIS migration and the bulk-import handler. -->
+	<ItemGroup>
+		<EmbeddedResource Include="Data\aleppo_neighborhoods_v1.json" />
+	</ItemGroup>
 </Project>

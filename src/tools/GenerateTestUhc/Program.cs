@@ -291,16 +291,18 @@ using (var conn = new SqliteConnection(connStr))
             neighborhood_name       TEXT
         );");
 
-    var fullBuildingCode = $"141401010011{buildingNumber}";
+    // OCHA-aligned admin codes: SY02 (Aleppo) / SY0200 (Mount Simeon) / SY020000 (Markaz Jebel Saman) / C1007 (Aleppo city)
+    // Neighborhood "001" matches the Al-Jamiliyah seed in NeighborhoodSeedData.
+    var fullBuildingCode = $"020000001001{buildingNumber}";
     Execute(conn, @"
         INSERT INTO buildings VALUES (
-            @id, '14', '14', '01', '010', '011', @bnum,
+            @id, '02', '00', '00', '001', '001', @bnum,
             1, 1, 2, 2, 0,
             @lat, @lon,
             @wkt,
             'مبنى سكني بحالة جيدة',
             @bcode,
-            'حلب', 'حلب', 'مركز حلب', 'حلب المدينة', 'الجميلية'
+            'حلب', 'جبل سمعان', 'مركز جبل سمعان', 'حلب', 'الجميلية'
         );",
         ("@id", buildingId.ToString()),
         ("@bnum", buildingNumber),

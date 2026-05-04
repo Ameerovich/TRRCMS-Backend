@@ -104,6 +104,23 @@ public class BuildingInPolygonDto
     /// </summary>
     public string CommunityName { get; set; } = string.Empty;
 
+    // ──────────── OCHA P-Codes (additive — same convention as BuildingDto) ────────────
+
+    /// <summary>Governorate OCHA P-Code, e.g. "SY02".</summary>
+    public string GovernoratePCode { get; set; } = string.Empty;
+
+    /// <summary>District OCHA P-Code, e.g. "SY0200".</summary>
+    public string DistrictPCode { get; set; } = string.Empty;
+
+    /// <summary>Sub-district OCHA P-Code, e.g. "SY020000".</summary>
+    public string SubDistrictPCode { get; set; } = string.Empty;
+
+    /// <summary>Community OCHA P-Code, e.g. "C1007" (sourced from Community.ExternalPCode when present).</summary>
+    public string CommunityPCode { get; set; } = string.Empty;
+
+    /// <summary>Neighborhood OCHA P-Code, e.g. "N0160".</summary>
+    public string NeighborhoodPCode { get; set; } = string.Empty;
+
 
     /// <summary>
     /// Full building details (only populated when IncludeFullDetails=true)

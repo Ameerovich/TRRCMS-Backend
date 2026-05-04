@@ -100,6 +100,7 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<ICaseNumberGenerator, CaseNumberGenerator>();
         services.AddScoped<ISurveyReferenceCodeGenerator, SurveyReferenceCodeGenerator>();
         services.AddScoped<IAdministrativeNameResolver, AdministrativeNameResolver>();
+        services.AddScoped<IAleppoNeighborhoodsImportService, AleppoNeighborhoodsImportService>();
 
         // ── Import pipeline ──────────────────────────────────────────
         services.AddScoped(typeof(IStagingRepository<>), typeof(StagingRepository<>));
