@@ -75,10 +75,6 @@ public class MergeConflictCommandHandler
             ? conflict.SecondEntityId
             : conflict.FirstEntityId;
 
-        conflict.RecordReviewAttempt(
-            $"Merge: master={masterEntityId}, discarded={discardedEntityId} — {request.Reason}",
-            userId);
-
         var mergeService = conflict.EntityType switch
         {
             "Person" => _personMergeService,
@@ -95,6 +91,13 @@ public class MergeConflictCommandHandler
             throw new ConflictException(
                 $"Merge failed for conflict {conflict.ConflictNumber}: {mergeResult.ErrorMessage}");
         }
+
+        // Log after merge so the history reflects the actual surviving/discarded IDs,
+        // not the pre-flip request IDs (the merge service may swap master/discarded
+        // to ensure the production entity always survives in cross-batch merges).
+        conflict.RecordReviewAttempt(
+            $"Merge: master={mergeResult.MasterEntityId}, discarded={mergeResult.DiscardedEntityId} — {request.Reason}",
+            userId);
 
         conflict.Resolve(
             action: ConflictResolutionAction.Merge,

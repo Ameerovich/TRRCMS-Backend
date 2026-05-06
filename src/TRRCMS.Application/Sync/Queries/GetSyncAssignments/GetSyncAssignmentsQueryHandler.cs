@@ -2,6 +2,7 @@ using System.Text.Json;
 using MediatR;
 using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Sync.DTOs;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
@@ -35,6 +36,7 @@ public sealed class GetSyncAssignmentsQueryHandler
     private readonly ICurrentUserService _currentUser;
     private readonly IAuditService _auditService;
     private readonly ICommunityRepository _communityRepo;
+    private readonly IAdministrativeNameResolver _nameResolver;
 
     public GetSyncAssignmentsQueryHandler(
         IUnitOfWork uow,
@@ -42,7 +44,8 @@ public sealed class GetSyncAssignmentsQueryHandler
         IVocabularyRepository vocabularyRepo,
         ICurrentUserService currentUser,
         IAuditService auditService,
-        ICommunityRepository communityRepo)
+        ICommunityRepository communityRepo,
+        IAdministrativeNameResolver nameResolver)
     {
         _uow = uow;
         _assignmentRepo = assignmentRepo;
@@ -50,6 +53,7 @@ public sealed class GetSyncAssignmentsQueryHandler
         _currentUser = currentUser;
         _auditService = auditService;
         _communityRepo = communityRepo;
+        _nameResolver = nameResolver;
     }
 
     public async Task<SyncAssignmentPayloadDto> Handle(
@@ -108,9 +112,31 @@ public sealed class GetSyncAssignmentsQueryHandler
             communityPCodeMap[key] = c?.ExternalPCode;
         }
 
+        // ── 6b. Resolve admin names for buildings whose denormalized name columns are empty ─
+        // Buildings created before the name resolver was wired have empty GovernorateName etc.
+        // We resolve them live here so the tablet always receives readable Arabic names.
+        var nameMap = new Dictionary<(string, string, string, string, string), AdministrativeNames>();
+        foreach (var a in assignments)
+        {
+            var b = a.Building;
+            if (b == null) continue;
+            if (!string.IsNullOrEmpty(b.GovernorateName) &&
+                !string.IsNullOrEmpty(b.DistrictName) &&
+                !string.IsNullOrEmpty(b.SubDistrictName) &&
+                !string.IsNullOrEmpty(b.CommunityName) &&
+                !string.IsNullOrEmpty(b.NeighborhoodName))
+                continue;
+
+            var nameKey = (b.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode, b.NeighborhoodCode);
+            if (nameMap.ContainsKey(nameKey)) continue;
+
+            nameMap[nameKey] = await _nameResolver.ResolveAsync(
+                b.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode, b.NeighborhoodCode, ct);
+        }
+
         // ── 7. Map assignments to DTOs ─────────────────────────────────────────────
         var assignmentDtos = assignments
-            .Select(a => MapToSyncBuildingDto(a, communityPCodeMap))
+            .Select(a => MapToSyncBuildingDto(a, communityPCodeMap, nameMap))
             .ToList();
 
         // ── 7. Map vocabularies to DTOs ────────────────────────────────────────────
@@ -172,7 +198,8 @@ public sealed class GetSyncAssignmentsQueryHandler
     /// </summary>
     private static SyncBuildingDto MapToSyncBuildingDto(
         BuildingAssignment assignment,
-        IReadOnlyDictionary<(string, string, string, string), string?> communityPCodeMap)
+        IReadOnlyDictionary<(string, string, string, string), string?> communityPCodeMap,
+        IReadOnlyDictionary<(string, string, string, string, string), AdministrativeNames> nameMap)
     {
         var building = assignment.Building;
 
@@ -186,6 +213,9 @@ public sealed class GetSyncAssignmentsQueryHandler
 
         var commKey = (building.GovernorateCode, building.DistrictCode, building.SubDistrictCode, building.CommunityCode);
         communityPCodeMap.TryGetValue(commKey, out var communityExternalPCode);
+
+        var nameKey = (building.GovernorateCode, building.DistrictCode, building.SubDistrictCode, building.CommunityCode, building.NeighborhoodCode);
+        nameMap.TryGetValue(nameKey, out var resolved);
 
         return new SyncBuildingDto
         {
@@ -217,12 +247,13 @@ public sealed class GetSyncAssignmentsQueryHandler
             CommunityPCode       = OchaPCodeConverter.ToCommunityPCode(communityExternalPCode, building.CommunityCode),
             NeighborhoodPCode    = OchaPCodeConverter.ToNeighborhoodPCode(building.NeighborhoodCode),
 
-            // Location names (Arabic)
-            GovernorateName      = building.GovernorateName,
-            DistrictName         = building.DistrictName,
-            SubDistrictName      = building.SubDistrictName,
-            CommunityName        = building.CommunityName,
-            NeighborhoodName     = building.NeighborhoodName,
+            // Location names (Arabic) — prefer the stored denormalized value; fall back to
+            // the live-resolved name for buildings created before the resolver was wired up.
+            GovernorateName      = !string.IsNullOrEmpty(building.GovernorateName) ? building.GovernorateName : resolved?.GovernorateName ?? string.Empty,
+            DistrictName         = !string.IsNullOrEmpty(building.DistrictName)    ? building.DistrictName    : resolved?.DistrictName    ?? string.Empty,
+            SubDistrictName      = !string.IsNullOrEmpty(building.SubDistrictName) ? building.SubDistrictName : resolved?.SubDistrictName ?? string.Empty,
+            CommunityName        = !string.IsNullOrEmpty(building.CommunityName)   ? building.CommunityName   : resolved?.CommunityName   ?? string.Empty,
+            NeighborhoodName     = !string.IsNullOrEmpty(building.NeighborhoodName)? building.NeighborhoodName: resolved?.NeighborhoodName?? string.Empty,
 
             // Building attributes
             BuildingType         = building.BuildingType,

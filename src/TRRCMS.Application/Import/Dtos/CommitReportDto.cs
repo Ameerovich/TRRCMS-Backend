@@ -69,8 +69,8 @@ public class CommitReportDto
     /// <summary>List of errors encountered during commit (if any).</summary>
     public List<CommitErrorDto> Errors { get; set; } = new();
 
-    /// <summary>True if commit completed without any errors.</summary>
-    public bool IsFullySuccessful => Errors.Count == 0 && TotalRecordsFailed == 0;
+    /// <summary>True if commit completed without errors and at least one record was committed.</summary>
+    public bool IsFullySuccessful => Errors.Count == 0 && TotalRecordsFailed == 0 && TotalRecordsCommitted > 0;
 }
 
 /// <summary>

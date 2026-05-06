@@ -34,4 +34,10 @@
 	<ItemGroup>
 		<EmbeddedResource Include="Data\aleppo_neighborhoods_v1.json" />
 	</ItemGroup>
+
+	<!-- Embedded sample buildings (sourced from client shapefile via tools/SeedBuildingsFromShapefile).
+	     Read by SeedSampleBuildingsFromGIS migration and the /api/v1/Buildings/import-bulk endpoint. -->
+	<ItemGroup>
+		<EmbeddedResource Include="Data\buildings_sample_v1.json" />
+	</ItemGroup>
 </Project>

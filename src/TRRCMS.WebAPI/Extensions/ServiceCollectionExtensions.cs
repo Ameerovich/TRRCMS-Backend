@@ -101,6 +101,7 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<ISurveyReferenceCodeGenerator, SurveyReferenceCodeGenerator>();
         services.AddScoped<IAdministrativeNameResolver, AdministrativeNameResolver>();
         services.AddScoped<IAleppoNeighborhoodsImportService, AleppoNeighborhoodsImportService>();
+        services.AddScoped<IBuildingsImportService, BuildingsImportService>();
 
         // ── Import pipeline ──────────────────────────────────────────
         services.AddScoped(typeof(IStagingRepository<>), typeof(StagingRepository<>));

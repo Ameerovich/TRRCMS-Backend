@@ -1,0 +1,5 @@
+# Client-supplied shapefile batches — keep out of source control.
+# Drop each batch into its own subfolder, e.g. shapefiles/aleppo-2026-05-batch1/
+*
+!.gitignore
+!README.md

@@ -1,0 +1,88 @@
+{
+  "Version": 1,
+  "Source": "buidings.shp",
+  "Crs": "EPSG:4326",
+  "GeneratedAtUtc": "2026-05-06T17:50:43.8243643Z",
+  "Items": [
+    {
+      "BuildingNumber": "00051",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14983584 36.18613900)",
+      "Notes": null
+    },
+    {
+      "BuildingNumber": "00052",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14970876 36.18613769)",
+      "Notes": null
+    },
+    {
+      "BuildingNumber": "00053",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14996397 36.18614034)",
+      "Notes": null
+    },
+    {
+      "BuildingNumber": "00054",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14958905 36.18613642)",
+      "Notes": null
+    },
+    {
+      "BuildingNumber": "00055",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14996264 36.18621244)",
+      "Notes": null
+    },
+    {
+      "BuildingNumber": "00056",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14970782 36.18621169)",
+      "Notes": null
+    },
+    {
+      "BuildingNumber": "00057",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14958934 36.18621134)",
+      "Notes": null
+    },
+    {
+      "BuildingNumber": "00058",
+      "GovernoratePCode": "SY02",
+      "DistrictPCode": "SY0200",
+      "SubDistrictPCode": "SY020000",
+      "CommunityPCode": "C1007",
+      "NeighborhoodPCode": "N0225",
+      "GeometryWkt": "POINT(37.14983403 36.18621202)",
+      "Notes": null
+    }
+  ]
+}

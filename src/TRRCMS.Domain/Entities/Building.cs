@@ -227,19 +227,22 @@ public class Building : BaseAuditableEntity
 
     /// <summary>
     /// Set building geometry (pre-parsed by IGeometryConverter).
-    /// Auto-computes centroid for polygon geometries.
+    /// Auto-fills Latitude/Longitude — centroid for polygons, X/Y for points.
     /// </summary>
     public void SetGeometry(Geometry? geometry, Guid modifiedByUserId)
     {
         BuildingGeometry = geometry;
 
-        // Auto-compute centroid from polygon so Latitude/Longitude are never null
-        // when a polygon geometry is provided
         if (geometry is Polygon or MultiPolygon)
         {
             var centroid = geometry.Centroid;
             Latitude = (decimal)centroid.Y;
             Longitude = (decimal)centroid.X;
+        }
+        else if (geometry is Point point)
+        {
+            Latitude = (decimal)point.Y;
+            Longitude = (decimal)point.X;
         }
 
         MarkAsModified(modifiedByUserId);
