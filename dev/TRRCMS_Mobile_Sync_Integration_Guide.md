@@ -1,7 +1,7 @@
 # TRRCMS Mobile Sync Integration Guide
 
-**Version:** 1.9
-**Last Updated:** April 10, 2026
+**Version:** 2.1
+**Last Updated:** May 6, 2026
 **Audience:** Mobile (Flutter/Android) Development Team
 **Backend Contact:** TRRCMS Backend Team
 **System:** Tenure Rights Registration & Claims Management System (TRRCMS)
@@ -20,6 +20,33 @@
 9. [Package Assembly Workflow](#9-package-assembly-workflow)
 10. [Error Handling & Edge Cases](#10-error-handling--edge-cases)
 11. [Checklist Before First Sync](#11-checklist-before-first-sync)
+
+---
+
+## Changelog — v2.1 (May 6, 2026)
+
+> **Mobile team: review all items marked with `>>> CHANGED v2.1` in this document.**
+> Search for `>>> CHANGED v2.1` to find every updated section.
+
+| Change | Section | Impact |
+|--------|---------|--------|
+| `property_units.unit_type` and `property_units.status` are now **optional**. When omitted (NULL) or sent as `0`, the server stores `Unknown = 99`. Intended for surveys where the field collector was obstructed and could not inspect the unit — send `id`, `building_id`, `unit_identifier`, and (optionally) `floor_number` so the unit is still recorded for statistics. | 3.2, 8 | Non-breaking — existing packages with valid codes continue to work unchanged |
+| `property_unit_type` vocabulary gains a new code `99 = Unknown` (غير معروف) | 6 | Additive — appears in the vocabulary payload after the next sync |
+| Survey `status = 4` (Obstructed) is now preserved end-to-end at commit time. Previously the server force-finalized any survey that had a contact person, overwriting Obstructed → Finalized. Mobile can now ship Obstructed surveys with confidence that the status survives import. | 10 | Bug fix — no mobile change required |
+
+---
+
+## Changelog — v2.0 (May 5, 2026)
+
+> **Mobile team: review all items marked with `>>> CHANGED v2.0` in this document.**
+> Search for `>>> CHANGED v2.0` to find every updated section.
+
+| Change | Section | Impact |
+|--------|---------|--------|
+| Aleppo governorate code realigned `"01"` → `"02"`. All building IDs previously starting with `01…` now start with `02…` | 3.2, 5 | **BREAKING** — any hardcoded `"01"` check or cached governorate code for Aleppo will miss all Aleppo buildings. Clear local caches after updating. |
+| 5 new OCHA P-Code fields added to the Step 3 assignment payload: `governoratePCode`, `districtPCode`, `subDistrictPCode`, `communityPCode`, `neighborhoodPCode` | 5 | Additive — new fields alongside existing raw codes. Use for display and OCHA cross-referencing. |
+| 109 official Aleppo neighborhoods seeded from GIS shapefile (codes `119`–`227`, P-Codes `N0119`–`N0227`). Legacy placeholder codes `001`–`020` (N0001–N0020) are soft-deleted and no longer returned. | 5 | **BREAKING** — if mobile cached or hardcoded the old placeholder neighborhood codes (001–020) they will no longer resolve to a name. Active range is now `119`–`227`. |
+| Aleppo city community now carries the real OCHA P-Code `"C1007"` — `communityPCode` in the response returns this value instead of the synthetic `"C001"` | 5 | New — use `communityPCode` as the canonical OCHA identifier for Aleppo city |
 
 ---
 
@@ -386,11 +413,11 @@ CREATE TABLE manifest (
 | Column | SQLite Type | Required | Description |
 |---|---|---|---|
 | `id` | TEXT (UUID) | Yes | Primary key — generate with `Uuid.v4()` |
-| `governorate_code` | TEXT | Yes | 2-digit code (e.g., `14`) |
-| `district_code` | TEXT | Yes | 2-digit code (e.g., `14`) |
-| `sub_district_code` | TEXT | Yes | 2-digit code (e.g., `01`) |
-| `community_code` | TEXT | Yes | 3-digit code (e.g., `010`) |
-| `neighborhood_code` | TEXT | Yes | 3-digit code (e.g., `011`) |
+| `governorate_code` | TEXT | Yes | 2-digit code. `>>> CHANGED v2.0` — Aleppo is `"02"` (was `"01"`) |
+| `district_code` | TEXT | Yes | 2-digit code (e.g., `"00"` for Mount Simeon) |
+| `sub_district_code` | TEXT | Yes | 2-digit code (e.g., `"00"` for Markaz Jebel Saman) |
+| `community_code` | TEXT | Yes | 3-digit code (e.g., `"001"` for Aleppo city) |
+| `neighborhood_code` | TEXT | Yes | 3-digit code. `>>> CHANGED v2.0` — active Aleppo city range is `"119"`–`"227"` (old `"001"`–`"020"` retired) |
 | `building_number` | TEXT | Yes | 5-digit code (e.g., `00001`) |
 | `building_id` | TEXT | No | Full 17-digit code (auto-composed: `GGDDSSCCCCNNNBBBBB`). Optional — server recomputes it. |
 | `building_type` | INTEGER | Yes | Vocabulary code from `building_type` |
@@ -427,13 +454,15 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 
 #### `property_units`
 
+> `>>> CHANGED v2.1` — `unit_type` and `status` are now **optional**. NULL or `0` is stored server-side as `Unknown = 99`. Use this when a survey was obstructed and the field collector could not inspect the unit — sending the row anyway (with at least `id`, `building_id`, `unit_identifier`) keeps the unit visible in statistics and preserves the link from the survey to the unit it was attempting to cover.
+
 | Column | SQLite Type | Required | Description |
 |---|---|---|---|
 | `id` | TEXT (UUID) | Yes | Primary key |
 | `building_id` | TEXT (UUID) | Yes | FK → `buildings.id` |
 | `unit_identifier` | TEXT | Yes | Label within building (e.g., `شقة 1`, `محل 2`) |
-| `unit_type` | INTEGER | Yes | Vocabulary code from `property_unit_type` |
-| `status` | INTEGER | Yes | Vocabulary code from `property_unit_status` |
+| `unit_type` | INTEGER | No | `>>> CHANGED v2.1` — was Required. Vocabulary code from `property_unit_type`. Omit (or send `0`) when unknown — server stores `99 = Unknown`. |
+| `status` | INTEGER | No | `>>> CHANGED v2.1` — was Required. Vocabulary code from `property_unit_status`. Omit (or send `0`) when unknown — server stores `99 = Unknown`. |
 | `floor_number` | INTEGER | No | Floor number |
 | `number_of_rooms` | INTEGER | No | Room count |
 | `area_square_meters` | REAL | No | Unit area in m² |
@@ -531,6 +560,8 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `status` | INTEGER | No | Vocabulary code from `survey_status` |
 
 > **Contact Person Link:** The `contact_person_id` should reference the `id` of the person in the `persons` table who has `is_contact_person = 1`. This creates a bidirectional link: the person knows it is a contact person, and the survey knows which person is its contact. **Every survey must have a contact person** — the server rejects finalization if `contact_person_id` is null.
+>
+> `>>> CHANGED v2.1` — **Obstructed surveys (`status = 4`) and Cancelled surveys (`status = 8`) are now preserved at commit time.** Previously, any survey that arrived with a contact person was force-finalized server-side, which silently overwrote `Obstructed`/`Cancelled` with `Finalized` (3). The fix: if mobile sends `status = 4` or `status = 8`, the server keeps that value. Obstructed surveys do **not** require a contact person and may ship with a minimal `property_units` row (see section 3.2).
 
 #### `evidences`
 
@@ -739,21 +770,27 @@ Each element in the `assignments` array has this structure:
   "isRevisit": false,
   "unitsForRevisit": null,
 
-  "buildingCode": "14140101001100001",
-  "buildingCodeDisplay": "14-14-01-010-011-00001",
+  "buildingCode": "02000000111900001",
+  "buildingCodeDisplay": "02-00-00-001-119-00001",
 
-  "governorateCode": "14",
-  "districtCode": "14",
-  "subDistrictCode": "01",
-  "communityCode": "010",
-  "neighborhoodCode": "011",
+  "governorateCode": "02",
+  "districtCode": "00",
+  "subDistrictCode": "00",
+  "communityCode": "001",
+  "neighborhoodCode": "119",
   "buildingNumber": "00001",
 
+  "governoratePCode": "SY02",
+  "districtPCode": "SY0200",
+  "subDistrictPCode": "SY020000",
+  "communityPCode": "C1007",
+  "neighborhoodPCode": "N0119",
+
   "governorateName": "حلب",
-  "districtName": "حلب",
-  "subDistrictName": "مركز حلب",
-  "communityName": "حلب المدينة",
-  "neighborhoodName": "الجميلية",
+  "districtName": "جبل سمعان",
+  "subDistrictName": "مركز جبل سمعان",
+  "communityName": "حلب",
+  "neighborhoodName": "السكن الشبابي",
 
   "buildingType": 1,
   "buildingStatus": 1,
@@ -786,6 +823,20 @@ Each element in the `assignments` array has this structure:
   ]
 }
 ```
+
+#### `>>> CHANGED v2.0` — OCHA P-Code Fields
+
+The five `*PCode` fields are **new in v2.0**. They are computed by the server and included in every assignment for OCHA cross-referencing and display purposes.
+
+| Field | Type | Example | Description |
+|---|---|---|---|
+| `governoratePCode` | `string` | `"SY02"` | OCHA P-Code for the governorate. Aleppo = `"SY02"` |
+| `districtPCode` | `string` | `"SY0200"` | OCHA P-Code for the district (6 chars) |
+| `subDistrictPCode` | `string` | `"SY020000"` | OCHA P-Code for the sub-district (8 chars) |
+| `communityPCode` | `string \| null` | `"C1007"` | OCHA P-Code for the community. Aleppo city = `"C1007"`. `null` if not mapped. |
+| `neighborhoodPCode` | `string` | `"N0119"` | OCHA P-Code for the neighborhood (format `N` + 4-digit zero-padded code) |
+
+> **`>>> CHANGED v2.0` — Important:** These P-Code fields are **reference-only**. Do **not** write them to the `.uhc` `buildings` table. The `.uhc` format uses raw administrative codes (`governorate_code`, `district_code`, etc.) — the server recomputes the P-Codes from those. Writing P-Codes to the package will be ignored and may cause checksum errors.
 
 #### Building Attribute Fields
 
@@ -864,12 +915,12 @@ The following vocabulary names are used as integer codes in the `.uhc` data tabl
 | `survey_type` | `surveys` | `type` |
 | `survey_source` | `surveys` | `source` |
 | `survey_status` | `surveys` | `status` | `>>> CHANGED v1.8` — value `4` renamed to `Obstructed` (معرقل, was Interrupted). Owner/occupant refused cooperation. |
-| `occupancy_type` | `households`, `person_property_relations` | `occupancy_type` | `>>> CHANGED v1.6` |
+| `occupancy_type` | `person_property_relations` | `occupancy_type` | `>>> CHANGED v1.6` — vocabulary still sent; `>>> CHANGED v1.7` — removed from `households` table (do NOT use in households) |
 | `occupancy_nature` | `households` | `occupancy_nature` | `>>> CHANGED v1.6` |
 | `claim_type` | `claims` | `claim_type` | `>>> CHANGED v1.6` — was TEXT, now INTEGER vocabulary code |
 | `gender` | `persons` | `gender` | `>>> CHANGED v1.6` — now vocabulary-driven |
 | `nationality` | `persons` | `nationality` | `>>> CHANGED v1.6` — now vocabulary-driven |
-| `relationship_to_head` | `persons` | `relationship_to_head` | `>>> CHANGED v1.6` — now vocabulary-driven |
+| `relationship_to_head` | *(none — column removed)* | *(n/a)* | `>>> CHANGED v1.6` — became vocabulary-driven; `>>> CHANGED v1.7` — `relationship_to_head` column **removed** from `.uhc` `persons` table. Vocabulary is still downloaded (for desktop use); mobile must NOT write this column to the package. |
 
 > **`>>> CHANGED v1.6`** — `gender`, `nationality`, and `relationship_to_head` are now **vocabulary-driven** (downloaded via sync like other vocabularies). `claim_type` is now an **INTEGER** vocabulary code, not a TEXT string. All integer codes come from the vocabulary values downloaded in Step 3.
 
@@ -1173,7 +1224,7 @@ When the tablet is ready to export collected data:
 - [ ] Vocabulary codes stored as integers in data tables
 - [ ] `>>> CHANGED v1.6` — `gender`, `nationality`, `relationship_to_head` populated from downloaded vocabularies (no longer hardcoded)
 - [ ] `>>> CHANGED v1.6` — `claim_type` uses INTEGER codes (`1` = OwnershipClaim, `2` = OccupancyClaim) — NOT text strings
-- [ ] `>>> CHANGED v1.6` — `households` include `occupancy_type` and `occupancy_nature` vocabulary codes
+- [ ] `>>> CHANGED v1.6` — `households` include `occupancy_nature` vocabulary code; `>>> CHANGED v1.7` — `occupancy_type` removed from households — do NOT include it; `>>> CHANGED v1.9` — also include `adult_count`, `disabled_count`, `occupancy_start_date`
 - [ ] `>>> CHANGED v1.6` — `person_property_relations` include `occupancy_type` and `has_evidence` fields
 - [ ] `>>> CHANGED v1.6` — `surveys` include `duration_minutes`
 - [ ] `>>> CHANGED v1.6` — `claims` include `originating_survey_id` linking to the survey
@@ -1202,5 +1253,10 @@ When the tablet is ready to export collected data:
 - [ ] Can parse assignment payload (building codes, property units)
 - [ ] Can parse vocabulary payload and store locally
 - [ ] Assignment acknowledgement working (Step 4)
+- [ ] `>>> CHANGED v2.0` — Aleppo `governorate_code` is `"02"` (was `"01"`) — update any hardcoded Aleppo governorate check; clear cached governorate codes
+- [ ] `>>> CHANGED v2.0` — All Aleppo building IDs (`building_id`) now start with `"02…"` — any code that checks for `"01…"` prefix will miss all Aleppo buildings
+- [ ] `>>> CHANGED v2.0` — Active Aleppo neighborhood codes are `"119"`–`"227"` (P-Codes `N0119`–`N0227`); old placeholder codes `"001"`–`"020"` are retired and will not resolve to a name
+- [ ] `>>> CHANGED v2.0` — Assignment payload now includes 5 new OCHA P-Code fields: `governoratePCode`, `districtPCode`, `subDistrictPCode`, `communityPCode`, `neighborhoodPCode` — parse and store these for display and OCHA cross-referencing
+- [ ] `>>> CHANGED v2.0` — Do NOT write P-Code fields to `.uhc` `buildings` table — they are read-only reference data from the server; continue using raw administrative codes in the package
 
 ---------------------------------------------------------------------------------------

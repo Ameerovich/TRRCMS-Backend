@@ -973,10 +973,22 @@ public class CommitService : ICommitService
                     }
                 }
 
-                // Surveys arriving via .uhc are always finalized on the tablet before export.
-                // MarkAsFinalized requires a contact person — only call it when one was resolved.
-                if (survey.ContactPersonId.HasValue)
+                // Surveys arriving via .uhc are normally finalized on the tablet before export,
+                // but Obstructed/Cancelled surveys must keep their incoming status — they were
+                // never completed in the field and finalizing would erase that signal.
+                if (staging.Status == SurveyStatus.Obstructed)
+                {
+                    survey.MarkAsObstructed(userId);
+                }
+                else if (staging.Status == SurveyStatus.Cancelled)
+                {
+                    survey.Cancel(userId);
+                }
+                else if (survey.ContactPersonId.HasValue)
+                {
+                    // MarkAsFinalized requires a contact person — only call it when one was resolved.
                     survey.MarkAsFinalized(userId);
+                }
 
                 await _unitOfWork.Surveys.AddAsync(survey, ct);
 

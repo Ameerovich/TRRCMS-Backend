@@ -34,4 +34,11 @@ public enum PropertyUnitType
     /// </summary>
     [ArabicLabel("أخرى")]
     Other = 5,
+
+    /// <summary>
+    /// Unknown - used when the unit type could not be determined
+    /// (e.g., field collector was obstructed and could not inspect the unit).
+    /// </summary>
+    [ArabicLabel("غير معروف")]
+    Unknown = 99,
 }
