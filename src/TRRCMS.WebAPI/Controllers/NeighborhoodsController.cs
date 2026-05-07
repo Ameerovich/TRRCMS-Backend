@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Neighborhoods.Commands.ImportAleppoNeighborhoods;
 using TRRCMS.Application.Neighborhoods.Dtos;
 using TRRCMS.Application.Neighborhoods.Queries.GetNeighborhoodByCode;
 using TRRCMS.Application.Neighborhoods.Queries.GetNeighborhoods;
@@ -93,6 +95,10 @@ public class NeighborhoodsController : ControllerBase
         [FromQuery] string? districtCode,
         [FromQuery] string? subDistrictCode,
         [FromQuery] string? communityCode,
+        [FromQuery] string? governoratePCode,
+        [FromQuery] string? districtPCode,
+        [FromQuery] string? subDistrictPCode,
+        [FromQuery] string? communityPCode,
         CancellationToken cancellationToken = default)
     {
         var query = new GetNeighborhoodsQuery
@@ -100,7 +106,11 @@ public class NeighborhoodsController : ControllerBase
             GovernorateCode = governorateCode,
             DistrictCode = districtCode,
             SubDistrictCode = subDistrictCode,
-            CommunityCode = communityCode
+            CommunityCode = communityCode,
+            GovernoratePCode = governoratePCode,
+            DistrictPCode = districtPCode,
+            SubDistrictPCode = subDistrictPCode,
+            CommunityPCode = communityPCode
         };
 
         var result = await _mediator.Send(query, cancellationToken);
@@ -196,20 +206,32 @@ public class NeighborhoodsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<NeighborhoodDto>> GetNeighborhoodByCodes(
-        [FromQuery] string governorateCode,
-        [FromQuery] string districtCode,
-        [FromQuery] string subDistrictCode,
-        [FromQuery] string communityCode,
-        [FromQuery] string neighborhoodCode,
+        [FromQuery] string? governorateCode,
+        [FromQuery] string? districtCode,
+        [FromQuery] string? subDistrictCode,
+        [FromQuery] string? communityCode,
+        [FromQuery] string? neighborhoodCode,
+        [FromQuery] string? governoratePCode,
+        [FromQuery] string? districtPCode,
+        [FromQuery] string? subDistrictPCode,
+        [FromQuery] string? communityPCode,
+        [FromQuery] string? neighborhoodPCode,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(governorateCode) ||
-            string.IsNullOrWhiteSpace(districtCode) ||
-            string.IsNullOrWhiteSpace(subDistrictCode) ||
-            string.IsNullOrWhiteSpace(communityCode) ||
-            string.IsNullOrWhiteSpace(neighborhoodCode))
+        // Allow either raw codes or OCHA pCodes (or a mix). The handler normalizes both.
+        var hasRawCodes =
+            !string.IsNullOrWhiteSpace(governorateCode) &&
+            !string.IsNullOrWhiteSpace(districtCode) &&
+            !string.IsNullOrWhiteSpace(subDistrictCode) &&
+            !string.IsNullOrWhiteSpace(communityCode) &&
+            !string.IsNullOrWhiteSpace(neighborhoodCode);
+        var hasPCodes =
+            !string.IsNullOrWhiteSpace(subDistrictPCode) &&
+            (!string.IsNullOrWhiteSpace(communityCode) || !string.IsNullOrWhiteSpace(communityPCode)) &&
+            (!string.IsNullOrWhiteSpace(neighborhoodCode) || !string.IsNullOrWhiteSpace(neighborhoodPCode));
+        if (!hasRawCodes && !hasPCodes)
         {
-            return BadRequest(new { message = "All five hierarchy codes are required" });
+            return BadRequest(new { message = "Provide either the five raw codes or their OCHA pCode equivalents (subDistrictPCode + communityPCode + neighborhoodPCode)." });
         }
 
         var query = new GetNeighborhoodByCodeQuery
@@ -218,7 +240,12 @@ public class NeighborhoodsController : ControllerBase
             DistrictCode = districtCode,
             SubDistrictCode = subDistrictCode,
             CommunityCode = communityCode,
-            NeighborhoodCode = neighborhoodCode
+            NeighborhoodCode = neighborhoodCode,
+            GovernoratePCode = governoratePCode,
+            DistrictPCode = districtPCode,
+            SubDistrictPCode = subDistrictPCode,
+            CommunityPCode = communityPCode,
+            NeighborhoodPCode = neighborhoodPCode
         };
 
         var result = await _mediator.Send(query, cancellationToken);
@@ -403,5 +430,45 @@ public class NeighborhoodsController : ControllerBase
         };
 
         return Ok(result);
+    }
+
+    // ==================== ADMIN: BULK IMPORT FROM GIS ====================
+
+    /// <summary>
+    /// Bulk-import Aleppo neighborhoods from a GIS-team payload.
+    /// </summary>
+    /// <remarks>
+    /// Accepts the same JSON shape as the embedded
+    /// <c>Data/aleppo_neighborhoods_v1.json</c> seeded by the
+    /// <c>SeedAleppoNeighborhoodsFromGIS</c> migration. Upserts by FullCode
+    /// (insert if missing, update names/geometry in place if present),
+    /// soft-deletes legacy placeholders not in the payload. **Idempotent.**
+    ///
+    /// Use this whenever the GIS team supplies a corrected/extended shapefile
+    /// without redeploying. For a permanent rollout, also commit a new
+    /// <c>aleppo_neighborhoods_v{n}.json</c> and a follow-up migration so fresh
+    /// DBs pick up the new dataset automatically.
+    ///
+    /// **Required Role**: <c>Admin</c> (matches the existing
+    /// <c>POST /api/v1/AdministrativeDivisions/import</c> policy).
+    /// </remarks>
+    /// <param name="command">Wrapper carrying the JSON payload.</param>
+    /// <returns>Counts of inserted / updated / restored / soft-deleted rows.</returns>
+    /// <response code="200">Import succeeded; counts returned.</response>
+    /// <response code="400">Payload malformed or missing required fields.</response>
+    /// <response code="401">Not authenticated.</response>
+    /// <response code="403">User lacks the required role.</response>
+    [HttpPost("import-bulk")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(NeighborhoodImportSummary), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<NeighborhoodImportSummary>> ImportBulk(
+        [FromBody] ImportAleppoNeighborhoodsCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var summary = await _mediator.Send(command, cancellationToken);
+        return Ok(summary);
     }
 }

@@ -64,6 +64,23 @@ public class BuildingDto
     /// </summary>
     public string BuildingNumber { get; set; } = string.Empty;
 
+    // ──────────── OCHA P-Codes (additive for the Excel/UI convention) ────────────
+
+    /// <summary>Governorate OCHA P-Code, e.g. "SY02".</summary>
+    public string GovernoratePCode { get; set; } = string.Empty;
+
+    /// <summary>District OCHA P-Code, e.g. "SY0200".</summary>
+    public string DistrictPCode { get; set; } = string.Empty;
+
+    /// <summary>Sub-district OCHA P-Code, e.g. "SY020000".</summary>
+    public string SubDistrictPCode { get; set; } = string.Empty;
+
+    /// <summary>Community OCHA P-Code, e.g. "C1007". Sourced from Community.ExternalPCode + fallback.</summary>
+    public string CommunityPCode { get; set; } = string.Empty;
+
+    /// <summary>Neighborhood OCHA P-Code, e.g. "N0160".</summary>
+    public string NeighborhoodPCode { get; set; } = string.Empty;
+
 
     /// <summary>
     /// Governorate name in Arabic

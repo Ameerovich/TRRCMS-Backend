@@ -280,8 +280,8 @@ public class StagingService : IStagingService
                 originalEntityId: GetGuid(reader, "id"),
                 originalBuildingId: GetGuid(reader, "building_id"),
                 unitIdentifier: GetString(reader, "unit_identifier"),
-                unitType: GetEnum<PropertyUnitType>(reader, "unit_type", "property_unit_type"),
-                status: GetEnum<PropertyUnitStatus>(reader, "status", "property_unit_status"),
+                unitType: GetEnum<PropertyUnitType>(reader, "unit_type", "property_unit_type", PropertyUnitType.Unknown),
+                status: GetEnum<PropertyUnitStatus>(reader, "status", "property_unit_status", PropertyUnitStatus.Unknown),
                 floorNumber: GetNullableInt(reader, "floor_number"),
                 numberOfRooms: GetNullableInt(reader, "number_of_rooms"),
                 areaSquareMeters: GetNullableDecimal(reader, "area_square_meters"),
@@ -508,6 +508,27 @@ public class StagingService : IStagingService
     {
         if (!await TableExistsAsync(connection, "evidences", ct)) return (0, 0, 0);
 
+        // Preload all attachment blobs before opening the evidences reader.
+        // SQLite serializes access on a single connection — running attachment
+        // queries while the evidences DataReader is open causes the inner queries
+        // to silently return 0, so blobs are never extracted.
+        var attachmentBlobs = new Dictionary<Guid, byte[]>();
+        if (await TableExistsAsync(connection, "attachments", ct))
+        {
+            using var attCmd = connection.CreateCommand();
+            attCmd.CommandText = "SELECT evidence_id, data FROM attachments WHERE evidence_id IS NOT NULL AND data IS NOT NULL";
+            using var attReader = await attCmd.ExecuteReaderAsync(ct);
+            while (await attReader.ReadAsync(ct))
+            {
+                if (Guid.TryParse(attReader.GetString(0), out var attId))
+                {
+                    var blob = attReader[1] as byte[];
+                    if (blob != null && blob.Length > 0)
+                        attachmentBlobs[attId] = blob;
+                }
+            }
+        }
+
         var entities = new List<StagingEvidence>();
         int fileCount = 0;
         long totalBytes = 0;
@@ -526,16 +547,23 @@ public class StagingService : IStagingService
             string filePath = GetString(reader, "file_path", "");
             var fileHash = GetNullableString(reader, "file_hash");
 
-            // Check if attachment blob is embedded in the SQLite
-            if (await HasAttachmentBlobAsync(connection, originalId, ct))
+            if (attachmentBlobs.TryGetValue(originalId, out var blobData))
             {
-                var savedPath = await ExtractAttachmentAsync(
-                    connection, originalId, originalFileName, packageId, ct);
-                if (savedPath != null)
+                try
                 {
-                    filePath = savedPath;
-                    fileCount++;
-                    totalBytes += fileSizeBytes;
+                    using var stream = new MemoryStream(blobData);
+                    var savedPath = await _fileStorageService.SaveFileAsync(
+                        stream, originalFileName, "import-attachments", packageId, ct);
+                    if (savedPath != null)
+                    {
+                        filePath = savedPath;
+                        fileCount++;
+                        totalBytes += fileSizeBytes;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to extract attachment for evidence {EvidenceId}", originalId);
                 }
             }
             else if (!string.IsNullOrEmpty(originalFileName))

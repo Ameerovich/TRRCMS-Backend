@@ -39,4 +39,16 @@ public class GetNeighborhoodByCodeQuery : IRequest<NeighborhoodDto?>
     /// Neighborhood code — 3 digits
     /// </summary>
     public string? NeighborhoodCode { get; set; }
+
+    // ──────────── OCHA pCode aliases (optional) ────────────
+    /// <summary>OCHA governorate P-Code, e.g. "SY02".</summary>
+    public string? GovernoratePCode { get; set; }
+    /// <summary>OCHA district P-Code, e.g. "SY0200".</summary>
+    public string? DistrictPCode { get; set; }
+    /// <summary>OCHA sub-district P-Code, e.g. "SY020000".</summary>
+    public string? SubDistrictPCode { get; set; }
+    /// <summary>OCHA community P-Code, e.g. "C1007" (resolved via Community.ExternalPCode).</summary>
+    public string? CommunityPCode { get; set; }
+    /// <summary>OCHA neighborhood P-Code, e.g. "N0160".</summary>
+    public string? NeighborhoodPCode { get; set; }
 }

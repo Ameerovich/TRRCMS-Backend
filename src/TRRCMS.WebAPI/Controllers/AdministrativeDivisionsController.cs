@@ -148,9 +148,14 @@ public class AdministrativeDivisionsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<List<DistrictDto>>> GetDistricts(
         [FromQuery] string? governorateCode,
+        [FromQuery] string? governoratePCode,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetDistrictsQuery { GovernorateCode = governorateCode };
+        var query = new GetDistrictsQuery
+        {
+            GovernorateCode = governorateCode,
+            GovernoratePCode = governoratePCode
+        };
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
@@ -199,12 +204,16 @@ public class AdministrativeDivisionsController : ControllerBase
     public async Task<ActionResult<List<SubDistrictDto>>> GetSubDistricts(
         [FromQuery] string? governorateCode,
         [FromQuery] string? districtCode,
+        [FromQuery] string? governoratePCode,
+        [FromQuery] string? districtPCode,
         CancellationToken cancellationToken = default)
     {
         var query = new GetSubDistrictsQuery
         {
             GovernorateCode = governorateCode,
-            DistrictCode = districtCode
+            DistrictCode = districtCode,
+            GovernoratePCode = governoratePCode,
+            DistrictPCode = districtPCode
         };
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
@@ -257,13 +266,19 @@ public class AdministrativeDivisionsController : ControllerBase
         [FromQuery] string? governorateCode,
         [FromQuery] string? districtCode,
         [FromQuery] string? subDistrictCode,
+        [FromQuery] string? governoratePCode,
+        [FromQuery] string? districtPCode,
+        [FromQuery] string? subDistrictPCode,
         CancellationToken cancellationToken = default)
     {
         var query = new GetCommunitiesQuery
         {
             GovernorateCode = governorateCode,
             DistrictCode = districtCode,
-            SubDistrictCode = subDistrictCode
+            SubDistrictCode = subDistrictCode,
+            GovernoratePCode = governoratePCode,
+            DistrictPCode = districtPCode,
+            SubDistrictPCode = subDistrictPCode
         };
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);

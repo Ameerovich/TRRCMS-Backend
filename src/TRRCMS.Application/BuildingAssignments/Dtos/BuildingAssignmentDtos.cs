@@ -18,6 +18,13 @@ public class BuildingAssignmentDto
     public string? CommunityCode { get; set; }
     public string? NeighborhoodCode { get; set; }
 
+    // OCHA pCodes (additive, populated by handler)
+    public string? GovernoratePCode { get; set; }
+    public string? DistrictPCode { get; set; }
+    public string? SubDistrictPCode { get; set; }
+    public string? CommunityPCode { get; set; }
+    public string? NeighborhoodPCode { get; set; }
+
     // Building Spatial Data
     /// <summary>
     /// Building geometry in WKT format (POLYGON or POINT).
@@ -153,6 +160,13 @@ public class BuildingForAssignmentDto
     public string? CommunityName { get; set; }
     public string NeighborhoodCode { get; set; } = string.Empty;
     public string? NeighborhoodName { get; set; }
+
+    // OCHA P-Codes (additive)
+    public string? GovernoratePCode { get; set; }
+    public string? DistrictPCode { get; set; }
+    public string? SubDistrictPCode { get; set; }
+    public string? CommunityPCode { get; set; }
+    public string? NeighborhoodPCode { get; set; }
 
     // Building details
     public int NumberOfPropertyUnits { get; set; }

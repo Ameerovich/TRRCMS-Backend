@@ -16,11 +16,11 @@ namespace TRRCMS.Infrastructure.Persistence.SeedData;
 /// </summary>
 public static class NeighborhoodSeedData
 {
-    // Parent hierarchy for Aleppo city center
-    private const string GovCode = "01";    // Aleppo Governorate
-    private const string DistCode = "01";   // Aleppo District
-    private const string SubDistCode = "01"; // Aleppo Sub-District
-    private const string CommCode = "001";  // Aleppo City Community
+    // Parent hierarchy for Aleppo city — OCHA-aligned (SY02 / SY0200 / SY020000 / C1007)
+    private const string GovCode = "02";    // Aleppo Governorate (SY02)
+    private const string DistCode = "00";   // Mount Simeon District (SY0200)
+    private const string SubDistCode = "00"; // Markaz Jebel Saman Sub-District (SY020000)
+    private const string CommCode = "001";  // Aleppo City Community — synthetic 3-digit, ExternalPCode = C1007
 
     /// <summary>
     /// Returns 20 seeded Aleppo neighborhoods with boundary polygons.

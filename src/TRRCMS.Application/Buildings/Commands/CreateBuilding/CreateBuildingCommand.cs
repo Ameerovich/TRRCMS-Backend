@@ -46,6 +46,18 @@ public record CreateBuildingCommand : IRequest<BuildingDto>
     /// <example>00001</example>
     public string BuildingNumber { get; init; } = string.Empty;
 
+    // ────────────── OCHA P-Codes (optional — accepted alongside raw codes) ──────────────
+    /// <summary>OCHA governorate P-Code, e.g. "SY02".</summary>
+    public string? GovernoratePCode { get; init; }
+    /// <summary>OCHA district P-Code, e.g. "SY0200".</summary>
+    public string? DistrictPCode { get; init; }
+    /// <summary>OCHA sub-district P-Code, e.g. "SY020000".</summary>
+    public string? SubDistrictPCode { get; init; }
+    /// <summary>OCHA community P-Code, e.g. "C1007" (resolved via Community.ExternalPCode lookup).</summary>
+    public string? CommunityPCode { get; init; }
+    /// <summary>OCHA neighborhood P-Code, e.g. "N0160".</summary>
+    public string? NeighborhoodPCode { get; init; }
+
 
     /// <summary>
     /// Building type (نوع البناء)

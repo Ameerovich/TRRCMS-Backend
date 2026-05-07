@@ -22,4 +22,13 @@ public record GetCommunitiesQuery : IRequest<List<CommunityDto>>
     /// Filter by sub-district code (optional)
     /// </summary>
     public string? SubDistrictCode { get; init; }
+
+    /// <summary>OCHA governorate P-Code, e.g. "SY02" (optional, takes precedence).</summary>
+    public string? GovernoratePCode { get; init; }
+
+    /// <summary>OCHA district P-Code, e.g. "SY0200" (optional, populates Gov+Dist).</summary>
+    public string? DistrictPCode { get; init; }
+
+    /// <summary>OCHA sub-district P-Code, e.g. "SY020000" (optional, populates Gov+Dist+SubDist).</summary>
+    public string? SubDistrictPCode { get; init; }
 }

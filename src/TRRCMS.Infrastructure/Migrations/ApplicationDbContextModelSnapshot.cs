@@ -826,6 +826,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(2)")
                         .HasComment("Parent district code");
 
+                    b.Property<string>("ExternalPCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasComment("OCHA community P-Code, e.g. C1007. Cannot be derived from numeric Code.");
+
                     b.Property<string>("GovernorateCode")
                         .IsRequired()
                         .HasMaxLength(2)
@@ -874,6 +879,10 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ExternalPCode")
+                        .HasDatabaseName("IX_Communities_ExternalPCode")
+                        .HasFilter("\"ExternalPCode\" IS NOT NULL AND \"IsDeleted\" = false");
 
                     b.HasIndex("SubDistrictId");
 

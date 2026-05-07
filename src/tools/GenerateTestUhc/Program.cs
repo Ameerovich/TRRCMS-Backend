@@ -291,16 +291,18 @@ using (var conn = new SqliteConnection(connStr))
             neighborhood_name       TEXT
         );");
 
-    var fullBuildingCode = $"141401010011{buildingNumber}";
+    // OCHA-aligned admin codes: SY02 (Aleppo) / SY0200 (Mount Simeon) / SY020000 (Markaz Jebel Saman) / C1007 (Aleppo city)
+    // Neighborhood "119" = N0119 "السكن الشبابي" — first of the 109 GIS-seeded official neighborhoods (codes 001-020 are soft-deleted).
+    var fullBuildingCode = $"020000001119{buildingNumber}";
     Execute(conn, @"
         INSERT INTO buildings VALUES (
-            @id, '14', '14', '01', '010', '011', @bnum,
+            @id, '02', '00', '00', '001', '119', @bnum,
             1, 1, 2, 2, 0,
             @lat, @lon,
             @wkt,
             'مبنى سكني بحالة جيدة',
             @bcode,
-            'حلب', 'حلب', 'مركز حلب', 'حلب المدينة', 'الجميلية'
+            'حلب', 'جبل سمعان', 'مركز جبل سمعان', 'حلب', 'السكن الشبابي'
         );",
         ("@id", buildingId.ToString()),
         ("@bnum", buildingNumber),
@@ -702,7 +704,7 @@ Console.WriteLine($"  PackageId: {packageId}");
 Console.WriteLine($"  Checksum:  {contentChecksum} (omitted from manifest — server skips validation when empty)");
 Console.WriteLine();
 Console.WriteLine("=== Randomized Data ===");
-Console.WriteLine($"  Building:   14-14-01-010-011-{buildingNumber} ({baseLat:F4}, {baseLon:F4})  [FIXED — conflict-prone]");
+Console.WriteLine($"  Building:   02-00-00-001-119-{buildingNumber} ({baseLat:F4}, {baseLon:F4})  [FIXED — conflict-prone]");
 Console.WriteLine($"  Units:      unit_identifier={unitName1} (floor {floor1}), unit_identifier={unitName2} (floor {floor2})  [FIXED to 10/20]");
 Console.WriteLine($"  Person 1:   {p1First} {p1Family} (ID: {p1NatId} [FIXED], Gender: {p1Gender}, Age: {AgeFromYob(p1Yob)}) — Owner, ContactPerson");
 Console.WriteLine($"  Person 2:   {p2First} {p2Family} (ID: {p2NatId}, Gender: {p2Gender}, Age: {AgeFromYob(p2Yob)}) — Spouse of P1");

@@ -1,6 +1,7 @@
 using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Models;
@@ -11,17 +12,20 @@ namespace TRRCMS.Application.Buildings.Queries.GetBuildingsInPolygon;
 /// Handler for GetBuildingsInPolygonQuery
 /// Uses repository for PostGIS spatial queries (Clean Architecture)
 /// </summary>
-public class GetBuildingsInPolygonQueryHandler 
+public class GetBuildingsInPolygonQueryHandler
     : IRequestHandler<GetBuildingsInPolygonQuery, GetBuildingsInPolygonResponse>
 {
     private readonly IBuildingRepository _buildingRepository;
+    private readonly ICommunityRepository _communityRepository;
     private readonly IMapper _mapper;
 
     public GetBuildingsInPolygonQueryHandler(
         IBuildingRepository buildingRepository,
+        ICommunityRepository communityRepository,
         IMapper mapper)
     {
         _buildingRepository = buildingRepository;
+        _communityRepository = communityRepository;
         _mapper = mapper;
     }
 
@@ -86,21 +90,57 @@ public class GetBuildingsInPolygonQueryHandler
 
             // MAP RESULTS
 
-            var buildingDtos = buildings.Select(b => new BuildingInPolygonDto
+            // Batch-resolve real OCHA Community.ExternalPCode for the result set so each
+            // lightweight DTO can carry the canonical "Cxxxx" value (not just the synthetic "C{Code}").
+            var distinctCommunityKeys = buildings
+                .Select(b => (b.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode))
+                .Distinct()
+                .ToList();
+            var communityPCodeMap = new Dictionary<(string, string, string, string), string?>();
+            foreach (var key in distinctCommunityKeys)
             {
-                Id = b.Id,
-                BuildingId = b.BuildingId,
-                BuildingIdFormatted = FormatBuildingId(b.BuildingId),
-                Latitude = b.Latitude,
-                Longitude = b.Longitude,
-                BuildingType = b.BuildingType.ToString(),
-                Status = b.Status.ToString(),
-                NumberOfPropertyUnits = b.NumberOfPropertyUnits,
-                NeighborhoodName = b.NeighborhoodName,
-                CommunityName = b.CommunityName,
-                BuildingGeometryWkt = request.IncludeFullDetails ? b.BuildingGeometryWkt : null,
-                FullDetails = request.IncludeFullDetails ? _mapper.Map<BuildingDto>(b) : null
+                var c = await _communityRepository.GetByCodeAsync(
+                    key.GovernorateCode, key.DistrictCode, key.SubDistrictCode, key.CommunityCode,
+                    cancellationToken);
+                communityPCodeMap[key] = c?.ExternalPCode;
+            }
+
+            var buildingDtos = buildings.Select(b =>
+            {
+                var commKey = (b.GovernorateCode, b.DistrictCode, b.SubDistrictCode, b.CommunityCode);
+                communityPCodeMap.TryGetValue(commKey, out var commExternalPCode);
+
+                return new BuildingInPolygonDto
+                {
+                    Id = b.Id,
+                    BuildingId = b.BuildingId,
+                    BuildingIdFormatted = FormatBuildingId(b.BuildingId),
+                    Latitude = b.Latitude,
+                    Longitude = b.Longitude,
+                    BuildingType = b.BuildingType.ToString(),
+                    Status = b.Status.ToString(),
+                    NumberOfPropertyUnits = b.NumberOfPropertyUnits,
+                    NeighborhoodName = b.NeighborhoodName,
+                    CommunityName = b.CommunityName,
+                    BuildingGeometryWkt = request.IncludeFullDetails ? b.BuildingGeometryWkt : null,
+                    // OCHA P-Codes (always populated on the lightweight DTO)
+                    GovernoratePCode = OchaPCodeConverter.ToGovPCode(b.GovernorateCode),
+                    DistrictPCode = OchaPCodeConverter.ToDistrictPCode(b.GovernorateCode, b.DistrictCode),
+                    SubDistrictPCode = OchaPCodeConverter.ToSubDistrictPCode(b.GovernorateCode, b.DistrictCode, b.SubDistrictCode),
+                    CommunityPCode = OchaPCodeConverter.ToCommunityPCode(commExternalPCode, b.CommunityCode),
+                    NeighborhoodPCode = OchaPCodeConverter.ToNeighborhoodPCode(b.NeighborhoodCode),
+                    FullDetails = request.IncludeFullDetails ? _mapper.Map<BuildingDto>(b) : null
+                };
             }).ToList();
+
+            // Enrich CommunityPCode on the FullDetails DTOs (when present) with real OCHA values.
+            if (request.IncludeFullDetails)
+            {
+                var fullDtos = buildingDtos.Where(d => d.FullDetails != null)
+                                            .Select(d => d.FullDetails!)
+                                            .ToList();
+                await BuildingDtoEnricher.EnrichCommunityPCodesAsync(fullDtos, _communityRepository, cancellationToken);
+            }
 
             double? polygonArea = CalculateApproximateArea(polygonWkt);
 

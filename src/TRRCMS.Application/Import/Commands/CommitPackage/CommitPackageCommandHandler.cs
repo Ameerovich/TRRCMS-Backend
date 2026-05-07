@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Import.Commands.ApproveForCommit;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Domain.Enums;
 using System.Diagnostics;
@@ -30,6 +31,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
     private readonly ICommitService _commitService;
     private readonly IStagingService _stagingService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ISender _sender;
     private readonly ILogger<CommitPackageCommandHandler> _logger;
 
     public CommitPackageCommandHandler(
@@ -37,12 +39,14 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         ICommitService commitService,
         IStagingService stagingService,
         ICurrentUserService currentUserService,
+        ISender sender,
         ILogger<CommitPackageCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _commitService = commitService;
         _stagingService = stagingService;
         _currentUserService = currentUserService;
+        _sender = sender;
         _logger = logger;
     }
 
@@ -76,7 +80,17 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                 $"Cannot commit: {unresolvedCount} unresolved conflict(s) remain.");
         }
 
-        // 3. Transition to Committing
+        // 3. Auto-approve all valid/warning staging records before committing.
+        // The approve step is idempotent — re-approving already-approved records is harmless.
+        // This allows callers to go directly from staging → commit without a separate
+        // approve call, while still supporting explicit pre-approval for partial commits.
+        await _sender.Send(new ApproveForCommitCommand
+        {
+            ImportPackageId = request.ImportPackageId,
+            ApproveAllValid = true
+        }, cancellationToken);
+
+        // 4. Transition to Committing
         _logger.LogInformation(
             "Starting commit for package {PackageNumber} ({PackageId})",
             package.PackageNumber, package.PackageId);

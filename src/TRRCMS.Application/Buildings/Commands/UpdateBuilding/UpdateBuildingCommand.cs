@@ -47,6 +47,13 @@ public class UpdateBuildingCommand : IRequest<BuildingDto>
     /// </summary>
     public string? BuildingNumber { get; set; }
 
+    // ────────────── OCHA P-Codes (optional — accepted alongside raw codes) ──────────────
+    public string? GovernoratePCode { get; set; }
+    public string? DistrictPCode { get; set; }
+    public string? SubDistrictPCode { get; set; }
+    public string? CommunityPCode { get; set; }
+    public string? NeighborhoodPCode { get; set; }
+
     /// <summary>
     /// Governorate name in Arabic (optional - existing name preserved if not provided)
     /// </summary>

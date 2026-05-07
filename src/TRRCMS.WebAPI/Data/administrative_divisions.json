@@ -1,25 +1,21 @@
 {
   "governorates": [
     {
-      "code": "01",
+      "code": "02",
       "name_en": "Aleppo",
       "name_ar": "حلب",
       "districts": [
         {
-          "code": "01",
+          "code": "00",
           "name_en": "Mount Simeon",
           "name_ar": "جبل سمعان",
           "sub_districts": [
             {
-              "code": "01",
-              "name_en": "Mount Simeon",
-              "name_ar": "مدينة حلب",
+              "code": "00",
+              "name_en": "Markaz Jebel Saman",
+              "name_ar": "مركز جبل سمعان",
               "communities": [
-                {"code": "001", "name_en": "Western Sector", "name_ar": "القطاع الغربي"},
-                {"code": "002", "name_en": "Eastern Sector", "name_ar": "القطاع الشرقي"},
-                {"code": "003", "name_en": "Northern Sector", "name_ar": "القطاع الشمالي"},
-                {"code": "004", "name_en": "Southern Sector", "name_ar": "القطاع الجنوبي"},
-                {"code": "005", "name_en": "Central Sector", "name_ar": "القطاع المركزي"}
+                {"code": "001", "name_en": "Aleppo", "name_ar": "حلب", "external_pcode": "C1007"}
               ]
             },
             {

@@ -16,6 +16,12 @@ public class GovernorateDto
     public string Code { get; set; } = string.Empty;
 
     /// <summary>
+    /// UN-OCHA P-Code, e.g. "SY02". Always derivable from Code.
+    /// Use this when round-tripping with the Excel/OCHA convention.
+    /// </summary>
+    public string PCode { get; set; } = string.Empty;
+
+    /// <summary>
     /// Arabic name
     /// </summary>
     public string NameArabic { get; set; } = string.Empty;

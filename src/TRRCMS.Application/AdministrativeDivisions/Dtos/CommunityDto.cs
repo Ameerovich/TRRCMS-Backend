@@ -16,6 +16,18 @@ public class CommunityDto
     public string Code { get; set; } = string.Empty;
 
     /// <summary>
+    /// UN-OCHA P-Code, e.g. "C1007". Sourced from Community.ExternalPCode when present;
+    /// otherwise a synthetic "C" + Code fallback.
+    /// </summary>
+    public string PCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Raw stored OCHA External P-Code (nullable when not yet known).
+    /// Distinct from PCode which always returns a non-empty display value.
+    /// </summary>
+    public string? ExternalPCode { get; set; }
+
+    /// <summary>
     /// Parent governorate code (2 digits)
     /// </summary>
     public string GovernorateCode { get; set; } = string.Empty;

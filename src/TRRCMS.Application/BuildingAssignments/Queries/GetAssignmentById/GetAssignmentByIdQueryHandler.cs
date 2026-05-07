@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.BuildingAssignments.Dtos;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Interfaces;
 
 namespace TRRCMS.Application.BuildingAssignments.Queries.GetAssignmentById;
@@ -10,10 +11,14 @@ namespace TRRCMS.Application.BuildingAssignments.Queries.GetAssignmentById;
 public class GetAssignmentByIdQueryHandler : IRequestHandler<GetAssignmentByIdQuery, BuildingAssignmentDto?>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICommunityRepository _communityRepository;
 
-    public GetAssignmentByIdQueryHandler(IUnitOfWork unitOfWork)
+    public GetAssignmentByIdQueryHandler(
+        IUnitOfWork unitOfWork,
+        ICommunityRepository communityRepository)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+        _communityRepository = communityRepository ?? throw new ArgumentNullException(nameof(communityRepository));
     }
 
     public async Task<BuildingAssignmentDto?> Handle(GetAssignmentByIdQuery request, CancellationToken cancellationToken)
@@ -27,14 +32,24 @@ public class GetAssignmentByIdQueryHandler : IRequestHandler<GetAssignmentByIdQu
         // Get additional details
         var building = await _unitOfWork.Buildings.GetByIdAsync(assignment.BuildingId, cancellationToken);
         var fieldCollector = await _unitOfWork.Users.GetByIdAsync(assignment.FieldCollectorId, cancellationToken);
-        var assignedByUser = assignment.AssignedByUserId.HasValue 
-            ? await _unitOfWork.Users.GetByIdAsync(assignment.AssignedByUserId.Value, cancellationToken) 
+        var assignedByUser = assignment.AssignedByUserId.HasValue
+            ? await _unitOfWork.Users.GetByIdAsync(assignment.AssignedByUserId.Value, cancellationToken)
             : null;
+
+        // Resolve community ExternalPCode for OCHA-accurate output.
+        string? communityExternalPCode = null;
+        if (building != null && !string.IsNullOrEmpty(building.CommunityCode))
+        {
+            var commRow = await _communityRepository.GetByCodeAsync(
+                building.GovernorateCode, building.DistrictCode, building.SubDistrictCode,
+                building.CommunityCode, cancellationToken);
+            communityExternalPCode = commRow?.ExternalPCode;
+        }
 
         return new BuildingAssignmentDto
         {
             Id = assignment.Id,
-            
+
             // Building Info
             BuildingId = assignment.BuildingId,
             BuildingCode = building?.BuildingId ?? string.Empty,
@@ -46,6 +61,13 @@ public class GetAssignmentByIdQueryHandler : IRequestHandler<GetAssignmentByIdQu
             BuildingGeometryWkt = building?.BuildingGeometryWkt,
             Latitude = building?.Latitude,
             Longitude = building?.Longitude,
+
+            // OCHA P-Codes
+            GovernoratePCode = OchaPCodeConverter.ToGovPCode(building?.GovernorateCode),
+            DistrictPCode = OchaPCodeConverter.ToDistrictPCode(building?.GovernorateCode, building?.DistrictCode),
+            SubDistrictPCode = OchaPCodeConverter.ToSubDistrictPCode(building?.GovernorateCode, building?.DistrictCode, building?.SubDistrictCode),
+            CommunityPCode = OchaPCodeConverter.ToCommunityPCode(communityExternalPCode, building?.CommunityCode),
+            NeighborhoodPCode = OchaPCodeConverter.ToNeighborhoodPCode(building?.NeighborhoodCode),
             
             // Field Collector Info
             FieldCollectorId = assignment.FieldCollectorId,

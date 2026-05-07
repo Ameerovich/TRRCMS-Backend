@@ -55,22 +55,11 @@ public static class WebApplicationExtensions
             }
         }
 
-        // SCOPE 2: Neighborhood seeding
-        using (var scope = app.Services.CreateScope())
-        {
-            var services = scope.ServiceProvider;
-            var logger = services.GetRequiredService<ILogger<Program>>();
-
-            try
-            {
-                var context = services.GetRequiredService<ApplicationDbContext>();
-                await SeedNeighborhoodsIfNeeded(context, logger);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "An error occurred while seeding neighborhoods");
-            }
-        }
+        // SCOPE 2: Neighborhood seeding — superseded by SeedAleppoNeighborhoodsFromGIS migration.
+        // The migration applies the full 109 GIS-supplied Aleppo neighborhoods (codes N0119–N0227)
+        // and soft-deletes the legacy 20-row placeholder seed. The hardcoded NeighborhoodSeedData
+        // is retained as historical reference but no longer invoked at startup.
+        // For future GIS updates, use POST /api/v1/Neighborhoods/import-bulk or ship a new migration.
 
         // SCOPE 3: Vocabulary seeding
         using (var scope = app.Services.CreateScope())

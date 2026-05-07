@@ -192,8 +192,9 @@ public class DataConsistencyValidator : IStagingValidator
 
         if (u.OriginalBuildingId == Guid.Empty) errors.Add("OriginalBuildingId is required");
         if (string.IsNullOrWhiteSpace(u.UnitIdentifier)) errors.Add("UnitIdentifier is required");
-        if (!_vocabService.IsValidCode("property_unit_type", (int)u.UnitType)) errors.Add($"Invalid UnitType: {u.UnitType}");
-        if (!_vocabService.IsValidCode("property_unit_status", (int)u.Status)) errors.Add($"Invalid PropertyUnitStatus: {u.Status}");
+        // UnitType and Status are intentionally not required here — surveys obstructed in the
+        // field may legitimately arrive with these unset (Unknown). VocabularyValidator emits
+        // a warning when the value is outside the vocabulary.
         if (u.AreaSquareMeters.HasValue && u.AreaSquareMeters <= 0)
             warnings.Add("AreaSquareMeters should be positive");
 

@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
@@ -17,17 +18,20 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
     private readonly ICurrentUserService _currentUserService;
     private readonly IGeometryConverter _geometryConverter;
     private readonly IAdministrativeNameResolver _nameResolver;
+    private readonly ICommunityRepository _communityRepository;
 
     public CreateBuildingCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
         IGeometryConverter geometryConverter,
-        IAdministrativeNameResolver nameResolver)
+        IAdministrativeNameResolver nameResolver,
+        ICommunityRepository communityRepository)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _geometryConverter = geometryConverter;
         _nameResolver = nameResolver;
+        _communityRepository = communityRepository;
     }
 
     public async Task<BuildingDto> Handle(CreateBuildingCommand request, CancellationToken cancellationToken)
@@ -36,9 +40,28 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
         var userId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User is not authenticated");
 
+        // Normalize OCHA pCodes (when provided) to raw numeric admin codes.
+        var (govCode, distCode, subDistCode) = OchaCommandNormalizer.ResolveAdmCodes(
+            request.GovernorateCode, request.DistrictCode, request.SubDistrictCode,
+            request.GovernoratePCode, request.DistrictPCode, request.SubDistrictPCode);
+        var neighCode = OchaCommandNormalizer.ResolveNeighborhoodCode(
+            request.NeighborhoodCode, request.NeighborhoodPCode);
+
+        var commCode = request.CommunityCode ?? string.Empty;
+        var commPCode = OchaCommandNormalizer.NormalizeCommunityPCode(request.CommunityPCode);
+        if (commPCode != null)
+        {
+            var matched = await _communityRepository.GetByExternalPCodeAsync(
+                commPCode, govCode, distCode, subDistCode, cancellationToken);
+            if (matched == null)
+                throw new ValidationException(
+                    $"No community matches OCHA P-Code '{commPCode}' under {govCode}/{distCode}/{subDistCode}.");
+            commCode = matched.Code;
+        }
+
         // Generate Building ID for duplicate check (stored without dashes)
-        var buildingIdCode = $"{request.GovernorateCode}{request.DistrictCode}{request.SubDistrictCode}" +
-                             $"{request.CommunityCode}{request.NeighborhoodCode}{request.BuildingNumber}";
+        var buildingIdCode = $"{govCode}{distCode}{subDistCode}" +
+                             $"{commCode}{neighCode}{request.BuildingNumber}";
 
         // Check if building ID already exists
         var existingBuilding = await _buildingRepository.GetByBuildingIdAsync(buildingIdCode, cancellationToken);
@@ -49,17 +72,15 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
 
         // Resolve administrative hierarchy codes to Arabic names
         var names = await _nameResolver.ResolveAsync(
-            request.GovernorateCode, request.DistrictCode,
-            request.SubDistrictCode, request.CommunityCode,
-            request.NeighborhoodCode, cancellationToken);
+            govCode, distCode, subDistCode, commCode, neighCode, cancellationToken);
 
         // Create building entity
         var building = Building.Create(
-            governorateCode: request.GovernorateCode,
-            districtCode: request.DistrictCode,
-            subDistrictCode: request.SubDistrictCode,
-            communityCode: request.CommunityCode,
-            neighborhoodCode: request.NeighborhoodCode,
+            governorateCode: govCode,
+            districtCode: distCode,
+            subDistrictCode: subDistCode,
+            communityCode: commCode,
+            neighborhoodCode: neighCode,
             buildingNumber: request.BuildingNumber,
             governorateName: names.GovernorateName,
             districtName: names.DistrictName,
@@ -107,11 +128,20 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
         await _buildingRepository.AddAsync(building, cancellationToken);
         await _buildingRepository.SaveChangesAsync(cancellationToken);
 
+        // Resolve community ExternalPCode for response accuracy.
+        string? resolvedCommunityPCode = commPCode;
+        if (resolvedCommunityPCode == null && !string.IsNullOrEmpty(commCode))
+        {
+            var matched = await _communityRepository.GetByCodeAsync(
+                govCode, distCode, subDistCode, commCode, cancellationToken);
+            resolvedCommunityPCode = matched?.ExternalPCode;
+        }
+
         // Return full DTO
-        return MapToDto(building);
+        return MapToDto(building, resolvedCommunityPCode);
     }
 
-    private static BuildingDto MapToDto(Building building)
+    private static BuildingDto MapToDto(Building building, string? communityExternalPCode)
     {
         return new BuildingDto
         {
@@ -132,6 +162,13 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
             SubDistrictName = building.SubDistrictName,
             CommunityName = building.CommunityName,
             NeighborhoodName = building.NeighborhoodName,
+
+            // OCHA P-Codes
+            GovernoratePCode = OchaPCodeConverter.ToGovPCode(building.GovernorateCode),
+            DistrictPCode = OchaPCodeConverter.ToDistrictPCode(building.GovernorateCode, building.DistrictCode),
+            SubDistrictPCode = OchaPCodeConverter.ToSubDistrictPCode(building.GovernorateCode, building.DistrictCode, building.SubDistrictCode),
+            CommunityPCode = OchaPCodeConverter.ToCommunityPCode(communityExternalPCode, building.CommunityCode),
+            NeighborhoodPCode = OchaPCodeConverter.ToNeighborhoodPCode(building.NeighborhoodCode),
 
             // Attributes
             BuildingType = (int)building.BuildingType,

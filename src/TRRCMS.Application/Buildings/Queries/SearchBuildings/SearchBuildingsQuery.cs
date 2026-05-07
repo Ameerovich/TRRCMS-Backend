@@ -34,6 +34,18 @@ public class SearchBuildingsQuery : IRequest<SearchBuildingsResponse>
     /// </summary>
     public string? NeighborhoodCode { get; set; }
 
+    // ──────────── OCHA pCode filter aliases (optional) ────────────
+    /// <summary>Filter by OCHA governorate P-Code, e.g. "SY02".</summary>
+    public string? GovernoratePCode { get; set; }
+    /// <summary>Filter by OCHA district P-Code, e.g. "SY0200".</summary>
+    public string? DistrictPCode { get; set; }
+    /// <summary>Filter by OCHA sub-district P-Code, e.g. "SY020000".</summary>
+    public string? SubDistrictPCode { get; set; }
+    /// <summary>Filter by OCHA community P-Code, e.g. "C1007".</summary>
+    public string? CommunityPCode { get; set; }
+    /// <summary>Filter by OCHA neighborhood P-Code, e.g. "N0160".</summary>
+    public string? NeighborhoodPCode { get; set; }
+
 
     /// <summary>
     /// Search by building ID (رمز البناء) - partial match

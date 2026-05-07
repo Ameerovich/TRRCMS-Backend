@@ -55,6 +55,17 @@ public class CommunityConfiguration : IEntityTypeConfiguration<Community>
             .HasMaxLength(200)
             .HasComment("English name");
 
+        builder.Property(c => c.ExternalPCode)
+            .HasMaxLength(10)
+            .IsRequired(false)
+            .HasComment("OCHA community P-Code, e.g. C1007. Cannot be derived from numeric Code.");
+
+        // Non-unique index: communities can have null ExternalPCode (legacy/internal),
+        // and OCHA may legitimately reuse the same C-code if data is re-imported.
+        builder.HasIndex(c => c.ExternalPCode)
+            .HasFilter("\"ExternalPCode\" IS NOT NULL AND \"IsDeleted\" = false")
+            .HasDatabaseName("IX_Communities_ExternalPCode");
+
         builder.Property(c => c.IsActive)
             .IsRequired()
             .HasDefaultValue(true)

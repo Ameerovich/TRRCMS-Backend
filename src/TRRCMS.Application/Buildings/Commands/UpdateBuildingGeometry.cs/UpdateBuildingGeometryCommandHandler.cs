@@ -2,6 +2,7 @@
 using MediatR;
 using System.Text.Json;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Common;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Enums;
@@ -15,19 +16,22 @@ public class UpdateBuildingGeometryCommandHandler : IRequestHandler<UpdateBuildi
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
     private readonly IGeometryConverter _geometryConverter;
+    private readonly ICommunityRepository _communityRepository;
 
     public UpdateBuildingGeometryCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService,
         IMapper mapper,
-        IGeometryConverter geometryConverter)
+        IGeometryConverter geometryConverter,
+        ICommunityRepository communityRepository)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _auditService = auditService;
         _mapper = mapper;
         _geometryConverter = geometryConverter;
+        _communityRepository = communityRepository;
     }
 
     public async Task<BuildingDto> Handle(UpdateBuildingGeometryCommand request, CancellationToken cancellationToken)
@@ -95,7 +99,9 @@ public class UpdateBuildingGeometryCommandHandler : IRequestHandler<UpdateBuildi
                 cancellationToken: cancellationToken);
         }
 
-        // Return updated building DTO
-        return _mapper.Map<BuildingDto>(building);
+        // Return updated building DTO with real OCHA CommunityPCode resolved.
+        var dto = _mapper.Map<BuildingDto>(building);
+        await BuildingDtoEnricher.EnrichCommunityPCodesAsync(dto, _communityRepository, cancellationToken);
+        return dto;
     }
 }

@@ -39,6 +39,13 @@ public class Community : BaseAuditableEntity
     public string NameEnglish { get; private set; } = string.Empty;
 
     /// <summary>
+    /// Optional UN-OCHA community P-Code (e.g. "C1007"). OCHA assigns these as flat global IDs;
+    /// they cannot be derived from the parent hierarchy or the numeric Code, so we store them
+    /// directly. Used by the API surface to round-trip the OCHA convention with the frontend.
+    /// </summary>
+    public string? ExternalPCode { get; private set; }
+
+    /// <summary>
     /// Whether this community is active in the system
     /// </summary>
     public bool IsActive { get; private set; }
@@ -59,7 +66,8 @@ public class Community : BaseAuditableEntity
         string subDistrictCode,
         string nameArabic,
         string nameEnglish,
-        Guid createdByUserId)
+        Guid createdByUserId,
+        string? externalPCode = null)
     {
         if (string.IsNullOrWhiteSpace(code) || code.Length != 3)
             throw new ArgumentException("Community code must be exactly 3 digits", nameof(code));
@@ -88,10 +96,20 @@ public class Community : BaseAuditableEntity
             SubDistrictCode = subDistrictCode,
             NameArabic = nameArabic,
             NameEnglish = nameEnglish,
+            ExternalPCode = string.IsNullOrWhiteSpace(externalPCode) ? null : externalPCode.Trim(),
             IsActive = true
         };
         community.MarkAsCreated(createdByUserId);
         return community;
+    }
+
+    /// <summary>
+    /// Set or clear the OCHA community P-Code (e.g. "C1007"). Pass null/empty to clear.
+    /// </summary>
+    public void SetExternalPCode(string? externalPCode, Guid modifiedByUserId)
+    {
+        ExternalPCode = string.IsNullOrWhiteSpace(externalPCode) ? null : externalPCode.Trim();
+        MarkAsModified(modifiedByUserId);
     }
 
     /// <summary>

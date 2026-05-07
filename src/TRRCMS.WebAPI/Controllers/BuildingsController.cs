@@ -5,7 +5,9 @@ using TRRCMS.Application.Common.Models;
 using TRRCMS.WebAPI.Middleware;
 using TRRCMS.Application.Buildings.Commands.CreateBuilding;
 using TRRCMS.Application.Buildings.Commands.DeleteBuilding;
+using TRRCMS.Application.Buildings.Commands.ImportBuildings;
 using TRRCMS.Application.Buildings.Commands.RegisterBuilding;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Buildings.Commands.UpdateBuilding;
 using TRRCMS.Application.Buildings.Commands.UpdateBuildingGeometry;
 using TRRCMS.Application.Buildings.Commands.ToggleBuildingLock;
@@ -858,6 +860,53 @@ public class BuildingsController : ControllerBase
     {
         var result = await _mediator.Send(query);
         return Ok(result);
+    }
+
+    // ==================== IMPORT BULK (sample buildings dataset) ====================
+
+    /// <summary>
+    /// Bulk-import / hot-reload sample buildings from a JSON dataset
+    /// </summary>
+    /// <remarks>
+    /// Accepts the same JSON shape as the embedded
+    /// <c>Data/buildings_sample_v1.json</c> seeded by the
+    /// <c>SeedSampleBuildingsFromGIS</c> migration. Upserts by 17-digit
+    /// BuildingId (insert if missing, update geometry in place if present),
+    /// skips rows whose admin hierarchy isn't seeded yet. **Idempotent.**
+    ///
+    /// Use this whenever a new GIS shapefile arrives and you want to update an
+    /// already-deployed DB without redeploying. For a permanent rollout, also
+    /// commit a new <c>buildings_sample_v{n}.json</c> and a follow-up migration
+    /// so fresh DBs pick up the new dataset automatically.
+    ///
+    /// Generate the JSON from a shapefile via:
+    /// <code>
+    /// dotnet run --project tools/SeedBuildingsFromShapefile -- \
+    ///   --shapefile path/to/buidings.shp \
+    ///   --output-json buildings.json
+    /// </code>
+    ///
+    /// **Required Role**: <c>Admin</c> (matches the existing
+    /// <c>POST /api/v1/Neighborhoods/import-bulk</c> policy).
+    /// </remarks>
+    /// <param name="command">Wrapper carrying the JSON payload.</param>
+    /// <returns>Counts of inserted / updated / unchanged / skipped rows.</returns>
+    /// <response code="200">Import succeeded; counts returned.</response>
+    /// <response code="400">Payload malformed or missing required fields.</response>
+    /// <response code="401">Not authenticated.</response>
+    /// <response code="403">User lacks the required role.</response>
+    [HttpPost("import-bulk")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(BuildingsImportSummary), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<BuildingsImportSummary>> ImportBulk(
+        [FromBody] ImportBuildingsCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var summary = await _mediator.Send(command, cancellationToken);
+        return Ok(summary);
     }
 }
 
