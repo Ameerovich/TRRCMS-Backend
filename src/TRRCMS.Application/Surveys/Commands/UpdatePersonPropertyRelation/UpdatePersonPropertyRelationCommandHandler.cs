@@ -100,8 +100,8 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         {
             if (!effectiveOwnershipShare.HasValue || effectiveOwnershipShare <= 0)
                 throw new ValidationException("Ownership share is required for Owner type and must be > 0");
-            if (effectiveOwnershipShare > 1)
-                throw new ValidationException("Ownership share cannot exceed 1.0 (100%)");
+            if (effectiveOwnershipShare > 2400)
+                throw new ValidationException("Ownership share cannot exceed 2400 (100%, qirat-based)");
         }
 
         // Update using simplified domain method

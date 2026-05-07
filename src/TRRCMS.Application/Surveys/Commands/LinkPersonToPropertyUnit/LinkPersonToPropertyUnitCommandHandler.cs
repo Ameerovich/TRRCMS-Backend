@@ -65,8 +65,8 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
         {
             if (!request.OwnershipShare.HasValue || request.OwnershipShare <= 0)
                 throw new ValidationException("Ownership share is required for Owner type and must be > 0");
-            if (request.OwnershipShare > 1)
-                throw new ValidationException("Ownership share cannot exceed 1.0 (100%)");
+            if (request.OwnershipShare > 2400)
+                throw new ValidationException("Ownership share cannot exceed 2400 (100%, qirat-based)");
         }
 
         // Create relation using factory method — link to originating survey
