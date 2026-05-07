@@ -25,7 +25,7 @@ public class FileStorageService : IFileStorageService
             .Get<string[]>() ?? new[] { ".jpg", ".jpeg", ".png" };
 
         _allowedDocumentExtensions = configuration.GetSection("FileStorage:AllowedDocumentExtensions")
-            .Get<string[]>() ?? new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+            .Get<string[]>() ?? new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx", ".mp3", ".wav", ".ogg", ".m4a", ".aac", ".mp4" };
 
         // Ensure upload directory exists
         if (!Directory.Exists(_uploadPath))
@@ -149,6 +149,8 @@ public class FileStorageService : IFileStorageService
             ".wav" => "audio/wav",
             ".ogg" => "audio/ogg",
             ".m4a" => "audio/mp4",
+            ".aac" => "audio/aac",
+            ".mp4" => "audio/mp4",
             _ => "application/octet-stream"
         };
     }
