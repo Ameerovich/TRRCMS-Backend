@@ -149,7 +149,7 @@ public class Person : BaseAuditableEntity
             FirstNameArabic = firstNameArabic,
             FatherNameArabic = fatherNameArabic,
             MotherNameArabic = motherNameArabic,
-            NationalId = nationalId,
+            NationalId = string.IsNullOrWhiteSpace(nationalId) ? null : nationalId.Trim(),
             DateOfBirth = dateOfBirth,
             Gender = gender,
             Nationality = nationality,
@@ -181,7 +181,7 @@ public class Person : BaseAuditableEntity
         FirstNameArabic = firstNameArabic;
         FatherNameArabic = fatherNameArabic;
         MotherNameArabic = motherNameArabic;
-        NationalId = nationalId;
+        NationalId = string.IsNullOrWhiteSpace(nationalId) ? null : nationalId.Trim();
         DateOfBirth = dateOfBirth;
         Gender = gender;
         Nationality = nationality;
@@ -213,7 +213,7 @@ public class Person : BaseAuditableEntity
         Nationality? nationality,
         Guid modifiedByUserId)
     {
-        NationalId = nationalId;
+        NationalId = string.IsNullOrWhiteSpace(nationalId) ? null : nationalId.Trim();
         DateOfBirth = dateOfBirth;
         Gender = gender;
         Nationality = nationality;

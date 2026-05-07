@@ -41,7 +41,7 @@ public class PersonPropertyRelationConfiguration : IEntityTypeConfiguration<Pers
 
         builder.Property(ppr => ppr.OwnershipShare)
             .HasPrecision(18, 4)
-            .HasComment("حصة الملكية - Ownership share (0.0 to 1.0)");
+            .HasComment("حصة الملكية - Ownership share (0 to 2400, qirat-based; 2400 = 100%)");
 
         builder.Property(ppr => ppr.ContractDetails)
             .IsRequired(false)

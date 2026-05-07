@@ -1,8 +1,10 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Localization;
+using Npgsql;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.WebAPI;
 
@@ -191,9 +193,25 @@ public class GlobalExceptionHandlingMiddleware
                     Detail = isArabic ? argEx.Message : null
                 }),
 
+            DbUpdateException dbEx when dbEx.InnerException is PostgresException pg && pg.SqlState == "23505" => (
+                HttpStatusCode.Conflict,
+                new ErrorResponse
+                {
+                    Status = (int)HttpStatusCode.Conflict,
+                    Title = L("Title_Conflict"),
+                    Message = isArabic ? L("Message_Conflict") : DescribeUniqueViolation(pg),
+                    Detail = isArabic ? DescribeUniqueViolation(pg) : null
+                }),
+
             _ => BuildServerErrorResponse(context, exception)
         };
     }
+
+    private static string DescribeUniqueViolation(PostgresException pg) => pg.ConstraintName switch
+    {
+        "IX_Person_NationalId" => "A person with this National ID already exists.",
+        _ => $"A record with these values already exists (constraint: {pg.ConstraintName})."
+    };
 
     private (HttpStatusCode, ErrorResponse) BuildServerErrorResponse(
         HttpContext context, Exception exception)
