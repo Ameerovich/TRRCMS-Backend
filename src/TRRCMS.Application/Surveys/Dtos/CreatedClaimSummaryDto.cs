@@ -100,4 +100,11 @@ public class CreatedClaimSummaryDto
     /// Maps to UI: معرف الزيارة
     /// </summary>
     public Guid? SurveyId { get; set; }
+
+    /// <summary>
+    /// True if a fresh claim was created on this call; false if an existing
+    /// claim for the same (Person, PropertyUnit) pair within this survey was
+    /// updated with the latest relation data.
+    /// </summary>
+    public bool IsNew { get; set; }
 }

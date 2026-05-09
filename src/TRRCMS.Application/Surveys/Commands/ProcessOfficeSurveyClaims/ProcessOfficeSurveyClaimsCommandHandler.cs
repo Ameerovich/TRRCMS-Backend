@@ -143,6 +143,16 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                 // Derive TypeOfWorks once from the property unit
                 var typeOfWorks = MapPropertyUnitTypeToTypeOfWorks(propertyUnit?.UnitType);
 
+                // Hoist the unit-level claims fetch outside the loop. We mutate
+                // this list as we create new claims so subsequent iterations
+                // within the same call see them and don't create duplicates.
+                var existingClaimsForUnit = (await _unitOfWork.Claims
+                    .GetAllByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken))
+                    .ToList();
+
+                var newClaimCount = 0;
+                var updatedClaimCount = 0;
+
                 foreach (var relation in surveyRelations)
                 {
                     var person = await _unitOfWork.Persons.GetByIdAsync(relation.PersonId, cancellationToken);
@@ -152,51 +162,146 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         continue;
                     }
 
-                    var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(cancellationToken);
-
-                    // Check if this specific relation has tenure evidence attached
                     var relationHasEvidence = relation.EvidenceRelations != null && relation.EvidenceRelations.Any(er => er.IsActive && !er.IsDeleted);
-
-                    // Determine claim type based on relation type
                     var isOwnershipRelation = relation.RelationType == RelationType.Owner
                                            || relation.RelationType == RelationType.Heir;
-                    var claimType = isOwnershipRelation ? ClaimType.OwnershipClaim : ClaimType.OccupancyClaim;
+                    var ownershipShareInt = relation.OwnershipShare.HasValue
+                        ? (int?)Math.Round(relation.OwnershipShare.Value)
+                        : null;
 
-                    var claim = Claim.Create(
-                        claimNumber: claimNumber,
-                        propertyUnitId: survey.PropertyUnitId.Value,
-                        primaryClaimantId: person.Id,
-                        claimType: claimType,
-                        claimSource: ClaimSource.OfficeSubmission,
-                        createdByUserId: currentUserId,
-                        originatingSurveyId: survey.Id);
+                    // Match scope: same (Person, PropertyUnit) pair AND originated by this survey.
+                    var existingClaim = existingClaimsForUnit.FirstOrDefault(c =>
+                        c.PrimaryClaimantId == person.Id
+                        && c.OriginatingSurveyId == survey.Id);
 
-                    // CaseStatus: Owner/Heir → Closed, all others → Open (default)
-                    if (isOwnershipRelation)
-                        claim.CloseCase(currentUserId);
+                    Claim claim;
+                    bool isNew;
 
-                    // Link claim to Case and auto-close Case on ownership
-                    claim.LinkToCase(caseEntity.Id, currentUserId);
+                    if (existingClaim != null)
+                    {
+                        // UPDATE path: refresh existing claim from latest relation data
+                        var oldSnapshot = new
+                        {
+                            ClaimType = existingClaim.ClaimType.ToString(),
+                            CaseStatus = existingClaim.CaseStatus.ToString(),
+                            existingClaim.OwnershipShare,
+                            existingClaim.ClaimDescription,
+                            existingClaim.CaseId
+                        };
 
-                    if (isOwnershipRelation && caseEntity.Status == Domain.Enums.CaseLifecycleStatus.Open)
-                        caseEntity.Close(claim.Id, currentUserId);
+                        existingClaim.DeriveStateFromRelation(relation.RelationType, currentUserId);
+                        existingClaim.UpdateOwnershipShare(ownershipShareInt, currentUserId);
+                        if (!string.IsNullOrWhiteSpace(relation.ContractDetails))
+                            existingClaim.UpdateClaimDescription(relation.ContractDetails, currentUserId);
+                        existingClaim.LinkToCase(caseEntity.Id, currentUserId);
 
-                    await _unitOfWork.Claims.AddAsync(claim, cancellationToken);
+                        if (isOwnershipRelation && caseEntity.Status == Domain.Enums.CaseLifecycleStatus.Open)
+                            caseEntity.Close(existingClaim.Id, currentUserId);
 
-                    // Link first claim to survey for backward compatibility
-                    if (createdClaims.Count == 0)
+                        await _unitOfWork.Claims.UpdateAsync(existingClaim, cancellationToken);
+
+                        await _auditService.LogActionAsync(
+                            actionType: AuditActionType.Update,
+                            actionDescription: $"Updated claim {existingClaim.ClaimNumber} from office survey {survey.ReferenceCode} (relation {relation.Id})",
+                            entityType: "Claim",
+                            entityId: existingClaim.Id,
+                            entityIdentifier: existingClaim.ClaimNumber,
+                            oldValues: System.Text.Json.JsonSerializer.Serialize(oldSnapshot),
+                            newValues: System.Text.Json.JsonSerializer.Serialize(new
+                            {
+                                ClaimType = existingClaim.ClaimType.ToString(),
+                                CaseStatus = existingClaim.CaseStatus.ToString(),
+                                existingClaim.OwnershipShare,
+                                existingClaim.ClaimDescription,
+                                existingClaim.CaseId,
+                                RelationId = relation.Id,
+                                RelationType = relation.RelationType.ToString(),
+                                SourceSurveyId = survey.Id,
+                                SourceSurveyReference = survey.ReferenceCode
+                            }),
+                            changedFields: "Claim refreshed from Office Survey relation",
+                            cancellationToken: cancellationToken);
+
+                        claim = existingClaim;
+                        isNew = false;
+                        updatedClaimCount++;
+                    }
+                    else
+                    {
+                        // CREATE path: fresh claim for an unclaimed (Person, PropertyUnit) pair
+                        var claimNumber = await _claimNumberGenerator.GenerateNextClaimNumberAsync(cancellationToken);
+                        var claimType = isOwnershipRelation ? ClaimType.OwnershipClaim : ClaimType.OccupancyClaim;
+
+                        var newClaim = Claim.Create(
+                            claimNumber: claimNumber,
+                            propertyUnitId: survey.PropertyUnitId.Value,
+                            primaryClaimantId: person.Id,
+                            claimType: claimType,
+                            claimSource: ClaimSource.OfficeSubmission,
+                            createdByUserId: currentUserId,
+                            originatingSurveyId: survey.Id);
+
+                        if (ownershipShareInt.HasValue)
+                            newClaim.UpdateOwnershipShare(ownershipShareInt, currentUserId);
+                        if (!string.IsNullOrWhiteSpace(relation.ContractDetails))
+                            newClaim.UpdateClaimDescription(relation.ContractDetails, currentUserId);
+
+                        // CaseStatus: Owner/Heir → Closed, all others → Open (default)
+                        if (isOwnershipRelation)
+                            newClaim.CloseCase(currentUserId);
+
+                        newClaim.LinkToCase(caseEntity.Id, currentUserId);
+
+                        if (isOwnershipRelation && caseEntity.Status == Domain.Enums.CaseLifecycleStatus.Open)
+                            caseEntity.Close(newClaim.Id, currentUserId);
+
+                        await _unitOfWork.Claims.AddAsync(newClaim, cancellationToken);
+
+                        await _auditService.LogActionAsync(
+                            actionType: AuditActionType.Create,
+                            actionDescription: $"Created claim {claimNumber} from office survey {survey.ReferenceCode} (relation {relation.Id})",
+                            entityType: "Claim",
+                            entityId: newClaim.Id,
+                            entityIdentifier: claimNumber,
+                            oldValues: null,
+                            newValues: System.Text.Json.JsonSerializer.Serialize(new
+                            {
+                                newClaim.ClaimNumber,
+                                newClaim.PropertyUnitId,
+                                newClaim.PrimaryClaimantId,
+                                PrimaryClaimantName = person.GetFullNameArabic(),
+                                newClaim.ClaimType,
+                                newClaim.ClaimSource,
+                                CaseStatus = newClaim.CaseStatus.ToString(),
+                                RelationId = relation.Id,
+                                RelationType = relation.RelationType.ToString(),
+                                SourceSurveyId = survey.Id,
+                                SourceSurveyReference = survey.ReferenceCode
+                            }),
+                            changedFields: "New Claim from Office Survey",
+                            cancellationToken: cancellationToken);
+
+                        // Track in local cache so a later iteration on the same
+                        // (person, unit) pair does not re-create.
+                        existingClaimsForUnit.Add(newClaim);
+                        claim = newClaim;
+                        isNew = true;
+                        newClaimCount++;
+                    }
+
+                    // Link first result claim to survey for backward compatibility
+                    if (createdClaims.Count == 0 && !survey.ClaimId.HasValue)
                     {
                         survey.LinkClaim(claim.Id, currentUserId);
                     }
 
-                    // Build the UI summary DTO
                     createdClaims.Add(new CreatedClaimSummaryDto
                     {
                         ClaimId = claim.Id,
-                        ClaimNumber = claimNumber,
+                        ClaimNumber = claim.ClaimNumber,
                         PropertyUnitIdNumber = propertyUnit?.UnitIdentifier ?? string.Empty,
                         FullNameArabic = person.GetFullNameArabic(),
-                        ClaimSource = (int)ClaimSource.OfficeSubmission,
+                        ClaimSource = (int)claim.ClaimSource,
                         CaseStatus = (int)claim.CaseStatus,
                         SurveyDate = survey.CreatedAtUtc,
                         TypeOfWorks = typeOfWorks,
@@ -204,33 +309,10 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
                         SourceRelationId = relation.Id,
                         RelationType = (int)relation.RelationType,
                         PersonId = person.Id,
-                        PropertyUnitId = survey.PropertyUnitId.Value
+                        PropertyUnitId = survey.PropertyUnitId.Value,
+                        SurveyId = survey.Id,
+                        IsNew = isNew
                     });
-
-                    // Audit each claim creation
-                    await _auditService.LogActionAsync(
-                        actionType: AuditActionType.Create,
-                        actionDescription: $"Created claim {claimNumber} from office survey {survey.ReferenceCode} (relation {relation.Id})",
-                        entityType: "Claim",
-                        entityId: claim.Id,
-                        entityIdentifier: claimNumber,
-                        oldValues: null,
-                        newValues: System.Text.Json.JsonSerializer.Serialize(new
-                        {
-                            claim.ClaimNumber,
-                            claim.PropertyUnitId,
-                            claim.PrimaryClaimantId,
-                            PrimaryClaimantName = person.GetFullNameArabic(),
-                            claim.ClaimType,
-                            claim.ClaimSource,
-                            CaseStatus = claim.CaseStatus.ToString(),
-                            RelationId = relation.Id,
-                            RelationType = relation.RelationType.ToString(),
-                            SourceSurveyId = survey.Id,
-                            SourceSurveyReference = survey.ReferenceCode
-                        }),
-                        changedFields: "New Claim from Office Survey",
-                        cancellationToken: cancellationToken);
                 }
 
                 if (!createdClaims.Any())
@@ -261,7 +343,9 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
             oldValues: null,
             newValues: System.Text.Json.JsonSerializer.Serialize(new
             {
-                ClaimsCreated = createdClaims.Count,
+                ClaimsProcessed = createdClaims.Count,
+                ClaimsCreated = createdClaims.Count(c => c.IsNew),
+                ClaimsUpdated = createdClaims.Count(c => !c.IsNew),
                 ClaimNumbers = createdClaims.Select(c => c.ClaimNumber).ToList(),
                 DataSummary = new
                 {
