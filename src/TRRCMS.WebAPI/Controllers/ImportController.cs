@@ -7,6 +7,8 @@ using TRRCMS.Application.Import.Commands.CommitPackage;
 using TRRCMS.Application.Import.Commands.DetectDuplicates;
 using TRRCMS.Application.Import.Commands.QuarantinePackage;
 using TRRCMS.Application.Import.Commands.ResetCommit;
+using TRRCMS.Application.Import.Commands.UncancelPackage;
+using TRRCMS.Application.Import.Queries.GetQuarantineReport;
 using TRRCMS.Application.Import.Commands.StagePackage;
 using TRRCMS.Application.Import.Commands.UploadPackage;
 using TRRCMS.Application.Import.Dtos;
@@ -319,5 +321,46 @@ public class ImportController : ControllerBase
     {
         command.ImportPackageId = id;
         return Ok(await _mediator.Send(command));
+    }
+
+    /// <summary>
+    /// Restore a Cancelled import package to its pre-cancellation status.
+    /// The package is returned to the status it held immediately before it was cancelled,
+    /// so the import pipeline can resume. If no previous status was recorded (packages
+    /// cancelled before this feature), the package is restored to Pending.
+    /// </summary>
+    /// <param name="id">ImportPackage surrogate ID.</param>
+    /// <param name="command">Optional reason for the audit trail.</param>
+    /// <response code="200">Package restored to previous status.</response>
+    /// <response code="404">Package not found.</response>
+    /// <response code="409">Package is not in Cancelled status.</response>
+    [HttpPost("packages/{id:guid}/uncancel")]
+    [ProducesResponseType(typeof(ImportPackageDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ImportPackageDto>> UncancelPackage(
+        Guid id, [FromBody] UncancelPackageCommand command)
+    {
+        command.ImportPackageId = id;
+        return Ok(await _mediator.Send(command));
+    }
+
+    /// <summary>
+    /// Get a structured report explaining why a package is quarantined.
+    /// Returns the quarantine reason, category (ChecksumFailure / SignatureFailure /
+    /// VocabularyVersionMismatch / SchemaInvalid / ManualQuarantine), and all
+    /// integrity flags so the frontend can display a clear diagnosis.
+    /// </summary>
+    /// <param name="id">ImportPackage surrogate ID.</param>
+    /// <response code="200">Quarantine report returned.</response>
+    /// <response code="404">Package not found.</response>
+    /// <response code="409">Package is not in Quarantined status.</response>
+    [HttpGet("packages/{id:guid}/quarantine-report")]
+    [ProducesResponseType(typeof(QuarantineReportDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<QuarantineReportDto>> GetQuarantineReport(Guid id)
+    {
+        return Ok(await _mediator.Send(new GetQuarantineReportQuery { ImportPackageId = id }));
     }
 }

@@ -284,6 +284,30 @@ public class BuildingAssignment : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Reset transfer status to Pending so the assignment is picked up on the next sync.
+    /// Clears all transfer error/retry state and reactivates a cancelled assignment.
+    /// Applies regardless of current TransferStatus (Transferred, Failed, Cancelled, etc.).
+    /// </summary>
+    public void ResetTransferToPending(string? reason, Guid modifiedByUserId)
+    {
+        TransferStatus = TransferStatus.Pending;
+        IsActive = true;
+        TransferErrorMessage = null;
+        TransferRetryCount = 0;
+        LastTransferAttemptDate = null;
+        TransferredToTabletDate = null;
+
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            AssignmentNotes = string.IsNullOrWhiteSpace(AssignmentNotes)
+                ? $"[Reset to Pending]: {reason}"
+                : $"{AssignmentNotes}\n[Reset to Pending]: {reason}";
+        }
+
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Check if assignment is overdue
     /// </summary>
     public bool IsOverdue()

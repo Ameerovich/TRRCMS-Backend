@@ -45,15 +45,24 @@ public class GetConflictSummaryQueryHandler
         var overdueCount = queryable
             .Count(c => c.IsOverdue && c.Status == "PendingReview" && !c.IsDeleted);
 
+        // Sum both exact and _WithinBatch variants so totals are consistent with pending sub-counts.
+        var personDuplicateCount =
+            typeCounts.GetValueOrDefault("PersonDuplicate", 0) +
+            typeCounts.GetValueOrDefault("PersonDuplicate_WithinBatch", 0);
+        var propertyDuplicateCount =
+            typeCounts.GetValueOrDefault("PropertyDuplicate", 0) +
+            typeCounts.GetValueOrDefault("PropertyDuplicate_WithinBatch", 0);
+        var claimConflictCount = typeCounts.GetValueOrDefault("ClaimConflict", 0);
+
         return new ConflictSummaryDto
         {
             TotalConflicts = await _conflictRepository.GetTotalCountAsync(cancellationToken),
             PendingReviewCount = statusCounts.GetValueOrDefault("PendingReview", 0),
             ResolvedCount = statusCounts.GetValueOrDefault("Resolved", 0),
             IgnoredCount = statusCounts.GetValueOrDefault("Ignored", 0),
-            PersonDuplicateCount = typeCounts.GetValueOrDefault("PersonDuplicate", 0),
-            PropertyDuplicateCount = typeCounts.GetValueOrDefault("PropertyDuplicate", 0),
-            ClaimConflictCount = typeCounts.GetValueOrDefault("ClaimConflict", 0),
+            PersonDuplicateCount = personDuplicateCount,
+            PropertyDuplicateCount = propertyDuplicateCount,
+            ClaimConflictCount = claimConflictCount,
             PendingPersonDuplicates = pendingPersonDuplicates,
             PendingPropertyDuplicates = pendingPropertyDuplicates,
             PendingClaimConflicts = pendingClaimConflicts,
@@ -65,10 +74,10 @@ public class GetConflictSummaryQueryHandler
     }
 
     private async Task<int> GetPendingCountByTypeAsync(
-        string conflictType, CancellationToken cancellationToken)
+        string conflictTypePrefix, CancellationToken cancellationToken)
     {
-        var conflicts = await _conflictRepository.GetByConflictTypeAndStatusAsync(
-            conflictType, "PendingReview", cancellationToken);
+        var conflicts = await _conflictRepository.GetByConflictTypePrefixAndStatusAsync(
+            conflictTypePrefix, "PendingReview", cancellationToken);
         return conflicts.Count;
     }
 }

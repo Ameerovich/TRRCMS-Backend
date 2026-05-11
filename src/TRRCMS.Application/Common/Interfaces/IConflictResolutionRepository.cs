@@ -94,6 +94,15 @@ public interface IConflictResolutionRepository
         string entityType,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Get all KeepSeparate (KeepBoth) resolved conflicts for a package.
+    /// Used during commit to identify staging entities that must be inserted as
+    /// genuinely distinct records rather than being merged with existing production data.
+    /// </summary>
+    Task<List<ConflictResolution>> GetResolvedKeepSeparateForPackageAsync(
+        Guid importPackageId,
+        CancellationToken cancellationToken = default);
+
 
 
     /// <summary>
@@ -179,6 +188,15 @@ public interface IConflictResolutionRepository
     /// </summary>
     Task<List<ConflictResolution>> GetByConflictTypeAndStatusAsync(
         string conflictType,
+        string status,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get conflicts whose ConflictType starts with <paramref name="prefix"/> and matches <paramref name="status"/>.
+    /// Covers both exact types (e.g. "PersonDuplicate") and their within-batch variants ("PersonDuplicate_WithinBatch").
+    /// </summary>
+    Task<List<ConflictResolution>> GetByConflictTypePrefixAndStatusAsync(
+        string prefix,
         string status,
         CancellationToken cancellationToken = default);
 

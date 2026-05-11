@@ -105,6 +105,19 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
     }
 
     /// <inheritdoc />
+    public async Task<List<ConflictResolution>> GetResolvedKeepSeparateForPackageAsync(
+        Guid importPackageId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ConflictResolutions
+            .Where(c => c.ImportPackageId == importPackageId
+                && c.Status == "Resolved"
+                && c.ResolutionAction == ConflictResolutionAction.KeepBoth
+                && !c.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<List<ConflictResolution>> GetResolvedMergesForPackageAsync(
         Guid importPackageId,
         string entityType,
@@ -230,6 +243,19 @@ public class ConflictResolutionRepository : IConflictResolutionRepository
     {
         return await _context.ConflictResolutions
             .Where(c => c.ConflictType == conflictType
+                && c.Status == status
+                && !c.IsDeleted)
+            .OrderByDescending(c => c.SimilarityScore)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<ConflictResolution>> GetByConflictTypePrefixAndStatusAsync(
+        string prefix,
+        string status,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.ConflictResolutions
+            .Where(c => c.ConflictType.StartsWith(prefix)
                 && c.Status == status
                 && !c.IsDeleted)
             .OrderByDescending(c => c.SimilarityScore)
