@@ -59,6 +59,14 @@ public class CommitService : ICommitService
     // ID mapping: OriginalEntityId (from .uhc) → Production Entity Id
     private readonly Dictionary<Guid, Guid> _idMap = new();
 
+    // OriginalEntityIds of staging persons whose NationalId must be cleared before insert
+    // (operator chose KeepSeparate on a NationalId conflict — unique DB constraint would block commit)
+    private readonly HashSet<Guid> _keepSeparatePersonIds = new();
+
+    // OriginalEntityIds of staging property units that must bypass the upsert path and force-insert
+    // (operator chose KeepSeparate on a composite-key conflict — they are genuinely distinct units)
+    private readonly HashSet<Guid> _keepSeparateUnitIds = new();
+
     public CommitService(
         IUnitOfWork unitOfWork,
         IStagingRepository<StagingBuilding> stagingBuildingRepo,
@@ -112,6 +120,8 @@ public class CommitService : ICommitService
         CancellationToken cancellationToken = default)
     {
         _idMap.Clear();
+        _keepSeparatePersonIds.Clear();
+        _keepSeparateUnitIds.Clear();
 
         var report = new CommitReportDto
         {
@@ -130,6 +140,9 @@ public class CommitService : ICommitService
         // These won't be re-committed (GetApprovedForCommitAsync skips them), but child entities
         // (e.g. Claims referencing a PropertyUnit) still need their FK resolved via _idMap.
         await PrePopulateIdMapFromCommittedAsync(importPackageId, cancellationToken);
+
+        // Load KeepSeparate decisions so commit can honour them per entity type.
+        await LoadKeepSeparateDecisionsAsync(importPackageId, cancellationToken);
 
         // Clear change tracker to ensure no stale dirty entities from prior operations
         _unitOfWork.DetachAllEntities();
@@ -293,6 +306,66 @@ public class CommitService : ICommitService
             _logger.LogInformation(
                 "Pre-populated ID map with {Count} already-committed staging records for re-commit",
                 _idMap.Count);
+    }
+
+    /// <summary>
+    /// Find a UnitIdentifier that does not yet exist under <paramref name="buildingId"/> in production.
+    /// Starts with the original value; appends -2, -3, … until a free slot is found.
+    /// Used for KeepSeparate property unit conflicts where the operator confirmed the unit is distinct
+    /// from an existing one with the same composite key.
+    /// </summary>
+    private async Task<string> FindAvailableUnitIdentifierAsync(
+        Guid buildingId, string baseIdentifier, CancellationToken ct)
+    {
+        var candidate = baseIdentifier;
+        var suffix = 2;
+        while (await _unitOfWork.PropertyUnits.GetByBuildingAndIdentifierAsync(buildingId, candidate, ct) != null)
+        {
+            candidate = $"{baseIdentifier}-{suffix++}";
+        }
+        return candidate;
+    }
+
+    /// <summary>
+    /// Populate _keepSeparatePersonIds and _keepSeparateUnitIds from KeepSeparate-resolved conflicts.
+    ///
+    /// Person conflicts: NationalId unique constraint would block inserting a staging person that
+    /// matches an existing production person by NationalId. Clearing the NationalId on the staging
+    /// person before insert lets the record through; a data-quality reviewer can reconcile later.
+    ///
+    /// Property conflicts: The commit's upsert path would silently remap the staging unit to the
+    /// existing production unit, ignoring the operator's KeepSeparate decision. Flagging the
+    /// staging unit's OriginalEntityId bypasses the upsert and forces a new insert with a
+    /// disambiguated UnitIdentifier suffix.
+    ///
+    /// Cross-batch: FirstEntityId is always the staging entity's OriginalEntityId.
+    /// Within-batch: both FirstEntityId and SecondEntityId are staging OriginalEntityIds.
+    /// </summary>
+    private async Task LoadKeepSeparateDecisionsAsync(Guid importPackageId, CancellationToken ct)
+    {
+        var conflicts = await _unitOfWork.ConflictResolutions
+            .GetResolvedKeepSeparateForPackageAsync(importPackageId, ct);
+
+        foreach (var c in conflicts)
+        {
+            if (c.ConflictType.StartsWith("PersonDuplicate"))
+            {
+                _keepSeparatePersonIds.Add(c.FirstEntityId);
+                if (c.ConflictType == "PersonDuplicate_WithinBatch")
+                    _keepSeparatePersonIds.Add(c.SecondEntityId);
+            }
+            else if (c.ConflictType.StartsWith("PropertyDuplicate"))
+            {
+                _keepSeparateUnitIds.Add(c.FirstEntityId);
+                if (c.ConflictType == "PropertyDuplicate_WithinBatch")
+                    _keepSeparateUnitIds.Add(c.SecondEntityId);
+            }
+        }
+
+        if (conflicts.Count > 0)
+            _logger.LogInformation(
+                "KeepSeparate decisions loaded: {PersonCount} persons, {UnitCount} property units",
+                _keepSeparatePersonIds.Count, _keepSeparateUnitIds.Count);
     }
 
     private async Task PopulateMergeRedirectsAsync(
@@ -585,31 +658,50 @@ public class CommitService : ICommitService
                         "Building must be committed before its property units.");
                 }
 
-                // Check if a property unit with this (BuildingId, UnitIdentifier) already exists
-                // (e.g., from a previous package covering the same building and unit)
-                var existingUnit = await _unitOfWork.PropertyUnits
-                    .GetByBuildingAndIdentifierAsync(productionBuildingId, staging.UnitIdentifier, ct);
+                // KeepSeparate: operator confirmed this is a genuinely distinct unit despite
+                // sharing (BuildingId, UnitIdentifier) with an existing production unit.
+                // Skip the upsert lookup entirely and force a new insert with a disambiguated identifier.
+                var isKeepSeparate = _keepSeparateUnitIds.Contains(staging.OriginalEntityId);
 
-                if (existingUnit != null)
+                if (!isKeepSeparate)
                 {
-                    // Reuse the existing production unit — just map the ID
-                    _idMap[staging.OriginalEntityId] = existingUnit.Id;
-                    staging.SetCommittedEntityId(existingUnit.Id);
-                    await _stagingPropertyUnitRepo.UpdateAsync(staging, ct);
+                    // Check if a property unit with this (BuildingId, UnitIdentifier) already exists
+                    // (e.g., from a previous package covering the same building and unit)
+                    var existingUnit = await _unitOfWork.PropertyUnits
+                        .GetByBuildingAndIdentifierAsync(productionBuildingId, staging.UnitIdentifier, ct);
 
-                    report.PropertyUnits.Committed++;
-                    report.PropertyUnits.IdMappings[staging.OriginalEntityId] = existingUnit.Id;
+                    if (existingUnit != null)
+                    {
+                        // Reuse the existing production unit — just map the ID
+                        _idMap[staging.OriginalEntityId] = existingUnit.Id;
+                        staging.SetCommittedEntityId(existingUnit.Id);
+                        await _stagingPropertyUnitRepo.UpdateAsync(staging, ct);
 
-                    _logger.LogInformation(
-                        "PropertyUnit {OriginalId} reused existing production unit {ProductionId} (Building: {BuildingId}, Unit: {UnitId})",
-                        staging.OriginalEntityId, existingUnit.Id, productionBuildingId, staging.UnitIdentifier);
-                    continue;
+                        report.PropertyUnits.Committed++;
+                        report.PropertyUnits.IdMappings[staging.OriginalEntityId] = existingUnit.Id;
+
+                        _logger.LogInformation(
+                            "PropertyUnit {OriginalId} reused existing production unit {ProductionId} (Building: {BuildingId}, Unit: {UnitId})",
+                            staging.OriginalEntityId, existingUnit.Id, productionBuildingId, staging.UnitIdentifier);
+                        continue;
+                    }
                 }
 
-                // No existing unit — create a new one
+                // KeepSeparate: find a unique identifier by appending a numeric suffix
+                var unitIdentifier = staging.UnitIdentifier;
+                if (isKeepSeparate)
+                {
+                    unitIdentifier = await FindAvailableUnitIdentifierAsync(
+                        productionBuildingId, staging.UnitIdentifier, ct);
+                    _logger.LogInformation(
+                        "KeepSeparate: inserting staging PropertyUnit {OriginalId} as new unit with identifier '{Identifier}' (original: '{Original}')",
+                        staging.OriginalEntityId, unitIdentifier, staging.UnitIdentifier);
+                }
+
+                // No existing unit (or KeepSeparate) — create a new one
                 var unit = PropertyUnit.Create(
                     buildingId: productionBuildingId,
-                    unitIdentifier: staging.UnitIdentifier,
+                    unitIdentifier: unitIdentifier,
                     unitType: staging.UnitType,
                     floorNumber: staging.FloorNumber,
                     createdByUserId: userId,
@@ -656,12 +748,24 @@ public class CommitService : ICommitService
             var staging = approved[i];
             try
             {
+                // KeepSeparate: operator confirmed this is a genuinely distinct person despite a
+                // matching NationalId in production. Clear NationalId before insert to avoid
+                // violating the unique constraint; the record can be reconciled by a data reviewer.
+                var nationalId = _keepSeparatePersonIds.Contains(staging.OriginalEntityId)
+                    ? null
+                    : staging.NationalId;
+
+                if (nationalId == null && staging.NationalId != null)
+                    _logger.LogInformation(
+                        "KeepSeparate: cleared NationalId for staging Person {OriginalId} before commit",
+                        staging.OriginalEntityId);
+
                 var person = Person.CreateWithFullInfo(
                     familyNameArabic: staging.FamilyNameArabic,
                     firstNameArabic: staging.FirstNameArabic,
                     fatherNameArabic: staging.FatherNameArabic,
                     motherNameArabic: staging.MotherNameArabic,
-                    nationalId: staging.NationalId,
+                    nationalId: nationalId,
                     dateOfBirth: staging.DateOfBirth,
                     gender: staging.Gender,
                     nationality: staging.Nationality,

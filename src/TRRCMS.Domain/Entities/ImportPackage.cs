@@ -54,6 +54,12 @@ public class ImportPackage : BaseAuditableEntity
     public ImportStatus Status { get; private set; }
 
     /// <summary>
+    /// Status before the last Cancel() call. Used by Uncancel() to restore the package.
+    /// Null for packages cancelled before this field was introduced.
+    /// </summary>
+    public ImportStatus? PreviousStatus { get; private set; }
+
+    /// <summary>
     /// Date when package was imported to desktop system
     /// </summary>
     public DateTime? ImportedDate { get; private set; }
@@ -614,10 +620,36 @@ public class ImportPackage : BaseAuditableEntity
     /// </summary>
     public void Cancel(string cancellationReason, Guid modifiedByUserId)
     {
+        PreviousStatus = Status;
         Status = ImportStatus.Cancelled;
         ProcessingNotes = string.IsNullOrWhiteSpace(ProcessingNotes)
             ? $"[Cancelled]: {cancellationReason}"
             : $"{ProcessingNotes}\n[Cancelled]: {cancellationReason}";
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Restore a cancelled package to its previous status so the import pipeline can resume.
+    /// If PreviousStatus was not recorded (old data), restores to Pending so the package
+    /// can be re-processed from the beginning.
+    /// </summary>
+    public void Uncancel(string? reason, Guid modifiedByUserId)
+    {
+        if (Status != ImportStatus.Cancelled)
+            throw new InvalidOperationException(
+                $"Cannot uncancel package. Current status is '{Status}'. Only Cancelled packages can be uncancelled.");
+
+        Status = PreviousStatus ?? ImportStatus.Pending;
+        PreviousStatus = null;
+
+        var note = reason is { Length: > 0 }
+            ? $"[Uncancelled to {Status}]: {reason}"
+            : $"[Uncancelled to {Status}]";
+
+        ProcessingNotes = string.IsNullOrWhiteSpace(ProcessingNotes)
+            ? note
+            : $"{ProcessingNotes}\n{note}";
+
         MarkAsModified(modifiedByUserId);
     }
 

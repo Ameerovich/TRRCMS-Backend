@@ -63,6 +63,9 @@ public class ImportPackageConfiguration : IEntityTypeConfiguration<ImportPackage
             .IsRequired()
             .HasComment("Current import workflow status - stored as integer");
 
+        builder.Property(p => p.PreviousStatus)
+            .HasComment("Status before the last Cancel() call; null for pre-uncancel packages");
+
         builder.Property(p => p.ImportedDate)
             .HasComment("Date when package was uploaded to desktop system");
 

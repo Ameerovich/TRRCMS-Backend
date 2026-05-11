@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.BuildingAssignments.Commands.AssignBuildings;
+using TRRCMS.Application.BuildingAssignments.Commands.ResetAssignmentToPending;
 using TRRCMS.Application.BuildingAssignments.Commands.UnassignBuilding;
 using TRRCMS.Application.BuildingAssignments.Dtos;
 using TRRCMS.Application.BuildingAssignments.Queries.GetAssignmentById;
@@ -919,6 +920,83 @@ public class BuildingAssignmentsController : ControllerBase
         return Ok(result);
     }
 
+    // ==================== RESET TO PENDING ====================
+
+    /// <summary>
+    /// Reset a building assignment's transfer status back to Pending
+    /// إعادة تعيين حالة النقل إلى "قيد الانتظار"
+    /// </summary>
+    /// <remarks>
+    /// Forces a building assignment back to Pending so it is included in the field
+    /// collector's next sync download, regardless of its current status.
+    ///
+    /// **Required Permission**: Buildings_Assign (4003) - CanAssignBuildings policy
+    ///
+    /// **Use cases:**
+    /// - Re-transfer after a failed transfer (Failed → Pending)
+    /// - Force re-download of an already-transferred assignment (Transferred → Pending)
+    /// - Reactivate a cancelled assignment (Cancelled → Pending)
+    /// - Allow re-sync of a partially transferred assignment (PartialTransfer → Pending)
+    ///
+    /// **What changes:**
+    /// - TransferStatus → Pending
+    /// - IsActive → true (reactivates cancelled assignments)
+    /// - TransferErrorMessage → cleared
+    /// - TransferRetryCount → 0
+    /// - TransferredToTabletDate → cleared
+    /// - Reason appended to AssignmentNotes (if provided)
+    ///
+    /// **Example Request:**
+    /// ```
+    /// POST /api/v1/buildingassignments/3fa85f64-5717-4562-b3fc-2c963f66afa6/reset-to-pending
+    /// Content-Type: application/json
+    ///
+    /// {
+    ///   "reason": "النقل السابق فشل بسبب انقطاع الشبكة"
+    /// }
+    /// ```
+    ///
+    /// **Example Response:**
+    /// ```json
+    /// {
+    ///   "success": true,
+    ///   "message": "Assignment for building 01010100300200001 has been reset to Pending and will be transferred on next sync",
+    ///   "assignmentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "buildingCode": "01010100300200001",
+    ///   "fieldCollectorName": "أحمد محمد",
+    ///   "previousStatus": "Failed"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="assignmentId">Assignment GUID to reset</param>
+    /// <param name="request">Optional reason for the reset</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Reset result with previous status</returns>
+    /// <response code="200">Assignment reset to Pending successfully</response>
+    /// <response code="401">Not authenticated</response>
+    /// <response code="403">Missing required permission - requires Buildings_Assign (4003)</response>
+    /// <response code="404">Assignment not found</response>
+    [HttpPost("{assignmentId:guid}/reset-to-pending")]
+    [Authorize(Policy = "CanAssignBuildings")]
+    [ProducesResponseType(typeof(ResetAssignmentToPendingResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResetAssignmentToPendingResult>> ResetAssignmentToPending(
+        Guid assignmentId,
+        [FromBody] ResetAssignmentToPendingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new ResetAssignmentToPendingCommand
+        {
+            AssignmentId = assignmentId,
+            Reason = request.Reason
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
 }
 
 // ==================== REQUEST MODELS ====================
@@ -1065,4 +1143,18 @@ public class UnassignBuildingRequest
     /// </summary>
     /// <example>تم نقل جامع البيانات إلى منطقة أخرى</example>
     public string CancellationReason { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Request body for reset-to-pending operation
+/// طلب إعادة تعيين حالة النقل إلى "قيد الانتظار"
+/// </summary>
+public class ResetAssignmentToPendingRequest
+{
+    /// <summary>
+    /// Optional reason recorded in assignment notes for audit trail.
+    /// سبب إعادة التعيين (اختياري)
+    /// </summary>
+    /// <example>النقل السابق فشل بسبب انقطاع الشبكة</example>
+    public string? Reason { get; set; }
 }
