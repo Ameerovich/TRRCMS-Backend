@@ -5,6 +5,7 @@ using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Buildings.Commands.CreateBuilding;
 
@@ -19,19 +20,22 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
     private readonly IGeometryConverter _geometryConverter;
     private readonly IAdministrativeNameResolver _nameResolver;
     private readonly ICommunityRepository _communityRepository;
+    private readonly IAuditService _auditService;
 
     public CreateBuildingCommandHandler(
         IBuildingRepository buildingRepository,
         ICurrentUserService currentUserService,
         IGeometryConverter geometryConverter,
         IAdministrativeNameResolver nameResolver,
-        ICommunityRepository communityRepository)
+        ICommunityRepository communityRepository,
+        IAuditService auditService)
     {
         _buildingRepository = buildingRepository;
         _currentUserService = currentUserService;
         _geometryConverter = geometryConverter;
         _nameResolver = nameResolver;
         _communityRepository = communityRepository;
+        _auditService = auditService;
     }
 
     public async Task<BuildingDto> Handle(CreateBuildingCommand request, CancellationToken cancellationToken)
@@ -136,6 +140,14 @@ public class CreateBuildingCommandHandler : IRequestHandler<CreateBuildingComman
                 govCode, distCode, subDistCode, commCode, cancellationToken);
             resolvedCommunityPCode = matched?.ExternalPCode;
         }
+
+        await _auditService.LogActionAsync(
+            actionType: AuditActionType.Create,
+            actionDescription: $"Building {building.BuildingId} created",
+            entityType: "Building",
+            entityId: building.Id,
+            entityIdentifier: building.BuildingId,
+            cancellationToken: cancellationToken);
 
         // Return full DTO
         return MapToDto(building, resolvedCommunityPCode);

@@ -3,6 +3,7 @@ using MediatR;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Evidences.Dtos;
 using TRRCMS.Domain.Entities;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Evidences.Commands.CreateEvidence;
 
@@ -11,17 +12,20 @@ public class CreateEvidenceCommandHandler : IRequestHandler<CreateEvidenceComman
     private readonly IEvidenceRepository _evidenceRepository;
     private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public CreateEvidenceCommandHandler(
         IEvidenceRepository evidenceRepository,
         IEvidenceRelationRepository evidenceRelationRepository,
         ICurrentUserService currentUserService,
+        IAuditService auditService,
         IMapper mapper)
     {
         _evidenceRepository = evidenceRepository;
         _evidenceRelationRepository = evidenceRelationRepository;
         _currentUserService = currentUserService;
+        _auditService = auditService;
         _mapper = mapper;
     }
 
@@ -90,6 +94,15 @@ public class CreateEvidenceCommandHandler : IRequestHandler<CreateEvidenceComman
         var updatedEvidence = await _evidenceRepository.GetByIdAsync(evidence.Id, cancellationToken);
         var result = _mapper.Map<EvidenceDto>(updatedEvidence!);
         result.IsExpired = updatedEvidence!.IsExpired();
+
+        await _auditService.LogActionAsync(
+            actionType: AuditActionType.Upload,
+            actionDescription: $"Evidence document '{evidence.OriginalFileName}' uploaded ({evidence.EvidenceType})",
+            entityType: "Evidence",
+            entityId: evidence.Id,
+            entityIdentifier: evidence.OriginalFileName,
+            cancellationToken: cancellationToken);
+
         return result;
     }
 }

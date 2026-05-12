@@ -43,6 +43,12 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
         if (!vocabulary.IsCurrentVersion)
             throw new ValidationException("Can only create new versions from the current version of a vocabulary.");
 
+        if (vocabulary.IsSystemVocabulary && request.VersionType.ToLowerInvariant() == "major")
+            throw new ValidationException(
+                $"System vocabulary '{vocabulary.VocabularyName}' cannot have new codes added. " +
+                "Its values are fixed by the domain model. " +
+                "Only 'patch' (label fixes) and 'minor' (deprecations) versions are permitted.");
+
         // Block code removal — codes can only be deprecated, never removed
         var oldValues = VocabularyMappingHelper.ParseValues(vocabulary.ValuesJson);
         var oldCodes = new HashSet<int>(oldValues.Select(v => v.Code));

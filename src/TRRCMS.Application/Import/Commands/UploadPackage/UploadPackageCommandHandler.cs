@@ -4,6 +4,7 @@ using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
+using System.Text.Json;
 
 namespace TRRCMS.Application.Import.Commands.UploadPackage;
 
@@ -24,17 +25,20 @@ public class UploadPackageCommandHandler : IRequestHandler<UploadPackageCommand,
     private readonly IImportService _importService;
     private readonly IImportPackageRepository _packageRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditService _auditService;
     private readonly ILogger<UploadPackageCommandHandler> _logger;
 
     public UploadPackageCommandHandler(
         IImportService importService,
         IImportPackageRepository packageRepository,
         ICurrentUserService currentUserService,
+        IAuditService auditService,
         ILogger<UploadPackageCommandHandler> logger)
     {
         _importService = importService;
         _packageRepository = packageRepository;
         _currentUserService = currentUserService;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -246,6 +250,29 @@ public class UploadPackageCommandHandler : IRequestHandler<UploadPackageCommand,
             _logger.LogInformation(
                 "Package created: Id={Id}, PackageId={PackageId}, Status={Status}, Quarantined={IsQuarantined}",
                 package.Id, package.PackageId, package.Status, isQuarantined);
+
+            var actionType = isQuarantined ? AuditActionType.Import : AuditActionType.Upload;
+            var description = isQuarantined
+                ? $"Package '{package.PackageNumber}' ({request.FileName}) uploaded and quarantined: {validationResult.Errors.FirstOrDefault()}"
+                : $"Package '{package.PackageNumber}' ({request.FileName}) uploaded — {manifest.TotalRecordCount} records, schema {manifest.SchemaVersion}";
+
+            await _auditService.LogActionAsync(
+                actionType: actionType,
+                actionDescription: description,
+                entityType: "ImportPackage",
+                entityId: package.Id,
+                entityIdentifier: package.PackageNumber,
+                newValues: JsonSerializer.Serialize(new
+                {
+                    package.FileName,
+                    package.FileSizeBytes,
+                    package.SurveyCount,
+                    package.BuildingCount,
+                    package.PropertyUnitCount,
+                    package.PersonCount,
+                    IsQuarantined = isQuarantined
+                }),
+                cancellationToken: cancellationToken);
 
             return new UploadPackageResultDto
             {

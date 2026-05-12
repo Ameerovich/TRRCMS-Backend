@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Auth.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Auth.Commands.Login;
 
@@ -17,6 +18,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
     private readonly ISecurityPolicyRepository _securityPolicyRepository;
+    private readonly IAuditService _auditService;
     private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
@@ -25,6 +27,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         ITokenService tokenService,
         IConfiguration configuration,
         ISecurityPolicyRepository securityPolicyRepository,
+        IAuditService auditService,
         ILogger<LoginCommandHandler> logger)
     {
         _userRepository = userRepository;
@@ -32,6 +35,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         _tokenService = tokenService;
         _configuration = configuration;
         _securityPolicyRepository = securityPolicyRepository;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -43,6 +47,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         if (user == null)
         {
             _logger.LogWarning("Failed login attempt for unknown username {Username}", request.Username);
+            await _auditService.LogSecurityActionAsync(
+                AuditActionType.LoginFailed,
+                $"Login failed: unknown username '{request.Username}'",
+                isSecuritySensitive: true,
+                cancellationToken);
             throw new InvalidCredentialsException(
                 "Message_InvalidCredentials",
                 "Invalid username or password.");
@@ -58,6 +67,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
                 _logger.LogWarning(
                     "Failed login attempt for locked account {Username}, remaining lockout minutes: {Minutes}",
                     request.Username, remainingTime.Minutes);
+                await _auditService.LogSecurityActionAsync(
+                    AuditActionType.LoginFailed,
+                    $"Login blocked: account '{request.Username}' is locked for {remainingTime.Minutes} more minute(s)",
+                    isSecuritySensitive: true,
+                    cancellationToken);
                 throw new InvalidCredentialsException(
                     "Message_AccountLocked",
                     $"Account is locked due to multiple failed login attempts. Please try again in {remainingTime.Minutes} minutes.",
@@ -76,6 +90,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         if (!user.IsActive)
         {
             _logger.LogWarning("Failed login attempt for inactive account {Username}", request.Username);
+            await _auditService.LogSecurityActionAsync(
+                AuditActionType.LoginFailed,
+                $"Login blocked: account '{request.Username}' is inactive",
+                isSecuritySensitive: true,
+                cancellationToken);
             throw new InvalidCredentialsException(
                 "Message_AccountInactive",
                 "Account is inactive. Please contact your administrator.");
@@ -98,6 +117,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
             await _userRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogWarning("Failed login attempt for username {Username}: wrong password", request.Username);
+            await _auditService.LogSecurityActionAsync(
+                AuditActionType.LoginFailed,
+                $"Login failed: wrong password for '{request.Username}'",
+                isSecuritySensitive: true,
+                cancellationToken);
             throw new InvalidCredentialsException(
                 "Message_InvalidCredentials",
                 "Invalid username or password.");
@@ -163,7 +187,16 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
 
-        // Step 9: Build and return response
+        // Step 9: Log successful login
+        await _auditService.LogActionAsync(
+            actionType: AuditActionType.Login,
+            actionDescription: $"User '{user.Username}' logged in successfully",
+            entityType: "User",
+            entityId: user.Id,
+            entityIdentifier: user.Username,
+            cancellationToken: cancellationToken);
+
+        // Step 10: Build and return response
         return new LoginResponse
         {
             UserId = user.Id,
