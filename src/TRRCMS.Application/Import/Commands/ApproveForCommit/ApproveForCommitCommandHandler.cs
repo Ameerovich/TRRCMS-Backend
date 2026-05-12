@@ -5,6 +5,7 @@ using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Domain.Entities.Staging;
 using TRRCMS.Domain.Enums;
+using System.Text.Json;
 
 namespace TRRCMS.Application.Import.Commands.ApproveForCommit;
 
@@ -33,6 +34,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
     private readonly IStagingRepository<StagingClaim> _stagingClaimRepo;
     private readonly IStagingRepository<StagingSurvey> _stagingSurveyRepo;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
 
     public ApproveForCommitCommandHandler(
@@ -49,6 +51,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         IStagingRepository<StagingClaim> stagingClaimRepo,
         IStagingRepository<StagingSurvey> stagingSurveyRepo,
         ICurrentUserService currentUserService,
+        IAuditService auditService,
         IMapper mapper)
     {
         _importPackageRepository = importPackageRepository;
@@ -64,6 +67,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         _stagingClaimRepo = stagingClaimRepo;
         _stagingSurveyRepo = stagingSurveyRepo;
         _currentUserService = currentUserService;
+        _auditService = auditService;
         _mapper = mapper;
     }
 
@@ -113,6 +117,14 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
 
         await _importPackageRepository.UpdateAsync(package, cancellationToken);
         await _importPackageRepository.SaveChangesAsync(cancellationToken);
+
+        await _auditService.LogActionAsync(
+            actionType: AuditActionType.Approve,
+            actionDescription: $"Package '{package.PackageNumber}' approved for commit by user {userId}",
+            entityType: "ImportPackage",
+            entityId: package.Id,
+            entityIdentifier: package.PackageNumber,
+            cancellationToken: cancellationToken);
 
         // 6. Return updated DTO
         return _mapper.Map<ImportPackageDto>(package);

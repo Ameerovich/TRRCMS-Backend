@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Auth.Commands.ChangePassword;
 
@@ -12,15 +13,18 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IAuditService _auditService;
     private readonly ILogger<ChangePasswordCommandHandler> _logger;
 
     public ChangePasswordCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
+        IAuditService auditService,
         ILogger<ChangePasswordCommandHandler> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -79,6 +83,12 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
+
+        await _auditService.LogSecurityActionAsync(
+            AuditActionType.PasswordChange,
+            $"Password changed for user '{user.Username}'",
+            isSecuritySensitive: true,
+            cancellationToken);
 
         return true;
     }

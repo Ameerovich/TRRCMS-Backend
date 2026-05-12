@@ -34,6 +34,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
     private readonly IStagingRepository<StagingClaim> _claimRepo;
     private readonly IStagingRepository<StagingSurvey> _surveyRepo;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAuditService _auditService;
     private readonly ILogger<StagePackageCommandHandler> _logger;
 
     public StagePackageCommandHandler(
@@ -50,6 +51,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         IStagingRepository<StagingClaim> claimRepo,
         IStagingRepository<StagingSurvey> surveyRepo,
         ICurrentUserService currentUserService,
+        IAuditService auditService,
         ILogger<StagePackageCommandHandler> logger)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
@@ -65,6 +67,7 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
         _claimRepo = claimRepo;
         _surveyRepo = surveyRepo;
         _currentUserService = currentUserService;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -236,6 +239,16 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
             var summary = await BuildSummaryDtoAsync(
                 package.Id, package.PackageNumber, package.Status,
                 stagingResult, validationSummary, dupeResult, cancellationToken);
+
+            await _auditService.LogActionAsync(
+                actionType: AuditActionType.Validate,
+                actionDescription: $"Package '{package.PackageNumber}' staged and validated — " +
+                    $"{validationSummary.ValidCount} valid, {validationSummary.InvalidCount} errors, " +
+                    $"{validationSummary.WarningCount} warnings → {package.Status}",
+                entityType: "ImportPackage",
+                entityId: package.Id,
+                entityIdentifier: package.PackageNumber,
+                cancellationToken: cancellationToken);
 
             return summary;
         }

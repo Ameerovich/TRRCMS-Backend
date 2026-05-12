@@ -6,6 +6,7 @@ using TRRCMS.Application.Import.Commands.ApproveForCommit;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Domain.Enums;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace TRRCMS.Application.Import.Commands.CommitPackage;
 
@@ -32,6 +33,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
     private readonly IStagingService _stagingService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ISender _sender;
+    private readonly IAuditService _auditService;
     private readonly ILogger<CommitPackageCommandHandler> _logger;
 
     public CommitPackageCommandHandler(
@@ -40,6 +42,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         IStagingService stagingService,
         ICurrentUserService currentUserService,
         ISender sender,
+        IAuditService auditService,
         ILogger<CommitPackageCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
@@ -47,6 +50,7 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
         _stagingService = stagingService;
         _currentUserService = currentUserService;
         _sender = sender;
+        _auditService = auditService;
         _logger = logger;
     }
 
@@ -152,6 +156,26 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
             await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            var auditOutcome = report.IsFullySuccessful ? "fully committed"
+                : report.TotalRecordsCommitted > 0 ? "partially committed" : "commit failed (0 records)";
+
+            await _auditService.LogActionAsync(
+                actionType: AuditActionType.Import,
+                actionDescription: $"Package '{package.PackageNumber}' {auditOutcome} — " +
+                                   $"{report.TotalRecordsCommitted} committed, {report.TotalRecordsFailed} failed, {report.TotalRecordsSkipped} skipped",
+                entityType: "ImportPackage",
+                entityId: package.Id,
+                entityIdentifier: package.PackageNumber,
+                newValues: JsonSerializer.Serialize(new
+                {
+                    report.TotalRecordsCommitted,
+                    report.TotalRecordsFailed,
+                    report.TotalRecordsSkipped,
+                    report.SuccessRate,
+                    Outcome = auditOutcome
+                }),
+                cancellationToken: cancellationToken);
+
             // 6. Archive .uhc package (post-commit, non-transactional)
             if (report.TotalRecordsCommitted > 0)
             {
@@ -243,6 +267,14 @@ public class CommitPackageCommandHandler : IRequestHandler<CommitPackageCommand,
                     "Use reset-commit endpoint to recover.",
                     package.PackageNumber);
             }
+
+            await _auditService.LogFailedActionAsync(
+                actionType: AuditActionType.Import,
+                actionDescription: $"Package '{package.PackageNumber}' commit failed",
+                errorMessage: ex.Message,
+                entityType: "ImportPackage",
+                entityId: package.Id,
+                cancellationToken: cancellationToken);
 
             report = new CommitReportDto
             {
