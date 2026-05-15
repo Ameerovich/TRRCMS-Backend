@@ -120,6 +120,11 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// ── Reporting subsystem bootstrap (QuestPDF license + Arabic font) ──
+TRRCMS.Infrastructure.Reporting.ReportingBootstrap.Initialize(
+    app.Services,
+    app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Reporting"));
+
 // ── Seeding ──────────────────────────────────────────────────────
 await app.SeedDatabaseAsync();
 

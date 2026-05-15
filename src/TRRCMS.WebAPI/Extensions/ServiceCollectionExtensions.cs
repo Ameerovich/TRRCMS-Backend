@@ -14,9 +14,11 @@ using TRRCMS.Application.Common.Mappings;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Import.Models;
 using TRRCMS.Domain.Enums;
+using TRRCMS.Application.Reporting.Common;
 using TRRCMS.Infrastructure.Authorization;
 using TRRCMS.Infrastructure.Persistence;
 using TRRCMS.Infrastructure.Persistence.Repositories;
+using TRRCMS.Infrastructure.Reporting;
 using TRRCMS.Infrastructure.Services;
 using TRRCMS.Infrastructure.Services.Validators;
 using TRRCMS.WebAPI.Middleware;
@@ -142,6 +144,13 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
 
         // ── Security Settings ─────────────────────────────────────────────────────
         services.AddScoped<ISecurityPolicyRepository, SecurityPolicyRepository>();
+
+        // ── Reporting ────────────────────────────────────────────────
+        services.Configure<ReportFontSettings>(
+            configuration.GetSection(ReportFontSettings.SectionName));
+        services.AddSingleton<IReportLocalizer, ReportLocalizer>();
+        services.AddSingleton<IPdfReportRenderer, QuestPdfReportRenderer>();
+        services.AddSingleton<IExcelReportRenderer, ClosedXmlReportRenderer>();
 
         return services;
     }
@@ -426,6 +435,18 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
             // Landmarks
             options.AddPolicy("CanManageLandmarks", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Landmarks_Manage)));
+
+            // Reports
+            options.AddPolicy("CanViewReports", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Reports_View)));
+            options.AddPolicy("CanExportSurveysReport", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Reports_ExportSurveys)));
+            options.AddPolicy("CanExportBuildingsReport", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Reports_ExportBuildings)));
+            options.AddPolicy("CanExportImportsReport", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Reports_ExportImports)));
+            options.AddPolicy("CanExportAuditReport", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Reports_ExportAudit)));
         });
 
         return services;

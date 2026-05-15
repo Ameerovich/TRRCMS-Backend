@@ -22,6 +22,10 @@
 		<!-- SQLite Support for reading .uhc import packages -->
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
+		<!-- Reporting: PDF generation (Community license — verify revenue tier <$1M USD/yr for production) -->
+		<PackageReference Include="QuestPDF" Version="2024.12.3" />
+		<!-- Reporting: XLSX generation -->
+		<PackageReference Include="ClosedXML" Version="0.104.2" />
 	</ItemGroup>
 
 	<ItemGroup>
