@@ -37,13 +37,23 @@ public class DeactivateVocabularyCommandHandler : IRequestHandler<DeactivateVoca
             ?? throw new UnauthorizedAccessException("User not authenticated");
 
         var vocabulary = await _unitOfWork.Vocabularies.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new NotFoundException($"Vocabulary with ID '{request.Id}' not found.");
+            ?? throw new NotFoundException(
+                $"Vocabulary with ID '{request.Id}' not found.",
+                "Message_Vocabulary_NotFound",
+                request.Id);
 
         if (vocabulary.IsSystemVocabulary)
-            throw new ValidationException($"System vocabulary '{vocabulary.VocabularyName}' cannot be deactivated.");
+            throw new ValidationException(
+                $"System vocabulary '{vocabulary.VocabularyName}' is required by the application and cannot be deactivated. " +
+                $"To restrict a specific code, create a new vocabulary version and set isDeprecated=true on that code instead.",
+                "Message_Vocabulary_SystemCannotDeactivate",
+                vocabulary.VocabularyName);
 
         if (!vocabulary.IsActive)
-            throw new ValidationException($"Vocabulary '{vocabulary.VocabularyName}' is already inactive.");
+            throw new ValidationException(
+                $"Vocabulary '{vocabulary.VocabularyName}' is already inactive — no action needed.",
+                "Message_Vocabulary_AlreadyInactive",
+                vocabulary.VocabularyName);
 
         // Check if any active entities use codes from this vocabulary
         var entityCount = await _unitOfWork.Vocabularies
@@ -51,9 +61,10 @@ public class DeactivateVocabularyCommandHandler : IRequestHandler<DeactivateVoca
 
         if (entityCount > 0)
             throw new ValidationException(
-                $"Cannot deactivate vocabulary '{vocabulary.VocabularyName}'. " +
-                $"{entityCount} active entities use its codes. " +
-                $"Deprecate individual codes instead of deactivating the entire vocabulary.");
+                $"Vocabulary '{vocabulary.VocabularyName}' cannot be deactivated while {entityCount} active records still reference its codes. " +
+                $"Create a new vocabulary version and deprecate the codes individually (isDeprecated=true), or migrate the dependent records first.",
+                "Message_Vocabulary_HasActiveDependencies",
+                vocabulary.VocabularyName, entityCount);
 
         vocabulary.Deactivate(currentUserId);
 

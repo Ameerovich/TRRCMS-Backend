@@ -94,6 +94,22 @@ public class GlobalExceptionHandlingMiddleware
 
     private string L(string key) => _localizer[key].Value;
 
+    /// <summary>
+    /// If the exception carries an <see cref="ILocalizableException.LocalizationKey"/> and the
+    /// current culture is Arabic, resolves it via the localizer (with format args). Otherwise
+    /// returns <paramref name="fallback"/> so legacy callers keep their existing behaviour.
+    /// </summary>
+    private string LocalizedOr(ILocalizableException ex, bool isArabic, string fallback)
+    {
+        if (!isArabic || string.IsNullOrEmpty(ex.LocalizationKey))
+            return fallback;
+
+        var template = _localizer[ex.LocalizationKey].Value;
+        return ex.LocalizationArgs.Length > 0
+            ? string.Format(template, ex.LocalizationArgs)
+            : template;
+    }
+
     private (HttpStatusCode, ErrorResponse) BuildResponse(
         HttpContext context, Exception exception, bool isArabic)
     {
@@ -105,7 +121,7 @@ public class GlobalExceptionHandlingMiddleware
                 {
                     Status = (int)HttpStatusCode.BadRequest,
                     Title = L("Title_ValidationFailed"),
-                    Message = L("Message_ValidationFailed_WithErrors"),
+                    Message = LocalizedOr(validationEx, isArabic, L("Message_ValidationFailed_WithErrors")),
                     Detail = isArabic ? validationEx.Message : null,
                     Errors = validationEx.Errors
                 }),
@@ -116,7 +132,7 @@ public class GlobalExceptionHandlingMiddleware
                 {
                     Status = (int)HttpStatusCode.BadRequest,
                     Title = L("Title_ValidationFailed"),
-                    Message = isArabic ? L("Message_ValidationFailed") : validationEx.Message,
+                    Message = LocalizedOr(validationEx, isArabic, isArabic ? L("Message_ValidationFailed") : validationEx.Message),
                     Detail = isArabic ? validationEx.Message : null
                 }),
 
@@ -126,7 +142,7 @@ public class GlobalExceptionHandlingMiddleware
                 {
                     Status = (int)HttpStatusCode.NotFound,
                     Title = L("Title_NotFound"),
-                    Message = isArabic ? L("Message_NotFound") : notFoundEx.Message,
+                    Message = LocalizedOr(notFoundEx, isArabic, isArabic ? L("Message_NotFound") : notFoundEx.Message),
                     Detail = isArabic ? notFoundEx.Message : null
                 }),
 
@@ -168,7 +184,7 @@ public class GlobalExceptionHandlingMiddleware
                 {
                     Status = (int)HttpStatusCode.Conflict,
                     Title = L("Title_Conflict"),
-                    Message = isArabic ? L("Message_Conflict") : conflictEx.Message,
+                    Message = LocalizedOr(conflictEx, isArabic, isArabic ? L("Message_Conflict") : conflictEx.Message),
                     Detail = isArabic ? conflictEx.Message : null,
                     ConflictData = conflictEx.ConflictData
                 }),

@@ -1,5 +1,7 @@
 using AutoMapper;
 using MediatR;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Text.Json;
 using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Common.Exceptions;
@@ -19,23 +21,31 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
+    private readonly ILogger<UpdateClaimCommandHandler> _logger;
 
     public UpdateClaimCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<UpdateClaimCommandHandler> logger)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<UpdateClaimResultDto> Handle(
         UpdateClaimCommand request,
         CancellationToken cancellationToken)
     {
+        // Per-step timing to diagnose hangs reported behind ngrok/proxy.
+        var sw = Stopwatch.StartNew();
+        void Lap(string label) => _logger.LogInformation("UpdateClaim timing | {Step} | t+{Ms}ms", label, sw.ElapsedMilliseconds);
+        Lap("handler.start");
+
         // 1. Authenticate
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
@@ -43,6 +53,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
         // 2. Load claim
         var claim = await _unitOfWork.Claims.GetByIdAsync(request.ClaimId, cancellationToken)
             ?? throw new NotFoundException($"Claim with ID {request.ClaimId} not found");
+        Lap("claim.loaded");
 
         // 3. Find or create source relation
         var relation = await _unitOfWork.PersonPropertyRelations
@@ -288,7 +299,9 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
 
         // 10. Persist atomically
         await _unitOfWork.Claims.UpdateAsync(claim, cancellationToken);
+        Lap("claim.update.staged");
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        Lap("saveChanges.done");
 
         // 11. Audit log
         var newValues = new
@@ -318,6 +331,7 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
             newValues: JsonSerializer.Serialize(newValues),
             changedFields: string.Join(", ", changedFields),
             cancellationToken: cancellationToken);
+        Lap("audit.done");
 
         // 12. Build result
         var claimDto = _mapper.Map<ClaimDto>(claim);
@@ -328,6 +342,8 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
         var finalActiveLinks = (await _unitOfWork.EvidenceRelations
             .GetActiveByRelationIdAsync(relation.Id, cancellationToken)).ToList();
         claimDto.EvidenceIds = finalActiveLinks.Select(er => er.EvidenceId).ToList();
+        Lap("dto.built");
+        _logger.LogInformation("UpdateClaim completed in {TotalMs}ms (claimId={ClaimId})", sw.ElapsedMilliseconds, request.ClaimId);
 
         return new UpdateClaimResultDto
         {

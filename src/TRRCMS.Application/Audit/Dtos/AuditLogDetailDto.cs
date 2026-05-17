@@ -7,7 +7,17 @@ public class AuditLogDetailDto
     public DateTime Timestamp { get; set; }
 
     public int ActionType { get; set; }
+
+    /// <summary>C# enum name (e.g. "Create", "Login"). Stable across releases.</summary>
     public string ActionTypeName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Arabic verb label sourced from <c>[ArabicLabel]</c> on the
+    /// <c>AuditActionType</c> enum (e.g. "إنشاء", "تسجيل دخول"). Lets the
+    /// dashboard render the verb chip in Arabic without maintaining a parallel
+    /// label map for every enum value.
+    /// </summary>
+    public string ActionTypeNameAr { get; set; } = string.Empty;
     public string ActionDescription { get; set; } = string.Empty;
     public string ActionResult { get; set; } = string.Empty;
 

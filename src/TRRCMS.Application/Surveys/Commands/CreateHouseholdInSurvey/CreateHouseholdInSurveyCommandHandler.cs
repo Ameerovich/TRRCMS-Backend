@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using AutoMapper;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Services;
@@ -19,27 +21,39 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
+    private readonly ILogger<CreateHouseholdInSurveyCommandHandler> _logger;
 
     public CreateHouseholdInSurveyCommandHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IAuditService auditService,
-        IMapper mapper)
+        IMapper mapper,
+        ILogger<CreateHouseholdInSurveyCommandHandler> logger)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<HouseholdDto> Handle(CreateHouseholdInSurveyCommand request, CancellationToken cancellationToken)
     {
+        // Per-step timing — helps diagnose hangs reported behind ngrok/proxy. Lap times
+        // pinpoint which DB call or the audit write is responsible when a request stalls.
+        var sw = Stopwatch.StartNew();
+        long Lap(string label) { var ms = sw.ElapsedMilliseconds; _logger.LogInformation("CreateHousehold timing | {Step} | t+{Ms}ms", label, ms); return ms; }
+
+        Lap("handler.start");
+
         // Get current user
         var currentUserId = _currentUserService.UserId
             ?? throw new UnauthorizedAccessException("User not authenticated");
+        Lap("currentUser.resolved");
 
         // Get and validate survey
         var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken);
+        Lap("survey.fetched");
         if (survey == null)
         {
             throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
@@ -49,6 +63,7 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
         if (survey.FieldCollectorId != currentUserId)
         {
             var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+            Lap("currentUser.dbFetch");
             if (currentUser == null || !currentUser.HasPermission(Permission.Surveys_EditAll))
                 throw new UnauthorizedAccessException("You can only create households for your own surveys");
         }
@@ -68,6 +83,7 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
 
         // Validate property unit exists
         var propertyUnit = await _unitOfWork.PropertyUnits.GetByIdAsync(propertyUnitId.Value, cancellationToken);
+        Lap("propertyUnit.fetched");
         if (propertyUnit == null)
         {
             throw new NotFoundException($"Property unit with ID {propertyUnitId} not found");
@@ -91,7 +107,9 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
 
         // Save household
         await _unitOfWork.Households.AddAsync(household, cancellationToken);
+        Lap("household.added");
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        Lap("saveChanges.done");
 
         // Audit logging
         await _auditService.LogActionAsync(
@@ -112,10 +130,13 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
             changedFields: "New Household in Survey",
             cancellationToken: cancellationToken
         );
+        Lap("audit.done");
 
         // Map to DTO
         var result = _mapper.Map<HouseholdDto>(household);
         result.PropertyUnitIdentifier = propertyUnit.UnitIdentifier;
+        Lap("dto.mapped");
+        _logger.LogInformation("CreateHousehold completed in {TotalMs}ms (surveyId={SurveyId})", sw.ElapsedMilliseconds, request.SurveyId);
 
         return result;
     }

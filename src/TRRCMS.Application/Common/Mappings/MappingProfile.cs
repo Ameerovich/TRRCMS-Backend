@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using TRRCMS.Application.AdministrativeDivisions.Dtos;
+using TRRCMS.Application.Audit;
 using TRRCMS.Application.Audit.Dtos;
 using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Application.Common;
@@ -236,7 +237,8 @@ public class MappingProfile : Profile
         // AuditLog → AuditLogDetailDto (admin feed)
         CreateMap<AuditLog, AuditLogDetailDto>()
             .ForMember(dest => dest.ActionType, opt => opt.MapFrom(src => (int)src.ActionType))
-            .ForMember(dest => dest.ActionTypeName, opt => opt.MapFrom(src => src.ActionType.ToString()));
+            .ForMember(dest => dest.ActionTypeName, opt => opt.MapFrom(src => src.ActionType.ToString()))
+            .ForMember(dest => dest.ActionTypeNameAr, opt => opt.MapFrom(src => AuditActionLabel.Arabic(src.ActionType)));
 
         // AuditLog mappings (for GetUserAuditLog)
         CreateMap<AuditLog, AuditLogDto>()

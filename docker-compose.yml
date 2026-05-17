@@ -49,6 +49,10 @@ services:
       # ASP.NET Core Configuration
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
+      # Honor X-Forwarded-* headers when running behind ngrok / nginx / k8s ingress.
+      # Without this, the app sees the proxy's IP and scheme=http, which breaks the
+      # IpFilterMiddleware and any HTTPS-aware logic.
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
       
       # Database Connection (using docker service name 'db')
       ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=TRRCMS_Dev;Username=postgres;Password=${DB_PASSWORD:-ChangeThisPassword}"

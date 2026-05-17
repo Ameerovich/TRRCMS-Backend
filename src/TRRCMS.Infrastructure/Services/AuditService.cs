@@ -387,10 +387,37 @@ public class AuditService : IAuditService
     }
 
     /// <summary>
-    /// Generate next sequential audit log number
+    /// Generate the next sequential audit log number.
+    ///
+    /// Primary path: <c>SELECT nextval('audit_log_number_seq')</c> — atomic, non-blocking,
+    /// race-free even under concurrent SaveChanges. The sequence is created at startup by
+    /// <c>WebApplicationExtensions.SeedDatabaseAsync</c> and aligned to the current MAX.
+    ///
+    /// Fallback path: if the sequence is missing (e.g. ran against a snapshot DB that
+    /// predates the startup seed), fall back to <c>MAX(AuditLogNumber)+1</c>. That fallback
+    /// has a known race window but lets the audit write proceed instead of bringing down
+    /// every request, which is preferable since the surrounding catch in
+    /// <see cref="LogActionAsync"/> already swallows audit errors anyway.
     /// </summary>
     private async Task<long> GetNextAuditLogNumberAsync(CancellationToken cancellationToken)
     {
+        try
+        {
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+                await connection.OpenAsync(cancellationToken);
+
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT nextval('audit_log_number_seq')";
+            var result = await cmd.ExecuteScalarAsync(cancellationToken);
+            if (result != null && result != DBNull.Value)
+                return Convert.ToInt64(result);
+        }
+        catch
+        {
+            // Sequence missing or transient DB issue — drop through to MAX+1 fallback.
+        }
+
         var maxNumber = await _context.AuditLogs
             .MaxAsync(a => (long?)a.AuditLogNumber, cancellationToken) ?? 0;
 

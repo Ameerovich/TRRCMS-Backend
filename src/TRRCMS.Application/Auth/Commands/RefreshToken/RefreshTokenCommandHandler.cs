@@ -15,17 +15,20 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
     private readonly IUserRepository _userRepository;
     private readonly ITokenService _tokenService;
     private readonly IConfiguration _configuration;
+    private readonly ISecurityPolicyRepository _securityPolicyRepository;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
         IUserRepository userRepository,
         ITokenService tokenService,
         IConfiguration configuration,
+        ISecurityPolicyRepository securityPolicyRepository,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _userRepository = userRepository;
         _tokenService = tokenService;
         _configuration = configuration;
+        _securityPolicyRepository = securityPolicyRepository;
         _logger = logger;
     }
 
@@ -80,13 +83,19 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
                 "You must change your password before continuing. Please login and change your password.");
         }
 
-        // Step 5: Generate new tokens
-        var newAccessToken = _tokenService.GenerateAccessToken(user, request.DeviceId);
+        // Step 5: Generate new tokens.
+        // Access-token lifetime is sourced from the active security policy's SessionTimeoutMinutes
+        // so admin changes to the session timeout actually take effect on refresh.
+        var policy = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
+        int accessTokenExpirationMinutes = policy?.SessionLockoutPolicy.SessionTimeoutMinutes
+            ?? int.Parse(_configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
+
+        var newAccessToken = _tokenService.GenerateAccessToken(
+            user, request.DeviceId,
+            isPasswordChangeOnly: false,
+            overrideExpirationMinutes: accessTokenExpirationMinutes);
         var newRefreshToken = _tokenService.GenerateRefreshToken();
 
-        // Get token expiration settings
-        int accessTokenExpirationMinutes = int.Parse(
-            _configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
         int refreshTokenExpirationDays = int.Parse(
             _configuration["JwtSettings:RefreshTokenExpirationDays"] ?? "7");
 

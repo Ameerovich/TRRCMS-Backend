@@ -41,6 +41,27 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
 
     public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        // Fetch active policy once. Lockout, password auth toggle, and session timeout
+        // all read from this single snapshot so a mid-handler policy change can't cause
+        // inconsistent decisions.
+        var policy = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
+
+        // Step 0: Honor the AllowPasswordAuthentication toggle on the active access-control policy.
+        // (If false, password sign-in is gated off by admin — surface a clear message rather than
+        // a generic 401, so the user can switch to whichever method is enabled instead.)
+        if (policy != null && !policy.AccessControlPolicy.AllowPasswordAuthentication)
+        {
+            _logger.LogWarning("Login attempt while password auth is disabled by policy v{Version}", policy.Version);
+            await _auditService.LogSecurityActionAsync(
+                AuditActionType.LoginFailed,
+                $"Login blocked: password authentication disabled by security policy",
+                isSecuritySensitive: true,
+                cancellationToken);
+            throw new InvalidCredentialsException(
+                "Message_PasswordAuthDisabled",
+                "Password sign-in is currently disabled by the security policy.");
+        }
+
         // Step 1: Find user by username
         var user = await _userRepository.GetByUsernameAsync(request.Username, cancellationToken);
 
@@ -109,7 +130,6 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         if (!isPasswordValid)
         {
             // Record failed login attempt using active security policy lockout settings
-            var policy = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
             int maxAttempts = policy?.SessionLockoutPolicy.MaxFailedLoginAttempts ?? 5;
             int lockoutMinutes = policy?.SessionLockoutPolicy.LockoutDurationMinutes ?? 30;
             user.RecordFailedLogin(maxAttempts, lockoutMinutes);
@@ -167,13 +187,19 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
                 "Your password has expired. Please contact your administrator to reset it.");
         }
 
-        // Step 7: Generate tokens
-        var accessToken = _tokenService.GenerateAccessToken(user, request.DeviceId);
+        // Step 7: Generate tokens.
+        // Access-token lifetime comes from the active security policy's SessionTimeoutMinutes
+        // so admin changes via /Vocabularies-style settings UI actually take effect.
+        // JwtSettings:AccessTokenExpirationMinutes remains the boot/no-policy fallback.
+        int accessTokenExpirationMinutes = policy?.SessionLockoutPolicy.SessionTimeoutMinutes
+            ?? int.Parse(_configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
+
+        var accessToken = _tokenService.GenerateAccessToken(
+            user, request.DeviceId,
+            isPasswordChangeOnly: false,
+            overrideExpirationMinutes: accessTokenExpirationMinutes);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
-        // Get token expiration settings
-        int accessTokenExpirationMinutes = int.Parse(
-            _configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
         int refreshTokenExpirationDays = int.Parse(
             _configuration["JwtSettings:RefreshTokenExpirationDays"] ?? "7");
 

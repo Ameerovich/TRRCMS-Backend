@@ -81,6 +81,9 @@
   <data name="Message_PasswordExpired" xml:space="preserve">
     <value>Your password has expired. Please contact your administrator to reset it.</value>
   </data>
+  <data name="Message_PasswordAuthDisabled" xml:space="preserve">
+    <value>Password sign-in is currently disabled by the security policy. Please use another sign-in method or contact your administrator.</value>
+  </data>
   <data name="Message_InvalidRefreshToken" xml:space="preserve">
     <value>Invalid or expired refresh token.</value>
   </data>
@@ -101,5 +104,34 @@
   </data>
   <data name="Message_TokenInvalid" xml:space="preserve">
     <value>Invalid authentication token. Please login again.</value>
+  </data>
+
+  <!-- Vocabulary versioning (400) — specific reasons -->
+  <data name="Message_Vocabulary_NotCurrentVersion" xml:space="preserve">
+    <value>New versions can only be created from the current version of a vocabulary.</value>
+  </data>
+  <data name="Message_Vocabulary_SystemMajorBlocked" xml:space="preserve">
+    <value>System vocabulary '{0}' cannot have new codes added; its values are fixed by the domain. Only 'patch' (label fixes) and 'minor' (deprecations) versions are permitted.</value>
+  </data>
+  <data name="Message_Vocabulary_CodesCannotBeRemoved" xml:space="preserve">
+    <value>Vocabulary codes cannot be removed. Missing from the new version: {0}. Set isDeprecated=true on these codes to deprecate them instead.</value>
+  </data>
+  <data name="Message_Vocabulary_CustomValuesBlocked" xml:space="preserve">
+    <value>Adding new codes requires a major version. The new codes ({0}) cannot be added in a {1} version — only label edits and deprecations are permitted there. Change the version type to 'major' to add the new codes.</value>
+  </data>
+  <data name="Message_Vocabulary_InvalidVersionType" xml:space="preserve">
+    <value>Invalid version type '{0}'. Must be 'minor', 'major', or 'patch'.</value>
+  </data>
+  <data name="Message_Vocabulary_NotFound" xml:space="preserve">
+    <value>Vocabulary with ID '{0}' was not found.</value>
+  </data>
+  <data name="Message_Vocabulary_SystemCannotDeactivate" xml:space="preserve">
+    <value>System vocabulary '{0}' is required by the application and cannot be deactivated. To restrict a specific code, create a new vocabulary version and set isDeprecated=true on that code instead of deactivating the whole vocabulary.</value>
+  </data>
+  <data name="Message_Vocabulary_AlreadyInactive" xml:space="preserve">
+    <value>Vocabulary '{0}' is already inactive — no action needed.</value>
+  </data>
+  <data name="Message_Vocabulary_HasActiveDependencies" xml:space="preserve">
+    <value>Vocabulary '{0}' cannot be deactivated while {1} active records still reference its codes. Create a new vocabulary version and deprecate the codes individually (isDeprecated=true), or migrate the dependent records first.</value>
   </data>
 </root>

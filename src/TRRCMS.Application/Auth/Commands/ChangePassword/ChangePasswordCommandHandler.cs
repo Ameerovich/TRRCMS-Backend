@@ -14,17 +14,20 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditService _auditService;
+    private readonly ISecurityPolicyRepository _securityPolicyRepository;
     private readonly ILogger<ChangePasswordCommandHandler> _logger;
 
     public ChangePasswordCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IAuditService auditService,
+        ISecurityPolicyRepository securityPolicyRepository,
         ILogger<ChangePasswordCommandHandler> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _auditService = auditService;
+        _securityPolicyRepository = securityPolicyRepository;
         _logger = logger;
     }
 
@@ -80,6 +83,11 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         // Step 7: Update user password (this invalidates all existing tokens via SecurityStamp)
         user.ChangePassword(newPasswordHash, newSalt, request.ModifiedByUserId);
+
+        // Step 7b: Re-stamp password expiry from the active SecurityPolicy (0 days = never expires).
+        var activePolicy = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
+        int expiryDays = activePolicy?.PasswordPolicy.ExpiryDays ?? 0;
+        user.SetPasswordExpiry(expiryDays, request.ModifiedByUserId);
 
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);

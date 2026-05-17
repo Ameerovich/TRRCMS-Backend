@@ -125,15 +125,48 @@ public class ResolveConflictCommandHandler
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var resolutionDetail = BuildResolutionDescription(conflict, request.Action, mergedEntityId, discardedEntityId);
         await _auditService.LogActionAsync(
             AuditActionType.ConflictResolved,
-            $"Conflict {conflict.ConflictNumber} resolved with action '{request.Action}'.",
+            $"Conflict {conflict.ConflictNumber} resolved with action '{request.Action}'. {resolutionDetail}",
             entityType: "ConflictResolution",
             entityId: conflict.Id,
             entityIdentifier: conflict.ConflictNumber,
             cancellationToken: cancellationToken);
 
         return MapToDetailDto(conflict);
+    }
+
+    /// <summary>
+    /// Builds a human-readable suffix for the audit description that names the
+    /// surviving / discarded entities using <see cref="Domain.Entities.ConflictResolution.FirstEntityIdentifier"/>
+    /// instead of raw GUIDs (e.g. "Master: محمد أحمد (1234567890), Discarded: …").
+    /// Returns an empty string for actions that don't have a master/discarded pair.
+    /// </summary>
+    private static string BuildResolutionDescription(
+        Domain.Entities.ConflictResolution conflict,
+        ConflictResolutionAction action,
+        Guid? mergedEntityId,
+        Guid? discardedEntityId)
+    {
+        if (action == ConflictResolutionAction.Ignored)
+            return string.Empty;
+
+        if (mergedEntityId is null && discardedEntityId is null)
+            return string.Empty;
+
+        var master = mergedEntityId.HasValue ? IdentifierFor(conflict, mergedEntityId.Value) : "—";
+        var discarded = discardedEntityId.HasValue ? IdentifierFor(conflict, discardedEntityId.Value) : "—";
+        return $"Master: {master}, Discarded: {discarded}.";
+    }
+
+    private static string IdentifierFor(Domain.Entities.ConflictResolution conflict, Guid entityId)
+    {
+        if (entityId == conflict.FirstEntityId && !string.IsNullOrWhiteSpace(conflict.FirstEntityIdentifier))
+            return conflict.FirstEntityIdentifier!;
+        if (entityId == conflict.SecondEntityId && !string.IsNullOrWhiteSpace(conflict.SecondEntityIdentifier))
+            return conflict.SecondEntityIdentifier!;
+        return entityId.ToString();
     }
 
     /// <summary>

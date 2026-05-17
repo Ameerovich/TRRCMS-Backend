@@ -72,7 +72,7 @@
   <data name="Username_InvalidChars"><value>اسم المستخدم يمكن أن يحتوي فقط على أحرف وأرقام وشرطات سفلية</value></data>
   <data name="Password_Required"><value>كلمة المرور مطلوبة</value></data>
   <data name="Password_MaxLength128"><value>كلمة المرور لا يمكن أن تتجاوز 128 حرف</value></data>
-  <data name="Password_MinLength8"><value>كلمة المرور يجب أن تكون 8 أحرف على الأقل</value></data>
+  <data name="Password_MinLength"><value>كلمة المرور يجب أن تكون {0} أحرف على الأقل</value></data>
   <data name="Password_RequireUpper"><value>كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل</value></data>
   <data name="Password_RequireLower"><value>كلمة المرور يجب أن تحتوي على حرف صغير واحد على الأقل</value></data>
   <data name="Password_RequireDigit"><value>كلمة المرور يجب أن تحتوي على رقم واحد على الأقل</value></data>

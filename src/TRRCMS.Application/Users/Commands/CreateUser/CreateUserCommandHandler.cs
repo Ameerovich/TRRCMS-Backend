@@ -19,6 +19,7 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserD
     private readonly IPasswordHasher _passwordHasher;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
+    private readonly ISecurityPolicyRepository _securityPolicyRepository;
     private readonly IMapper _mapper;
 
     public CreateUserCommandHandler(
@@ -26,12 +27,14 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserD
         IPasswordHasher passwordHasher,
         ICurrentUserService currentUserService,
         IAuditService auditService,
+        ISecurityPolicyRepository securityPolicyRepository,
         IMapper mapper)
     {
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
+        _securityPolicyRepository = securityPolicyRepository ?? throw new ArgumentNullException(nameof(securityPolicyRepository));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
 
@@ -89,6 +92,11 @@ public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, UserD
             jobTitle: request.JobTitle,
             modifiedByUserId: currentUserId
         );
+
+        // Stamp password expiry from the active SecurityPolicy (0 days = never expires).
+        var activePolicy = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
+        int expiryDays = activePolicy?.PasswordPolicy.ExpiryDays ?? 0;
+        user.SetPasswordExpiry(expiryDays, currentUserId);
 
         // Grant default permissions based on role
         var defaultPermissions = PermissionSeeder.GetDefaultPermissionsForRole(request.Role);

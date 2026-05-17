@@ -1,19 +1,30 @@
+using System.Text.RegularExpressions;
 using FluentValidation;
 using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
 using TRRCMS.Application;
 using TRRCMS.Domain.Enums;
+using TRRCMS.Domain.ValueObjects;
 
 namespace TRRCMS.Application.Users.Commands.CreateUser;
 
 /// <summary>
 /// Validator for CreateUserCommand
-/// Enforces strong password policy and data integrity
+/// Enforces strong password policy and data integrity.
+/// Password rules are read from the currently active SecurityPolicy so the
+/// admin-configurable values (min length, character-class requirements) actually
+/// apply at validation time instead of being hardcoded.
 /// </summary>
 public class CreateUserCommandValidator : LocalizedValidator<CreateUserCommand>
 {
-    public CreateUserCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
+    private readonly ISecurityPolicyRepository _securityPolicyRepository;
+
+    public CreateUserCommandValidator(
+        IStringLocalizer<ValidationMessages> localizer,
+        ISecurityPolicyRepository securityPolicyRepository) : base(localizer)
     {
+        _securityPolicyRepository = securityPolicyRepository;
         RuleFor(x => x.Username)
             .NotEmpty().WithMessage(L("Username_Required"))
             .Length(3, 50).WithMessage(L("Username_Length3to50"))
@@ -40,14 +51,10 @@ public class CreateUserCommandValidator : LocalizedValidator<CreateUserCommand>
         RuleFor(x => x.Role)
             .IsInEnum().WithMessage(L("UserRole_Invalid"));
 
-        // Strong password policy
+        // Strong password policy — dynamic, sourced from the active SecurityPolicy.
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage(L("Password_Required"))
-            .MinimumLength(8).WithMessage(L("Password_MinLength8"))
-            .Matches(@"[A-Z]").WithMessage(L("Password_RequireUpper"))
-            .Matches(@"[a-z]").WithMessage(L("Password_RequireLower"))
-            .Matches(@"[0-9]").WithMessage(L("Password_RequireDigit"))
-            .Matches(@"[^a-zA-Z0-9]").WithMessage(L("Password_RequireSpecial"));
+            .CustomAsync(ValidateAgainstActivePasswordPolicyAsync);
 
         RuleFor(x => x.Organization)
             .MaximumLength(100).WithMessage(L("Organization_MaxLength100"))
@@ -65,5 +72,31 @@ public class CreateUserCommandValidator : LocalizedValidator<CreateUserCommand>
         RuleFor(x => x)
             .Must(x => x.HasMobileAccess || x.HasDesktopAccess)
             .WithMessage(L("User_RequireAccess"));
+    }
+
+    private async Task ValidateAgainstActivePasswordPolicyAsync(
+        string password,
+        FluentValidation.ValidationContext<CreateUserCommand> ctx,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(password)) return; // NotEmpty rule already reported this
+
+        var active = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
+        var policy = active?.PasswordPolicy ?? PasswordPolicy.Default();
+
+        if (password.Length < policy.MinLength)
+            ctx.AddFailure("Password", L("Password_MinLength", policy.MinLength));
+
+        if (policy.RequireUppercase && !Regex.IsMatch(password, "[A-Z]"))
+            ctx.AddFailure("Password", L("Password_RequireUpper"));
+
+        if (policy.RequireLowercase && !Regex.IsMatch(password, "[a-z]"))
+            ctx.AddFailure("Password", L("Password_RequireLower"));
+
+        if (policy.RequireDigit && !Regex.IsMatch(password, "[0-9]"))
+            ctx.AddFailure("Password", L("Password_RequireDigit"));
+
+        if (policy.RequireSpecialCharacter && !Regex.IsMatch(password, "[^a-zA-Z0-9]"))
+            ctx.AddFailure("Password", L("Password_RequireSpecial"));
     }
 }

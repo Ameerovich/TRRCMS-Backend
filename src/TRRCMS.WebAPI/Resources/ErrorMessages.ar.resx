@@ -81,6 +81,9 @@
   <data name="Message_PasswordExpired" xml:space="preserve">
     <value>انتهت صلاحية كلمة المرور. يرجى التواصل مع المسؤول لإعادة تعيينها.</value>
   </data>
+  <data name="Message_PasswordAuthDisabled" xml:space="preserve">
+    <value>تسجيل الدخول بكلمة المرور معطّل حالياً من قِبل سياسة الأمان. يرجى استخدام طريقة دخول أخرى أو التواصل مع المسؤول.</value>
+  </data>
   <data name="Message_InvalidRefreshToken" xml:space="preserve">
     <value>رمز التحديث غير صالح أو منتهي الصلاحية.</value>
   </data>
@@ -101,5 +104,34 @@
   </data>
   <data name="Message_TokenInvalid" xml:space="preserve">
     <value>رمز المصادقة غير صالح. يرجى تسجيل الدخول مجدداً.</value>
+  </data>
+
+  <!-- Vocabulary versioning (400) — specific reasons -->
+  <data name="Message_Vocabulary_NotCurrentVersion" xml:space="preserve">
+    <value>لا يمكن إنشاء إصدار جديد إلا من الإصدار الحالي للقاموس.</value>
+  </data>
+  <data name="Message_Vocabulary_SystemMajorBlocked" xml:space="preserve">
+    <value>القاموس النظامي '{0}' لا يقبل إضافة رموز جديدة؛ قيمه ثابتة في النموذج. يُسمح فقط بإصدارات 'patch' (تصحيح التسميات) و'minor' (الإهمال).</value>
+  </data>
+  <data name="Message_Vocabulary_CodesCannotBeRemoved" xml:space="preserve">
+    <value>لا يمكن حذف رموز القاموس. الرموز التالية مفقودة من الإصدار الجديد: {0}. لإهمالها، اضبط isDeprecated=true عليها بدلاً من الحذف.</value>
+  </data>
+  <data name="Message_Vocabulary_CustomValuesBlocked" xml:space="preserve">
+    <value>إضافة رموز جديدة تتطلب إصداراً رئيسياً (major). الرموز الجديدة ({0}) لا يمكن إضافتها في إصدار من نوع {1}؛ يُسمح في هذا النوع بتعديل التسميات والإهمال فقط. غيّر نوع الإصدار إلى رئيسي (major) لإضافة الرموز الجديدة.</value>
+  </data>
+  <data name="Message_Vocabulary_InvalidVersionType" xml:space="preserve">
+    <value>نوع إصدار غير صالح '{0}'. يجب أن يكون 'minor' أو 'major' أو 'patch'.</value>
+  </data>
+  <data name="Message_Vocabulary_NotFound" xml:space="preserve">
+    <value>لم يتم العثور على القاموس بالمعرّف '{0}'.</value>
+  </data>
+  <data name="Message_Vocabulary_SystemCannotDeactivate" xml:space="preserve">
+    <value>القاموس النظامي '{0}' مطلوب لعمل التطبيق ولا يمكن إلغاء تفعيله. لحظر رمز معيّن، أنشئ إصداراً جديداً واضبط isDeprecated=true على ذلك الرمز بدلاً من إلغاء تفعيل القاموس بأكمله.</value>
+  </data>
+  <data name="Message_Vocabulary_AlreadyInactive" xml:space="preserve">
+    <value>القاموس '{0}' غير مفعّل أصلاً — لا حاجة لإجراء.</value>
+  </data>
+  <data name="Message_Vocabulary_HasActiveDependencies" xml:space="preserve">
+    <value>لا يمكن إلغاء تفعيل القاموس '{0}' لأن {1} سجلاً نشطاً ما زال يستخدم رموزه. أنشئ إصداراً جديداً وأهمل الرموز بشكل فردي (isDeprecated=true)، أو حدّث السجلات المعتمدة عليها أولاً.</value>
   </data>
 </root>

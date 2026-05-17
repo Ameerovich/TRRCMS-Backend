@@ -484,6 +484,24 @@ public class User : BaseAuditableEntity
 
         return DateTime.UtcNow > PasswordExpiryDate.Value;
     }
+
+    /// <summary>
+    /// Stamp the password expiry date based on the active password policy.
+    /// Pass <paramref name="expiryDays"/> = 0 to mean "never expires" (clears the date).
+    /// Called by user-creation and change-password flows so the configured ExpiryDays actually applies.
+    /// </summary>
+    public void SetPasswordExpiry(int expiryDays, Guid modifiedByUserId)
+    {
+        if (expiryDays <= 0)
+        {
+            PasswordExpiryDate = null;
+        }
+        else
+        {
+            PasswordExpiryDate = DateTime.UtcNow.AddDays(expiryDays);
+        }
+        MarkAsModified(modifiedByUserId);
+    }
     /// <summary>
     /// Check if user has a specific permission
     /// </summary>

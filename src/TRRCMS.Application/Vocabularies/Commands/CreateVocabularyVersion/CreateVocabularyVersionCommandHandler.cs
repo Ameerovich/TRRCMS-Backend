@@ -41,13 +41,17 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
             ?? throw new NotFoundException($"Vocabulary with ID '{request.VocabularyId}' not found.");
 
         if (!vocabulary.IsCurrentVersion)
-            throw new ValidationException("Can only create new versions from the current version of a vocabulary.");
+            throw new ValidationException(
+                "Can only create new versions from the current version of a vocabulary.",
+                "Message_Vocabulary_NotCurrentVersion");
 
         if (vocabulary.IsSystemVocabulary && request.VersionType.ToLowerInvariant() == "major")
             throw new ValidationException(
                 $"System vocabulary '{vocabulary.VocabularyName}' cannot have new codes added. " +
                 "Its values are fixed by the domain model. " +
-                "Only 'patch' (label fixes) and 'minor' (deprecations) versions are permitted.");
+                "Only 'patch' (label fixes) and 'minor' (deprecations) versions are permitted.",
+                "Message_Vocabulary_SystemMajorBlocked",
+                vocabulary.VocabularyName);
 
         // Block code removal — codes can only be deprecated, never removed
         var oldValues = VocabularyMappingHelper.ParseValues(vocabulary.ValuesJson);
@@ -62,10 +66,13 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
                 .Select(v => $"{v.Code} ({v.LabelArabic} / {v.LabelEnglish})")
                 .ToList();
 
+            var removedJoined = string.Join(", ", removedLabels);
             throw new ValidationException(
                 $"Vocabulary codes cannot be removed. The following codes are missing from the new version: " +
-                $"{string.Join(", ", removedLabels)}. " +
-                $"Set isDeprecated=true on these codes instead to deprecate them.");
+                $"{removedJoined}. " +
+                $"Set isDeprecated=true on these codes instead to deprecate them.",
+                "Message_Vocabulary_CodesCannotBeRemoved",
+                removedJoined);
         }
 
         // Enforce AllowCustomValues — if false, block new codes on minor/patch versions
@@ -74,10 +81,14 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
             var addedCodes = newCodes.Except(oldCodes).ToList();
             if (addedCodes.Any())
             {
+                var addedJoined = string.Join(", ", addedCodes);
                 throw new ValidationException(
-                    $"This vocabulary does not allow custom values. " +
-                    $"New codes ({string.Join(", ", addedCodes)}) cannot be added in a {request.VersionType} version. " +
-                    $"Only label changes and deprecation are permitted. Use a major version to add new codes.");
+                    $"Adding new codes requires a major version. " +
+                    $"The new codes ({addedJoined}) cannot be added in a {request.VersionType} version — " +
+                    $"only label edits and deprecations are permitted there. " +
+                    $"Change the version type to 'major' to add the new codes.",
+                    "Message_Vocabulary_CustomValuesBlocked",
+                    addedJoined, request.VersionType);
             }
         }
 
@@ -90,7 +101,10 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
             "minor" => vocabulary.CreateMinorVersion(valuesJson, request.ChangeLog, currentUserId),
             "major" => vocabulary.CreateMajorVersion(valuesJson, request.ChangeLog, currentUserId),
             "patch" => vocabulary.CreatePatchVersion(valuesJson, request.ChangeLog, currentUserId),
-            _ => throw new ValidationException($"Invalid version type '{request.VersionType}'. Must be 'minor', 'major', or 'patch'.")
+            _ => throw new ValidationException(
+                $"Invalid version type '{request.VersionType}'. Must be 'minor', 'major', or 'patch'.",
+                "Message_Vocabulary_InvalidVersionType",
+                request.VersionType)
         };
 
         // Persist: update old (IsCurrentVersion = false), add new
