@@ -1,5 +1,6 @@
 using AutoMapper;
 using MediatR;
+using TRRCMS.Application.Audit;
 using TRRCMS.Application.Audit.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -27,6 +28,10 @@ public class GetEntityAuditHistoryQueryHandler : IRequestHandler<GetEntityAuditH
             entityId: request.EntityId,
             cancellationToken: cancellationToken);
 
-        return _mapper.Map<List<AuditLogDetailDto>>(logs);
+        var dtos = _mapper.Map<List<AuditLogDetailDto>>(logs);
+        foreach (var dto in dtos)
+            dto.Changes = AuditChangeBuilder.Build(dto.OldValues, dto.NewValues, dto.ChangedFields);
+
+        return dtos;
     }
 }

@@ -29,6 +29,40 @@ public static class WebApplicationExtensions
             await context.Database.MigrateAsync();
             logger.LogInformation("Database migrations applied successfully");
 
+            // Step 0: Ensure the AuditLogs sequence exists.
+            //
+            // Audit entries previously got their AuditLogNumber via `MAX(AuditLogNumber) + 1`,
+            // which races under concurrent writes — two concurrent commits could read the
+            // same MAX and one would fail the unique index. Failures were swallowed by
+            // AuditService's catch block, but the lock contention on the unique index could
+            // still stall a SaveChanges and cause the symptom-stack of 503s frontend reported.
+            //
+            // The sequence is created idempotently (CREATE SEQUENCE IF NOT EXISTS) and aligned
+            // to the current MAX so it never collides with pre-existing rows.
+            try
+            {
+                // setval is only invoked when there's at least one existing row, so an empty
+                // AuditLogs table doesn't waste the value 1 (CREATE SEQUENCE makes nextval() = 1).
+                // Wrapped in a DO block so the whole thing runs as a single statement.
+                await context.Database.ExecuteSqlRawAsync(@"
+                    CREATE SEQUENCE IF NOT EXISTS audit_log_number_seq AS bigint INCREMENT BY 1 MINVALUE 1 START WITH 1;
+                    DO $$
+                    DECLARE current_max bigint;
+                    BEGIN
+                        SELECT MAX(""AuditLogNumber"") INTO current_max FROM ""AuditLogs"";
+                        IF current_max IS NOT NULL AND current_max > 0 THEN
+                            PERFORM setval('audit_log_number_seq', current_max, true);
+                        END IF;
+                    END $$;");
+                logger.LogInformation("AuditLogs sequence ensured and aligned to existing MAX.");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Could not ensure audit_log_number_seq — AuditService will fall back to MAX+1. Reason: {Message}",
+                    ex.Message);
+            }
+
             // Step 1: Seed default users (independent — failure should not block permission sync)
             try
             {

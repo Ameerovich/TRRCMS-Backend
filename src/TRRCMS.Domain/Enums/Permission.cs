@@ -356,4 +356,33 @@ public enum Permission
     [ArabicLabel("إدارة المعالم")]
     Landmarks_Manage = 9020,
 
+    /// <summary>
+    /// View reports catalog and metadata (Administrator, DataManager, FieldSupervisor, Analyst)
+    /// </summary>
+    [ArabicLabel("عرض التقارير")]
+    Reports_View = 8600,
+
+    /// <summary>
+    /// Generate and download the survey activity report (Administrator, DataManager, FieldSupervisor, Analyst)
+    /// </summary>
+    [ArabicLabel("تقرير نشاط المسوحات")]
+    Reports_ExportSurveys = 8601,
+
+    /// <summary>
+    /// Generate and download the building & property inventory report (Administrator, DataManager, Analyst)
+    /// </summary>
+    [ArabicLabel("تقرير المباني والوحدات")]
+    Reports_ExportBuildings = 8602,
+
+    /// <summary>
+    /// Generate and download the import pipeline report (Administrator, DataManager)
+    /// </summary>
+    [ArabicLabel("تقرير الاستيراد")]
+    Reports_ExportImports = 8603,
+
+    /// <summary>
+    /// Generate and download the audit export report (Administrator, DataManager)
+    /// </summary>
+    [ArabicLabel("تقرير السجل التدقيقي")]
+    Reports_ExportAudit = 8604,
 }

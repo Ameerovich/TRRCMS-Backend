@@ -30,6 +30,7 @@ using TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 using TRRCMS.Application.Surveys.Commands.UploadIdentificationDocument;
 using TRRCMS.Application.Surveys.Commands.UploadPropertyPhoto;
 using TRRCMS.Application.Surveys.Commands.UpdateIdentificationDocument;
+using TRRCMS.Application.Surveys.Commands.DeleteIdentificationDocument;
 using TRRCMS.Application.IdentificationDocuments.Dtos;
 using TRRCMS.Application.IdentificationDocuments.Queries.GetIdentificationDocumentsByPerson;
 using TRRCMS.Application.Surveys.Commands.UpdatePersonInSurvey;
@@ -2322,6 +2323,51 @@ public class SurveysController : ControllerBase
         var query = new GetIdentificationDocumentsByPersonQuery(personId);
         var result = await _mediator.Send(query);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Delete identification document (soft delete + physical file removal)
+    /// حذف وثيقة التعريف
+    /// </summary>
+    /// <remarks>
+    /// **Purpose**: Soft-deletes an identification document and removes the physical file from storage.
+    ///
+    /// **What it does**:
+    /// - Marks the IdentificationDocument as deleted (soft delete via IsDeleted)
+    /// - Removes the underlying file from storage
+    /// - Writes an audit log entry
+    ///
+    /// **Constraints**:
+    /// - Survey must be in Draft status
+    /// - Caller must own the survey, or hold `Surveys_EditAll`
+    /// - Document's person must belong to a household whose property unit is in this survey's building
+    ///
+    /// **Required permissions**: CanEditOwnSurveys
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="documentId">Identification document ID to delete</param>
+    /// <returns>No content on success</returns>
+    /// <response code="204">Document deleted successfully.</response>
+    /// <response code="400">Survey not in Draft status, or document does not belong to this survey.</response>
+    /// <response code="401">Not authenticated.</response>
+    /// <response code="403">Not authorized.</response>
+    /// <response code="404">Survey or document not found.</response>
+    [HttpDelete("{surveyId}/evidence/identification/{documentId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteIdentificationDocument(Guid surveyId, Guid documentId)
+    {
+        var command = new DeleteIdentificationDocumentCommand
+        {
+            SurveyId = surveyId,
+            DocumentId = documentId
+        };
+        await _mediator.Send(command);
+        return NoContent();
     }
 
     /// <summary>

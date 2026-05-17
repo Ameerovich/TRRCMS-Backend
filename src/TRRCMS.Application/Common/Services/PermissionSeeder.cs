@@ -98,7 +98,13 @@ public static class PermissionSeeder
             Permission.System_Backup,
             Permission.System_Restore,
             Permission.System_Sync,   // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
-            Permission.Landmarks_Manage
+            Permission.Landmarks_Manage,
+
+            Permission.Reports_View,
+            Permission.Reports_ExportSurveys,
+            Permission.Reports_ExportBuildings,
+            Permission.Reports_ExportImports,
+            Permission.Reports_ExportAudit
         };
     }
 
@@ -158,7 +164,13 @@ public static class PermissionSeeder
             Permission.System_Import,
             Permission.System_Export,
             Permission.Audit_ViewAll,
-            Permission.Landmarks_Manage
+            Permission.Landmarks_Manage,
+
+            Permission.Reports_View,
+            Permission.Reports_ExportSurveys,
+            Permission.Reports_ExportBuildings,
+            Permission.Reports_ExportImports,
+            Permission.Reports_ExportAudit
         };
     }
 
@@ -205,7 +217,10 @@ public static class PermissionSeeder
 
             Permission.Dashboard_View,
 
-            Permission.System_Sync
+            Permission.System_Sync,
+
+            Permission.Reports_View,
+            Permission.Reports_ExportSurveys
         };
     }
 
@@ -273,7 +288,12 @@ public static class PermissionSeeder
             Permission.Dashboard_View,
 
             Permission.System_Export,
-            Permission.Audit_ViewAll
+            Permission.Audit_ViewAll,
+
+            Permission.Reports_View,
+            Permission.Reports_ExportSurveys,
+            Permission.Reports_ExportBuildings,
+            Permission.Reports_ExportAudit
         };
     }
 }

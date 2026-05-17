@@ -120,10 +120,12 @@ public class MergeConflictCommandHandler
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var entityTypeLabel = conflict.EntityType == "Person" ? "person" : "property unit";
+        var masterIdentifier = IdentifierFor(conflict, mergeResult.MasterEntityId);
+        var discardedIdentifier = IdentifierFor(conflict, mergeResult.DiscardedEntityId);
         await _auditService.LogActionAsync(
             AuditActionType.Merge,
             $"Conflict {conflict.ConflictNumber}: merged {entityTypeLabel} records. " +
-            $"Master: {mergeResult.MasterEntityId}, Discarded: {mergeResult.DiscardedEntityId}. " +
+            $"Master: {masterIdentifier}, Discarded: {discardedIdentifier}. " +
             $"References updated: {mergeResult.ReferencesUpdated}.",
             entityType: "ConflictResolution",
             entityId: conflict.Id,
@@ -154,6 +156,21 @@ public class MergeConflictCommandHandler
             package.MarkConflictsResolved(userId);
             await _unitOfWork.ImportPackages.UpdateAsync(package, cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Maps a side ID (master or discarded) back to the human-readable identifier
+    /// already stored on the conflict (e.g. "محمد أحمد (1234567890)"). Falls back
+    /// to the GUID only when the ID matches neither side — should not happen in
+    /// practice but keeps the audit message non-empty if it ever does.
+    /// </summary>
+    private static string IdentifierFor(Domain.Entities.ConflictResolution conflict, Guid entityId)
+    {
+        if (entityId == conflict.FirstEntityId && !string.IsNullOrWhiteSpace(conflict.FirstEntityIdentifier))
+            return conflict.FirstEntityIdentifier!;
+        if (entityId == conflict.SecondEntityId && !string.IsNullOrWhiteSpace(conflict.SecondEntityIdentifier))
+            return conflict.SecondEntityIdentifier!;
+        return entityId.ToString();
     }
 
     private static ConflictDetailDto MapToDetailDto(Domain.Entities.ConflictResolution c)

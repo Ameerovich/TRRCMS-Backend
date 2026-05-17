@@ -7,7 +7,17 @@ public class AuditLogDetailDto
     public DateTime Timestamp { get; set; }
 
     public int ActionType { get; set; }
+
+    /// <summary>C# enum name (e.g. "Create", "Login"). Stable across releases.</summary>
     public string ActionTypeName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Arabic verb label sourced from <c>[ArabicLabel]</c> on the
+    /// <c>AuditActionType</c> enum (e.g. "إنشاء", "تسجيل دخول"). Lets the
+    /// dashboard render the verb chip in Arabic without maintaining a parallel
+    /// label map for every enum value.
+    /// </summary>
+    public string ActionTypeNameAr { get; set; } = string.Empty;
     public string ActionDescription { get; set; } = string.Empty;
     public string ActionResult { get; set; } = string.Empty;
 
@@ -22,7 +32,23 @@ public class AuditLogDetailDto
 
     public string? OldValues { get; set; }
     public string? NewValues { get; set; }
+
+    /// <summary>
+    /// Comma-separated list of changed field names (legacy hint).
+    /// Semantics:
+    ///   <c>null</c>  → not tracked for this entry (e.g. Create/Delete or older logs).
+    ///   <c>""</c>    → tracked but no scalar field changes detected.
+    ///   populated → authoritative list of changed field names.
+    /// Prefer <see cref="Changes"/> for rendering; this remains for backward-compat.
+    /// </summary>
     public string? ChangedFields { get; set; }
+
+    /// <summary>
+    /// Structured per-field diff parsed from <see cref="OldValues"/> /
+    /// <see cref="NewValues"/>. Empty when the entry has no JSON payload
+    /// (e.g. Login, View, Delete).
+    /// </summary>
+    public List<AuditChangeDto> Changes { get; set; } = new();
 
     public string? IpAddress { get; set; }
     public string? SourceApplication { get; set; }

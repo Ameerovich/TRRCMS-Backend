@@ -72,7 +72,7 @@
   <data name="Username_InvalidChars"><value>Username can only contain letters, numbers, and underscores</value></data>
   <data name="Password_Required"><value>Password is required</value></data>
   <data name="Password_MaxLength128"><value>Password cannot exceed 128 characters</value></data>
-  <data name="Password_MinLength8"><value>Password must be at least 8 characters</value></data>
+  <data name="Password_MinLength"><value>Password must be at least {0} characters</value></data>
   <data name="Password_RequireUpper"><value>Password must contain at least one uppercase letter</value></data>
   <data name="Password_RequireLower"><value>Password must contain at least one lowercase letter</value></data>
   <data name="Password_RequireDigit"><value>Password must contain at least one digit</value></data>

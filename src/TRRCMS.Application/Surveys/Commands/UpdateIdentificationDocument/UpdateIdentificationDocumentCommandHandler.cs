@@ -101,6 +101,7 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
         }
 
         // Update file if provided (in-place, no versioning)
+        string? oldFilePathToDelete = null;
         if (request.File != null && request.File.Length > 0)
         {
             if (!_fileStorageService.ValidateFileSize(request.File.Length))
@@ -123,6 +124,14 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
             }
 
             var mimeType = _fileStorageService.GetMimeType(request.File.FileName);
+            // Capture old path so we can remove the orphaned blob AFTER the DB save succeeds.
+            // Skip deletion if the new file hashes identically to the old one (same path or same content).
+            var previousFilePath = idDoc.FilePath;
+            if (!string.IsNullOrWhiteSpace(previousFilePath)
+                && !string.Equals(previousFilePath, filePath, StringComparison.OrdinalIgnoreCase))
+            {
+                oldFilePathToDelete = previousFilePath;
+            }
             idDoc.UpdateFileInfo(filePath, request.File.FileName, request.File.Length, mimeType, fileHash, currentUserId);
         }
 
@@ -142,6 +151,19 @@ public class UpdateIdentificationDocumentCommandHandler : IRequestHandler<Update
 
         await _idDocRepository.UpdateAsync(idDoc, cancellationToken);
         await _idDocRepository.SaveChangesAsync(cancellationToken);
+
+        // Best-effort cleanup of the previous file; do not fail the request if storage delete fails.
+        if (oldFilePathToDelete != null)
+        {
+            try
+            {
+                await _fileStorageService.DeleteFileAsync(oldFilePathToDelete, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Could not delete replaced identification document file '{oldFilePathToDelete}': {ex.Message}");
+            }
+        }
 
         var changedFields = new List<string>();
         if (request.PersonId.HasValue) changedFields.Add("PersonId");

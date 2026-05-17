@@ -1,3 +1,4 @@
+using TRRCMS.Application.Audit.Dtos;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
@@ -81,6 +82,32 @@ public interface IAuditService
         AuditActionType? actionType = null,
         int pageNumber = 1,
         int pageSize = 50,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Paged query with the full set of dashboard filters. Returns the page slice
+    /// plus the total count for the envelope. Filters are AND-combined.
+    /// </summary>
+    Task<(List<AuditLog> Items, int TotalCount)> QueryAuditLogsAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        Guid? userId,
+        string? usernameContains,
+        string? entityType,
+        IReadOnlyCollection<AuditActionType>? actionTypes,
+        string? actionResult,
+        bool? isSecuritySensitive,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Aggregated stats over an optional time window for the dashboard overview cards.
+    /// </summary>
+    Task<AuditStatsDto> GetAuditStatsAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        int topUsersLimit,
         CancellationToken cancellationToken = default);
 
     /// <summary>

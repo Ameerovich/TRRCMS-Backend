@@ -454,10 +454,14 @@ public class UsersController : ControllerBase
     /// 
     /// **Effect:**
     /// - Sets `isActive = false`
-    /// - User cannot login
-    /// - Existing sessions are invalidated
-    /// - Permissions remain but are not usable
-    /// 
+    /// - User cannot login or refresh their token
+    /// - All permission-gated endpoints (anything marked `[Authorize(Policy = ...)]`) reject
+    ///   the user immediately, since the policy handler re-checks `IsActive` against the DB on
+    ///   every request. The few endpoints that use bare `[Authorize]` will keep accepting the
+    ///   user's existing access token until it expires (default 60 minutes); they cannot
+    ///   refresh it once expired.
+    /// - Permissions on the account remain stored but are not usable while inactive.
+    ///
     /// **Deactivation Reason Required:**
     /// A reason must be provided for audit trail.
     /// 

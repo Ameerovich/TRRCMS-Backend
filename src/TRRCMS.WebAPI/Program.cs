@@ -1,9 +1,29 @@
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using TRRCMS.WebAPI.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Forwarded-headers config ─────────────────────────────────────
+// When running behind a reverse proxy (ngrok, nginx, Traefik, k8s ingress) the proxy
+// terminates TLS and forwards plain HTTP to our container with the original scheme/IP
+// preserved in X-Forwarded-Proto / X-Forwarded-For. Without UseForwardedHeaders the app
+// sees scheme=http and RemoteIp=<proxy>, which:
+//   - breaks IpFilterMiddleware (it would block real clients while letting the proxy through)
+//   - breaks any generated URLs / scheme-sensitive logic
+//   - can cause infinite HTTPS-redirect loops with reverse proxies that re-issue HTTPS
+//
+// KnownNetworks / KnownProxies are cleared because ngrok and dynamic-IP proxies don't
+// have stable upstream IPs. Trust is therefore enforced by the deployment (only expose
+// 8080 to the trusted proxy network), not by IP allowlist here.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // ── Services ─────────────────────────────────────────────────────
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -120,6 +140,11 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// ── Reporting subsystem bootstrap (QuestPDF license + Arabic font) ──
+TRRCMS.Infrastructure.Reporting.ReportingBootstrap.Initialize(
+    app.Services,
+    app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Reporting"));
+
 // ── Seeding ──────────────────────────────────────────────────────
 await app.SeedDatabaseAsync();
 
@@ -135,6 +160,10 @@ app.UseRequestLocalization(options =>
     options.AddSupportedUICultures(supportedCultures);
 });
 
+// ForwardedHeaders must run before anything that reads Request.Scheme, Request.IsHttps,
+// or Connection.RemoteIpAddress — otherwise it reads stale (proxy) values.
+app.UseForwardedHeaders();
+
 app.UseMiddleware<TRRCMS.WebAPI.Middleware.GlobalExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -146,6 +175,9 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 app.UseRateLimiter();
 app.UseHttpsRedirection();
+// IP filter runs BEFORE authentication so banned/non-allowlisted IPs can't even attempt to authenticate.
+// Loopback is always allowed (see middleware) so local dev / health checks aren't bricked by misconfig.
+app.UseMiddleware<TRRCMS.WebAPI.Middleware.IpFilterMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TRRCMS.WebAPI.Middleware.MustChangePasswordMiddleware>();

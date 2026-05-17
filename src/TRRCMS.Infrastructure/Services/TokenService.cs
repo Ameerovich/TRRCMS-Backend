@@ -35,9 +35,12 @@ public class TokenService : ITokenService
     }
 
     /// <summary>
-    /// Generate a JWT access token with user claims
+    /// Generate a JWT access token with user claims.
+    /// When <paramref name="overrideExpirationMinutes"/> is non-null, it replaces the
+    /// JwtSettings fallback — callers pass the admin-configured session-timeout from the
+    /// active SecurityPolicy so the configured value actually drives the token's lifetime.
     /// </summary>
-    public string GenerateAccessToken(User user, string? deviceId = null, bool isPasswordChangeOnly = false)
+    public string GenerateAccessToken(User user, string? deviceId = null, bool isPasswordChangeOnly = false, int? overrideExpirationMinutes = null)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_secretKey);
@@ -65,8 +68,12 @@ public class TokenService : ITokenService
         if (isPasswordChangeOnly)
             claims.Add(new JwtClaim("must_change_password", "true"));
 
-        // Use shorter expiry for password-change-only tokens (10 minutes)
-        var expirationMinutes = isPasswordChangeOnly ? 10 : _accessTokenExpirationMinutes;
+        // Use shorter expiry for password-change-only tokens (10 minutes).
+        // Otherwise prefer the explicit override (sourced from the active SecurityPolicy);
+        // fall back to JwtSettings:AccessTokenExpirationMinutes for callers that don't pass one.
+        var expirationMinutes = isPasswordChangeOnly
+            ? 10
+            : (overrideExpirationMinutes ?? _accessTokenExpirationMinutes);
 
         // Token descriptor
         var tokenDescriptor = new SecurityTokenDescriptor

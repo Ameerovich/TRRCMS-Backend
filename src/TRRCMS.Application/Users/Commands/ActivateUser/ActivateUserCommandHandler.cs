@@ -49,8 +49,11 @@ public class ActivateUserCommandHandler : IRequestHandler<ActivateUserCommand, U
         // Activate user using domain method
         user.Reactivate(currentUserId);
 
-        // Save changes
+        // Persist the user change explicitly. AuditService.LogActionAsync swallows its own
+        // exceptions, so if we relied on its SaveChanges to flush the user update we'd lose
+        // the state change silently while still returning 200 OK with a stale DTO.
         await _userRepository.UpdateAsync(user, cancellationToken);
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
         // Audit logging
         await _auditService.LogActionAsync(

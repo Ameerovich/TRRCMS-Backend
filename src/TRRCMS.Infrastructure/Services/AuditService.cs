@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using TRRCMS.Application.Audit.Dtos;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
@@ -244,6 +245,136 @@ public class AuditService : IAuditService
     }
 
     /// <inheritdoc/>
+    public async Task<(List<AuditLog> Items, int TotalCount)> QueryAuditLogsAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        Guid? userId,
+        string? usernameContains,
+        string? entityType,
+        IReadOnlyCollection<AuditActionType>? actionTypes,
+        string? actionResult,
+        bool? isSecuritySensitive,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.AuditLogs.AsNoTracking().AsQueryable();
+
+        if (fromDate.HasValue)
+            query = query.Where(a => a.Timestamp >= fromDate.Value);
+
+        if (toDate.HasValue)
+            query = query.Where(a => a.Timestamp <= toDate.Value);
+
+        if (userId.HasValue)
+            query = query.Where(a => a.UserId == userId.Value);
+
+        if (!string.IsNullOrWhiteSpace(usernameContains))
+        {
+            var needle = usernameContains.Trim().ToLower();
+            query = query.Where(a =>
+                a.Username.ToLower().Contains(needle) ||
+                a.UserFullName.ToLower().Contains(needle));
+        }
+
+        if (!string.IsNullOrWhiteSpace(entityType))
+            query = query.Where(a => a.EntityType == entityType);
+
+        if (actionTypes != null && actionTypes.Count > 0)
+        {
+            var typeList = actionTypes.ToList();
+            query = query.Where(a => typeList.Contains(a.ActionType));
+        }
+
+        if (!string.IsNullOrWhiteSpace(actionResult))
+            query = query.Where(a => a.ActionResult == actionResult);
+
+        if (isSecuritySensitive.HasValue)
+            query = query.Where(a => a.IsSecuritySensitive == isSecuritySensitive.Value);
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(a => a.Timestamp)
+            .ThenByDescending(a => a.AuditLogNumber)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
+    /// <inheritdoc/>
+    public async Task<AuditStatsDto> GetAuditStatsAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        int topUsersLimit,
+        CancellationToken cancellationToken = default)
+    {
+        var windowEnd = toDate ?? DateTime.UtcNow;
+        var windowStart = fromDate ?? windowEnd.AddDays(-7);
+        var topLimit = Math.Clamp(topUsersLimit, 1, 50);
+
+        var baseQuery = _context.AuditLogs
+            .AsNoTracking()
+            .Where(a => a.Timestamp >= windowStart && a.Timestamp <= windowEnd);
+
+        var totalActions = await baseQuery.CountAsync(cancellationToken);
+
+        var byActionResult = await baseQuery
+            .GroupBy(a => a.ActionResult)
+            .Select(g => new { Key = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var byActionType = await baseQuery
+            .GroupBy(a => a.ActionType)
+            .Select(g => new { Key = (int)g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var byEntityType = await baseQuery
+            .Where(a => a.EntityType != null)
+            .GroupBy(a => a.EntityType!)
+            .Select(g => new { Key = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+
+        var uniqueUsers = await baseQuery
+            .Where(a => a.UserId != Guid.Empty)
+            .Select(a => a.UserId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        var securitySensitive = await baseQuery
+            .CountAsync(a => a.IsSecuritySensitive, cancellationToken);
+
+        var topUsers = await baseQuery
+            .Where(a => a.UserId != Guid.Empty)
+            .GroupBy(a => new { a.UserId, a.Username, a.UserFullName })
+            .Select(g => new AuditTopUserDto
+            {
+                UserId = g.Key.UserId,
+                Username = g.Key.Username,
+                UserFullName = g.Key.UserFullName,
+                ActionCount = g.Count()
+            })
+            .OrderByDescending(u => u.ActionCount)
+            .Take(topLimit)
+            .ToListAsync(cancellationToken);
+
+        return new AuditStatsDto
+        {
+            WindowStart = windowStart,
+            WindowEnd = windowEnd,
+            TotalActions = totalActions,
+            ByActionResult = byActionResult.ToDictionary(x => x.Key ?? string.Empty, x => x.Count),
+            ByActionType = byActionType.ToDictionary(x => x.Key.ToString(), x => x.Count),
+            ByEntityType = byEntityType.ToDictionary(x => x.Key, x => x.Count),
+            UniqueUsers = uniqueUsers,
+            SecuritySensitive = securitySensitive,
+            TopUsers = topUsers
+        };
+    }
+
+    /// <inheritdoc/>
     public void SetCorrelationId(Guid correlationId)
     {
         _correlationId = correlationId;
@@ -256,10 +387,37 @@ public class AuditService : IAuditService
     }
 
     /// <summary>
-    /// Generate next sequential audit log number
+    /// Generate the next sequential audit log number.
+    ///
+    /// Primary path: <c>SELECT nextval('audit_log_number_seq')</c> — atomic, non-blocking,
+    /// race-free even under concurrent SaveChanges. The sequence is created at startup by
+    /// <c>WebApplicationExtensions.SeedDatabaseAsync</c> and aligned to the current MAX.
+    ///
+    /// Fallback path: if the sequence is missing (e.g. ran against a snapshot DB that
+    /// predates the startup seed), fall back to <c>MAX(AuditLogNumber)+1</c>. That fallback
+    /// has a known race window but lets the audit write proceed instead of bringing down
+    /// every request, which is preferable since the surrounding catch in
+    /// <see cref="LogActionAsync"/> already swallows audit errors anyway.
     /// </summary>
     private async Task<long> GetNextAuditLogNumberAsync(CancellationToken cancellationToken)
     {
+        try
+        {
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+                await connection.OpenAsync(cancellationToken);
+
+            await using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT nextval('audit_log_number_seq')";
+            var result = await cmd.ExecuteScalarAsync(cancellationToken);
+            if (result != null && result != DBNull.Value)
+                return Convert.ToInt64(result);
+        }
+        catch
+        {
+            // Sequence missing or transient DB issue — drop through to MAX+1 fallback.
+        }
+
         var maxNumber = await _context.AuditLogs
             .MaxAsync(a => (long?)a.AuditLogNumber, cancellationToken) ?? 0;
 

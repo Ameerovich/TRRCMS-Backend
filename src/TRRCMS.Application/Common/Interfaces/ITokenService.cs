@@ -8,13 +8,18 @@ namespace TRRCMS.Application.Common.Interfaces;
 public interface ITokenService
 {
     /// <summary>
-    /// Generate a JWT access token for a user
+    /// Generate a JWT access token for a user.
     /// </summary>
     /// <param name="user">User to generate token for</param>
     /// <param name="deviceId">Optional device identifier for audit trail</param>
     /// <param name="isPasswordChangeOnly">When true, generates a restricted token with must_change_password claim and shorter expiry</param>
-    /// <returns>JWT access token (short-lived, 15 minutes; or 10 minutes for password-change-only)</returns>
-    string GenerateAccessToken(User user, string? deviceId = null, bool isPasswordChangeOnly = false);
+    /// <param name="overrideExpirationMinutes">
+    /// Optional explicit lifetime in minutes. When non-null, replaces the JwtSettings fallback —
+    /// callers pass <c>policy.SessionLockoutPolicy.SessionTimeoutMinutes</c> here so the admin-configured
+    /// session timeout actually drives the JWT lifetime. Ignored when <paramref name="isPasswordChangeOnly"/> is true.
+    /// </param>
+    /// <returns>JWT access token.</returns>
+    string GenerateAccessToken(User user, string? deviceId = null, bool isPasswordChangeOnly = false, int? overrideExpirationMinutes = null);
 
     /// <summary>
     /// Generate a refresh token (random string)
