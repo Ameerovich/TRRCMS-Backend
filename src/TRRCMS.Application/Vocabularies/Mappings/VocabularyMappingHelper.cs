@@ -27,6 +27,7 @@ public static class VocabularyMappingHelper
             Version = vocabulary.Version,
             Category = vocabulary.Category,
             IsActive = vocabulary.IsActive,
+            IsSystemVocabulary = vocabulary.IsSystemVocabulary,
             ValueCount = vocabulary.ValueCount,
             Values = ParseValues(vocabulary.ValuesJson)
         };

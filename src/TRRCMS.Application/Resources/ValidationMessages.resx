@@ -336,6 +336,7 @@
   <data name="VocabValues_UniqueCodes"><value>Vocabulary values must have unique codes</value></data>
   <data name="VocabVersionType_Required"><value>Version type is required</value></data>
   <data name="VocabVersionType_Invalid"><value>Version type must be 'minor', 'major', or 'patch'</value></data>
+  <data name="Message_Vocabulary_PatchCannotDeprecate"><value>Deprecating codes is not allowed in a patch version. Newly deprecated: {0}. Use a minor version to deprecate codes.</value></data>
   <data name="VocabChangeLog_Required"><value>Change log is required</value></data>
   <data name="VocabChangeLog_MaxLength2000"><value>Change log must not exceed 2000 characters</value></data>
   <data name="VocabImport_AtLeastOne"><value>At least one vocabulary must be provided for import.</value></data>

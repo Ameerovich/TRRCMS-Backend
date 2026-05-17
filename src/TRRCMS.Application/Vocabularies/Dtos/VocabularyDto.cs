@@ -14,6 +14,7 @@ public class VocabularyDto
     public string Version { get; set; } = string.Empty;
     public string? Category { get; set; }
     public bool IsActive { get; set; }
+    public bool IsSystemVocabulary { get; set; }
     public int ValueCount { get; set; }
 
     /// <summary>
