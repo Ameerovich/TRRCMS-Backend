@@ -45,8 +45,12 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Copy published output from build stage
 COPY --from=build /app/publish .
 
-# Change ownership to non-root user
-RUN chown -R appuser:appuser /app
+# Pre-create runtime directories that are mounted as Docker volumes.
+# Must happen before USER appuser so we can chown them — Docker mounts
+# volumes after the container starts, which would overwrite ownership if
+# the directories didn't exist in the image with the right owner.
+RUN mkdir -p /app/wwwroot/packages /app/archives \
+    && chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser

@@ -67,10 +67,14 @@ services:
     
     ports:
       - "8080:8080"
-    
+
+    volumes:
+      - packages_data:/app/wwwroot/packages
+      - archives_data:/app/archives
+
     networks:
       - trrcms-network
-    
+
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -106,6 +110,12 @@ volumes:
   postgres_data:
     driver: local
     name: trrcms-postgres-data
+  packages_data:
+    driver: local
+    name: trrcms-packages-data
+  archives_data:
+    driver: local
+    name: trrcms-archives-data
 
 # ============================================
 # Networks
