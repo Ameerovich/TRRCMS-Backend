@@ -22,41 +22,51 @@ public static class VocabularySeedData
     /// </summary>
     private static readonly VocabularyEnumDefinition[] EnumDefinitions = new[]
     {
+        // ── Extensible (isSystemVocabulary=false) ─────────────────────────────────
+        // Admins can add new codes via a major version through the API.
+        // Values are stored as plain integers and never branched on in backend logic —
+        // safe to extend without any code changes.
+
         // Demographics
-        Def<Gender>("gender", "الجنس", "Gender", "Demographics"),
-        Def<Nationality>("nationality", "الجنسية", "Nationality", "Demographics"),
-        Def<RelationshipToHead>("relationship_to_head", "العلاقة برب الأسرة", "Relationship to Head", "Demographics"),
+        Ext<Nationality>("nationality", "الجنسية", "Nationality", "Demographics"),
+        Ext<RelationshipToHead>("relationship_to_head", "العلاقة برب الأسرة", "Relationship to Head", "Demographics"),
 
         // Property
-        Def<BuildingType>("building_type", "نوع البناء", "Building Type", "Property"),
-        Def<BuildingStatus>("building_status", "حالة البناء", "Building Status", "Property"),
-Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", "Property"),
-        Def<OccupancyNature>("occupancy_nature", "طبيعة الإشغال", "Occupancy Nature", "Property"),
-        Def<TenureContractType>("tenure_contract_type", "نوع عقد الإشغال", "Tenure Contract Type", "Property"),
-
-        // Relations
-        Def<RelationType>("relation_type", "نوع العلاقة", "Relation Type", "Relations"),
+        Ext<BuildingStatus>("building_status", "حالة البناء", "Building Status", "Property"),
+        Ext<OccupancyNature>("occupancy_nature", "طبيعة الإشغال", "Occupancy Nature", "Property"),
+        Ext<TenureContractType>("tenure_contract_type", "نوع عقد الإشغال", "Tenure Contract Type", "Property"),
+        Ext<PropertyUnitType>("property_unit_type", "نوع الوحدة العقارية", "Property Unit Type", "Property"),
+        Ext<PropertyUnitStatus>("property_unit_status", "حالة الوحدة العقارية", "Property Unit Status", "Property"),
 
         // Legal
-        Def<EvidenceType>("evidence_type", "نوع الدليل", "Evidence Type", "Legal"),
-        Def<DocumentType>("document_type", "نوع الوثيقة", "Document Type", "Legal"),
+        Ext<DocumentType>("document_type", "نوع الوثيقة", "Document Type", "Legal"),
 
-        // Claims
+        // Survey
+        Ext<SurveySource>("survey_source", "مصدر الاستطلاع", "Survey Source", "Survey"),
+
+        // ── System-locked (isSystemVocabulary=true) ───────────────────────────────
+        // Major versions (new codes) are blocked via API.
+        // Specific enum values are referenced in backend logic — adding unknown codes
+        // would cause undefined behaviour in state machines or scoring algorithms.
+
+        Def<Gender>("gender", "الجنس", "Gender", "Demographics"),
+
+        Def<BuildingType>("building_type", "نوع البناء", "Building Type", "Property"),
+        Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", "Property"),
+
+        Def<RelationType>("relation_type", "نوع العلاقة", "Relation Type", "Relations"),
+
+        Def<EvidenceType>("evidence_type", "نوع الدليل", "Evidence Type", "Legal"),
+
         Def<ClaimType>("claim_type", "نوع المطالبة", "Claim Type", "Claims"),
         Def<CaseStatus>("case_status", "حالة الحالة", "Case Status", "Claims"),
         Def<ClaimSource>("claim_source", "مصدر المطالبة", "Claim Source", "Claims"),
-        // Survey
+
         Def<SurveyType>("survey_type", "نوع الاستطلاع", "Survey Type", "Survey"),
         Def<SurveyStatus>("survey_status", "حالة الاستطلاع", "Survey Status", "Survey"),
-        Def<SurveySource>("survey_source", "مصدر الاستطلاع", "Survey Source", "Survey"),
 
-        // Operations
         Def<TransferStatus>("transfer_status", "حالة النقل", "Transfer Status", "Operations"),
-        // Property Units
-        Def<PropertyUnitType>("property_unit_type", "نوع الوحدة العقارية", "Property Unit Type", "Property"),
-        Def<PropertyUnitStatus>("property_unit_status", "حالة الوحدة العقارية", "Property Unit Status", "Property"),
 
-        // System
         Def<UserRole>("user_role", "دور المستخدم", "User Role", "System"),
         Def<ImportStatus>("import_status", "حالة الاستيراد", "Import Status", "System"),
         Def<Permission>("permission", "الصلاحية", "Permission", "System"),
@@ -90,7 +100,7 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
                     displayNameEnglish: def.DisplayNameEnglish,
                     description: $"System vocabulary for {def.DisplayNameEnglish}",
                     valuesJson: valuesJson,
-                    isSystemVocabulary: true,
+                    isSystemVocabulary: !def.IsExtensible,
                     allowCustomValues: false,
                     category: def.Category,
                     createdByUserId: SystemUserId);
@@ -288,14 +298,16 @@ Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", 
     }
 
     private static VocabularyEnumDefinition Def<TEnum>(string name, string ar, string en, string category) where TEnum : Enum
-    {
-        return new VocabularyEnumDefinition(typeof(TEnum), name, ar, en, category);
-    }
+        => new VocabularyEnumDefinition(typeof(TEnum), name, ar, en, category, IsExtensible: false);
+
+    private static VocabularyEnumDefinition Ext<TEnum>(string name, string ar, string en, string category) where TEnum : Enum
+        => new VocabularyEnumDefinition(typeof(TEnum), name, ar, en, category, IsExtensible: true);
 
     private record VocabularyEnumDefinition(
         Type EnumType,
         string VocabularyName,
         string DisplayNameArabic,
         string DisplayNameEnglish,
-        string Category);
+        string Category,
+        bool IsExtensible);
 }

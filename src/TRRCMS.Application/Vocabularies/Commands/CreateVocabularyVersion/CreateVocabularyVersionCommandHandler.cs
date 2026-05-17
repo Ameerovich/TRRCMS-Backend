@@ -75,6 +75,30 @@ public class CreateVocabularyVersionCommandHandler : IRequestHandler<CreateVocab
                 removedJoined);
         }
 
+        // Block deprecations on patch versions — patch is label-fixes only
+        if (request.VersionType.ToLowerInvariant() == "patch")
+        {
+            var oldDeprecatedCodes = new HashSet<int>(
+                oldValues.Where(v => v.IsDeprecated).Select(v => v.Code));
+
+            var newlyDeprecated = request.Values
+                .Where(v => v.IsDeprecated && !oldDeprecatedCodes.Contains(v.Code))
+                .ToList();
+
+            if (newlyDeprecated.Any())
+            {
+                var joined = string.Join(", ", newlyDeprecated
+                    .Select(v => $"{v.Code} ({v.LabelArabic} / {v.LabelEnglish})"));
+
+                throw new ValidationException(
+                    $"Deprecating codes is not allowed in a patch version. " +
+                    $"The following codes were newly deprecated: {joined}. " +
+                    $"Use a minor version to deprecate codes.",
+                    "Message_Vocabulary_PatchCannotDeprecate",
+                    joined);
+            }
+        }
+
         // Enforce AllowCustomValues — if false, block new codes on minor/patch versions
         if (!vocabulary.AllowCustomValues && request.VersionType.ToLowerInvariant() != "major")
         {

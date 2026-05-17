@@ -111,7 +111,7 @@
     <value>لا يمكن إنشاء إصدار جديد إلا من الإصدار الحالي للقاموس.</value>
   </data>
   <data name="Message_Vocabulary_SystemMajorBlocked" xml:space="preserve">
-    <value>القاموس النظامي '{0}' لا يقبل إضافة رموز جديدة؛ قيمه ثابتة في النموذج. يُسمح فقط بإصدارات 'patch' (تصحيح التسميات) و'minor' (الإهمال).</value>
+    <value>قاموس النظام '{0}' لا يقبل إضافة رموز جديدة؛ قيمه ثابتة في النموذج. يُسمح فقط بإصدارات 'patch' (تصحيح التسميات) و'minor' (الإهمال).</value>
   </data>
   <data name="Message_Vocabulary_CodesCannotBeRemoved" xml:space="preserve">
     <value>لا يمكن حذف رموز القاموس. الرموز التالية مفقودة من الإصدار الجديد: {0}. لإهمالها، اضبط isDeprecated=true عليها بدلاً من الحذف.</value>
@@ -126,7 +126,7 @@
     <value>لم يتم العثور على القاموس بالمعرّف '{0}'.</value>
   </data>
   <data name="Message_Vocabulary_SystemCannotDeactivate" xml:space="preserve">
-    <value>القاموس النظامي '{0}' مطلوب لعمل التطبيق ولا يمكن إلغاء تفعيله. لحظر رمز معيّن، أنشئ إصداراً جديداً واضبط isDeprecated=true على ذلك الرمز بدلاً من إلغاء تفعيل القاموس بأكمله.</value>
+    <value>قاموس النظام '{0}' مطلوب لعمل التطبيق ولا يمكن إلغاء تفعيله. لحظر رمز معيّن، أنشئ إصداراً جديداً واضبط isDeprecated=true على ذلك الرمز بدلاً من إلغاء تفعيل القاموس بأكمله.</value>
   </data>
   <data name="Message_Vocabulary_AlreadyInactive" xml:space="preserve">
     <value>القاموس '{0}' غير مفعّل أصلاً — لا حاجة لإجراء.</value>

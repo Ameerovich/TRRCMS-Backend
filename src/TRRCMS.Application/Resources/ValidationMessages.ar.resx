@@ -338,6 +338,7 @@
   <data name="VocabValues_UniqueCodes"><value>قيم القاموس يجب أن تكون بأرقام فريدة</value></data>
   <data name="VocabVersionType_Required"><value>نوع الإصدار مطلوب</value></data>
   <data name="VocabVersionType_Invalid"><value>نوع الإصدار يجب أن يكون 'minor' أو 'major' أو 'patch'</value></data>
+  <data name="Message_Vocabulary_PatchCannotDeprecate"><value>لا يُسمح بإيقاف القيم في إصدار patch. القيم المُوقفة حديثاً: {0}. استخدم إصدار minor لإيقاف القيم.</value></data>
   <data name="VocabChangeLog_Required"><value>سجل التغييرات مطلوب</value></data>
   <data name="VocabChangeLog_MaxLength2000"><value>سجل التغييرات يجب ألا يتجاوز 2000 حرف</value></data>
   <data name="VocabImport_AtLeastOne"><value>يجب توفير قاموس واحد على الأقل للاستيراد.</value></data>
