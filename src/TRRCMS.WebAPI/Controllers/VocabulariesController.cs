@@ -122,6 +122,7 @@ public class VocabulariesController : ControllerBase
     /// when showing existing records that use deprecated codes.
     /// </remarks>
     /// <param name="category">Optional category filter (e.g., "Demographics", "Property", "Legal", "Claims", "Survey")</param>
+    /// <param name="includeInactive">When true, deactivated vocabularies are also returned (used by admin UIs to reactivate them). Defaults to false — runtime clients should omit it.</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of all current vocabularies with bilingual labels and integer codes</returns>
     /// <response code="200">Returns the list of vocabularies (may be empty if category filter has no matches)</response>
@@ -130,9 +131,10 @@ public class VocabulariesController : ControllerBase
     [ProducesResponseType(typeof(List<VocabularyDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<VocabularyDto>>> GetVocabularies(
         [FromQuery] string? category = null,
+        [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetAllVocabulariesQuery { Category = category };
+        var query = new GetAllVocabulariesQuery { Category = category, IncludeInactive = includeInactive };
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }

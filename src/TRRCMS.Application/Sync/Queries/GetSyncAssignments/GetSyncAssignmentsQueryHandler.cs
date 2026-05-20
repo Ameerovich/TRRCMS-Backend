@@ -87,7 +87,7 @@ public sealed class GetSyncAssignmentsQueryHandler
             cancellationToken: ct);
 
         // ── 4. Load all active vocabularies (offline code lists) ───────────────────
-        var vocabularies = await _vocabularyRepo.GetAllCurrentAsync(ct);
+        var vocabularies = await _vocabularyRepo.GetAllCurrentAsync(cancellationToken: ct);
 
         // ── 5. Build vocabulary version map for the session audit record ───────────
         // Format: { "ownership_type": "2.1.0", "document_type": "1.0.3", ... }

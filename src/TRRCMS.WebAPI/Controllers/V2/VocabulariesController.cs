@@ -28,9 +28,10 @@ public class VocabulariesController : ControllerBase
     [ProducesResponseType(typeof(ListResponse<VocabularyDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ListResponse<VocabularyDto>>> GetVocabularies(
         [FromQuery] string? category = null,
+        [FromQuery] bool includeInactive = false,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetAllVocabulariesQuery { Category = category };
+        var query = new GetAllVocabulariesQuery { Category = category, IncludeInactive = includeInactive };
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(ListResponse<VocabularyDto>.From(result));
     }

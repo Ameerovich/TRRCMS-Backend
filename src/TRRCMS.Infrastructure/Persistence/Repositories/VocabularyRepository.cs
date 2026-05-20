@@ -27,19 +27,29 @@ public class VocabularyRepository : IVocabularyRepository
         return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<List<Vocabulary>> GetAllCurrentAsync(CancellationToken cancellationToken = default)
+    public async Task<List<Vocabulary>> GetAllCurrentAsync(bool includeInactive = false, CancellationToken cancellationToken = default)
     {
-        return await _context.Vocabularies
-            .Where(v => !v.IsDeleted && v.IsCurrentVersion && v.IsActive)
+        var query = _context.Vocabularies
+            .Where(v => !v.IsDeleted && v.IsCurrentVersion);
+
+        if (!includeInactive)
+            query = query.Where(v => v.IsActive);
+
+        return await query
             .OrderBy(v => v.Category)
             .ThenBy(v => v.VocabularyName)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<List<Vocabulary>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default)
+    public async Task<List<Vocabulary>> GetByCategoryAsync(string category, bool includeInactive = false, CancellationToken cancellationToken = default)
     {
-        return await _context.Vocabularies
-            .Where(v => !v.IsDeleted && v.IsCurrentVersion && v.IsActive && v.Category == category)
+        var query = _context.Vocabularies
+            .Where(v => !v.IsDeleted && v.IsCurrentVersion && v.Category == category);
+
+        if (!includeInactive)
+            query = query.Where(v => v.IsActive);
+
+        return await query
             .OrderBy(v => v.VocabularyName)
             .ToListAsync(cancellationToken);
     }

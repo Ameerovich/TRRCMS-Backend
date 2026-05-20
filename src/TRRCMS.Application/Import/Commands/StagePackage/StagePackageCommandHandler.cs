@@ -225,11 +225,18 @@ public class StagePackageCommandHandler : IRequestHandler<StagePackageCommand, S
                 catch (Exception dupeEx)
                 {
                     // Duplicate detection failure is non-blocking — staging data is valid.
-                    // The desktop team can re-trigger via POST /detect-duplicates.
+                    // Persist a note so the GET /packages/{id} response reveals why the
+                    // package is still at Staging, prompting a manual POST /detect-duplicates.
                     _logger.LogError(dupeEx,
                         "Auto-duplicate detection failed for package {PackageId}. " +
                         "Staging data is valid — detection can be re-triggered manually.",
                         package.PackageId);
+
+                    package.AddProcessingNotes(
+                        $"[AutoDetectionFailed]: {dupeEx.Message} — re-trigger via POST /detect-duplicates.",
+                        userId);
+                    await _unitOfWork.ImportPackages.UpdateAsync(package, CancellationToken.None);
+                    await _unitOfWork.SaveChangesAsync(CancellationToken.None);
                 }
             }
 

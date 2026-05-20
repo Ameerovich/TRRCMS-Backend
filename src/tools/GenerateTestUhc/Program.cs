@@ -291,7 +291,7 @@ using (var conn = new SqliteConnection(connStr))
             neighborhood_name       TEXT
         );");
 
-    // OCHA-aligned admin codes: SY02 (Aleppo) / SY0200 (Mount Simeon) / SY020000 (Markaz Jebel Saman) / C1007 (Aleppo city)
+    // OCHA-aligned admin codes: SY02 (Aleppo) / SY0200 (Mount Simeon) / SY020000 (Jabal Saman) / C1007 (Aleppo city)
     // Neighborhood "119" = N0119 "السكن الشبابي" — first of the 109 GIS-seeded official neighborhoods (codes 001-020 are soft-deleted).
     var fullBuildingCode = $"020000001119{buildingNumber}";
     Execute(conn, @"
