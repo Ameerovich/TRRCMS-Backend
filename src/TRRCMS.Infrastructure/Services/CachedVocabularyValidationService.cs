@@ -69,21 +69,11 @@ public class CachedVocabularyValidationService : IVocabularyValidationService
     private void EnsureLoaded()
     {
         if (_loaded) return;
-
-        // Blocking async-over-sync is acceptable here because:
-        // 1. This only happens on first access or after invalidation
-        // 2. The cache warmup is fast (single DB query)
-        // 3. The SemaphoreSlim ensures only one thread does the load
-        _lock.Wait();
-        try
-        {
-            if (_loaded) return;
-            LoadCacheAsync(CancellationToken.None).GetAwaiter().GetResult();
-        }
-        finally
-        {
-            _lock.Release();
-        }
+        // LoadCacheAsync acquires _lock internally via WaitAsync — do NOT also hold _lock here.
+        // Holding _lock synchronously while blocking on GetAwaiter().GetResult() causes a deadlock:
+        // the async continuation inside LoadCacheAsync also tries to acquire _lock and can never
+        // unblock because the calling thread holds it.
+        LoadCacheAsync(CancellationToken.None).GetAwaiter().GetResult();
     }
 
     private async Task LoadCacheAsync(CancellationToken cancellationToken)
