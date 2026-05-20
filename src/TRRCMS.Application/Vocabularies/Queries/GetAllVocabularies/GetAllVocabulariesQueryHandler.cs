@@ -17,8 +17,8 @@ public class GetAllVocabulariesQueryHandler : IRequestHandler<GetAllVocabularies
     public async Task<List<VocabularyDto>> Handle(GetAllVocabulariesQuery request, CancellationToken cancellationToken)
     {
         var vocabularies = !string.IsNullOrWhiteSpace(request.Category)
-            ? await _vocabularyRepository.GetByCategoryAsync(request.Category, cancellationToken)
-            : await _vocabularyRepository.GetAllCurrentAsync(cancellationToken);
+            ? await _vocabularyRepository.GetByCategoryAsync(request.Category, request.IncludeInactive, cancellationToken)
+            : await _vocabularyRepository.GetAllCurrentAsync(request.IncludeInactive, cancellationToken);
 
         return VocabularyMappingHelper.MapToDtoList(vocabularies);
     }

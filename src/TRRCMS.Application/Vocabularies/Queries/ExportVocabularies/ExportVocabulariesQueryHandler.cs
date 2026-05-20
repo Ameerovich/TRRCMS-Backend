@@ -16,7 +16,7 @@ public class ExportVocabulariesQueryHandler : IRequestHandler<ExportVocabularies
 
     public async Task<List<VocabularyExportDto>> Handle(ExportVocabulariesQuery request, CancellationToken cancellationToken)
     {
-        var vocabularies = await _unitOfWork.Vocabularies.GetAllCurrentAsync(cancellationToken);
+        var vocabularies = await _unitOfWork.Vocabularies.GetAllCurrentAsync(includeInactive: true, cancellationToken);
 
         return vocabularies.Select(v =>
         {

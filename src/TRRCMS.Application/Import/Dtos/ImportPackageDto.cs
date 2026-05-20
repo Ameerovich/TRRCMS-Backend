@@ -80,6 +80,7 @@ public class ImportPackageDto
     // ==================== ERROR INFO ====================
 
     public string? ErrorMessage { get; set; }
+    public string? ProcessingNotes { get; set; }
 
     // ==================== ARCHIVAL ====================
 

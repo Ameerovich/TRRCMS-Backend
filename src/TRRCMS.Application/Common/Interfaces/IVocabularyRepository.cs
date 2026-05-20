@@ -14,14 +14,17 @@ public interface IVocabularyRepository
     Task<Vocabulary?> GetByNameAsync(string vocabularyName, bool currentOnly = true, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get all current (active) vocabularies.
+    /// Get all current vocabularies. By default returns only active ones;
+    /// pass <paramref name="includeInactive"/> = true to include deactivated vocabularies
+    /// (used by admin UIs that need to reactivate them).
     /// </summary>
-    Task<List<Vocabulary>> GetAllCurrentAsync(CancellationToken cancellationToken = default);
+    Task<List<Vocabulary>> GetAllCurrentAsync(bool includeInactive = false, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get all current vocabularies filtered by category.
+    /// Get all current vocabularies filtered by category. By default returns only active ones;
+    /// pass <paramref name="includeInactive"/> = true to include deactivated vocabularies.
     /// </summary>
-    Task<List<Vocabulary>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default);
+    Task<List<Vocabulary>> GetByCategoryAsync(string category, bool includeInactive = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Get version history for a vocabulary (all versions ordered by version date descending).

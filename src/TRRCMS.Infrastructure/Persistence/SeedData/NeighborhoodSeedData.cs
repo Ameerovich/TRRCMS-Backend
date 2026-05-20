@@ -19,7 +19,7 @@ public static class NeighborhoodSeedData
     // Parent hierarchy for Aleppo city — OCHA-aligned (SY02 / SY0200 / SY020000 / C1007)
     private const string GovCode = "02";    // Aleppo Governorate (SY02)
     private const string DistCode = "00";   // Mount Simeon District (SY0200)
-    private const string SubDistCode = "00"; // Markaz Jebel Saman Sub-District (SY020000)
+    private const string SubDistCode = "00"; // Jabal Saman Sub-District (SY020000)
     private const string CommCode = "001";  // Aleppo City Community — synthetic 3-digit, ExternalPCode = C1007
 
     /// <summary>

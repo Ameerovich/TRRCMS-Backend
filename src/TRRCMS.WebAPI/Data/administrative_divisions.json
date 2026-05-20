@@ -12,8 +12,8 @@
           "sub_districts": [
             {
               "code": "00",
-              "name_en": "Markaz Jebel Saman",
-              "name_ar": "مركز جبل سمعان",
+              "name_en": "Jabal Saman",
+              "name_ar": "جبل سمعان",
               "communities": [
                 {"code": "001", "name_en": "Aleppo", "name_ar": "حلب", "external_pcode": "C1007"}
               ]
