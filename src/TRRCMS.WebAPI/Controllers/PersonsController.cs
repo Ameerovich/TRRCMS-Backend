@@ -362,15 +362,16 @@ public class PersonsController : ControllerBase
     /// **Purpose**: Retrieves all identification documents (personal ID photos, family records, photos)
     /// linked to a specific person. Returns newest first.
     ///
-    /// **Required permissions**: Surveys_ViewAll (CanViewAllSurveys)
+    /// **Required permissions**: Surveys_ViewOwn (CanViewOwnSurveys) — granted to OfficeClerk,
+    /// FieldCollector, FieldSupervisor, DataManager, Analyst, and Administrator.
     /// </remarks>
     /// <param name="personId">Person ID</param>
     /// <returns>List of identification documents (may be empty)</returns>
     /// <response code="200">Success. Returns list of identification documents.</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Not authorized — requires Surveys_ViewAll permission</response>
+    /// <response code="403">Not authorized — requires Surveys_ViewOwn permission</response>
     [HttpGet("{personId}/identification-documents")]
-    [Authorize(Policy = "CanViewAllSurveys")]
+    [Authorize(Policy = "CanViewOwnSurveys")]
     [ProducesResponseType(typeof(List<IdentificationDocumentDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -389,7 +390,8 @@ public class PersonsController : ControllerBase
     /// **Purpose**: Downloads a specific identification document (PDF, JPG, PNG) for a person.
     /// Returns the file as binary stream with appropriate Content-Type header.
     ///
-    /// **Required permissions**: Surveys_ViewAll (CanViewAllSurveys)
+    /// **Required permissions**: Surveys_ViewOwn (CanViewOwnSurveys) — granted to OfficeClerk,
+    /// FieldCollector, FieldSupervisor, DataManager, Analyst, and Administrator.
     ///
     /// **Example Usage:**
     /// ```
@@ -402,10 +404,10 @@ public class PersonsController : ControllerBase
     /// <returns>File stream of the document</returns>
     /// <response code="200">File downloaded successfully</response>
     /// <response code="401">Not authenticated</response>
-    /// <response code="403">Not authorized — requires Surveys_ViewAll permission</response>
+    /// <response code="403">Not authorized — requires Surveys_ViewOwn permission</response>
     /// <response code="404">Document or person not found</response>
     [HttpGet("{personId}/identification-documents/{documentId}/download")]
-    [Authorize]
+    [Authorize(Policy = "CanViewOwnSurveys")]
     [Produces("application/pdf", "image/jpeg", "image/png")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
