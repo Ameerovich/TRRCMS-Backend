@@ -280,6 +280,7 @@ public class PropertyUnitsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<PropertyUnitDto>> UpdatePropertyUnit(Guid id, [FromBody] UpdatePropertyUnitCommand command)
     {
         if (id != command.Id)

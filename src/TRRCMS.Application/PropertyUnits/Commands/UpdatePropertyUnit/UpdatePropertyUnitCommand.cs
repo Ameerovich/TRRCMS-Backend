@@ -16,6 +16,11 @@ public class UpdatePropertyUnitCommand : IRequest<PropertyUnitDto>
     public Guid Id { get; set; }
 
     /// <summary>
+    /// Unit identifier (معرّف الوحدة) — must be unique within the building
+    /// </summary>
+    public string? UnitIdentifier { get; set; }
+
+    /// <summary>
     /// Floor number (رقم الطابق)
     /// </summary>
     public int? FloorNumber { get; set; }

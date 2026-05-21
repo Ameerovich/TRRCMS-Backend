@@ -29,7 +29,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// **Endpoints:**
 /// | Method | Path                                  | Auth                       | Description                        |
 /// |--------|---------------------------------------|----------------------------|------------------------------------|
-/// | GET    | /api/v1/security-settings/current     | CanManageSecuritySettings   | Get active security policy         |
+/// | GET    | /api/v1/security-settings/current     | Anonymous                   | Get active security policy         |
 /// | GET    | /api/v1/security-settings/history     | CanManageSecuritySettings   | Get all policy versions (audit)    |
 /// | PUT    | /api/v1/security-settings             | CanManageSecuritySettings   | Validate and apply new policy      |
 /// </remarks>
@@ -56,7 +56,8 @@ public class SecuritySettingsController : ControllerBase
     /// Returns the active security policy with all three sections:
     /// password policy, session/lockout policy, and access control policy.
     ///
-    /// **Required permission:** `CanManageSecuritySettings` (Security_Settings = 8300)
+    /// **Auth:** Anonymous — clients (e.g. login/registration screens) need the password policy
+    /// before a user has authenticated. The response contains policy configuration only, no secrets.
     ///
     /// **Example response:**
     /// ```json
@@ -95,14 +96,10 @@ public class SecuritySettingsController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>The currently active security policy configuration</returns>
     /// <response code="200">Returns the active security policy</response>
-    /// <response code="401">Not authenticated — JWT token missing or expired</response>
-    /// <response code="403">Not authorized — requires CanManageSecuritySettings permission</response>
     /// <response code="404">No active security policy found (system not seeded)</response>
     [HttpGet("current")]
-    [Authorize(Policy = "CanManageSecuritySettings")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(SecurityPolicyDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SecurityPolicyDto>> GetCurrentSecuritySettings(
         CancellationToken cancellationToken = default)

@@ -16,6 +16,13 @@ public class UpdatePropertyUnitCommandValidator : LocalizedValidator<UpdatePrope
             .NotEmpty()
             .WithMessage(L("PropertyUnitId_Required"));
 
+        RuleFor(x => x.UnitIdentifier!)
+            .NotEmpty()
+            .WithMessage(L("UnitId_Required"))
+            .MaximumLength(50)
+            .WithMessage(L("UnitId_MaxLength50"))
+            .When(x => x.UnitIdentifier is not null);
+
         RuleFor(x => x.UnitType)
             .InclusiveBetween(1, 5)
             .When(x => x.UnitType.HasValue)

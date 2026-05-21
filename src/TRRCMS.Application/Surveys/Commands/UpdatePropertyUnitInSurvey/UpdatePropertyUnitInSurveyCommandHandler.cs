@@ -93,8 +93,8 @@ public class UpdatePropertyUnitInSurveyCommandHandler : IRequestHandler<UpdatePr
                 propertyUnit.BuildingId, request.UnitIdentifier, cancellationToken);
             if (existingUnit != null && existingUnit.Id != propertyUnit.Id)
             {
-                throw new ValidationException(
-                    $"A property unit with identifier '{request.UnitIdentifier}' already exists in this building");
+                throw new ConflictException(
+                    $"Property unit with identifier '{request.UnitIdentifier}' already exists in this building.");
             }
             propertyUnit.UpdateUnitIdentifier(request.UnitIdentifier, currentUserId);
         }
