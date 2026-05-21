@@ -56,6 +56,25 @@ public class UpdatePropertyUnitCommandHandler : IRequestHandler<UpdatePropertyUn
             propertyUnit.Description
         });
 
+        // Update unit identifier if provided (and changed). Enforce uniqueness within the building,
+        // mirroring CreatePropertyUnit so the frontend sees a 409 ConflictException on duplicates.
+        if (!string.IsNullOrWhiteSpace(request.UnitIdentifier) &&
+            !string.Equals(request.UnitIdentifier, propertyUnit.UnitIdentifier, StringComparison.Ordinal))
+        {
+            var conflicting = await _propertyUnitRepository.GetByBuildingAndIdentifierAsync(
+                propertyUnit.BuildingId,
+                request.UnitIdentifier,
+                cancellationToken);
+
+            if (conflicting != null && conflicting.Id != propertyUnit.Id)
+            {
+                throw new ConflictException(
+                    $"Property unit with identifier '{request.UnitIdentifier}' already exists in this building.");
+            }
+
+            propertyUnit.UpdateUnitIdentifier(request.UnitIdentifier, userId);
+        }
+
         // Update floor number if provided
         if (request.FloorNumber.HasValue)
         {
