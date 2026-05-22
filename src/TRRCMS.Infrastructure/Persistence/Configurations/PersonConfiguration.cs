@@ -41,6 +41,14 @@ public class PersonConfiguration : IEntityTypeConfiguration<Person>
             .HasMaxLength(50)
             .HasComment("الرقم الوطني - National ID or identification number");
 
+        builder.Property(p => p.NationalIdClearedByKeepSeparate)
+            .HasDefaultValue(false)
+            .HasComment("True if NationalId was cleared at import commit for a Keep-Separate decision (awaits reconciliation)");
+
+        builder.Property(p => p.PreservedNationalId)
+            .HasMaxLength(50)
+            .HasComment("Original NationalId removed at commit time for a Keep-Separate decision, preserved for reconciliation");
+
         builder.Property(p => p.DateOfBirth)
             .HasColumnType("timestamp with time zone")
             .IsRequired(false)

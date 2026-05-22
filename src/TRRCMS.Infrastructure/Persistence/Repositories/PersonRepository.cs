@@ -41,6 +41,25 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories
             return await _context.Persons
                 .FirstOrDefaultAsync(p => p.NationalId == nationalId && !p.IsDeleted, cancellationToken);
         }
+
+        public async Task<(List<Person> Items, int TotalCount)> GetPendingNationalIdReconciliationAsync(
+            int page, int pageSize, CancellationToken cancellationToken = default)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1) pageSize = 20;
+
+            var query = _context.Persons
+                .Where(p => !p.IsDeleted && p.NationalIdClearedByKeepSeparate)
+                .OrderByDescending(p => p.LastModifiedAtUtc);
+
+            var total = await query.CountAsync(cancellationToken);
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
+
+            return (items, total);
+        }
         public async Task<List<Person>> GetByHouseholdIdAsync(Guid householdId, CancellationToken cancellationToken = default)
         {
             return await _context.Persons

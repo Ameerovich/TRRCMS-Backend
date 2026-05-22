@@ -24,10 +24,22 @@ public class PropertyUnitConfiguration : IEntityTypeConfiguration<PropertyUnit>
             .IsRequired()
             .HasMaxLength(50);
 
-        // Unique constraint: One unit identifier per building
+        builder.Property(p => p.UnitIdentifierAdjustedByKeepSeparate)
+            .HasDefaultValue(false)
+            .HasComment("True if UnitIdentifier was suffix-disambiguated at import commit for a Keep-Separate decision (awaits reconciliation)");
+
+        builder.Property(p => p.OriginalUnitIdentifier)
+            .HasMaxLength(50)
+            .HasComment("UnitIdentifier as received before commit-time suffix adjustment for a Keep-Separate decision");
+
+        // Unique constraint: one LIVE unit identifier per building.
+        // Filtered on IsDeleted = false so a soft-deleted unit no longer reserves its
+        // (BuildingId, UnitIdentifier) slot — mirrors IX_Person_NationalId. Without the filter a
+        // soft-deleted (e.g. merged-away) unit permanently blocked re-importing the same identifier.
         builder.HasIndex(p => new { p.BuildingId, p.UnitIdentifier })
             .IsUnique()
-            .HasDatabaseName("IX_PropertyUnits_BuildingId_UnitIdentifier");
+            .HasDatabaseName("IX_PropertyUnits_BuildingId_UnitIdentifier")
+            .HasFilter("\"IsDeleted\" = false");
 
         builder.Property(p => p.FloorNumber)
             .IsRequired(false);

@@ -37,6 +37,21 @@ public class PropertyUnitRepository : IPropertyUnitRepository
                 cancellationToken);
     }
 
+    public async Task<PropertyUnit?> GetByBuildingAndIdentifierIncludingDeletedAsync(
+        Guid buildingId,
+        string unitIdentifier,
+        CancellationToken cancellationToken = default)
+    {
+        // IgnoreQueryFilters() bypasses the global !IsDeleted filter so the result
+        // mirrors exactly what the (unfiltered) unique index will enforce on insert.
+        return await _context.PropertyUnits
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(
+                pu => pu.BuildingId == buildingId
+                && pu.UnitIdentifier == unitIdentifier,
+                cancellationToken);
+    }
+
     public async Task<List<PropertyUnit>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.PropertyUnits
@@ -44,6 +59,26 @@ public class PropertyUnitRepository : IPropertyUnitRepository
             .OrderBy(p => p.BuildingId)
             .ThenBy(p => p.UnitIdentifier)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<(List<PropertyUnit> Items, int TotalCount)> GetPendingIdentifierReconciliationAsync(
+        int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 20;
+
+        var query = _context.PropertyUnits
+            .Include(p => p.Building)
+            .Where(p => !p.IsDeleted && p.UnitIdentifierAdjustedByKeepSeparate)
+            .OrderByDescending(p => p.LastModifiedAtUtc);
+
+        var total = await query.CountAsync(cancellationToken);
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
     }
 
     public async Task<List<PropertyUnit>> GetByBuildingIdAsync(Guid buildingId, CancellationToken cancellationToken = default)

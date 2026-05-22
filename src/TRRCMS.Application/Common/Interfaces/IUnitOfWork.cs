@@ -176,6 +176,46 @@ public interface IUnitOfWork : IDisposable
     /// get accidentally included in the transaction's SaveChanges.
     /// </summary>
     void DetachAllEntities();
+
+    /// <summary>
+    /// Flush the currently-pending changes inside a named SAVEPOINT of the active transaction,
+    /// isolating them so a failure does not abort the whole transaction.
+    ///
+    /// On success the savepoint is released and the changes remain staged in the outer transaction.
+    /// On a database error (e.g. unique-constraint violation) the transaction is rolled back to the
+    /// savepoint, the offending pending entities are detached from the change tracker (so they are
+    /// not retried by a later save), and the failure is returned rather than thrown — enabling
+    /// per-record partial commit.
+    ///
+    /// Requires an active transaction (e.g. inside <see cref="ExecuteInTransactionAsync(Func{Task}, CancellationToken)"/>).
+    /// </summary>
+    /// <param name="savepointName">Unique savepoint name within the current transaction.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<SavepointSaveResult> TrySaveChangesWithSavepointAsync(
+        string savepointName, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Outcome of <see cref="IUnitOfWork.TrySaveChangesWithSavepointAsync"/>.
+/// </summary>
+public sealed class SavepointSaveResult
+{
+    /// <summary>True when the flush succeeded and the savepoint was released.</summary>
+    public bool Success { get; init; }
+
+    /// <summary>Database constraint name that was violated, when known (e.g. a unique index).</summary>
+    public string? ConstraintName { get; init; }
+
+    /// <summary>Database-provided detail line, when available (e.g. the conflicting key values).</summary>
+    public string? Detail { get; init; }
+
+    /// <summary>Raw exception message, for logging/fallback.</summary>
+    public string? ErrorMessage { get; init; }
+
+    public static SavepointSaveResult Ok() => new() { Success = true };
+
+    public static SavepointSaveResult Fail(string? constraintName, string? detail, string? message) =>
+        new() { Success = false, ConstraintName = constraintName, Detail = detail, ErrorMessage = message };
 }
 
 /// <summary>

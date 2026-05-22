@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using TRRCMS.Infrastructure.Persistence;
 namespace TRRCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260522114753_FilterPropertyUnitUniqueIndexOnIsDeleted")]
+    partial class FilterPropertyUnitUniqueIndexOnIsDeleted
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2319,12 +2322,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("character varying(50)")
                         .HasComment("الرقم الوطني - National ID or identification number");
 
-                    b.Property<bool>("NationalIdClearedByKeepSeparate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasComment("True if NationalId was cleared at import commit for a Keep-Separate decision (awaits reconciliation)");
-
                     b.Property<int?>("Nationality")
                         .HasColumnType("integer")
                         .HasComment("الجنسية - Nationality enum stored as integer");
@@ -2333,11 +2330,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasComment("رقم الهاتف - Landline phone number");
-
-                    b.Property<string>("PreservedNationalId")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("Original NationalId removed at commit time for a Keep-Separate decision, preserved for reconciliation");
 
                     b.Property<int?>("RelationshipToHead")
                         .HasColumnType("integer")
@@ -2543,11 +2535,6 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<int?>("NumberOfRooms")
                         .HasColumnType("integer");
 
-                    b.Property<string>("OriginalUnitIdentifier")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasComment("UnitIdentifier as received before commit-time suffix adjustment for a Keep-Separate decision");
-
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -2560,12 +2547,6 @@ namespace TRRCMS.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<bool>("UnitIdentifierAdjustedByKeepSeparate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasComment("True if UnitIdentifier was suffix-disambiguated at import commit for a Keep-Separate decision (awaits reconciliation)");
 
                     b.Property<int>("UnitType")
                         .HasColumnType("integer");

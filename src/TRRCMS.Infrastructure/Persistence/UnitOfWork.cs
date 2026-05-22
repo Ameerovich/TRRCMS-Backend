@@ -191,6 +191,39 @@ private IClaimRepository? _claims;
         _context.ChangeTracker.Clear();
     }
 
+    /// <inheritdoc />
+    public async Task<SavepointSaveResult> TrySaveChangesWithSavepointAsync(
+        string savepointName, CancellationToken cancellationToken = default)
+    {
+        var transaction = _context.Database.CurrentTransaction
+            ?? throw new InvalidOperationException(
+                "TrySaveChangesWithSavepointAsync requires an active transaction.");
+
+        await transaction.CreateSavepointAsync(savepointName, cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.ReleaseSavepointAsync(savepointName, cancellationToken);
+            return SavepointSaveResult.Ok();
+        }
+        catch (DbUpdateException ex)
+        {
+            // Roll the failed record's writes back to the savepoint so the outer transaction
+            // stays usable, then detach everything still pending (nothing was persisted by this
+            // failed flush) so a later SaveChanges does not retry the offending entities.
+            await transaction.RollbackToSavepointAsync(savepointName, cancellationToken);
+
+            var pending = _context.ChangeTracker.Entries()
+                .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+                .ToList();
+            foreach (var entry in pending)
+                entry.State = EntityState.Detached;
+
+            var pg = ex.InnerException as Npgsql.PostgresException;
+            return SavepointSaveResult.Fail(pg?.ConstraintName, pg?.Detail, ex.InnerException?.Message ?? ex.Message);
+        }
+    }
+
     public void Dispose()
     {
         Dispose(true);

@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Npgsql;
+using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Application.Import.Models;
@@ -67,6 +70,16 @@ public class CommitService : ICommitService
     // (operator chose KeepSeparate on a composite-key conflict — they are genuinely distinct units)
     private readonly HashSet<Guid> _keepSeparateUnitIds = new();
 
+    // (BuildingId, UnitIdentifier) pairs already assigned to a unit earlier in the CURRENT commit
+    // transaction. Records are flushed individually within savepoints, so a freshly-inserted unit is
+    // visible to the DB on the next query — but tracking the assignment here is still cheaper and
+    // avoids handing the same identifier to two units in one package (e.g. within-batch KeepSeparate
+    // of two units sharing a building + identifier). Keyed "{buildingId}|{identifier}".
+    private readonly HashSet<string> _assignedUnitIdentifiers = new();
+
+    // Monotonic counter producing unique SAVEPOINT names within a single commit transaction.
+    private int _savepointCounter;
+
     public CommitService(
         IUnitOfWork unitOfWork,
         IStagingRepository<StagingBuilding> stagingBuildingRepo,
@@ -122,6 +135,8 @@ public class CommitService : ICommitService
         _idMap.Clear();
         _keepSeparatePersonIds.Clear();
         _keepSeparateUnitIds.Clear();
+        _assignedUnitIdentifiers.Clear();
+        _savepointCounter = 0;
 
         var report = new CommitReportDto
         {
@@ -147,26 +162,42 @@ public class CommitService : ICommitService
         // Clear change tracker to ensure no stale dirty entities from prior operations
         _unitOfWork.DetachAllEntities();
 
-        // Execute the entire commit in a transaction
-        await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        // Execute the entire commit in a transaction.
+        // The whole commit flushes with a single SaveChangesAsync, so a unique-constraint
+        // violation surfaces here and rolls the entire package back. Translate the raw
+        // Postgres error into an actionable message instead of leaking the SQLSTATE string.
+        try
         {
-            // Commit in FK-dependency order
-            await CommitBuildingsAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await CommitBuildingDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await CommitPropertyUnitsAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await PopulateMergeRedirectsAsync("PropertyUnit", importPackageId, cancellationToken);
-            await CommitPersonsAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await PopulateMergeRedirectsAsync("Person", importPackageId, cancellationToken);
-            await CommitHouseholdsAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await CommitPersonPropertyRelationsAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await CommitSurveysAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await CommitClaimsAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await CommitEvidenceAsync(importPackageId, committedByUserId, report, cancellationToken);
-            await CommitIdentificationDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
+            await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                // Commit in FK-dependency order
+                await CommitBuildingsAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await CommitBuildingDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await CommitPropertyUnitsAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await PopulateMergeRedirectsAsync("PropertyUnit", importPackageId, cancellationToken);
+                await CommitPersonsAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await PopulateMergeRedirectsAsync("Person", importPackageId, cancellationToken);
+                await CommitHouseholdsAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await CommitPersonPropertyRelationsAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await CommitSurveysAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await CommitClaimsAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await CommitEvidenceAsync(importPackageId, committedByUserId, report, cancellationToken);
+                await CommitIdentificationDocumentsAsync(importPackageId, committedByUserId, report, cancellationToken);
 
-            // Link Cases — runs last so all entities are resolved
-            await LinkCasesAsync(importPackageId, committedByUserId, report, cancellationToken);
-        }, cancellationToken);
+                // Link Cases — runs last so all entities are resolved
+                await LinkCasesAsync(importPackageId, committedByUserId, report, cancellationToken);
+            }, cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException pg && pg.SqlState == "23505")
+        {
+            // Safety net: a unique violation that escaped per-record savepoint handling (e.g. raised
+            // by the final flush or LinkCases) aborts the whole transaction. Surface it clearly.
+            _logger.LogError(ex,
+                "Commit for package {PackageId} rejected by a unique constraint ({Constraint}). Rolled back.",
+                importPackageId, pg.ConstraintName);
+            throw new ConflictException(
+                TranslateCommitError("Package", pg.ConstraintName, pg.Detail, pg.Message), ex);
+        }
 
         // Update aggregate counts
         report.TotalRecordsCommitted =
@@ -313,17 +344,96 @@ public class CommitService : ICommitService
     /// Starts with the original value; appends -2, -3, … until a free slot is found.
     /// Used for KeepSeparate property unit conflicts where the operator confirmed the unit is distinct
     /// from an existing one with the same composite key.
+    ///
+    /// A candidate is "free" only if it collides with neither:
+    ///   (a) any DB row — INCLUDING soft-deleted ones, because the unique index is unfiltered, so a
+    ///       soft-deleted unit still reserves its (BuildingId, UnitIdentifier) slot; nor
+    ///   (b) a unit already assigned earlier in this same commit transaction (buffered, not yet
+    ///       flushed, so invisible to a DB query) — tracked in <see cref="_assignedUnitIdentifiers"/>.
+    /// Both checks are required to avoid a unique-constraint violation at the final SaveChangesAsync.
     /// </summary>
     private async Task<string> FindAvailableUnitIdentifierAsync(
         Guid buildingId, string baseIdentifier, CancellationToken ct)
     {
         var candidate = baseIdentifier;
         var suffix = 2;
-        while (await _unitOfWork.PropertyUnits.GetByBuildingAndIdentifierAsync(buildingId, candidate, ct) != null)
+        while (_assignedUnitIdentifiers.Contains($"{buildingId}|{candidate}")
+            || await _unitOfWork.PropertyUnits
+                .GetByBuildingAndIdentifierIncludingDeletedAsync(buildingId, candidate, ct) != null)
         {
             candidate = $"{baseIdentifier}-{suffix++}";
         }
         return candidate;
+    }
+
+    /// <summary>
+    /// Flush a single just-staged record inside its own SAVEPOINT. On success, the record's writes
+    /// remain in the transaction. On a database rejection, the writes are rolled back, the in-memory
+    /// ID-map / report bookkeeping for this record is undone (so FK-dependent records correctly skip
+    /// it), and a clear per-record error is appended to the report. Returns whether the record committed.
+    /// </summary>
+    private async Task<bool> FlushRecordAsync(
+        string entityType,
+        Guid stagingId,
+        Guid originalEntityId,
+        Guid productionEntityId,
+        CommitEntityTypeSummary section,
+        CommitReportDto report,
+        CancellationToken ct)
+    {
+        var savepoint = $"sp_{_savepointCounter++}";
+        var result = await _unitOfWork.TrySaveChangesWithSavepointAsync(savepoint, ct);
+        if (result.Success)
+            return true;
+
+        // Nothing was persisted for this record — undo bookkeeping so dependents skip it.
+        // Remove from _idMap only if it still maps to THIS entity: some staging entities reuse
+        // another entity's UUID (e.g. a Household reusing its PropertyUnit's id), and we must not
+        // clobber that other entity's already-committed mapping.
+        if (_idMap.TryGetValue(originalEntityId, out var mapped) && mapped == productionEntityId)
+            _idMap.Remove(originalEntityId);
+        section.IdMappings.Remove(originalEntityId);
+        section.Failed++;
+        report.Errors.Add(new CommitErrorDto
+        {
+            EntityType = entityType,
+            StagingEntityId = stagingId,
+            OriginalEntityId = originalEntityId,
+            ErrorMessage = TranslateCommitError(entityType, result.ConstraintName, result.Detail, result.ErrorMessage)
+        });
+        _logger.LogWarning(
+            "Commit rejected {EntityType} {OriginalId}: {Reason}",
+            entityType, originalEntityId, result.ErrorMessage);
+        return false;
+    }
+
+    /// <summary>
+    /// Turn a database rejection into an operator-actionable, per-record message keyed off the
+    /// violated constraint. Falls back to the raw detail for any constraint not special-cased.
+    /// </summary>
+    private static string TranslateCommitError(
+        string entityType, string? constraintName, string? detail, string? rawMessage)
+    {
+        var constraint = constraintName ?? string.Empty;
+
+        if (constraint.Contains("PropertyUnits", StringComparison.OrdinalIgnoreCase)
+            && constraint.Contains("UnitIdentifier", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Rejected: this property unit's identifier already exists in the building " +
+                   "(BuildingId + UnitIdentifier must be unique). Resolve the property duplicate " +
+                   $"(Merge or Keep-Separate) and re-commit. ({detail})";
+        }
+
+        if (constraint.Contains("NationalId", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Rejected: this person's National ID already exists (must be unique). Resolve the " +
+                   $"person duplicate (Merge or Keep-Separate, which clears the duplicate NID). ({detail})";
+        }
+
+        if (!string.IsNullOrEmpty(constraint))
+            return $"Rejected by database rule '{constraint}'. {detail}";
+
+        return $"Rejected: {rawMessage}";
     }
 
     /// <summary>
@@ -466,6 +576,10 @@ public class CommitService : ICommitService
                 staging.SetCommittedEntityId(document.Id);
                 await _stagingBuildingDocRepo.UpdateAsync(staging, ct);
 
+                if (!await FlushRecordAsync("BuildingDocument", staging.Id, staging.OriginalEntityId,
+                        document.Id, report.BuildingDocuments, report, ct))
+                    continue;
+
                 report.BuildingDocuments.Committed++;
                 report.BuildingDocuments.IdMappings[staging.OriginalEntityId] = document.Id;
 
@@ -532,6 +646,11 @@ public class CommitService : ICommitService
                         _idMap[staging.OriginalEntityId] = existingBuilding.Id;
                         staging.SetCommittedEntityId(existingBuilding.Id);
                         await _stagingBuildingRepo.UpdateAsync(staging, ct);
+
+                        if (!await FlushRecordAsync("Building", staging.Id, staging.OriginalEntityId,
+                                existingBuilding.Id, report.Buildings, report, ct))
+                            continue;
+
                         report.Buildings.Committed++;
                         report.Buildings.IdMappings[staging.OriginalEntityId] = existingBuilding.Id;
                         continue;
@@ -553,6 +672,10 @@ public class CommitService : ICommitService
                     _idMap[staging.OriginalEntityId] = existingBuilding.Id;
                     staging.SetCommittedEntityId(existingBuilding.Id);
                     await _stagingBuildingRepo.UpdateAsync(staging, ct);
+
+                    if (!await FlushRecordAsync("Building", staging.Id, staging.OriginalEntityId,
+                            existingBuilding.Id, report.Buildings, report, ct))
+                        continue;
 
                     report.Buildings.Committed++;
                     report.Buildings.IdMappings[staging.OriginalEntityId] = existingBuilding.Id;
@@ -608,6 +731,10 @@ public class CommitService : ICommitService
                 _idMap[staging.OriginalEntityId] = building.Id;
                 staging.SetCommittedEntityId(building.Id);
                 await _stagingBuildingRepo.UpdateAsync(staging, ct);
+
+                if (!await FlushRecordAsync("Building", staging.Id, staging.OriginalEntityId,
+                        building.Id, report.Buildings, report, ct))
+                    continue;
 
                 report.Buildings.Committed++;
                 report.Buildings.IdMappings[staging.OriginalEntityId] = building.Id;
@@ -665,8 +792,8 @@ public class CommitService : ICommitService
 
                 if (!isKeepSeparate)
                 {
-                    // Check if a property unit with this (BuildingId, UnitIdentifier) already exists
-                    // (e.g., from a previous package covering the same building and unit)
+                    // Check if a LIVE property unit with this (BuildingId, UnitIdentifier) already
+                    // exists (e.g., from a previous package covering the same building and unit).
                     var existingUnit = await _unitOfWork.PropertyUnits
                         .GetByBuildingAndIdentifierAsync(productionBuildingId, staging.UnitIdentifier, ct);
 
@@ -676,6 +803,11 @@ public class CommitService : ICommitService
                         _idMap[staging.OriginalEntityId] = existingUnit.Id;
                         staging.SetCommittedEntityId(existingUnit.Id);
                         await _stagingPropertyUnitRepo.UpdateAsync(staging, ct);
+                        _assignedUnitIdentifiers.Add($"{productionBuildingId}|{staging.UnitIdentifier}");
+
+                        if (!await FlushRecordAsync("PropertyUnit", staging.Id, staging.OriginalEntityId,
+                                existingUnit.Id, report.PropertyUnits, report, ct))
+                            continue;
 
                         report.PropertyUnits.Committed++;
                         report.PropertyUnits.IdMappings[staging.OriginalEntityId] = existingUnit.Id;
@@ -683,6 +815,37 @@ public class CommitService : ICommitService
                         _logger.LogInformation(
                             "PropertyUnit {OriginalId} reused existing production unit {ProductionId} (Building: {BuildingId}, Unit: {UnitId})",
                             staging.OriginalEntityId, existingUnit.Id, productionBuildingId, staging.UnitIdentifier);
+                        continue;
+                    }
+
+                    // No live occupant — but the unique index is unfiltered, so a SOFT-DELETED unit
+                    // may still hold this slot. Inserting would hit a unique-constraint violation and
+                    // roll back the whole package. Since this is not a KeepSeparate decision, the
+                    // composite key means "same unit": restore the soft-deleted row and reuse it.
+                    var deletedUnit = await _unitOfWork.PropertyUnits
+                        .GetByBuildingAndIdentifierIncludingDeletedAsync(productionBuildingId, staging.UnitIdentifier, ct);
+
+                    if (deletedUnit != null)
+                    {
+                        deletedUnit.Restore(userId);
+                        await _unitOfWork.PropertyUnits.UpdateAsync(deletedUnit, ct);
+
+                        _idMap[staging.OriginalEntityId] = deletedUnit.Id;
+                        staging.SetCommittedEntityId(deletedUnit.Id);
+                        await _stagingPropertyUnitRepo.UpdateAsync(staging, ct);
+                        _assignedUnitIdentifiers.Add($"{productionBuildingId}|{staging.UnitIdentifier}");
+
+                        if (!await FlushRecordAsync("PropertyUnit", staging.Id, staging.OriginalEntityId,
+                                deletedUnit.Id, report.PropertyUnits, report, ct))
+                            continue;
+
+                        report.PropertyUnits.Committed++;
+                        report.PropertyUnits.IdMappings[staging.OriginalEntityId] = deletedUnit.Id;
+
+                        _logger.LogInformation(
+                            "PropertyUnit {OriginalId} restored previously soft-deleted production unit {ProductionId} " +
+                            "(Building: {BuildingId}, Unit: {UnitId}) instead of inserting a colliding row",
+                            staging.OriginalEntityId, deletedUnit.Id, productionBuildingId, staging.UnitIdentifier);
                         continue;
                     }
                 }
@@ -710,11 +873,23 @@ public class CommitService : ICommitService
                     areaSquareMeters: staging.AreaSquareMeters,
                     description: staging.Description);
 
+                // If KeepSeparate appended a suffix, preserve the original identifier so the
+                // adjustment is reviewable rather than silently changing the field.
+                if (isKeepSeparate && !string.Equals(unitIdentifier, staging.UnitIdentifier, StringComparison.Ordinal))
+                {
+                    unit.MarkUnitIdentifierAdjustedForKeepSeparate(staging.UnitIdentifier, userId);
+                }
+
                 await _unitOfWork.PropertyUnits.AddAsync(unit, ct);
 
                 _idMap[staging.OriginalEntityId] = unit.Id;
                 staging.SetCommittedEntityId(unit.Id);
                 await _stagingPropertyUnitRepo.UpdateAsync(staging, ct);
+                _assignedUnitIdentifiers.Add($"{productionBuildingId}|{unitIdentifier}");
+
+                if (!await FlushRecordAsync("PropertyUnit", staging.Id, staging.OriginalEntityId,
+                        unit.Id, report.PropertyUnits, report, ct))
+                    continue;
 
                 report.PropertyUnits.Committed++;
                 report.PropertyUnits.IdMappings[staging.OriginalEntityId] = unit.Id;
@@ -750,22 +925,16 @@ public class CommitService : ICommitService
             {
                 // KeepSeparate: operator confirmed this is a genuinely distinct person despite a
                 // matching NationalId in production. Clear NationalId before insert to avoid
-                // violating the unique constraint; the record can be reconciled by a data reviewer.
-                var nationalId = _keepSeparatePersonIds.Contains(staging.OriginalEntityId)
-                    ? null
-                    : staging.NationalId;
-
-                if (nationalId == null && staging.NationalId != null)
-                    _logger.LogInformation(
-                        "KeepSeparate: cleared NationalId for staging Person {OriginalId} before commit",
-                        staging.OriginalEntityId);
+                // violating the unique constraint; the original is preserved on the record so a
+                // data reviewer can reconcile it later (see PreservedNationalId).
+                var isKeepSeparate = _keepSeparatePersonIds.Contains(staging.OriginalEntityId);
 
                 var person = Person.CreateWithFullInfo(
                     familyNameArabic: staging.FamilyNameArabic,
                     firstNameArabic: staging.FirstNameArabic,
                     fatherNameArabic: staging.FatherNameArabic,
                     motherNameArabic: staging.MotherNameArabic,
-                    nationalId: nationalId,
+                    nationalId: staging.NationalId,
                     dateOfBirth: staging.DateOfBirth,
                     gender: staging.Gender,
                     nationality: staging.Nationality,
@@ -773,6 +942,15 @@ public class CommitService : ICommitService
                     mobileNumber: staging.MobileNumber,
                     phoneNumber: staging.PhoneNumber,
                     createdByUserId: userId);
+
+                if (isKeepSeparate && !string.IsNullOrWhiteSpace(staging.NationalId))
+                {
+                    person.ClearNationalIdForKeepSeparate(staging.NationalId!, userId);
+                    _logger.LogInformation(
+                        "KeepSeparate: cleared NationalId for staging Person {OriginalId} before commit " +
+                        "(preserved for reconciliation)",
+                        staging.OriginalEntityId);
+                }
 
                 if (staging.IsContactPerson)
                     person.SetAsContactPerson(true, userId);
@@ -782,6 +960,10 @@ public class CommitService : ICommitService
                 _idMap[staging.OriginalEntityId] = person.Id;
                 staging.SetCommittedEntityId(person.Id);
                 await _stagingPersonRepo.UpdateAsync(staging, ct);
+
+                if (!await FlushRecordAsync("Person", staging.Id, staging.OriginalEntityId,
+                        person.Id, report.Persons, report, ct))
+                    continue;
 
                 report.Persons.Committed++;
                 report.Persons.IdMappings[staging.OriginalEntityId] = person.Id;
@@ -849,9 +1031,6 @@ public class CommitService : ICommitService
                 staging.SetCommittedEntityId(household.Id);
                 await _stagingHouseholdRepo.UpdateAsync(staging, ct);
 
-                report.Households.Committed++;
-                report.Households.IdMappings[staging.OriginalEntityId] = household.Id;
-
                 // Assign committed persons to this household.
                 // Primary path: StagingPerson.OriginalHouseholdId (set when mobile populates persons.household_id).
                 // Fallback: infer members from PersonPropertyRelations pointing to the same property unit,
@@ -888,6 +1067,14 @@ public class CommitService : ICommitService
                         await _unitOfWork.Persons.UpdateAsync(person, ct);
                     }
                 }
+
+                // Flush the household and its member re-assignments together as one record.
+                if (!await FlushRecordAsync("Household", staging.Id, staging.OriginalEntityId,
+                        household.Id, report.Households, report, ct))
+                    continue;
+
+                report.Households.Committed++;
+                report.Households.IdMappings[staging.OriginalEntityId] = household.Id;
             }
             catch (Exception ex)
             {
@@ -948,6 +1135,10 @@ public class CommitService : ICommitService
                 _idMap[staging.OriginalEntityId] = relation.Id;
                 staging.SetCommittedEntityId(relation.Id);
                 await _stagingRelationRepo.UpdateAsync(staging, ct);
+
+                if (!await FlushRecordAsync("PersonPropertyRelation", staging.Id, staging.OriginalEntityId,
+                        relation.Id, report.PersonPropertyRelations, report, ct))
+                    continue;
 
                 report.PersonPropertyRelations.Committed++;
                 report.PersonPropertyRelations.IdMappings[staging.OriginalEntityId] = relation.Id;
@@ -1027,6 +1218,10 @@ public class CommitService : ICommitService
                         staging.SetCommittedEntityId(existingSurvey.Id);
                         await _stagingSurveyRepo.UpdateAsync(staging, ct);
 
+                        if (!await FlushRecordAsync("Survey", staging.Id, staging.OriginalEntityId,
+                                existingSurvey.Id, report.Surveys, report, ct))
+                            continue;
+
                         report.Surveys.Committed++;
                         report.Surveys.IdMappings[staging.OriginalEntityId] = existingSurvey.Id;
 
@@ -1099,6 +1294,10 @@ public class CommitService : ICommitService
                 _idMap[staging.OriginalEntityId] = survey.Id;
                 staging.SetCommittedEntityId(survey.Id);
                 await _stagingSurveyRepo.UpdateAsync(staging, ct);
+
+                if (!await FlushRecordAsync("Survey", staging.Id, staging.OriginalEntityId,
+                        survey.Id, report.Surveys, report, ct))
+                    continue;
 
                 report.Surveys.Committed++;
                 report.Surveys.IdMappings[staging.OriginalEntityId] = survey.Id;
@@ -1206,6 +1405,10 @@ public class CommitService : ICommitService
                 _idMap[staging.OriginalEntityId] = claim.Id;
                 staging.SetCommittedEntityId(claim.Id);
                 await _stagingClaimRepo.UpdateAsync(staging, ct);
+
+                if (!await FlushRecordAsync("Claim", staging.Id, staging.OriginalEntityId,
+                        claim.Id, report.Claims, report, ct))
+                    continue;
 
                 report.Claims.Committed++;
                 report.Claims.IdMappings[staging.OriginalEntityId] = claim.Id;
@@ -1322,6 +1525,10 @@ public class CommitService : ICommitService
                 staging.SetCommittedEntityId(evidence.Id);
                 await _stagingEvidenceRepo.UpdateAsync(staging, ct);
 
+                if (!await FlushRecordAsync("Evidence", staging.Id, staging.OriginalEntityId,
+                        evidence.Id, report.Evidences, report, ct))
+                    continue;
+
                 report.Evidences.Committed++;
                 report.Evidences.IdMappings[staging.OriginalEntityId] = evidence.Id;
             }
@@ -1396,6 +1603,10 @@ public class CommitService : ICommitService
                 _idMap[staging.OriginalEntityId] = doc.Id;
                 staging.SetCommittedEntityId(doc.Id);
                 await _stagingIdDocRepo.UpdateAsync(staging, ct);
+
+                if (!await FlushRecordAsync("IdentificationDocument", staging.Id, staging.OriginalEntityId,
+                        doc.Id, report.IdentificationDocuments, report, ct))
+                    continue;
 
                 report.IdentificationDocuments.Committed++;
                 report.IdentificationDocuments.IdMappings[staging.OriginalEntityId] = doc.Id;

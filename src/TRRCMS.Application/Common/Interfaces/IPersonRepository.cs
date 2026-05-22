@@ -27,6 +27,14 @@ namespace TRRCMS.Application.Common.Interfaces
         Task<Person?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Get persons whose National ID was cleared at import-commit time for a Keep-Separate
+        /// decision and still await reconciliation (NationalIdClearedByKeepSeparate = true).
+        /// Ordered by most-recently-modified first. Returns the page plus the total matching count.
+        /// </summary>
+        Task<(List<Person> Items, int TotalCount)> GetPendingNationalIdReconciliationAsync(
+            int page, int pageSize, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Search persons by name (Arabic)
         /// </summary>
         Task<List<Person>> SearchByNameAsync(string? firstName, string? fatherName, string? familyName, CancellationToken cancellationToken = default);

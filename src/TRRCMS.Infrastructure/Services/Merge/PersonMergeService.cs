@@ -144,9 +144,19 @@ public class PersonMergeService : IMergeService
             }
             else
             {
+                // Neither side resolves — the conflict is orphaned. Typical causes:
+                //   - The import package was re-staged after this conflict was created
+                //     (staging rows replaced with new OriginalEntityIds).
+                //   - The package was committed and staging was cleaned up, but the
+                //     conflict was not resolved beforehand.
+                //   - The conflict references a production entity that has since been
+                //     hard-deleted or merged elsewhere.
                 throw new InvalidOperationException(
-                    $"Could not locate master ({masterEntityId}) or discarded ({discardedEntityId}) " +
-                    $"entity in either production or staging tables.");
+                    $"Conflict references entities that no longer exist " +
+                    $"(master={masterEntityId}, discarded={discardedEntityId}). " +
+                    "This usually means the import package was re-staged or committed " +
+                    "after the conflict was created. Re-run duplicate detection to " +
+                    "regenerate conflicts against the current data.");
             }
 
             result.Success = true;
