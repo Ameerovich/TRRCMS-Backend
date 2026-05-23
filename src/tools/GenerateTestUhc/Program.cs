@@ -6,6 +6,9 @@
 //   - 11 data tables: surveys, buildings, building_documents, property_units,
 //     persons, households, person_property_relations, claims, evidences,
 //     evidence_relations (M:N junction), identification_documents
+//   - attachments table: binary BLOBs keyed by the owning document
+//     (building_document_id / evidence_id / identification_document_id);
+//     excluded from the content checksum
 //
 // v1.9 changes (current):
 //   - households: per-gender age/disability columns removed; adult_count,
@@ -324,19 +327,53 @@ using (var conn = new SqliteConnection(connStr))
             notes               TEXT
         );");
 
-    // Building photo document — linked to the building
-    Execute(conn, @"
+    // Building photo document — linked to the building.
+    // A real (minimal valid) JPEG is embedded as a BLOB in the attachments table below,
+    // so the import pipeline extracts an actual file to disk. file_size_bytes and file_hash
+    // are computed from the blob so they stay consistent (and exercise commit-time dedup).
+    var buildingPhotoBytes = Convert.FromBase64String(
+        "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a" +
+        "HBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAA" +
+        "AAAAAAAAAAAAAv/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AfwD/2Q==");
+    var buildingPhotoSize = buildingPhotoBytes.Length;
+    var buildingPhotoHash = Convert.ToHexString(SHA256.HashData(buildingPhotoBytes)).ToLowerInvariant();
+
+    Execute(conn, $@"
         INSERT INTO building_documents VALUES (
             @id, @bid,
             'building_photo_front.jpg',
-            512000,
+            {buildingPhotoSize},
             'documents/building_photo_front.jpg',
-            'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
+            '{buildingPhotoHash}',
             'صورة واجهة المبنى الأمامية',
             'تم التقاط الصورة أثناء المسح الميداني'
         );",
         ("@id", buildingDocId1.ToString()),
         ("@bid", buildingId.ToString()));
+
+    // ── ATTACHMENTS TABLE (binary BLOBs) ───────────────────────────────────────
+    // Unified attachment store keyed by the owning document. The server's
+    // StagingService reads: SELECT data FROM attachments WHERE building_document_id = @id
+    // (and likewise for evidence_id / identification_document_id). Excluded from the
+    // content checksum (see ComputeContentChecksum exclusion list).
+    Execute(conn, @"
+        CREATE TABLE attachments (
+            id                          TEXT PRIMARY KEY,
+            building_document_id        TEXT,
+            evidence_id                 TEXT,
+            identification_document_id  TEXT,
+            data                        BLOB NOT NULL
+        );");
+
+    using (var attachCmd = conn.CreateCommand())
+    {
+        attachCmd.CommandText =
+            "INSERT INTO attachments (id, building_document_id, data) VALUES (@id, @bdid, @data);";
+        attachCmd.Parameters.AddWithValue("@id", DeriveGuid(packageId, "attachment_1").ToString());
+        attachCmd.Parameters.AddWithValue("@bdid", buildingDocId1.ToString());
+        attachCmd.Parameters.AddWithValue("@data", buildingPhotoBytes);
+        attachCmd.ExecuteNonQuery();
+    }
 
     // ── 4. PROPERTY_UNITS TABLE ────────────────────────────────────────────────
     // Columns aligned with StagingPropertyUnit entity (no occupancy_status/damage_level/estimated_area_sqm)
@@ -716,6 +753,7 @@ Console.WriteLine($"  Claim 1:    OwnershipClaim (share: {ownershipShare}/2400) 
 Console.WriteLine($"  Claim 2:    OccupancyClaim by P3 (relation: {relationTypeNames.GetValueOrDefault(relation2Type, "Other")})");
 Console.WriteLine($"  Evidence:   type={evidenceType} (tenure doc), linked to 2 relations via junction table");
 Console.WriteLine($"  ID Doc:     type={docType} for P1");
+Console.WriteLine($"  Bldg Photo: building_photo_front.jpg (JPEG BLOB embedded in attachments table)");
 Console.WriteLine($"  Survey:     status={statusNames.GetValueOrDefault(surveyStatus, "Unknown")} ({surveyStatus})");
 Console.WriteLine();
 Console.WriteLine("  Each run generates UNIQUE values. Run again for different test data.");

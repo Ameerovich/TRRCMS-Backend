@@ -16,10 +16,11 @@ public class UploadIdentificationDocumentCommandValidator : LocalizedValidator<U
     /// </summary>
     private const long MaxFileSizeBytes = 15 * 1024 * 1024;
 
+    // Must match the extension allow-list enforced in the handler (.pdf/.jpg/.jpeg/.png)
+    // and the formats the file storage layer can MIME-map and magic-byte validate.
     private static readonly string[] AllowedMimeTypes =
     {
-        "image/jpeg", "image/png", "image/gif", "image/webp", "image/tiff",
-        "application/pdf"
+        "image/jpeg", "image/png", "application/pdf"
     };
 
     public UploadIdentificationDocumentCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)

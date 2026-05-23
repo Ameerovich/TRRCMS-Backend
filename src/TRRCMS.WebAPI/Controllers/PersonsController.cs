@@ -415,10 +415,9 @@ public class PersonsController : ControllerBase
     public async Task<IActionResult> DownloadIdentificationDocument(Guid personId, Guid documentId, CancellationToken cancellationToken)
     {
         var query = new DownloadIdentificationDocumentQuery(personId, documentId);
-        var fileStream = await _mediator.Send(query, cancellationToken);
+        var result = await _mediator.Send(query, cancellationToken);
 
-        var mimeType = "application/octet-stream";
-        return File(fileStream, mimeType, enableRangeProcessing: true);
+        return File(result.FileStream, result.MimeType, result.FileName, enableRangeProcessing: true);
     }
 
     // ==================== GET ALL ====================

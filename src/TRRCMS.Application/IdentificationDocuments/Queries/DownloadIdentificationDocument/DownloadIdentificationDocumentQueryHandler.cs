@@ -5,7 +5,7 @@ using TRRCMS.Domain.Entities;
 
 namespace TRRCMS.Application.IdentificationDocuments.Queries.DownloadIdentificationDocument;
 
-public class DownloadIdentificationDocumentQueryHandler : IRequestHandler<DownloadIdentificationDocumentQuery, Stream>
+public class DownloadIdentificationDocumentQueryHandler : IRequestHandler<DownloadIdentificationDocumentQuery, DownloadIdentificationDocumentResult>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileStorageService _fileStorageService;
@@ -18,7 +18,7 @@ public class DownloadIdentificationDocumentQueryHandler : IRequestHandler<Downlo
         _fileStorageService = fileStorageService;
     }
 
-    public async Task<Stream> Handle(
+    public async Task<DownloadIdentificationDocumentResult> Handle(
         DownloadIdentificationDocumentQuery request,
         CancellationToken cancellationToken)
     {
@@ -35,6 +35,16 @@ public class DownloadIdentificationDocumentQueryHandler : IRequestHandler<Downlo
             throw new NotFoundException("Document has no associated file");
 
         var fileStream = await _fileStorageService.GetFileAsync(document.FilePath, cancellationToken);
-        return fileStream;
+
+        return new DownloadIdentificationDocumentResult
+        {
+            FileStream = fileStream,
+            FileName = string.IsNullOrWhiteSpace(document.OriginalFileName)
+                ? $"{document.Id}"
+                : document.OriginalFileName,
+            MimeType = string.IsNullOrWhiteSpace(document.MimeType)
+                ? "application/octet-stream"
+                : document.MimeType
+        };
     }
 }
