@@ -190,6 +190,7 @@
   <data name="UnitStatus_ValidValue"><value>قيمة حالة الوحدة العقارية غير صالحة</value></data>
   <data name="FloorNumber_Range"><value>رقم الطابق يجب أن يكون بين -5 و200</value></data>
   <data name="Area_GreaterThanZero"><value>المساحة يجب أن تكون أكبر من 0</value></data>
+  <data name="Area_MaxValue"><value>المساحة يجب ألا تتجاوز 10000 متر مربع</value></data>
   <data name="Rooms_Range0to100"><value>عدد الغرف يجب أن يكون بين 0 و100</value></data>
   <data name="UnitType_Invalid"><value>قيمة نوع الوحدة العقارية غير صالحة</value></data>
   <data name="UnitStatus_Invalid"><value>قيمة حالة الوحدة العقارية غير صالحة</value></data>

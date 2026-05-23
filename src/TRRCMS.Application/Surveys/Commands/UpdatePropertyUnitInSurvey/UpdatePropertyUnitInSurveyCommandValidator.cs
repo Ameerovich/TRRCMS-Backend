@@ -43,8 +43,10 @@ public class UpdatePropertyUnitInSurveyCommandValidator : LocalizedValidator<Upd
 
         RuleFor(x => x.AreaSquareMeters)
             .GreaterThan(0)
-            .When(x => x.AreaSquareMeters.HasValue)
-            .WithMessage(L("Area_GreaterThanZero"));
+            .WithMessage(L("Area_GreaterThanZero"))
+            .LessThanOrEqualTo(10000)
+            .WithMessage(L("Area_MaxValue"))
+            .When(x => x.AreaSquareMeters.HasValue);
 
         RuleFor(x => x.NumberOfRooms)
             .InclusiveBetween(0, 100)

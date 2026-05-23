@@ -188,6 +188,7 @@
   <data name="UnitStatus_ValidValue"><value>Status is not a recognized value</value></data>
   <data name="FloorNumber_Range"><value>Floor number must be between -5 and 200</value></data>
   <data name="Area_GreaterThanZero"><value>Area must be greater than 0</value></data>
+  <data name="Area_MaxValue"><value>Area must not exceed 10,000 square meters</value></data>
   <data name="Rooms_Range0to100"><value>Number of rooms must be between 0 and 100</value></data>
   <data name="UnitType_Invalid"><value>Invalid property unit type value</value></data>
   <data name="UnitStatus_Invalid"><value>Invalid property unit status value</value></data>
