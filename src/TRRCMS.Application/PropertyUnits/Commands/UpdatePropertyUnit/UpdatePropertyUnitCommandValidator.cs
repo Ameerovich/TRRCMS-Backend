@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
 using TRRCMS.Application;
 
@@ -10,7 +11,7 @@ namespace TRRCMS.Application.PropertyUnits.Commands.UpdatePropertyUnit;
 /// </summary>
 public class UpdatePropertyUnitCommandValidator : LocalizedValidator<UpdatePropertyUnitCommand>
 {
-    public UpdatePropertyUnitCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
+    public UpdatePropertyUnitCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.Id)
             .NotEmpty()
@@ -24,12 +25,13 @@ public class UpdatePropertyUnitCommandValidator : LocalizedValidator<UpdatePrope
             .When(x => x.UnitIdentifier is not null);
 
         RuleFor(x => x.UnitType)
-            .InclusiveBetween(1, 5)
+            .Must(v => vocabService.IsValidCode("property_unit_type", v!.Value))
             .When(x => x.UnitType.HasValue)
-            .WithMessage(L("UnitType_Range1to5"));
+            .WithMessage(L("UnitType_InvalidRange"));
 
         RuleFor(x => x.Status)
-            .Must(s => !s.HasValue || (s.Value >= 1 && s.Value <= 6) || s.Value == 99)
+            .Must(v => vocabService.IsValidCode("property_unit_status", v!.Value))
+            .When(x => x.Status.HasValue)
             .WithMessage(L("UnitStatus_ValidValue"));
 
         RuleFor(x => x.FloorNumber)
@@ -39,8 +41,10 @@ public class UpdatePropertyUnitCommandValidator : LocalizedValidator<UpdatePrope
 
         RuleFor(x => x.AreaSquareMeters)
             .GreaterThan(0)
-            .When(x => x.AreaSquareMeters.HasValue)
-            .WithMessage(L("Area_GreaterThanZero"));
+            .WithMessage(L("Area_GreaterThanZero"))
+            .LessThanOrEqualTo(10000)
+            .WithMessage(L("Area_MaxValue"))
+            .When(x => x.AreaSquareMeters.HasValue);
 
         RuleFor(x => x.NumberOfRooms)
             .InclusiveBetween(0, 100)

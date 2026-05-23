@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
 using TRRCMS.Application;
 
@@ -10,7 +11,7 @@ namespace TRRCMS.Application.Surveys.Commands.CreatePropertyUnitInSurvey;
 /// </summary>
 public class CreatePropertyUnitInSurveyCommandValidator : LocalizedValidator<CreatePropertyUnitInSurveyCommand>
 {
-    public CreatePropertyUnitInSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
+    public CreatePropertyUnitInSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
@@ -23,11 +24,11 @@ public class CreatePropertyUnitInSurveyCommandValidator : LocalizedValidator<Cre
             .WithMessage(L("UnitIdentifier_MaxLength50"));
 
         RuleFor(x => x.UnitType)
-            .InclusiveBetween(1, 5)
+            .Must(v => vocabService.IsValidCode("property_unit_type", v))
             .WithMessage(L("UnitType_InvalidRange"));
 
         RuleFor(x => x.Status)
-            .Must(s => s >= 1 && s <= 6 || s == 99)
+            .Must(v => vocabService.IsValidCode("property_unit_status", v))
             .WithMessage(L("UnitStatus_Invalid"));
 
         RuleFor(x => x.FloorNumber)
@@ -37,8 +38,10 @@ public class CreatePropertyUnitInSurveyCommandValidator : LocalizedValidator<Cre
 
         RuleFor(x => x.AreaSquareMeters)
             .GreaterThan(0)
-            .When(x => x.AreaSquareMeters.HasValue)
-            .WithMessage(L("Area_GreaterThanZero"));
+            .WithMessage(L("Area_GreaterThanZero"))
+            .LessThanOrEqualTo(10000)
+            .WithMessage(L("Area_MaxValue"))
+            .When(x => x.AreaSquareMeters.HasValue);
 
         RuleFor(x => x.NumberOfRooms)
             .InclusiveBetween(0, 100)

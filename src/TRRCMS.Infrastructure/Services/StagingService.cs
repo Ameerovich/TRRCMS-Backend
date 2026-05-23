@@ -29,6 +29,7 @@ public class StagingService : IStagingService
     private readonly IStagingRepository<StagingIdentificationDocument> _idDocRepo;
     private readonly IStagingRepository<StagingClaim> _claimRepo;
     private readonly IStagingRepository<StagingSurvey> _surveyRepo;
+    private readonly IConflictResolutionRepository _conflictRepo;
     private readonly IFileStorageService _fileStorageService;
     private readonly IVocabularyValidationService _vocabService;
     private readonly ILogger<StagingService> _logger;
@@ -45,6 +46,7 @@ public class StagingService : IStagingService
         IStagingRepository<StagingIdentificationDocument> idDocRepo,
         IStagingRepository<StagingClaim> claimRepo,
         IStagingRepository<StagingSurvey> surveyRepo,
+        IConflictResolutionRepository conflictRepo,
         IFileStorageService fileStorageService,
         IVocabularyValidationService vocabService,
         ILogger<StagingService> logger)
@@ -60,6 +62,7 @@ public class StagingService : IStagingService
         _idDocRepo = idDocRepo;
         _claimRepo = claimRepo;
         _surveyRepo = surveyRepo;
+        _conflictRepo = conflictRepo;
         _fileStorageService = fileStorageService;
         _vocabService = vocabService;
         _logger = logger;
@@ -118,6 +121,23 @@ public class StagingService : IStagingService
     public async Task CleanupStagingAsync(Guid importPackageId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Cleaning up staging data for package {PackageId}", importPackageId);
+
+        // Purge unresolved conflicts first — their FirstEntityId / SecondEntityId point at
+        // staging OriginalEntityIds that are about to be deleted. Leaving them behind would
+        // cause Merge / KeepSeparate to fail with "Could not locate master/discarded entity"
+        // once the user tried to act on them. Resolved conflicts (KeepBoth / Merge) are kept
+        // for audit — their side-effects are already applied and the stale IDs are harmless.
+        var pendingConflicts = (await _conflictRepo.GetByPackageIdAsync(importPackageId, cancellationToken))
+            .Where(c => c.Status == "PendingReview")
+            .ToList();
+        if (pendingConflicts.Count > 0)
+        {
+            await _conflictRepo.RemoveRangeAsync(pendingConflicts, cancellationToken);
+            await _conflictRepo.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation(
+                "Hard-deleted {Count} PendingReview conflict(s) for package {PackageId} as part of staging cleanup",
+                pendingConflicts.Count, importPackageId);
+        }
 
         // Delete in reverse dependency order
         await _idDocRepo.DeleteByPackageIdAsync(importPackageId, cancellationToken);

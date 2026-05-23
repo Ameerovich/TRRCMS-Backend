@@ -183,10 +183,12 @@
   <!-- ── PropertyUnits ──────────────────────────────────────────── -->
   <data name="UnitId_Required"><value>Unit identifier is required</value></data>
   <data name="UnitId_MaxLength50"><value>Unit identifier must not exceed 50 characters</value></data>
-  <data name="UnitType_Range1to5"><value>Unit type must be between 1 and 5</value></data>
-  <data name="UnitStatus_ValidValue"><value>Status must be a valid value (1-6 or 99)</value></data>
+  <data name="UnitType_Range1to5"><value>Unit type is not a recognized value</value></data>
+  <data name="UnitType_InvalidRange"><value>Unit type is not a recognized value</value></data>
+  <data name="UnitStatus_ValidValue"><value>Status is not a recognized value</value></data>
   <data name="FloorNumber_Range"><value>Floor number must be between -5 and 200</value></data>
   <data name="Area_GreaterThanZero"><value>Area must be greater than 0</value></data>
+  <data name="Area_MaxValue"><value>Area must not exceed 10,000 square meters</value></data>
   <data name="Rooms_Range0to100"><value>Number of rooms must be between 0 and 100</value></data>
   <data name="UnitType_Invalid"><value>Invalid property unit type value</value></data>
   <data name="UnitStatus_Invalid"><value>Invalid property unit status value</value></data>

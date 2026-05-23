@@ -45,6 +45,21 @@ public class PropertyUnit : BaseAuditableEntity
     /// Unit description or notes
     /// </summary>
     public string? Description { get; private set; }
+
+    /// <summary>
+    /// True when this unit was committed via the import pipeline with a disambiguated UnitIdentifier
+    /// (a numeric suffix) because an operator chose Keep-Separate on a composite-key duplicate. The
+    /// unique (BuildingId, UnitIdentifier) index would otherwise have blocked the insert. Such records
+    /// await reconciliation so the identifier can be confirmed or corrected.
+    /// </summary>
+    public bool UnitIdentifierAdjustedByKeepSeparate { get; private set; }
+
+    /// <summary>
+    /// The UnitIdentifier as it arrived in the package, before a suffix was appended at commit time
+    /// (see <see cref="UnitIdentifierAdjustedByKeepSeparate"/>). Null when no adjustment was made.
+    /// </summary>
+    public string? OriginalUnitIdentifier { get; private set; }
+
     /// <summary>
     /// Parent building
     /// </summary>
@@ -168,6 +183,30 @@ public class PropertyUnit : BaseAuditableEntity
     public void UpdateUnitIdentifier(string unitIdentifier, Guid modifiedByUserId)
     {
         UnitIdentifier = unitIdentifier;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Record that this unit's identifier was suffix-disambiguated at import-commit time for a
+    /// Keep-Separate decision, preserving the original (colliding) identifier for later reconciliation.
+    /// Call after the unit is created with its adjusted identifier.
+    /// </summary>
+    public void MarkUnitIdentifierAdjustedForKeepSeparate(string originalUnitIdentifier, Guid modifiedByUserId)
+    {
+        OriginalUnitIdentifier = originalUnitIdentifier;
+        UnitIdentifierAdjustedByKeepSeparate = true;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Reconcile a previously suffix-adjusted identifier: set the confirmed identifier and clear the
+    /// pending-reconciliation flag. The caller is responsible for ensuring uniqueness.
+    /// </summary>
+    public void ReconcileAdjustedUnitIdentifier(string confirmedUnitIdentifier, Guid modifiedByUserId)
+    {
+        UnitIdentifier = confirmedUnitIdentifier;
+        UnitIdentifierAdjustedByKeepSeparate = false;
+        OriginalUnitIdentifier = null;
         MarkAsModified(modifiedByUserId);
     }
 

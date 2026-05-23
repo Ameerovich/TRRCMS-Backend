@@ -15,6 +15,7 @@ using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Application.Import.Queries.GetCommitReport;
 using TRRCMS.Application.Import.Queries.GetImportPackage;
 using TRRCMS.Application.Import.Queries.GetImportPackages;
+using TRRCMS.Application.Import.Queries.GetReconciliationQueue;
 using TRRCMS.Application.Import.Queries.GetStagingSummary;
 using TRRCMS.Application.Import.Queries.GetStagedEntities;
 using TRRCMS.Domain.Enums;
@@ -194,6 +195,30 @@ public class ImportController : ControllerBase
         {
             ImportPackageId = id,
             EntityTypeFilter = entityType
+        }));
+    }
+
+    /// <summary>
+    /// Get the post-commit reconciliation queue: records the import pipeline auto-adjusted to honour a
+    /// Keep-Separate decision and which await manual review — persons whose National ID was cleared, and
+    /// property units whose identifier was suffix-disambiguated.
+    /// </summary>
+    /// <param name="entityType">Optional filter: "person" or "propertyunit". Omit for both.</param>
+    /// <param name="page">1-based page number (default 1).</param>
+    /// <param name="pageSize">Page size per entity type (default 20).</param>
+    /// <response code="200">Reconciliation queue (may be empty).</response>
+    [HttpGet("reconciliation-queue")]
+    [ProducesResponseType(typeof(ReconciliationQueueDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ReconciliationQueueDto>> GetReconciliationQueue(
+        [FromQuery] string? entityType = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        return Ok(await _mediator.Send(new GetReconciliationQueueQuery
+        {
+            EntityTypeFilter = entityType,
+            Page = page,
+            PageSize = pageSize
         }));
     }
 

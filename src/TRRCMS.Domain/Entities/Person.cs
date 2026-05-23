@@ -67,6 +67,21 @@ public class Person : BaseAuditableEntity
     /// Indicates if this person is the main contact person
     /// </summary>
     public bool IsContactPerson { get; private set; }
+
+    /// <summary>
+    /// True when this person was committed via the import pipeline with its National ID cleared
+    /// because an operator chose Keep-Separate on a National-ID duplicate. The unique NID index
+    /// would otherwise have blocked the insert. Such records await reconciliation by a data reviewer.
+    /// </summary>
+    public bool NationalIdClearedByKeepSeparate { get; private set; }
+
+    /// <summary>
+    /// The National ID that was removed from this record at commit time (see
+    /// <see cref="NationalIdClearedByKeepSeparate"/>). Preserved so a reviewer can verify the
+    /// identity and either re-assign it or correct it. Null when no NID was ever cleared.
+    /// </summary>
+    public string? PreservedNationalId { get; private set; }
+
     /// <summary>
     /// Foreign key to household (nullable for non-household persons)
     /// </summary>
@@ -258,6 +273,31 @@ public class Person : BaseAuditableEntity
     public void SetAsContactPerson(bool isContact, Guid modifiedByUserId)
     {
         IsContactPerson = isContact;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Clear the National ID at import-commit time for a Keep-Separate decision, preserving the
+    /// original value for later reconciliation. Used when an operator confirmed this is a distinct
+    /// person despite a matching NID, where the unique index would otherwise block the insert.
+    /// </summary>
+    public void ClearNationalIdForKeepSeparate(string originalNationalId, Guid modifiedByUserId)
+    {
+        PreservedNationalId = string.IsNullOrWhiteSpace(originalNationalId) ? null : originalNationalId.Trim();
+        NationalId = null;
+        NationalIdClearedByKeepSeparate = true;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Reconcile a previously-cleared National ID: re-assign a (presumably corrected) value and
+    /// clear the pending-reconciliation flag. The caller is responsible for ensuring uniqueness.
+    /// </summary>
+    public void ReconcileClearedNationalId(string? reconciledNationalId, Guid modifiedByUserId)
+    {
+        NationalId = string.IsNullOrWhiteSpace(reconciledNationalId) ? null : reconciledNationalId.Trim();
+        NationalIdClearedByKeepSeparate = false;
+        PreservedNationalId = null;
         MarkAsModified(modifiedByUserId);
     }
 

@@ -304,7 +304,10 @@ public class PersonMatchingService
         {
             StagingPersonId = a.Id,
             StagingOriginalEntityId = a.OriginalEntityId,
-            MatchedEntityId = b.Id,
+            // For within-batch matches the "matched" entity is another STAGING person, so this must be
+            // its OriginalEntityId (the id the merge/keep-separate pipeline resolves against) — NOT its
+            // staging-table primary key b.Id, which would be unresolvable and break within-batch merges.
+            MatchedEntityId = b.OriginalEntityId,
             StagingPersonIdentifier = BuildPersonIdentifier(
                 a.FirstNameArabic, a.FatherNameArabic, a.FamilyNameArabic, a.NationalId),
             MatchedPersonIdentifier = BuildPersonIdentifier(
