@@ -2174,12 +2174,12 @@ public class SurveysController : ControllerBase
     /// DocumentReferenceNumber: 123456789
     /// ```
     ///
-    /// **Response**: Evidence record with file details.
-    /// Note: evidenceType is returned as integer (e.g., 1 for IdentificationDocument). Use the Vocabularies API to get labels.
+    /// **Response**: The created IdentificationDocumentDto with file details and metadata.
+    /// Note: documentType is returned as integer (e.g., 1 for PersonalIdPhoto). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
     /// <param name="command">Upload command with file and metadata (from form)</param>
-    /// <returns>Created evidence record</returns>
+    /// <returns>Created identification document</returns>
     /// <response code="201">Document uploaded successfully.</response>
     /// <response code="400">Invalid file type, size exceeded, or person not in survey.</response>
     /// <response code="401">Not authenticated. Login required.</response>
@@ -2188,18 +2188,21 @@ public class SurveysController : ControllerBase
     [HttpPost("{surveyId}/evidence/identification")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(IdentificationDocumentDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<EvidenceDto>> UploadIdentificationDocument(
+    public async Task<ActionResult<IdentificationDocumentDto>> UploadIdentificationDocument(
         Guid surveyId,
         [FromForm] UploadIdentificationDocumentCommand command)
     {
         command.SurveyId = surveyId;
         var result = await _mediator.Send(command);
-        return CreatedAtAction(nameof(GetEvidenceById), new { evidenceId = result.Id }, result);
+        return CreatedAtAction(
+            nameof(GetIdentificationDocumentsByPerson),
+            new { personId = result.PersonId },
+            result);
     }
 
     /// <summary>
@@ -2233,7 +2236,7 @@ public class SurveysController : ControllerBase
     /// - Add missing metadata (notes, reference numbers)
     ///
     /// **File Requirements** (only if replacing):
-    /// - Format: PDF, JPG, JPEG, PNG, GIF, WebP, TIFF
+    /// - Format: PDF, JPG, JPEG, PNG
     /// - Max size: 15MB
     /// - File content is validated (magic bytes must match the declared format)
     /// - File is optional - omit to keep existing file
@@ -2267,27 +2270,27 @@ public class SurveysController : ControllerBase
     /// PersonId: new-person-guid-here
     /// ```
     ///
-    /// **Response**: Updated EvidenceDto with file details.
-    /// Note: evidenceType is returned as integer (e.g., 1 for IdentificationDocument). Use the Vocabularies API to get labels.
+    /// **Response**: The updated IdentificationDocumentDto with file details and metadata.
+    /// Note: documentType is returned as integer (e.g., 1 for PersonalIdPhoto). Use the Vocabularies API to get labels.
     /// </remarks>
     /// <param name="surveyId">Survey ID for authorization</param>
-    /// <param name="evidenceId">Evidence ID to update</param>
+    /// <param name="evidenceId">Identification document ID to update</param>
     /// <param name="command">Update command with optional file and metadata (from form)</param>
-    /// <returns>Updated evidence record</returns>
+    /// <returns>Updated identification document</returns>
     /// <response code="200">Document updated successfully.</response>
     /// <response code="400">Validation error (invalid file type, size exceeded, expiry before issue date, etc.).</response>
     /// <response code="401">Not authenticated. Login required.</response>
-    /// <response code="403">Not authorized. Can only update evidence in your own surveys.</response>
-    /// <response code="404">Survey, evidence, or person not found.</response>
+    /// <response code="403">Not authorized. Can only update documents in your own surveys.</response>
+    /// <response code="404">Survey, document, or person not found.</response>
     [HttpPut("{surveyId}/evidence/identification/{evidenceId}")]
     [Authorize(Policy = "CanEditOwnSurveys")]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IdentificationDocumentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<EvidenceDto>> UpdateIdentificationDocument(
+    public async Task<ActionResult<IdentificationDocumentDto>> UpdateIdentificationDocument(
         Guid surveyId,
         Guid evidenceId,
         [FromForm] UpdateIdentificationDocumentCommand command)
