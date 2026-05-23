@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
 using TRRCMS.Application;
 
@@ -10,7 +11,7 @@ namespace TRRCMS.Application.Surveys.Commands.UpdatePropertyUnitInSurvey;
 /// </summary>
 public class UpdatePropertyUnitInSurveyCommandValidator : LocalizedValidator<UpdatePropertyUnitInSurveyCommand>
 {
-    public UpdatePropertyUnitInSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
+    public UpdatePropertyUnitInSurveyCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.SurveyId)
             .NotEmpty()
@@ -26,12 +27,13 @@ public class UpdatePropertyUnitInSurveyCommandValidator : LocalizedValidator<Upd
             .WithMessage(L("UnitIdentifier_MaxLength50"));
 
         RuleFor(x => x.UnitType)
-            .InclusiveBetween(1, 5)
+            .Must(v => vocabService.IsValidCode("property_unit_type", v!.Value))
             .When(x => x.UnitType.HasValue)
             .WithMessage(L("UnitType_InvalidRange"));
 
         RuleFor(x => x.Status)
-            .Must(s => !s.HasValue || (s.Value >= 1 && s.Value <= 6) || s.Value == 99)
+            .Must(v => vocabService.IsValidCode("property_unit_status", v!.Value))
+            .When(x => x.Status.HasValue)
             .WithMessage(L("UnitStatus_Invalid"));
 
         RuleFor(x => x.FloorNumber)

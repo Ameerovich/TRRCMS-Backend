@@ -185,8 +185,9 @@
   <!-- ── PropertyUnits ──────────────────────────────────────────── -->
   <data name="UnitId_Required"><value>معرف الوحدة مطلوب</value></data>
   <data name="UnitId_MaxLength50"><value>معرف الوحدة يجب ألا يتجاوز 50 حرف</value></data>
-  <data name="UnitType_Range1to5"><value>نوع الوحدة يجب أن يكون بين 1 و5</value></data>
-  <data name="UnitStatus_ValidValue"><value>الحالة يجب أن تكون قيمة صالحة (1-6 أو 99)</value></data>
+  <data name="UnitType_Range1to5"><value>نوع الوحدة العقارية غير صالح</value></data>
+  <data name="UnitType_InvalidRange"><value>نوع الوحدة العقارية غير صالح</value></data>
+  <data name="UnitStatus_ValidValue"><value>قيمة حالة الوحدة العقارية غير صالحة</value></data>
   <data name="FloorNumber_Range"><value>رقم الطابق يجب أن يكون بين -5 و200</value></data>
   <data name="Area_GreaterThanZero"><value>المساحة يجب أن تكون أكبر من 0</value></data>
   <data name="Rooms_Range0to100"><value>عدد الغرف يجب أن يكون بين 0 و100</value></data>

@@ -1,8 +1,8 @@
 using FluentValidation;
 using Microsoft.Extensions.Localization;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
 using TRRCMS.Application;
-using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Households.Commands.UpdateHousehold;
 
@@ -12,7 +12,7 @@ namespace TRRCMS.Application.Households.Commands.UpdateHousehold;
 /// </summary>
 public class UpdateHouseholdCommandValidator : LocalizedValidator<UpdateHouseholdCommand>
 {
-    public UpdateHouseholdCommandValidator(IStringLocalizer<ValidationMessages> localizer) : base(localizer)
+    public UpdateHouseholdCommandValidator(IStringLocalizer<ValidationMessages> localizer, IVocabularyValidationService vocabService) : base(localizer)
     {
         RuleFor(x => x.Id)
             .NotEmpty()
@@ -71,7 +71,7 @@ public class UpdateHouseholdCommandValidator : LocalizedValidator<UpdateHousehol
             .When(x => x.HouseholdSize.HasValue && x.DisabledCount.HasValue);
 
         RuleFor(x => x.OccupancyNature!.Value)
-            .Must(v => Enum.IsDefined(typeof(OccupancyNature), v))
+            .Must(v => vocabService.IsValidCode("occupancy_nature", v))
             .WithMessage(L("OccupancyNature_Invalid"))
             .When(x => x.OccupancyNature.HasValue);
 
