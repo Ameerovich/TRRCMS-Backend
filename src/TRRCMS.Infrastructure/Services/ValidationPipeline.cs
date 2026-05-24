@@ -24,6 +24,8 @@ public class ValidationPipeline : IValidationPipeline
     private readonly IStagingRepository<StagingHousehold> _householdRepo;
     private readonly IStagingRepository<StagingPersonPropertyRelation> _relationRepo;
     private readonly IStagingRepository<StagingEvidence> _evidenceRepo;
+    private readonly IStagingRepository<StagingBuildingDocument> _buildingDocRepo;
+    private readonly IStagingRepository<StagingIdentificationDocument> _idDocRepo;
     private readonly IStagingRepository<StagingClaim> _claimRepo;
     private readonly IStagingRepository<StagingSurvey> _surveyRepo;
     private readonly ILogger<ValidationPipeline> _logger;
@@ -36,6 +38,8 @@ public class ValidationPipeline : IValidationPipeline
         IStagingRepository<StagingHousehold> householdRepo,
         IStagingRepository<StagingPersonPropertyRelation> relationRepo,
         IStagingRepository<StagingEvidence> evidenceRepo,
+        IStagingRepository<StagingBuildingDocument> buildingDocRepo,
+        IStagingRepository<StagingIdentificationDocument> idDocRepo,
         IStagingRepository<StagingClaim> claimRepo,
         IStagingRepository<StagingSurvey> surveyRepo,
         ILogger<ValidationPipeline> logger)
@@ -47,6 +51,8 @@ public class ValidationPipeline : IValidationPipeline
         _householdRepo = householdRepo;
         _relationRepo = relationRepo;
         _evidenceRepo = evidenceRepo;
+        _buildingDocRepo = buildingDocRepo;
+        _idDocRepo = idDocRepo;
         _claimRepo = claimRepo;
         _surveyRepo = surveyRepo;
         _logger = logger;
@@ -121,6 +127,8 @@ public class ValidationPipeline : IValidationPipeline
         await FinalizeForTypeAsync(_householdRepo, importPackageId, ct);
         await FinalizeForTypeAsync(_relationRepo, importPackageId, ct);
         await FinalizeForTypeAsync(_evidenceRepo, importPackageId, ct);
+        await FinalizeForTypeAsync(_buildingDocRepo, importPackageId, ct);
+        await FinalizeForTypeAsync(_idDocRepo, importPackageId, ct);
         await FinalizeForTypeAsync(_claimRepo, importPackageId, ct);
         await FinalizeForTypeAsync(_surveyRepo, importPackageId, ct);
     }
@@ -153,7 +161,9 @@ public class ValidationPipeline : IValidationPipeline
             LevelResults = levelResults
         };
 
-        // Sum counts across all 8 entity types
+        // Sum counts across the core entity types. The package-level InvalidCount derived
+        // here is what flips the package to ValidationFailed (see StagePackageCommandHandler),
+        // so it must reflect only the core records whose failure should block the whole import.
         await AddCountsAsync(_buildingRepo, importPackageId, summary, ct);
         await AddCountsAsync(_unitRepo, importPackageId, summary, ct);
         await AddCountsAsync(_personRepo, importPackageId, summary, ct);
@@ -162,6 +172,13 @@ public class ValidationPipeline : IValidationPipeline
         await AddCountsAsync(_evidenceRepo, importPackageId, summary, ct);
         await AddCountsAsync(_claimRepo, importPackageId, summary, ct);
         await AddCountsAsync(_surveyRepo, importPackageId, summary, ct);
+
+        // BuildingDocuments and IdentificationDocuments are intentionally excluded from the
+        // package-level counts: an invalid auxiliary document must NOT block the import of
+        // otherwise-valid core data. Each document is still validated and finalized
+        // individually (see FinalizeEntityStatusesAsync + DataConsistency/DocumentReference
+        // validators); an Invalid document is simply never approved, so commit skips it while
+        // the rest of the package proceeds.
 
         return summary;
     }
