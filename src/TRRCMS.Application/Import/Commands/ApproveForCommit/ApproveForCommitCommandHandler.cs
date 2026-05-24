@@ -30,6 +30,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
     private readonly IStagingRepository<StagingPersonPropertyRelation> _stagingRelationRepo;
     private readonly IStagingRepository<StagingEvidence> _stagingEvidenceRepo;
     private readonly IStagingRepository<StagingEvidenceRelation> _stagingEvidenceRelationRepo;
+    private readonly IStagingRepository<StagingBuildingDocument> _stagingBuildingDocRepo;
     private readonly IStagingRepository<StagingIdentificationDocument> _stagingIdDocRepo;
     private readonly IStagingRepository<StagingClaim> _stagingClaimRepo;
     private readonly IStagingRepository<StagingSurvey> _stagingSurveyRepo;
@@ -47,6 +48,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         IStagingRepository<StagingPersonPropertyRelation> stagingRelationRepo,
         IStagingRepository<StagingEvidence> stagingEvidenceRepo,
         IStagingRepository<StagingEvidenceRelation> stagingEvidenceRelationRepo,
+        IStagingRepository<StagingBuildingDocument> stagingBuildingDocRepo,
         IStagingRepository<StagingIdentificationDocument> stagingIdDocRepo,
         IStagingRepository<StagingClaim> stagingClaimRepo,
         IStagingRepository<StagingSurvey> stagingSurveyRepo,
@@ -63,6 +65,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         _stagingRelationRepo = stagingRelationRepo;
         _stagingEvidenceRepo = stagingEvidenceRepo;
         _stagingEvidenceRelationRepo = stagingEvidenceRelationRepo;
+        _stagingBuildingDocRepo = stagingBuildingDocRepo;
         _stagingIdDocRepo = stagingIdDocRepo;
         _stagingClaimRepo = stagingClaimRepo;
         _stagingSurveyRepo = stagingSurveyRepo;
@@ -142,6 +145,7 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
         await ApproveValidForTypeAsync(_stagingRelationRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingEvidenceRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingEvidenceRelationRepo, importPackageId, ct);
+        await ApproveValidForTypeAsync(_stagingBuildingDocRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingIdDocRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingClaimRepo, importPackageId, ct);
         await ApproveValidForTypeAsync(_stagingSurveyRepo, importPackageId, ct);
@@ -193,6 +197,9 @@ public class ApproveForCommitCommandHandler : IRequestHandler<ApproveForCommitCo
                 || await TryApproveInRepo(_stagingHouseholdRepo, recordId, ct)
                 || await TryApproveInRepo(_stagingRelationRepo, recordId, ct)
                 || await TryApproveInRepo(_stagingEvidenceRepo, recordId, ct)
+                || await TryApproveInRepo(_stagingEvidenceRelationRepo, recordId, ct)
+                || await TryApproveInRepo(_stagingBuildingDocRepo, recordId, ct)
+                || await TryApproveInRepo(_stagingIdDocRepo, recordId, ct)
                 || await TryApproveInRepo(_stagingClaimRepo, recordId, ct)
                 || await TryApproveInRepo(_stagingSurveyRepo, recordId, ct);
 

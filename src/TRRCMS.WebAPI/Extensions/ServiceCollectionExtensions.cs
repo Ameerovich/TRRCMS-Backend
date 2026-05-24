@@ -118,6 +118,7 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
         // ── Staging validators ───────────────────────────────────────
         services.AddScoped<IStagingValidator, DataConsistencyValidator>();
         services.AddScoped<IStagingValidator, CrossEntityRelationValidator>();
+        services.AddScoped<IStagingValidator, DocumentReferenceValidator>();
         services.AddScoped<IStagingValidator, OwnershipEvidenceValidator>();
         services.AddScoped<IStagingValidator, HouseholdStructureValidator>();
         services.AddScoped<IStagingValidator, SpatialGeometryValidator>();

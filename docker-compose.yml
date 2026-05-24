@@ -71,6 +71,12 @@ services:
     volumes:
       - packages_data:/app/wwwroot/packages
       - archives_data:/app/archives
+      # Extracted document files (building documents, ID documents, evidence,
+      # and all survey uploads) live here. Without this mount they sit in the
+      # container's writable layer and are wiped on every rebuild/redeploy,
+      # leaving committed BuildingDocument/IdentificationDocument rows pointing
+      # at files that no longer exist.
+      - uploads_data:/app/wwwroot/uploads
 
     networks:
       - trrcms-network
@@ -116,6 +122,9 @@ volumes:
   archives_data:
     driver: local
     name: trrcms-archives-data
+  uploads_data:
+    driver: local
+    name: trrcms-uploads-data
 
 # ============================================
 # Networks

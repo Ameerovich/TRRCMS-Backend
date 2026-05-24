@@ -90,7 +90,9 @@ public class StagingService : IStagingService
         // Stage each entity type in dependency order
         // (buildings first, then building documents, then units, then persons, etc.)
         result.BuildingCount = await StageBuildingsAsync(connection, importPackageId, cancellationToken);
-        result.BuildingDocumentCount = await StageBuildingDocumentsAsync(connection, importPackageId, cancellationToken);
+        var (buildingDocCount, buildingDocFiles, buildingDocBytes) =
+            await StageBuildingDocumentsAsync(connection, importPackageId, cancellationToken);
+        result.BuildingDocumentCount = buildingDocCount;
         result.PropertyUnitCount = await StagePropertyUnitsAsync(connection, importPackageId, cancellationToken);
         result.PersonCount = await StagePersonsAsync(connection, importPackageId, cancellationToken);
         result.HouseholdCount = await StageHouseholdsAsync(connection, importPackageId, cancellationToken);
@@ -102,14 +104,18 @@ public class StagingService : IStagingService
         var (evidenceCount, fileCount, fileBytes) = await StageEvidenceAndAttachmentsAsync(
             connection, importPackageId, cancellationToken);
         result.EvidenceCount = evidenceCount;
-        result.AttachmentFilesExtracted = fileCount;
-        result.AttachmentBytesExtracted = fileBytes;
 
         // Evidence-relation junction (many-to-many links, optional table)
         await StageEvidenceRelationsAsync(connection, importPackageId, cancellationToken);
 
         // Identification documents (v1.7+)
-        await StageIdentificationDocumentsAsync(connection, importPackageId, cancellationToken);
+        var (idDocFiles, idDocBytes) = await StageIdentificationDocumentsAsync(
+            connection, importPackageId, cancellationToken);
+
+        // Total attachment files extracted to server storage across all document types
+        // (evidence + building documents + identification documents).
+        result.AttachmentFilesExtracted = fileCount + buildingDocFiles + idDocFiles;
+        result.AttachmentBytesExtracted = fileBytes + buildingDocBytes + idDocBytes;
 
         _logger.LogInformation(
             "Staging complete for package {PackageId}: {Total} records, {Files} attachments ({Bytes} bytes)",
@@ -219,12 +225,14 @@ public class StagingService : IStagingService
         return entities.Count;
     }
 
-    private async Task<int> StageBuildingDocumentsAsync(
+    private async Task<(int Count, int Files, long Bytes)> StageBuildingDocumentsAsync(
         SqliteConnection connection, Guid packageId, CancellationToken ct)
     {
-        if (!await TableExistsAsync(connection, "building_documents", ct)) return 0;
+        if (!await TableExistsAsync(connection, "building_documents", ct)) return (0, 0, 0);
 
         var entities = new List<StagingBuildingDocument>();
+        int fileCount = 0;
+        long fileBytes = 0;
         using var cmd = connection.CreateCommand();
         cmd.CommandText = "SELECT * FROM building_documents";
         using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -247,6 +255,8 @@ public class StagingService : IStagingService
                 if (savedPath != null)
                 {
                     filePath = savedPath;
+                    fileCount++;
+                    fileBytes += fileSizeBytes;
                 }
             }
             else if (!string.IsNullOrEmpty(originalFileName))
@@ -279,8 +289,9 @@ public class StagingService : IStagingService
             await _buildingDocRepo.SaveChangesAsync(ct);
         }
 
-        _logger.LogDebug("Staged {Count} building documents", entities.Count);
-        return entities.Count;
+        _logger.LogDebug("Staged {Count} building documents, extracted {Files} files ({Bytes} bytes)",
+            entities.Count, fileCount, fileBytes);
+        return (entities.Count, fileCount, fileBytes);
     }
 
     private async Task<int> StagePropertyUnitsAsync(
@@ -668,10 +679,10 @@ public class StagingService : IStagingService
     /// <summary>
     /// Stage identification_documents table from .uhc (v1.7+).
     /// </summary>
-    private async Task StageIdentificationDocumentsAsync(
+    private async Task<(int Files, long Bytes)> StageIdentificationDocumentsAsync(
         SqliteConnection connection, Guid packageId, CancellationToken ct)
     {
-        if (!await TableExistsAsync(connection, "identification_documents", ct)) return;
+        if (!await TableExistsAsync(connection, "identification_documents", ct)) return (0, 0);
 
         var entities = new List<StagingIdentificationDocument>();
         int fileCount = 0;
@@ -731,6 +742,7 @@ public class StagingService : IStagingService
 
         _logger.LogDebug("Staged {Count} identification documents, extracted {Files} files ({Bytes} bytes)",
             entities.Count, fileCount, totalBytes);
+        return (fileCount, totalBytes);
     }
 
     private static async Task<bool> HasIdentificationDocumentBlobAsync(

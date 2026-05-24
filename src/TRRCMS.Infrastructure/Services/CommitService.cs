@@ -557,6 +557,14 @@ public class CommitService : ICommitService
                         "BuildingDocument {OriginalId} references unknown building {OriginalBuildingId} — skipping",
                         staging.OriginalEntityId, staging.OriginalBuildingId);
                     report.BuildingDocuments.Failed++;
+                    report.Errors.Add(new CommitErrorDto
+                    {
+                        EntityType = "BuildingDocument",
+                        StagingEntityId = staging.Id,
+                        OriginalEntityId = staging.OriginalEntityId,
+                        ErrorMessage = $"Parent Building {staging.OriginalBuildingId} was not committed in this package; " +
+                                       $"document '{staging.OriginalFileName}' and its file were not imported."
+                    });
                     continue;
                 }
 
@@ -1571,6 +1579,14 @@ public class CommitService : ICommitService
                         "IdentificationDocument {OriginalId} references unknown Person {PersonId}, skipping",
                         staging.OriginalEntityId, staging.OriginalPersonId);
                     report.IdentificationDocuments.Failed++;
+                    report.Errors.Add(new CommitErrorDto
+                    {
+                        EntityType = "IdentificationDocument",
+                        StagingEntityId = staging.Id,
+                        OriginalEntityId = staging.OriginalEntityId,
+                        ErrorMessage = $"Parent Person {staging.OriginalPersonId} was not committed in this package; " +
+                                       $"document '{staging.OriginalFileName}' and its file were not imported."
+                    });
                     continue;
                 }
 

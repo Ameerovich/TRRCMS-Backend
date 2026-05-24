@@ -29,6 +29,7 @@ public class PersonMergeService : IMergeService
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IClaimRepository _claimRepository;
     private readonly IHouseholdRepository _householdRepository;
+    private readonly IIdentificationDocumentRepository _idDocRepository;
     private readonly IStagingRepository<StagingPerson> _stagingPersonRepo;
 
     public PersonMergeService(
@@ -36,6 +37,7 @@ public class PersonMergeService : IMergeService
         IPersonPropertyRelationRepository relationRepository,
         IClaimRepository claimRepository,
         IHouseholdRepository householdRepository,
+        IIdentificationDocumentRepository idDocRepository,
         IStagingRepository<StagingPerson> stagingPersonRepo)
     {
         _personRepository = personRepository
@@ -46,6 +48,8 @@ public class PersonMergeService : IMergeService
             ?? throw new ArgumentNullException(nameof(claimRepository));
         _householdRepository = householdRepository
             ?? throw new ArgumentNullException(nameof(householdRepository));
+        _idDocRepository = idDocRepository
+            ?? throw new ArgumentNullException(nameof(idDocRepository));
         _stagingPersonRepo = stagingPersonRepo
             ?? throw new ArgumentNullException(nameof(stagingPersonRepo));
     }
@@ -440,6 +444,15 @@ public class PersonMergeService : IMergeService
             claim.UpdatePrimaryClaimant(masterPersonId, masterPersonId);
             await _claimRepository.UpdateAsync(claim, ct);
             claimCount++;
+        }
+
+        // Re-point identification documents so the discarded person's ID documents
+        // follow the surviving master instead of being orphaned on a soft-deleted person.
+        var idDocs = await _idDocRepository.GetByPersonIdAsync(discardedPersonId, ct);
+        foreach (var idDoc in idDocs)
+        {
+            idDoc.LinkToPerson(masterPersonId, masterPersonId);
+            await _idDocRepository.UpdateAsync(idDoc, ct);
         }
 
         return (relCount, claimCount);
