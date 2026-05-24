@@ -18,6 +18,7 @@ using TRRCMS.Application.Surveys.Commands.DeleteHouseholdInSurvey;
 using TRRCMS.Application.Surveys.Commands.DeletePersonPropertyRelation;
 using TRRCMS.Application.Surveys.Commands.FinalizeOfficeSurvey;
 using TRRCMS.Application.Surveys.Commands.LinkEvidenceToRelation;
+using TRRCMS.Application.Surveys.Commands.UnlinkEvidenceFromRelation;
 using TRRCMS.Application.Surveys.Commands.LinkPersonToPropertyUnit;
 using TRRCMS.Application.Surveys.Commands.LinkPropertyUnitToSurvey;
 using TRRCMS.Application.Surveys.Commands.ProcessOfficeSurveyClaims;
@@ -2505,6 +2506,59 @@ public class SurveysController : ControllerBase
         command.EvidenceId = evidenceId;
         var result = await _mediator.Send(command);
         return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    /// <summary>
+    /// Unlink an evidence from a single person-property relation
+    /// إلغاء ربط دليل عن علاقة شخص-عقار واحدة
+    /// </summary>
+    /// <remarks>
+    /// **Use Case**: Detach a shared evidence from one relation without deleting the evidence.
+    /// عندما يكون الدليل مرتبطاً بعدة أشخاص ونريد فك ارتباطه عن أحدهم فقط
+    ///
+    /// **Purpose**: Removes (deactivates) the Evidence ↔ PersonPropertyRelation link for the
+    /// specified relation only. The Evidence record and its links to any other relations are
+    /// left intact. If this was the relation's last evidence link, the relation's HasEvidence
+    /// flag is cleared. The operation is reversible (the same pair can be re-linked later).
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys)
+    ///
+    /// **Prerequisites**:
+    /// - Survey must be in Draft status
+    /// - Evidence and relation must exist, and the relation must belong to the survey's building
+    /// - An active link between the evidence and the relation must exist
+    /// </remarks>
+    /// <param name="surveyId">Survey ID for authorization</param>
+    /// <param name="evidenceId">Evidence ID to unlink</param>
+    /// <param name="relationId">Person-property relation ID to detach the evidence from</param>
+    /// <param name="reason">Optional reason for unlinking (recorded for audit)</param>
+    /// <returns>The evidence with its remaining links</returns>
+    /// <response code="200">Evidence unlinked from the relation successfully.</response>
+    /// <response code="400">Survey not in Draft, relation not in survey's building, or link already inactive.</response>
+    /// <response code="401">Not authenticated. Login required.</response>
+    /// <response code="403">Not authorized. Can only modify your own surveys.</response>
+    /// <response code="404">Survey, evidence, relation, or active link not found.</response>
+    [HttpDelete("{surveyId}/evidence/{evidenceId}/unlink-from-relation/{relationId}")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(EvidenceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvidenceDto>> UnlinkEvidenceFromRelation(
+        Guid surveyId,
+        Guid evidenceId,
+        Guid relationId,
+        [FromQuery] string? reason = null)
+    {
+        var result = await _mediator.Send(new UnlinkEvidenceFromRelationCommand
+        {
+            SurveyId = surveyId,
+            EvidenceId = evidenceId,
+            PersonPropertyRelationId = relationId,
+            Reason = reason
+        });
+        return Ok(result);
     }
 
     /// <summary>
