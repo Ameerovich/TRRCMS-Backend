@@ -47,9 +47,15 @@ COPY --from=build /app/publish .
 
 # Pre-create runtime directories that are mounted as Docker volumes.
 # Must happen before USER appuser so we can chown them — Docker mounts
-# volumes after the container starts, which would overwrite ownership if
-# the directories didn't exist in the image with the right owner.
-RUN mkdir -p /app/wwwroot/packages /app/archives \
+# volumes after the container starts. A named volume inherits the owner of
+# the image directory at its mount path; if that directory does NOT exist in
+# the image, Docker creates the mountpoint as root:root and the non-root
+# appuser cannot write to it. /app/wwwroot/uploads (extracted import
+# attachments, building/ID documents, survey uploads) must be listed here for
+# the same reason as packages/archives — otherwise package file extraction
+# fails silently and committed document rows point at files that were never
+# written.
+RUN mkdir -p /app/wwwroot/packages /app/wwwroot/uploads /app/archives \
     && chown -R appuser:appuser /app
 
 # Switch to non-root user

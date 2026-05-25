@@ -181,6 +181,17 @@ public class Claim : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Re-point this claim to a different case, overriding any existing link. Unlike
+    /// <see cref="LinkToCase"/> this is not guarded — used when folding a discarded property unit's
+    /// case into the surviving unit's case during a merge.
+    /// </summary>
+    public void RelinkToCase(Guid caseId, Guid modifiedByUserId)
+    {
+        CaseId = caseId;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Close the case — ownership/heir claim registered.
     /// </summary>
     public void CloseCase(Guid modifiedByUserId)

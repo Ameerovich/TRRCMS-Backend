@@ -30,6 +30,8 @@ public class PersonMergeService : IMergeService
     private readonly IClaimRepository _claimRepository;
     private readonly IHouseholdRepository _householdRepository;
     private readonly IIdentificationDocumentRepository _idDocRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
+    private readonly ISurveyRepository _surveyRepository;
     private readonly IStagingRepository<StagingPerson> _stagingPersonRepo;
 
     public PersonMergeService(
@@ -38,6 +40,8 @@ public class PersonMergeService : IMergeService
         IClaimRepository claimRepository,
         IHouseholdRepository householdRepository,
         IIdentificationDocumentRepository idDocRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
+        ISurveyRepository surveyRepository,
         IStagingRepository<StagingPerson> stagingPersonRepo)
     {
         _personRepository = personRepository
@@ -50,6 +54,10 @@ public class PersonMergeService : IMergeService
             ?? throw new ArgumentNullException(nameof(householdRepository));
         _idDocRepository = idDocRepository
             ?? throw new ArgumentNullException(nameof(idDocRepository));
+        _evidenceRelationRepository = evidenceRelationRepository
+            ?? throw new ArgumentNullException(nameof(evidenceRelationRepository));
+        _surveyRepository = surveyRepository
+            ?? throw new ArgumentNullException(nameof(surveyRepository));
         _stagingPersonRepo = stagingPersonRepo
             ?? throw new ArgumentNullException(nameof(stagingPersonRepo));
     }
@@ -81,16 +89,16 @@ public class PersonMergeService : IMergeService
             var mergeMapping = new Dictionary<string, string>();
             var conflicts = new Dictionary<string, FieldConflictInfo>();
             var refsUpdated = 0;
-            var relCount = 0;
-            var claimCount = 0;
+            var counts = new RePointCounts();
 
             // Case 1: Both in production (standard merge)
             if (masterProd != null && discardedProd != null)
             {
                 MergePersonFields(masterProd, discardedProd, mergeMapping, conflicts);
-                (relCount, claimCount) = await RePointProductionReferencesAsync(
+                counts = await RePointProductionReferencesAsync(
                     masterProd.Id, discardedProd.Id, cancellationToken);
-                refsUpdated = relCount + claimCount;
+                refsUpdated = counts.Relations + counts.Claims + counts.Evidence
+                    + counts.IdDocuments + counts.Surveys;
                 discardedProd.MarkAsDeleted(masterProd.Id);
                 await _personRepository.UpdateAsync(discardedProd, cancellationToken);
                 await _personRepository.UpdateAsync(masterProd, cancellationToken);
@@ -169,8 +177,11 @@ public class PersonMergeService : IMergeService
             result.ReferencesUpdated = refsUpdated;
             result.ReferencesByType = new Dictionary<string, int>
             {
-                ["PersonPropertyRelation"] = relCount,
-                ["Claim"] = claimCount
+                ["PersonPropertyRelation"] = counts.Relations,
+                ["Claim"] = counts.Claims,
+                ["EvidenceRelation"] = counts.Evidence,
+                ["IdentificationDocument"] = counts.IdDocuments,
+                ["Survey"] = counts.Surveys
             };
         }
         catch (Exception ex)
@@ -413,11 +424,10 @@ public class PersonMergeService : IMergeService
         }
     }
 
-    private async Task<(int RelationCount, int ClaimCount)> RePointProductionReferencesAsync(
+    private async Task<RePointCounts> RePointProductionReferencesAsync(
         Guid masterPersonId, Guid discardedPersonId, CancellationToken ct)
     {
-        var relCount = 0;
-        var claimCount = 0;
+        var counts = new RePointCounts();
 
         var relations = (await _relationRepository
             .GetByPersonIdAsync(discardedPersonId, ct)).ToList();
@@ -427,12 +437,18 @@ public class PersonMergeService : IMergeService
                 .GetByPersonAndPropertyUnitAsync(masterPersonId, relation.PropertyUnitId, ct);
             if (existing is null)
             {
+                // No competing relation on the master for this property unit — re-point in place.
+                // Any evidence stays attached because the relation row itself survives.
                 relation.UpdatePersonId(masterPersonId, masterPersonId);
                 await _relationRepository.UpdateAsync(relation, ct);
-                relCount++;
+                counts.Relations++;
             }
             else
             {
+                // The master already has a relation to this property unit. Before discarding the
+                // duplicate relation, move its evidence links onto the surviving master relation so
+                // attached documents are not orphaned on a soft-deleted relation.
+                counts.Evidence += await MoveEvidenceLinksAsync(relation.Id, existing, ct);
                 await _relationRepository.DeleteAsync(relation, ct);
             }
         }
@@ -443,7 +459,7 @@ public class PersonMergeService : IMergeService
         {
             claim.UpdatePrimaryClaimant(masterPersonId, masterPersonId);
             await _claimRepository.UpdateAsync(claim, ct);
-            claimCount++;
+            counts.Claims++;
         }
 
         // Re-point identification documents so the discarded person's ID documents
@@ -453,9 +469,69 @@ public class PersonMergeService : IMergeService
         {
             idDoc.LinkToPerson(masterPersonId, masterPersonId);
             await _idDocRepository.UpdateAsync(idDoc, ct);
+            counts.IdDocuments++;
         }
 
-        return (relCount, claimCount);
+        // Re-point surveys whose contact person is the discarded record so they don't dangle
+        // against a soft-deleted person.
+        var surveys = await _surveyRepository.GetByContactPersonIdAsync(discardedPersonId, ct);
+        if (surveys.Count > 0)
+        {
+            var masterContactName = (await _personRepository.GetByIdAsync(masterPersonId, ct))
+                ?.GetContactPersonFullName() ?? string.Empty;
+            foreach (var survey in surveys)
+            {
+                survey.SetContactPerson(masterPersonId, masterContactName, masterPersonId);
+                await _surveyRepository.UpdateAsync(survey, ct);
+                counts.Surveys++;
+            }
+        }
+
+        return counts;
+    }
+
+    /// <summary>
+    /// Moves the (non-deleted) evidence links from a relation that is about to be discarded onto a
+    /// surviving relation. Skips links that would duplicate an existing active link on the survivor.
+    /// Returns the number of links moved.
+    /// </summary>
+    private async Task<int> MoveEvidenceLinksAsync(
+        Guid fromRelationId, PersonPropertyRelation survivingRelation, CancellationToken ct)
+    {
+        var moved = 0;
+        var links = (await _evidenceRelationRepository
+            .GetByRelationIdAsync(fromRelationId, ct)).ToList();
+        foreach (var link in links)
+        {
+            var alreadyLinked = await _evidenceRelationRepository
+                .LinkExistsAsync(link.EvidenceId, survivingRelation.Id, ct);
+            if (alreadyLinked)
+                continue;
+
+            link.RelinkToRelation(survivingRelation.Id, survivingRelation.PersonId);
+            await _evidenceRelationRepository.UpdateAsync(link, ct);
+            moved++;
+        }
+
+        if (moved > 0 && !survivingRelation.HasEvidence)
+        {
+            survivingRelation.SetHasEvidence(true, survivingRelation.PersonId);
+            await _relationRepository.UpdateAsync(survivingRelation, ct);
+        }
+
+        return moved;
+    }
+
+    /// <summary>
+    /// Tallies of production FK references re-pointed (or evidence moved) during a merge.
+    /// </summary>
+    private sealed class RePointCounts
+    {
+        public int Relations;
+        public int Claims;
+        public int Evidence;
+        public int IdDocuments;
+        public int Surveys;
     }
 
     /// <summary>

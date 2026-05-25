@@ -52,6 +52,13 @@ public class SurveyRepository : ISurveyRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<Survey>> GetByContactPersonIdAsync(Guid contactPersonId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Surveys
+            .Where(s => s.ContactPersonId == contactPersonId && !s.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Survey> AddAsync(Survey survey, CancellationToken cancellationToken = default)
     {
         await _context.Surveys.AddAsync(survey, cancellationToken);
