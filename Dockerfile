@@ -39,8 +39,15 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user for security with a PINNED uid/gid (1001).
+# The uid must be fixed: named volumes (packages/uploads/archives) persist the
+# ownership they were first created with. With an unpinned `useradd -r`, the uid
+# can change between image rebuilds, leaving previously-created volumes owned by
+# a uid that no longer matches appuser — which makes writes fail with
+# "Access to the path ... is denied". A fixed uid keeps volume ownership stable
+# across rebuilds so a freshly created volume (after `docker compose down -v`)
+# inherits appuser ownership from the chowned image dirs below and stays writable.
+RUN groupadd -r -g 1001 appuser && useradd -r -u 1001 -g appuser appuser
 
 # Copy published output from build stage
 COPY --from=build /app/publish .
