@@ -138,6 +138,18 @@ public class Case : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Re-point this case to a different property unit. Used during a property-unit merge when the
+    /// unit this case covers is being discarded and the surviving (master) unit has no case of its
+    /// own — the discarded unit's case follows the survivor so it is not orphaned on a soft-deleted
+    /// unit. The caller must ensure the target unit does not already have a case (one-to-one).
+    /// </summary>
+    public void RelinkToPropertyUnit(Guid newPropertyUnitId, Guid modifiedByUserId)
+    {
+        PropertyUnitId = newPropertyUnitId;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Update notes
     /// </summary>
     public void UpdateNotes(string? notes, Guid modifiedByUserId)

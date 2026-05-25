@@ -79,6 +79,18 @@ public class EvidenceRelation : BaseAuditableEntity
         return evidenceRelation;
     }
     /// <summary>
+    /// Re-point this link to a different person-property relation. Used during a person/property
+    /// merge when the relation this evidence was attached to is being discarded (collapsed into a
+    /// surviving duplicate relation), so the evidence follows the surviving relation instead of
+    /// being orphaned on a soft-deleted one.
+    /// </summary>
+    public void RelinkToRelation(Guid newPersonPropertyRelationId, Guid modifiedBy)
+    {
+        PersonPropertyRelationId = newPersonPropertyRelationId;
+        MarkAsModified(modifiedBy);
+    }
+
+    /// <summary>
     /// Deactivate this link
     /// </summary>
     public void Deactivate(Guid deactivatedBy, string reason)

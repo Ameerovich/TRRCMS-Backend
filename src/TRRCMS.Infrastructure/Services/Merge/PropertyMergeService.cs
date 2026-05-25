@@ -29,6 +29,8 @@ public class PropertyMergeService : IMergeService
     private readonly IClaimRepository _claimRepository;
     private readonly ISurveyRepository _surveyRepository;
     private readonly IHouseholdRepository _householdRepository;
+    private readonly IEvidenceRelationRepository _evidenceRelationRepository;
+    private readonly ICaseRepository _caseRepository;
     private readonly IStagingRepository<StagingPropertyUnit> _stagingPropertyUnitRepo;
 
     public PropertyMergeService(
@@ -37,6 +39,8 @@ public class PropertyMergeService : IMergeService
         IClaimRepository claimRepository,
         ISurveyRepository surveyRepository,
         IHouseholdRepository householdRepository,
+        IEvidenceRelationRepository evidenceRelationRepository,
+        ICaseRepository caseRepository,
         IStagingRepository<StagingPropertyUnit> stagingPropertyUnitRepo)
     {
         _propertyUnitRepository = propertyUnitRepository
@@ -49,6 +53,10 @@ public class PropertyMergeService : IMergeService
             ?? throw new ArgumentNullException(nameof(surveyRepository));
         _householdRepository = householdRepository
             ?? throw new ArgumentNullException(nameof(householdRepository));
+        _evidenceRelationRepository = evidenceRelationRepository
+            ?? throw new ArgumentNullException(nameof(evidenceRelationRepository));
+        _caseRepository = caseRepository
+            ?? throw new ArgumentNullException(nameof(caseRepository));
         _stagingPropertyUnitRepo = stagingPropertyUnitRepo
             ?? throw new ArgumentNullException(nameof(stagingPropertyUnitRepo));
     }
@@ -420,6 +428,8 @@ public class PropertyMergeService : IMergeService
         var surveyCount = 0;
         var householdCount = 0;
 
+        var evidenceCount = 0;
+
         var relations = (await _relationRepository
             .GetByPropertyUnitIdAsync(discardedUnitId, ct)).ToList();
         foreach (var relation in relations)
@@ -428,12 +438,18 @@ public class PropertyMergeService : IMergeService
                 .GetByPersonAndPropertyUnitAsync(relation.PersonId, masterUnitId, ct);
             if (existing is null)
             {
+                // No competing relation for this person on the master unit — re-point in place.
+                // Any evidence stays attached because the relation row itself survives.
                 relation.UpdatePropertyUnitId(masterUnitId, masterUnitId);
                 await _relationRepository.UpdateAsync(relation, ct);
                 relCount++;
             }
             else
             {
+                // The same person already relates to the master unit. Move the discarded
+                // relation's evidence links onto the surviving relation before deleting it so
+                // attached documents are not orphaned on a soft-deleted relation.
+                evidenceCount += await MoveEvidenceLinksAsync(relation.Id, existing, masterUnitId, ct);
                 await _relationRepository.DeleteAsync(relation, ct);
             }
         }
@@ -465,16 +481,109 @@ public class PropertyMergeService : IMergeService
             householdCount++;
         }
 
-        var total = relCount + claimCount + surveyCount + householdCount;
+        // Case is one-to-one with PropertyUnit, and the discarded unit is about to be soft-deleted.
+        var caseCount = await ReconcileCaseAsync(masterUnitId, discardedUnitId, ct);
+
+        var total = relCount + claimCount + surveyCount + householdCount + evidenceCount + caseCount;
         var byType = new Dictionary<string, int>
         {
             ["PersonPropertyRelation"] = relCount,
             ["Claim"] = claimCount,
             ["Survey"] = surveyCount,
-            ["Household"] = householdCount
+            ["Household"] = householdCount,
+            ["EvidenceRelation"] = evidenceCount,
+            ["Case"] = caseCount
         };
 
         return (total, byType);
+    }
+
+    /// <summary>
+    /// Moves the (non-deleted) evidence links from a relation that is about to be discarded onto a
+    /// surviving relation. Skips links that would duplicate an existing active link on the survivor.
+    /// Returns the number of links moved.
+    /// </summary>
+    private async Task<int> MoveEvidenceLinksAsync(
+        Guid fromRelationId, PersonPropertyRelation survivingRelation, Guid modifiedBy, CancellationToken ct)
+    {
+        var moved = 0;
+        var links = (await _evidenceRelationRepository
+            .GetByRelationIdAsync(fromRelationId, ct)).ToList();
+        foreach (var link in links)
+        {
+            var alreadyLinked = await _evidenceRelationRepository
+                .LinkExistsAsync(link.EvidenceId, survivingRelation.Id, ct);
+            if (alreadyLinked)
+                continue;
+
+            link.RelinkToRelation(survivingRelation.Id, modifiedBy);
+            await _evidenceRelationRepository.UpdateAsync(link, ct);
+            moved++;
+        }
+
+        if (moved > 0 && !survivingRelation.HasEvidence)
+        {
+            survivingRelation.SetHasEvidence(true, modifiedBy);
+            await _relationRepository.UpdateAsync(survivingRelation, ct);
+        }
+
+        return moved;
+    }
+
+    /// <summary>
+    /// Reconciles the Case (one-to-one with PropertyUnit) when a property-unit merge soft-deletes
+    /// the discarded unit. By the time this runs, the discarded unit's surveys/claims/relations have
+    /// already had their PropertyUnitId re-pointed to the master unit, but their CaseId still points
+    /// at the discarded unit's case.
+    ///
+    ///   - Discarded has no case            → nothing to do.
+    ///   - Master has no case               → re-point the discarded case onto the master unit.
+    ///   - Both have a case                 → fold the discarded case into the master case:
+    ///                                         move its children's CaseId to the master case,
+    ///                                         apply "Closed wins" to the master case status, then
+    ///                                         soft-delete the now-empty discarded case.
+    ///
+    /// Returns the number of Case rows affected.
+    /// </summary>
+    private async Task<int> ReconcileCaseAsync(Guid masterUnitId, Guid discardedUnitId, CancellationToken ct)
+    {
+        var discardedCase = await _caseRepository.GetByPropertyUnitIdAsync(discardedUnitId, ct);
+        if (discardedCase == null)
+            return 0;
+
+        var masterCase = await _caseRepository.GetByPropertyUnitIdAsync(masterUnitId, ct);
+
+        // Master has no case — simply re-point the discarded unit's case onto the surviving unit.
+        if (masterCase == null)
+        {
+            discardedCase.RelinkToPropertyUnit(masterUnitId, masterUnitId);
+            await _caseRepository.UpdateAsync(discardedCase, ct);
+            return 1;
+        }
+
+        // Both units have a case — fold the discarded case into the master case so the surviving
+        // unit's case carries all the work and nothing is stranded under a soft-deleted unit.
+        foreach (var survey in discardedCase.Surveys.ToList())
+            survey.RelinkToCase(masterCase.Id, masterUnitId);
+        foreach (var claim in discardedCase.Claims.ToList())
+            claim.RelinkToCase(masterCase.Id, masterUnitId);
+        foreach (var relation in discardedCase.PersonPropertyRelations.ToList())
+            relation.RelinkToCase(masterCase.Id, masterUnitId);
+
+        // "Closed wins": if the discarded case was closed (by an ownership/heir claim) and the
+        // master case is still open, carry that closure onto the master case. Case.Close is
+        // idempotent, so this is a no-op when the master is already closed.
+        if (discardedCase.Status == Domain.Enums.CaseLifecycleStatus.Closed
+            && masterCase.Status != Domain.Enums.CaseLifecycleStatus.Closed
+            && discardedCase.ClosedByClaimId.HasValue)
+        {
+            masterCase.Close(discardedCase.ClosedByClaimId.Value, masterUnitId);
+            await _caseRepository.UpdateAsync(masterCase, ct);
+        }
+
+        discardedCase.MarkAsDeleted(masterUnitId);
+        await _caseRepository.UpdateAsync(discardedCase, ct);
+        return 1;
     }
 
     /// <summary>

@@ -30,6 +30,12 @@ public interface ISurveyRepository
     Task<List<Survey>> GetByPropertyUnitAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Get surveys whose ContactPerson is the given person. Used during a person merge to
+    /// re-point the contact-person FK onto the surviving master record.
+    /// </summary>
+    Task<List<Survey>> GetByContactPersonIdAsync(Guid contactPersonId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Add new survey
     /// </summary>
     Task<Survey> AddAsync(Survey survey, CancellationToken cancellationToken = default);
