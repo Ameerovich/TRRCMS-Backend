@@ -48,9 +48,6 @@ public class ProcessOfficeSurveyClaimsCommandHandler : IRequestHandler<ProcessOf
         var survey = await _unitOfWork.Surveys.GetByIdAsync(request.SurveyId, cancellationToken)
             ?? throw new NotFoundException($"Survey with ID {request.SurveyId} not found");
 
-        if (survey.Type != Domain.Enums.SurveyType.Office)
-            throw new ValidationException("This endpoint is only for office surveys.");
-
         if (survey.Status != SurveyStatus.Draft)
             throw new ValidationException($"Survey is in {survey.Status} status. Only Draft surveys can be processed.");
 
