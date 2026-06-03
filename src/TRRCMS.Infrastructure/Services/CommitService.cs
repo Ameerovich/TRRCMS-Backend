@@ -1491,6 +1491,19 @@ public class CommitService : ICommitService
                     fileHash: staging.FileHash,
                     createdByUserId: userId);
 
+                if (staging.DocumentIssuedDate.HasValue || staging.DocumentExpiryDate.HasValue ||
+                    !string.IsNullOrEmpty(staging.IssuingAuthority) || !string.IsNullOrEmpty(staging.DocumentReferenceNumber) ||
+                    !string.IsNullOrEmpty(staging.Notes))
+                {
+                    evidence.UpdateMetadata(
+                        issuedDate: staging.DocumentIssuedDate,
+                        expiryDate: staging.DocumentExpiryDate,
+                        issuingAuthority: staging.IssuingAuthority,
+                        referenceNumber: staging.DocumentReferenceNumber,
+                        notes: staging.Notes,
+                        modifiedByUserId: userId);
+                }
+
                 // Link evidence to person-property relations
                 // Priority: junction table (many-to-many) > direct FK (legacy 1:1)
                 junctionByEvidence.TryGetValue(staging.OriginalEntityId, out var junctionLinks);
