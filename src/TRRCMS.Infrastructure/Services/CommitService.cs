@@ -1671,8 +1671,12 @@ public class CommitService : ICommitService
             // from committed surveys, claims, and relations
             var propertyUnitIds = new HashSet<Guid>();
 
-            // From surveys
-            var committedSurveys = await _stagingSurveyRepo.GetApprovedForCommitAsync(importPackageId, ct);
+            // From surveys.
+            // Must read COMMITTED staging records, not "approved for commit": this step runs last,
+            // after CommitSurveysAsync/CommitClaimsAsync have already set CommittedEntityId on every
+            // record. GetApprovedForCommitAsync filters out anything with CommittedEntityId set, so it
+            // would return nothing here and no survey/claim would ever be linked to a case.
+            var committedSurveys = await _stagingSurveyRepo.GetCommittedAsync(importPackageId, ct);
             foreach (var staging in committedSurveys)
             {
                 if (staging.CommittedEntityId.HasValue && staging.OriginalPropertyUnitId.HasValue)
@@ -1682,8 +1686,8 @@ public class CommitService : ICommitService
                 }
             }
 
-            // From claims
-            var committedClaims = await _stagingClaimRepo.GetApprovedForCommitAsync(importPackageId, ct);
+            // From claims (see note above — committed records, not approved-for-commit).
+            var committedClaims = await _stagingClaimRepo.GetCommittedAsync(importPackageId, ct);
             foreach (var staging in committedClaims)
             {
                 if (staging.CommittedEntityId.HasValue)
@@ -1752,15 +1756,28 @@ public class CommitService : ICommitService
                 }
                 catch (Exception ex)
                 {
+                    // Surface the failure in the commit report — not just the log — so a unit whose
+                    // surveys/claims silently failed to link to a case is visible to the operator.
                     _logger.LogWarning(ex,
                         "Failed to link Case for PropertyUnit {PropertyUnitId}. Import continues.",
                         propertyUnitId);
+                    report.Errors.Add(new CommitErrorDto
+                    {
+                        EntityType = "Case",
+                        OriginalEntityId = propertyUnitId,
+                        ErrorMessage = $"Failed to link case for PropertyUnit {propertyUnitId}: {ex.Message}"
+                    });
                 }
             }
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Case linking failed for import {ImportPackageId}. Import data is unaffected.", importPackageId);
+            report.Errors.Add(new CommitErrorDto
+            {
+                EntityType = "Case",
+                ErrorMessage = $"Case linking step failed: {ex.Message}"
+            });
         }
     }
 
