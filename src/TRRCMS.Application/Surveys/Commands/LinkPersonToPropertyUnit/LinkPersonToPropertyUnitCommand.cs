@@ -15,7 +15,13 @@ public class LinkPersonToPropertyUnitCommand : IRequest<PersonPropertyRelationDt
     /// <summary>
     /// نوع العلاقة - Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
-    public int RelationType { get; set; }
+    public int? RelationType { get; set; }
+
+    /// <summary>
+    /// نوع الادعاء - OwnershipClaim=1, OccupancyClaim=2
+    /// Optional for backward compatibility; RelationType is still supported.
+    /// </summary>
+    public int? ClaimType { get; set; }
 
     /// <summary>
     /// نوع الإشغال - OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
