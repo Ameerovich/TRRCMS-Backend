@@ -293,10 +293,12 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Evidence, opt => opt.Ignore())
             .ForMember(dest => dest.DataSummary, opt => opt.Ignore());
 
-            // ImportPackage
+        // ImportPackage
         CreateMap<ImportPackage, ImportPackageDto>()
-           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
-           .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()));
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()))
+            .ForMember(dest => dest.CollectorName, opt => opt.Ignore())
+            .ForMember(dest => dest.Buildings, opt => opt.Ignore());
 
         // Administrative Hierarchy mappings — pCode is the OCHA wire form (SY02, SY0200, ...).
         CreateMap<Governorate, GovernorateDto>()
