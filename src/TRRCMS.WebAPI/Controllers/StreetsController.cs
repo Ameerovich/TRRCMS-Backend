@@ -81,6 +81,7 @@ public class StreetsController : ControllerBase
     /// تسجيل شارع جديد
     /// </summary>
     [HttpPost("register")]
+    [Authorize(Policy = "CanWriteMapReferenceData")]
     [ProducesResponseType(typeof(StreetDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -124,6 +125,7 @@ public class StreetsController : ControllerBase
     /// <response code="400">Invalid request body.</response>
     /// <response code="401">Not authenticated.</response>
     [HttpPost("bulk-register")]
+    [Authorize(Policy = "CanWriteMapReferenceData")]
     [ProducesResponseType(typeof(Application.Common.Models.BulkOperationResult<StreetDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -140,6 +142,7 @@ public class StreetsController : ControllerBase
     /// تعديل شارع موجود
     /// </summary>
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "CanWriteMapReferenceData")]
     [ProducesResponseType(typeof(StreetDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<StreetDto>> UpdateStreet(
@@ -159,6 +162,7 @@ public class StreetsController : ControllerBase
     /// حذف شارع
     /// </summary>
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "CanDeleteMapReferenceData")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteStreet(

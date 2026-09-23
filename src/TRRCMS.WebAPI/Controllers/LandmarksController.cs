@@ -115,6 +115,7 @@ public class LandmarksController : ControllerBase
     /// تسجيل معلم جديد
     /// </summary>
     [HttpPost("register")]
+    [Authorize(Policy = "CanWriteMapReferenceData")]
     [ProducesResponseType(typeof(LandmarkDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -160,6 +161,7 @@ public class LandmarksController : ControllerBase
     /// <response code="400">Invalid request body.</response>
     /// <response code="401">Not authenticated.</response>
     [HttpPost("bulk-register")]
+    [Authorize(Policy = "CanWriteMapReferenceData")]
     [ProducesResponseType(typeof(Application.Common.Models.BulkOperationResult<LandmarkDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -176,6 +178,7 @@ public class LandmarksController : ControllerBase
     /// تعديل معلم موجود
     /// </summary>
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "CanWriteMapReferenceData")]
     [ProducesResponseType(typeof(LandmarkDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<LandmarkDto>> UpdateLandmark(
@@ -195,6 +198,7 @@ public class LandmarksController : ControllerBase
     /// حذف معلم
     /// </summary>
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "CanDeleteMapReferenceData")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteLandmark(
