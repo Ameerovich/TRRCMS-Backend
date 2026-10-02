@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
@@ -79,9 +80,11 @@ public static class VocabularySeedData
     /// Seed all vocabularies from enum definitions using additive merge logic.
     /// - Vocabulary doesn't exist → create from enum values (first install).
     /// - Vocabulary exists → only append new enum values not already present.
-    ///   Admin-added or admin-modified values are never removed or overwritten.
+    ///   Existing values (labels, deprecation flags, admin-added codes) are never
+    ///   overwritten or reverted — they may hold admin changes made via the versioning API.
+    /// - System-locked vocabularies only → codes removed from the C# enum are deprecated.
     /// </summary>
-    public static async Task SeedAsync(ApplicationDbContext context, CancellationToken cancellationToken = default)
+    public static async Task SeedAsync(ApplicationDbContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
         foreach (var def in EnumDefinitions)
         {
@@ -109,44 +112,45 @@ public static class VocabularySeedData
             }
             else
             {
-                // Smart merge: add new values, deprecate removed values, update changed labels
-                var enumValues = GetEnumValues(def.EnumType);
-                var enumByCode = enumValues.ToDictionary(v => v.Code);
+                // Align the system flag with the code-defined policy. Databases seeded before the
+                // extensible/system-locked split still carry isSystemVocabulary=true on extensible
+                // vocabularies, which blocks admins from adding codes via a major version.
+                var isSystemVocabulary = !def.IsExtensible;
+                if (existing.IsSystemVocabulary != isSystemVocabulary)
+                    existing.SetSystemVocabulary(isSystemVocabulary, SystemUserId);
+
+                // Additive merge: the current version may hold admin changes made through the
+                // versioning API (label fixes, deprecations, added codes) — never revert them.
                 var existingValues = ParseValues(existing.ValuesJson);
-                var existingCodes = existingValues.Select(v => v.Code).ToHashSet();
-
-                var hasChanges = false;
-                var changeDescriptions = new List<string>();
-
-                // 1. Deprecate DB entries that are no longer in the C# enum
-                foreach (var val in existingValues)
+                if (existingValues == null)
                 {
-                    if (!enumByCode.ContainsKey(val.Code) && !val.IsDeprecated)
-                    {
-                        val.IsDeprecated = true;
-                        hasChanges = true;
-                    }
-
-                    // 2. Update labels for entries that exist in both but labels changed
-                    if (enumByCode.TryGetValue(val.Code, out var enumVal))
-                    {
-                        if (val.LabelAr != enumVal.LabelAr || val.LabelEn != enumVal.LabelEn)
-                        {
-                            val.LabelAr = enumVal.LabelAr;
-                            val.LabelEn = enumVal.LabelEn;
-                            hasChanges = true;
-                        }
-
-                        // Un-deprecate if it was previously deprecated but is back in the enum
-                        if (val.IsDeprecated)
-                        {
-                            val.IsDeprecated = false;
-                            hasChanges = true;
-                        }
-                    }
+                    logger?.LogWarning(
+                        "Vocabulary '{VocabularyName}' v{Version} has unreadable ValuesJson — skipped enum sync",
+                        existing.VocabularyName, existing.Version);
+                    continue;
                 }
 
-                // 3. Add new enum values not already in the vocabulary
+                var enumValues = GetEnumValues(def.EnumType);
+                var enumCodes = enumValues.Select(v => v.Code).ToHashSet();
+                var existingCodes = existingValues.Select(v => v.Code).ToHashSet();
+                var changeDescriptions = new List<string>();
+
+                // 1. System-locked only: deprecate codes removed from the C# enum.
+                //    Extensible vocabularies hold admin-added codes that never exist in the enum.
+                if (!def.IsExtensible)
+                {
+                    var removedValues = existingValues
+                        .Where(v => !enumCodes.Contains(v.Code) && !v.IsDeprecated)
+                        .ToList();
+
+                    foreach (var val in removedValues)
+                        val.IsDeprecated = true;
+
+                    if (removedValues.Count > 0)
+                        changeDescriptions.Add($"deprecated {removedValues.Count} value(s) removed from enum");
+                }
+
+                // 2. Add new enum values not already in the vocabulary
                 var newValues = enumValues.Where(v => !existingCodes.Contains(v.Code)).ToList();
                 if (newValues.Count > 0)
                 {
@@ -160,11 +164,10 @@ public static class VocabularySeedData
                         existingValues.Add(val);
                     }
 
-                    hasChanges = true;
                     changeDescriptions.Add($"added {newValues.Count} value(s)");
                 }
 
-                if (hasChanges)
+                if (changeDescriptions.Count > 0)
                 {
                     var mergedJson = JsonSerializer.Serialize(existingValues.Select(v => new
                     {
@@ -176,8 +179,7 @@ public static class VocabularySeedData
                         isDeprecated = v.IsDeprecated
                     }));
 
-                    var deprecatedCount = existingValues.Count(v => v.IsDeprecated);
-                    var description = $"System: synced with enum — {existingValues.Count} total, {deprecatedCount} deprecated";
+                    var description = $"System: {string.Join(", ", changeDescriptions)} from code deployment";
 
                     var newVersion = existing.CreateMinorVersion(
                         mergedJson,
@@ -185,6 +187,10 @@ public static class VocabularySeedData
                         SystemUserId);
 
                     await context.Vocabularies.AddAsync(newVersion, cancellationToken);
+
+                    logger?.LogInformation(
+                        "Vocabulary '{VocabularyName}' synced with enum: v{OldVersion} → v{NewVersion} ({Changes})",
+                        existing.VocabularyName, existing.Version, newVersion.Version, string.Join(", ", changeDescriptions));
                 }
             }
         }
@@ -222,8 +228,10 @@ public static class VocabularySeedData
 
     /// <summary>
     /// Parse existing vocabulary values from JSON.
+    /// Returns null when the JSON is unreadable, so the caller skips the vocabulary
+    /// instead of rebuilding it from enum defaults and dropping admin-added codes.
     /// </summary>
-    private static List<SeedValue> ParseValues(string valuesJson)
+    private static List<SeedValue>? ParseValues(string valuesJson)
     {
         if (string.IsNullOrWhiteSpace(valuesJson) || valuesJson == "[]")
             return new List<SeedValue>();
@@ -232,9 +240,9 @@ public static class VocabularySeedData
         {
             return JsonSerializer.Deserialize<List<SeedValue>>(valuesJson, JsonOptions) ?? new List<SeedValue>();
         }
-        catch
+        catch (JsonException)
         {
-            return new List<SeedValue>();
+            return null;
         }
     }
 
