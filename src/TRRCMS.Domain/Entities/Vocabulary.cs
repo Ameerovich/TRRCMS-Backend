@@ -330,6 +330,15 @@ public class Vocabulary : BaseAuditableEntity
     }
 
     /// <summary>
+    /// Align the system-vocabulary flag with the code-defined policy (used by the seeder)
+    /// </summary>
+    public void SetSystemVocabulary(bool isSystemVocabulary, Guid modifiedByUserId)
+    {
+        IsSystemVocabulary = isSystemVocabulary;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
     /// Record usage of this vocabulary
     /// </summary>
     public void RecordUsage()

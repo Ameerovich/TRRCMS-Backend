@@ -104,7 +104,7 @@ public static class WebApplicationExtensions
             try
             {
                 var context = services.GetRequiredService<ApplicationDbContext>();
-                await VocabularySeedData.SeedAsync(context);
+                await VocabularySeedData.SeedAsync(context, logger);
                 logger.LogInformation("Vocabulary seed data applied successfully");
             }
             catch (Exception ex)
