@@ -3,6 +3,8 @@ using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
 using TRRCMS.Application;
+using TRRCMS.Application.Common.Mappings;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Commands.UpdatePersonPropertyRelation;
 
@@ -23,6 +25,20 @@ public class UpdatePersonPropertyRelationCommandValidator : LocalizedValidator<U
             .Must(v => vocabService.IsValidCode("relation_type", v!.Value))
             .When(x => x.RelationType.HasValue)
             .WithMessage(L("RelationType_Invalid"));
+
+        // ClaimType validation (optional compatibility field)
+        RuleFor(x => x.ClaimType)
+            .Must(v => vocabService.IsValidCode("claim_type", v!.Value))
+            .When(x => x.ClaimType.HasValue)
+            .WithMessage("Invalid ClaimType.");
+        RuleFor(x => x)
+            .Must(x =>
+                !x.RelationType.HasValue ||
+                !x.ClaimType.HasValue ||
+                ClaimTypeRelationMapper.IsCompatible(
+                    (RelationType)x.RelationType.Value,
+                    (ClaimType)x.ClaimType.Value))
+            .WithMessage("RelationType and ClaimType are inconsistent.");
 
         // OccupancyType enum validation (optional int field)
         RuleFor(x => x.OccupancyType)

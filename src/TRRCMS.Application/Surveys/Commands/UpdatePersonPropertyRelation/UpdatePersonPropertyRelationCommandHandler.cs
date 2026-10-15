@@ -1,6 +1,7 @@
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Mappings;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Domain.Entities;
@@ -88,20 +89,45 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         }
 
         // Determine effective values for business validation
-        var effectiveRelationType = request.RelationType.HasValue ? (RelationType)request.RelationType.Value : relation.RelationType;
-        var effectiveOccupancyType = request.ClearOccupancyType ? null : (request.OccupancyType.HasValue ? (OccupancyType?)request.OccupancyType.Value : relation.OccupancyType);
+        var effectiveRelationType = request.RelationType.HasValue
+            ? (RelationType)request.RelationType.Value
+            : request.ClaimType.HasValue
+                ? ClaimTypeRelationMapper.ResolveForUpdate(
+                    relation.RelationType,
+                    (ClaimType)request.ClaimType.Value)
+                : relation.RelationType;
+        var claimChangedToOwnership =
+            request.ClaimType.HasValue &&
+            (ClaimType)request.ClaimType.Value == ClaimType.OwnershipClaim;
+        var effectiveOccupancyType =
+            request.ClearOccupancyType || claimChangedToOwnership
+                ? null
+                : request.OccupancyType.HasValue
+                    ? (OccupancyType?)request.OccupancyType.Value
+                    : relation.OccupancyType;
         var effectiveHasEvidence = request.HasEvidence ?? relation.HasEvidence;
-        var effectiveOwnershipShare = request.ClearOwnershipShare ? null : (request.OwnershipShare ?? relation.OwnershipShare);
+        var claimChangedToOccupancy =
+            request.ClaimType.HasValue &&
+            (ClaimType)request.ClaimType.Value == ClaimType.OccupancyClaim;
+
+        var effectiveOwnershipShare =
+            request.ClearOwnershipShare || claimChangedToOccupancy
+                ? null
+                : request.OwnershipShare ?? relation.OwnershipShare;
         var effectiveContractDetails = request.ClearContractDetails ? null : (request.ContractDetails ?? relation.ContractDetails);
         var effectiveNotes = request.ClearNotes ? null : (request.Notes ?? relation.Notes);
 
         // Validate ownership share for Owner type
+
         if (effectiveRelationType == RelationType.Owner)
         {
             if (!effectiveOwnershipShare.HasValue || effectiveOwnershipShare <= 0)
-                throw new ValidationException("Ownership share is required for Owner type and must be > 0");
+                throw new ValidationException(
+                    "Ownership share is required for Owner type and must be > 0");
+
             if (effectiveOwnershipShare > 2400)
-                throw new ValidationException("Ownership share cannot exceed 2400 (100%, qirat-based)");
+                throw new ValidationException(
+                    "Ownership share cannot exceed 2400 (100%, qirat-based)");
         }
 
         // Update using simplified domain method
@@ -122,6 +148,7 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
         if (request.PersonId.HasValue) changedFields.Add("PersonId");
         if (request.PropertyUnitId.HasValue) changedFields.Add("PropertyUnitId");
         if (request.RelationType.HasValue) changedFields.Add("RelationType");
+        if (request.ClaimType.HasValue) changedFields.Add("ClaimType");
         if (request.OccupancyType.HasValue || request.ClearOccupancyType) changedFields.Add("OccupancyType");
         if (request.HasEvidence.HasValue) changedFields.Add("HasEvidence");
         if (request.OwnershipShare.HasValue || request.ClearOwnershipShare) changedFields.Add("OwnershipShare");
@@ -139,6 +166,9 @@ public class UpdatePersonPropertyRelationCommandHandler : IRequestHandler<Update
             System.Text.Json.JsonSerializer.Serialize(new
             {
                 RelationType = relation.RelationType.ToString(),
+                ClaimType = ClaimTypeRelationMapper
+                    .ToClaimType(relation.RelationType)
+                    .ToString(),
                 relation.OwnershipShare
             }),
             string.Join(", ", changedFields),
