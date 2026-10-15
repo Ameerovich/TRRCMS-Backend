@@ -68,7 +68,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPersonPropertyRelationRepository, PersonPropertyRelationRepository>();
         services.AddScoped<IEvidenceRepository, EvidenceRepository>();
         services.AddScoped<IEvidenceRelationRepository, EvidenceRelationRepository>();
-services.AddScoped<IClaimRepository, ClaimRepository>();
+        services.AddScoped<IClaimRepository, ClaimRepository>();
         services.AddScoped<ICaseRepository, CaseRepository>();
         services.AddScoped<IIdentificationDocumentRepository, IdentificationDocumentRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
@@ -436,6 +436,12 @@ services.AddScoped<IClaimRepository, ClaimRepository>();
             // Landmarks
             options.AddPolicy("CanManageLandmarks", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Landmarks_Manage)));
+
+            options.AddPolicy("CanWriteMapReferenceData", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.MapReferenceData_Write)));
+
+            options.AddPolicy("CanDeleteMapReferenceData", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.MapReferenceData_Delete)));
 
             // Reports
             options.AddPolicy("CanViewReports", policy =>

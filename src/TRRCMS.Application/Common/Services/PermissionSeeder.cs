@@ -99,6 +99,8 @@ public static class PermissionSeeder
             Permission.System_Restore,
             Permission.System_Sync,   // Tablet LAN synchronisation (Sync Protocol Steps 1–4)
             Permission.Landmarks_Manage,
+            Permission.MapReferenceData_Write,
+            Permission.MapReferenceData_Delete,
 
             Permission.Reports_View,
             Permission.Reports_ExportSurveys,
@@ -165,6 +167,8 @@ public static class PermissionSeeder
             Permission.System_Export,
             Permission.Audit_ViewAll,
             Permission.Landmarks_Manage,
+            Permission.MapReferenceData_Write,
+            Permission.MapReferenceData_Delete,
 
             Permission.Reports_View,
             Permission.Reports_ExportSurveys,
@@ -241,6 +245,9 @@ public static class PermissionSeeder
             Permission.Evidence_Upload,     // Upload supporting documents
 
             Permission.Buildings_View,
+            Permission.Buildings_Create,    // Create buildings from the QGIS plugin
+            Permission.Buildings_Update,    // Update buildings from the QGIS plugin
+            Permission.MapReferenceData_Write,
 
             Permission.Persons_View,
             Permission.Persons_Create,      // Create persons during office survey
