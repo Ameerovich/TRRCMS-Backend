@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Application.Import.Models;
 
 namespace TRRCMS.Infrastructure.Services;
@@ -278,6 +279,101 @@ public class ImportService : IImportService
             manifest.PersonCount, manifest.ClaimCount);
 
         return manifest;
+    }
+    public async Task<IReadOnlyList<ImportPackageBuildingDto>> ReadBuildingSummariesAsync(
+    string uhcFilePath,
+    CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(uhcFilePath))
+            return Array.Empty<ImportPackageBuildingDto>();
+
+        var connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = uhcFilePath,
+            Mode = SqliteOpenMode.ReadOnly,
+            Pooling = false
+        }.ToString();
+
+        using var connection = new SqliteConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        using var tableCmd = connection.CreateCommand();
+        tableCmd.CommandText =
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='buildings'";
+
+        var tableExists =
+            Convert.ToInt32(await tableCmd.ExecuteScalarAsync(cancellationToken));
+
+        if (tableExists == 0)
+            return Array.Empty<ImportPackageBuildingDto>();
+
+        var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        using (var pragmaCmd = connection.CreateCommand())
+        {
+            pragmaCmd.CommandText = "PRAGMA table_info(buildings)";
+
+            using var pragmaReader =
+                await pragmaCmd.ExecuteReaderAsync(cancellationToken);
+
+            while (await pragmaReader.ReadAsync(cancellationToken))
+            {
+                columns.Add(pragmaReader.GetString(1));
+            }
+        }
+
+        if (!columns.Contains("building_number"))
+            return Array.Empty<ImportPackageBuildingDto>();
+
+        string ColumnOrNull(string columnName) =>
+            columns.Contains(columnName)
+                ? $"\"{columnName}\""
+                : $"NULL AS \"{columnName}\"";
+
+        using var cmd = connection.CreateCommand();
+
+        cmd.CommandText = $"""
+        SELECT
+            "building_number",
+            {ColumnOrNull("governorate_name")},
+            {ColumnOrNull("district_name")},
+            {ColumnOrNull("sub_district_name")},
+            {ColumnOrNull("community_name")},
+            {ColumnOrNull("neighborhood_name")}
+        FROM buildings
+        ORDER BY rowid
+        """;
+
+        var result = new List<ImportPackageBuildingDto>();
+
+        using var reader =
+            await cmd.ExecuteReaderAsync(cancellationToken);
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var buildingNumber =
+                reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+
+            if (string.IsNullOrWhiteSpace(buildingNumber))
+                continue;
+
+            result.Add(new ImportPackageBuildingDto
+            {
+                BuildingNumber = buildingNumber,
+                GovernorateName =
+                    reader.IsDBNull(1) ? null : reader.GetString(1),
+                DistrictName =
+                    reader.IsDBNull(2) ? null : reader.GetString(2),
+                SubDistrictName =
+                    reader.IsDBNull(3) ? null : reader.GetString(3),
+                CommunityName =
+                    reader.IsDBNull(4) ? null : reader.GetString(4),
+                NeighborhoodName =
+                    reader.IsDBNull(5) ? null : reader.GetString(5)
+            });
+        }
+
+        return result;
     }
 
     public async Task<VocabularyCompatibilityResult> CheckVocabularyCompatibilityAsync(ManifestData manifest, CancellationToken cancellationToken = default)
