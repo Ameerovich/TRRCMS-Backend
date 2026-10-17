@@ -5,12 +5,15 @@ using TRRCMS.Application.Common.Models;
 using TRRCMS.Application.Users.Commands.ActivateUser;
 using TRRCMS.Application.Users.Commands.CreateUser;
 using TRRCMS.Application.Users.Commands.DeactivateUser;
+using TRRCMS.Application.Users.Commands.DismissPasswordResetRequest;
 using TRRCMS.Application.Users.Commands.GrantPermissions;
+using TRRCMS.Application.Users.Commands.ResetUserPassword;
 using TRRCMS.Application.Users.Commands.RevokePermission;
 using TRRCMS.Application.Users.Commands.UnlockUser;
 using TRRCMS.Application.Users.Commands.UpdateUser;
 using TRRCMS.Application.Users.Dtos;
 using TRRCMS.Application.Users.Queries.GetAllUsers;
+using TRRCMS.Application.Users.Queries.GetPasswordResetRequests;
 using TRRCMS.Application.Users.Queries.GetUser;
 using TRRCMS.Application.Users.Queries.GetUserAuditLog;
 using TRRCMS.Domain.Enums;
@@ -557,6 +560,85 @@ public class UsersController : ControllerBase
     {
         var result = await _mediator.Send(new UnlockUserCommand { UserId = id });
         return Ok(result);
+    }
+
+    // ==================== PASSWORD RESET ====================
+
+    /// <summary>
+    /// Reset a user's password (administrator)
+    /// </summary>
+    /// <remarks>
+    /// Sets a temporary password for another user.
+    /// إعادة تعيين كلمة مرور مستخدم
+    ///
+    /// **Required Permission**: Users_ResetPassword (8004) - CanResetUserPasswords policy
+    ///
+    /// **Body (optional):** `{ "temporaryPassword": "Temp@2026x" }`.
+    /// Omit the body (or `temporaryPassword`) to let the server generate a policy-compliant password,
+    /// returned **once** in `generatedTemporaryPassword`.
+    ///
+    /// **Effect:**
+    /// - `mustChangePassword = true` — at next login the user gets a restricted token and must change it
+    /// - every existing session of that user ends immediately (security stamp rotated, refresh token revoked)
+    /// - account is unlocked and failed attempts reset
+    /// - any pending "forgot password" request is resolved
+    ///
+    /// Cannot be used on your own account (use `POST /api/v1/auth/change-password`).
+    /// </remarks>
+    /// <response code="200">Password reset</response>
+    /// <response code="400">Temporary password violates the password policy, or target is yourself</response>
+    /// <response code="403">Missing Users_ResetPassword permission</response>
+    /// <response code="404">User not found</response>
+    [HttpPost("{id:guid}/reset-password")]
+    [Authorize(Policy = "CanResetUserPasswords")]
+    [ProducesResponseType(typeof(ResetUserPasswordResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResetUserPasswordResultDto>> ResetPassword(
+        Guid id, [FromBody] ResetUserPasswordRequest? request)
+    {
+        var result = await _mediator.Send(new ResetUserPasswordCommand
+        {
+            UserId = id,
+            TemporaryPassword = request?.TemporaryPassword
+        });
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// List pending "forgot password" requests
+    /// </summary>
+    /// <remarks>
+    /// Requests submitted from the login screen via `POST /api/v1/auth/forgot-password`, oldest first.
+    /// Resolve one with `POST /api/v1/users/{id}/reset-password`, or dismiss it with
+    /// `DELETE /api/v1/users/{id}/password-reset-request`.
+    ///
+    /// **Required Permission**: Users_ResetPassword (8004)
+    /// </remarks>
+    [HttpGet("password-reset-requests")]
+    [Authorize(Policy = "CanResetUserPasswords")]
+    [ProducesResponseType(typeof(List<PasswordResetRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<List<PasswordResetRequestDto>>> GetPasswordResetRequests()
+    {
+        return Ok(await _mediator.Send(new GetPasswordResetRequestsQuery()));
+    }
+
+    /// <summary>
+    /// Dismiss a pending "forgot password" request without resetting the password
+    /// </summary>
+    /// <remarks>**Required Permission**: Users_ResetPassword (8004)</remarks>
+    /// <response code="204">Request dismissed</response>
+    /// <response code="404">User not found or has no pending request</response>
+    [HttpDelete("{id:guid}/password-reset-request")]
+    [Authorize(Policy = "CanResetUserPasswords")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DismissPasswordResetRequest(Guid id)
+    {
+        await _mediator.Send(new DismissPasswordResetRequestCommand { UserId = id });
+        return NoContent();
     }
 
     // ==================== GRANT PERMISSIONS ====================

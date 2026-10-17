@@ -33,19 +33,9 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
     public async Task<bool> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        // Step 1: Validate that new password and confirmation match
-        if (request.NewPassword != request.ConfirmPassword)
-        {
-            throw new ArgumentException("New password and confirmation password do not match.");
-        }
+        // Confirmation match and password-policy strength are enforced by ChangePasswordCommandValidator.
 
-        // Step 2: Validate password strength (minimum requirements)
-        if (request.NewPassword.Length < 8)
-        {
-            throw new ArgumentException("Password must be at least 8 characters long.");
-        }
-
-        // Step 3: Find user
+        // Step 1: Find user
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user == null)
@@ -75,13 +65,13 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         if (isSamePassword)
         {
-            throw new ArgumentException("New password must be different from the current password.");
+            throw new ValidationException("New password must be different from the current password.");
         }
 
         // Step 6: Hash new password
         string newPasswordHash = _passwordHasher.HashPassword(request.NewPassword, out string newSalt);
 
-        // Step 7: Update user password (this invalidates all existing tokens via SecurityStamp)
+        // Step 7: Update user password (rotates SecurityStamp and revokes the refresh token, ending other sessions)
         user.ChangePassword(newPasswordHash, newSalt, request.ModifiedByUserId);
 
         // Step 7b: Re-stamp password expiry from the active SecurityPolicy (0 days = never expires).

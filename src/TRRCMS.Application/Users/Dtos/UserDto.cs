@@ -25,6 +25,8 @@ public class UserDto
     public DateTime? LastLoginDate { get; set; }
     public DateTime? LastPasswordChangeDate { get; set; }
     public bool MustChangePassword { get; set; }
+    public DateTime? PasswordResetRequestedAtUtc { get; set; }
+    public string? PasswordResetRequestNote { get; set; }
     public string? AssignedTabletId { get; set; }
     public DateTime? TabletAssignedDate { get; set; }
     public Guid? SupervisorUserId { get; set; }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Auth.Commands.ChangePassword;
 using TRRCMS.Application.Auth.Commands.Login;
 using TRRCMS.Application.Auth.Commands.RefreshToken;
+using TRRCMS.Application.Auth.Commands.RequestPasswordReset;
 using TRRCMS.Application.Auth.Dtos;
 using TRRCMS.WebAPI.Middleware;
 
@@ -302,13 +303,14 @@ public class AuthController : ControllerBase
         }
 
         // User can only change their own password
-        if (request.UserId != currentUserId)
+        // userId in the body is optional; when sent it must be the caller's own id
+        if (request.UserId != Guid.Empty && request.UserId != currentUserId)
         {
             return Forbid();
         }
 
         var command = new ChangePasswordCommand(
-            request.UserId,
+            currentUserId,
             request.CurrentPassword,
             request.NewPassword,
             request.ConfirmPassword,
@@ -319,6 +321,40 @@ public class AuthController : ControllerBase
         _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
 
         return Ok(new { message = "Password changed successfully. Please login again with your new password." });
+    }
+
+    /// <summary>
+    /// Ask an administrator to reset your password ("forgot password")
+    /// </summary>
+    /// <remarks>
+    /// Anonymous. Queues a reset request that administrators see in
+    /// `GET /api/v1/users/password-reset-requests`. The administrator then sets a temporary
+    /// password and gives it to the user out of band; the user must change it at next login.
+    ///
+    /// The response is **always** 202 with the same message, whether or not the username exists,
+    /// so the endpoint cannot be used to discover accounts. Rate-limited like login.
+    ///
+    /// **Example request:**
+    /// ```json
+    /// { "username": "clerk01", "note": "Call me on extension 214" }
+    /// ```
+    /// </remarks>
+    /// <response code="202">Request recorded (or silently ignored for unknown usernames)</response>
+    /// <response code="400">Username missing / note too long</response>
+    /// <response code="429">Too many requests</response>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> ForgotPassword([FromBody] RequestPasswordResetCommand request)
+    {
+        await _mediator.Send(request);
+
+        return Accepted(new
+        {
+            message = "If this account exists, your request was sent to the system administrator, who will contact you with a temporary password."
+        });
     }
 
     /// <summary>

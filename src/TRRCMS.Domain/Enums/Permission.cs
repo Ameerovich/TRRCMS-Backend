@@ -292,6 +292,12 @@ public enum Permission
     Users_Deactivate = 8003,
 
     /// <summary>
+    /// Reset another user's password and handle "forgot password" requests (Admin only)
+    /// </summary>
+    [ArabicLabel("إعادة تعيين كلمة مرور مستخدم")]
+    Users_ResetPassword = 8004,
+
+    /// <summary>
     /// Manage roles and permissions (Admin only)
     /// </summary>
     [ArabicLabel("إدارة الأدوار")]

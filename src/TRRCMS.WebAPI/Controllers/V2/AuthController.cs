@@ -47,13 +47,14 @@ public class AuthController : ControllerBase
             });
         }
 
-        if (request.UserId != currentUserId)
+        // userId in the body is optional; when sent it must be the caller's own id
+        if (request.UserId != Guid.Empty && request.UserId != currentUserId)
         {
             return Forbid();
         }
 
         var command = new ChangePasswordCommand(
-            request.UserId,
+            currentUserId,
             request.CurrentPassword,
             request.NewPassword,
             request.ConfirmPassword,

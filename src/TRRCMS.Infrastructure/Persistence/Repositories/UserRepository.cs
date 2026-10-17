@@ -103,6 +103,14 @@ public class UserRepository : IUserRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<User>> GetWithPendingPasswordResetRequestAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Where(u => u.PasswordResetRequestedAtUtc != null && !u.IsDeleted)
+            .OrderBy(u => u.PasswordResetRequestedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<User>> GetUsersByRoleAsync(UserRole role, bool activeOnly = true, CancellationToken cancellationToken = default)
     {
         var query = _context.Users

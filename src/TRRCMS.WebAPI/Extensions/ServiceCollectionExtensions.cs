@@ -393,6 +393,8 @@ public static class ServiceCollectionExtensions
                 policy.Requirements.Add(new PermissionRequirement(Permission.Users_Update)));
             options.AddPolicy("CanDeactivateUsers", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Users_Deactivate)));
+            options.AddPolicy("CanResetUserPasswords", policy =>
+                policy.Requirements.Add(new PermissionRequirement(Permission.Users_ResetPassword)));
             options.AddPolicy("CanManageRoles", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Roles_Manage)));
             options.AddPolicy("CanManageUserRoles", policy =>

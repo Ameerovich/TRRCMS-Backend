@@ -4399,6 +4399,13 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<string>("PasswordResetRequestNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("PasswordResetRequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("PasswordSalt")
                         .IsRequired()
                         .HasMaxLength(255)

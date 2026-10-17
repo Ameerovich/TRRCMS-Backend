@@ -86,6 +86,7 @@ public static class PermissionSeeder
             Permission.Users_Create,
             Permission.Users_Update,
             Permission.Users_Deactivate,
+            Permission.Users_ResetPassword,
             Permission.Roles_Manage,
             Permission.Vocabularies_Manage,
             Permission.Security_Settings,

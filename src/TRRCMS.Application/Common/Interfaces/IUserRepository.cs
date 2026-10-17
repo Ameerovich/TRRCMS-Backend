@@ -19,6 +19,7 @@ public interface IUserRepository
 
     Task<List<User>> GetByRoleAsync(UserRole role, CancellationToken cancellationToken = default);
     Task<List<User>> GetActiveUsersAsync(CancellationToken cancellationToken = default);
+    Task<List<User>> GetWithPendingPasswordResetRequestAsync(CancellationToken cancellationToken = default);
     Task<List<User>> GetUsersByRoleAsync(UserRole role, bool activeOnly = true, CancellationToken cancellationToken = default);
 
     Task<List<User>> GetSuperviseesByIdAsync(Guid supervisorId, CancellationToken cancellationToken = default);

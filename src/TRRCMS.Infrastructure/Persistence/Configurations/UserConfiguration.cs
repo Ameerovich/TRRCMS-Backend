@@ -103,6 +103,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.PasswordExpiryDate);
 
+        builder.Property(u => u.PasswordResetRequestedAtUtc);
+
+        builder.Property(u => u.PasswordResetRequestNote)
+            .HasMaxLength(500);
+
         builder.Property(u => u.AssignedTabletId)
             .HasMaxLength(50);
 
