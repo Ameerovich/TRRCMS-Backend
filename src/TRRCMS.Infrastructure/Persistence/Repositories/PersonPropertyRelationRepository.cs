@@ -106,6 +106,16 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<PersonPropertyRelation>> GetAllByPersonAndPropertyUnitAsync(
+        Guid personId, Guid propertyUnitId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Set<PersonPropertyRelation>()
+            .Include(r => r.Person)
+            .Include(r => r.PropertyUnit)
+            .Where(r => r.PersonId == personId && r.PropertyUnitId == propertyUnitId && !r.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<PersonPropertyRelation?> GetByPersonAndPropertyUnitAsync(Guid personId, Guid propertyUnitId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<PersonPropertyRelation>()
@@ -167,7 +177,7 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .CountAsync(cancellationToken);
     }
 
-    public async Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), PersonPropertyRelation>> GetByPersonPropertyPairsBatchAsync(
+    public async Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), List<PersonPropertyRelation>>> GetByPersonPropertyPairsBatchAsync(
         IEnumerable<(Guid PersonId, Guid PropertyUnitId)> pairs, CancellationToken cancellationToken = default)
     {
         var pairList = pairs.ToList();
@@ -181,9 +191,11 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .Where(r => !r.IsDeleted && personIds.Contains(r.PersonId) && propertyUnitIds.Contains(r.PropertyUnitId))
             .ToListAsync(cancellationToken);
 
+        // A person can hold several relations on one unit, so group instead of keying one relation per pair
         var pairSet = pairList.ToHashSet();
         return relations
             .Where(r => pairSet.Contains((r.PersonId, r.PropertyUnitId)))
-            .ToDictionary(r => (r.PersonId, r.PropertyUnitId));
+            .GroupBy(r => (r.PersonId, r.PropertyUnitId))
+            .ToDictionary(g => g.Key, g => g.ToList());
     }
 }

@@ -21,6 +21,11 @@ public interface IPersonPropertyRelationRepository
     /// </summary>
     Task<HashSet<Guid>> GetPersonIdsWithActiveRelationsAsync(
         IEnumerable<Guid> personIds, Guid? propertyUnitId = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Every non-deleted relation of a person on a unit (a person may hold several, e.g. owner and occupant). Tracked.
+    /// </summary>
+    Task<List<PersonPropertyRelation>> GetAllByPersonAndPropertyUnitAsync(
+        Guid personId, Guid propertyUnitId, CancellationToken cancellationToken = default);
     Task<PersonPropertyRelation?> GetByPersonAndPropertyUnitAsync(Guid personId, Guid propertyUnitId, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PersonPropertyRelation> AddAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default);
@@ -47,6 +52,6 @@ public interface IPersonPropertyRelationRepository
     /// <summary>
     /// Batch load relations by person-property pairs (avoids N+1 queries).
     /// </summary>
-    Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), PersonPropertyRelation>> GetByPersonPropertyPairsBatchAsync(
+    Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), List<PersonPropertyRelation>>> GetByPersonPropertyPairsBatchAsync(
         IEnumerable<(Guid PersonId, Guid PropertyUnitId)> pairs, CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 
 namespace TRRCMS.Application.Claims.Queries.GetClaim;
 
@@ -46,8 +47,9 @@ public class GetClaimQueryHandler : IRequestHandler<GetClaimQuery, ClaimDto?>
         var dto = _mapper.Map<ClaimDto>(claim);
 
         // Enrich with evidence from the source PersonPropertyRelation
-        var relation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
-            claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken);
+        var relation = ClaimSourceRelationResolver.Resolve(claim,
+            await _relationRepository.GetAllByPersonAndPropertyUnitAsync(
+                claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken));
 
         if (relation != null)
         {

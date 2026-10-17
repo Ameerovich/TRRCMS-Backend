@@ -2,6 +2,7 @@ using AutoMapper;
 using MediatR;
 using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Common.Models;
 
 namespace TRRCMS.Application.Claims.Queries.GetAllClaims;
@@ -69,13 +70,15 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
         var pairs = claimList.Select(c => (c.PrimaryClaimantId, c.PropertyUnitId)).ToList();
         var relationsDict = await _relationRepository.GetByPersonPropertyPairsBatchAsync(pairs, cancellationToken);
 
-        var relationIds = relationsDict.Values.Select(r => r.Id).ToList();
+        var relationIds = relationsDict.Values.SelectMany(list => list).Select(r => r.Id).ToList();
         var evidenceDict = await _evidenceRelationRepository.GetActiveByRelationIdsBatchAsync(relationIds, cancellationToken);
 
         // Enrich DTOs from batch-loaded data
         foreach (var (dto, claim) in dtos.Zip(claimList))
         {
-            if (relationsDict.TryGetValue((claim.PrimaryClaimantId, claim.PropertyUnitId), out var relation))
+            var relation = ClaimSourceRelationResolver.Resolve(
+                claim, relationsDict.GetValueOrDefault((claim.PrimaryClaimantId, claim.PropertyUnitId)));
+            if (relation != null)
             {
                 dto.SourceRelationId = relation.Id;
                 var activeLinks = evidenceDict.GetValueOrDefault(relation.Id, new List<Domain.Entities.EvidenceRelation>());

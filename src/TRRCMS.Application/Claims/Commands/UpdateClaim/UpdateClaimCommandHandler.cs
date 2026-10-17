@@ -6,6 +6,7 @@ using System.Text.Json;
 using TRRCMS.Application.Claims.Dtos;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Enums;
 
@@ -56,8 +57,9 @@ public class UpdateClaimCommandHandler : IRequestHandler<UpdateClaimCommand, Upd
         Lap("claim.loaded");
 
         // 3. Find or create source relation
-        var relation = await _unitOfWork.PersonPropertyRelations
-            .GetByPersonAndPropertyUnitAsync(claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken);
+        var relation = ClaimSourceRelationResolver.Resolve(claim,
+            await _unitOfWork.PersonPropertyRelations
+                .GetAllByPersonAndPropertyUnitAsync(claim.PrimaryClaimantId, claim.PropertyUnitId, cancellationToken));
 
         bool relationWasCreated = false;
         if (relation == null)
