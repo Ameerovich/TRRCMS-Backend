@@ -65,12 +65,13 @@ public class PersonDesignationService : IPersonDesignationService
 
         var personIds = relations.Select(r => r.PersonId).Concat(contactIds).Distinct().ToList();
         var persons = await _personRepository.GetByIdsAsync(personIds, cancellationToken);
-        var relationByPerson = relations
+        var relationsByPerson = relations
             .GroupBy(r => r.PersonId)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(r => r.CreatedAtUtc).First());
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         return persons
-            .Select(p => ToDto(p, contactIds.Contains(p.Id), relationByPerson.GetValueOrDefault(p.Id)))
+            .Select(p => ToDto(p, contactIds.Contains(p.Id),
+                relationsByPerson.GetValueOrDefault(p.Id) ?? new List<PersonPropertyRelation>()))
             .OrderByDescending(d => d.IsContactPoint)
             .ThenByDescending(d => d.IsRightsClaimant)
             .ThenBy(d => d.FullNameArabic)
@@ -84,34 +85,48 @@ public class PersonDesignationService : IPersonDesignationService
         var person = await _personRepository.GetByIdAsync(survey.ContactPersonId.Value, cancellationToken);
         if (person == null) return null;
 
-        PersonPropertyRelation? relation = null;
+        var relations = new List<PersonPropertyRelation>();
         if (survey.PropertyUnitId.HasValue)
         {
-            relation = await _relationRepository.GetByPersonAndPropertyUnitAsync(
-                person.Id, survey.PropertyUnitId.Value, cancellationToken);
-            if (relation is { IsActive: false } or { IsDeleted: true })
-                relation = null;
+            relations = (await _relationRepository.GetByPropertyUnitIdAsync(survey.PropertyUnitId.Value, cancellationToken))
+                .Where(r => r.PersonId == person.Id && r.IsActive && !r.IsDeleted)
+                .ToList();
         }
 
-        return ToDto(person, isContactPoint: true, relation);
+        return ToDto(person, isContactPoint: true, relations);
     }
 
-    private static DesignatedPersonDto ToDto(Person person, bool isContactPoint, PersonPropertyRelation? relation) => new()
+    private static DesignatedPersonDto ToDto(Person person, bool isContactPoint, List<PersonPropertyRelation> relations)
     {
-        PersonId = person.Id,
-        FirstNameArabic = person.FirstNameArabic,
-        FatherNameArabic = person.FatherNameArabic,
-        FamilyNameArabic = person.FamilyNameArabic,
-        MotherNameArabic = person.MotherNameArabic,
-        FullNameArabic = person.GetFullNameArabic(),
-        NationalId = person.NationalId,
-        MobileNumber = person.MobileNumber,
-        PhoneNumber = person.PhoneNumber,
-        HouseholdId = person.HouseholdId,
-        IsContactPoint = isContactPoint,
-        IsRightsClaimant = relation != null,
-        RelationType = relation != null ? (int)relation.RelationType : null,
-        ClaimType = relation != null ? (int)ClaimTypeRelationMapper.ToClaimType(relation.RelationType) : null,
-        RelationId = relation?.Id
-    };
+        // Primary relation: an ownership claim wins, then the most recent
+        var relation = relations
+            .OrderByDescending(r => ClaimTypeRelationMapper.ToClaimType(r.RelationType) == Domain.Enums.ClaimType.OwnershipClaim)
+            .ThenByDescending(r => r.CreatedAtUtc)
+            .FirstOrDefault();
+
+        return new DesignatedPersonDto
+        {
+            PersonId = person.Id,
+            FirstNameArabic = person.FirstNameArabic,
+            FatherNameArabic = person.FatherNameArabic,
+            FamilyNameArabic = person.FamilyNameArabic,
+            MotherNameArabic = person.MotherNameArabic,
+            FullNameArabic = person.GetFullNameArabic(),
+            NationalId = person.NationalId,
+            MobileNumber = person.MobileNumber,
+            PhoneNumber = person.PhoneNumber,
+            HouseholdId = person.HouseholdId,
+            IsContactPoint = isContactPoint,
+            IsRightsClaimant = relation != null,
+            RelationType = relation != null ? (int)relation.RelationType : null,
+            ClaimType = relation != null ? (int)ClaimTypeRelationMapper.ToClaimType(relation.RelationType) : null,
+            RelationId = relation?.Id,
+            Relations = relations.Select(r => new DesignatedRelationDto
+            {
+                RelationId = r.Id,
+                RelationType = (int)r.RelationType,
+                ClaimType = (int)ClaimTypeRelationMapper.ToClaimType(r.RelationType)
+            }).ToList()
+        };
+    }
 }

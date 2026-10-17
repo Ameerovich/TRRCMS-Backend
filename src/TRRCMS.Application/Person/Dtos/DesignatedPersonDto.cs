@@ -34,14 +34,30 @@ public class DesignatedPersonDto
     public bool IsRightsClaimant { get; set; }
 
     /// <summary>
-    /// Relation type on the unit (null when the person is only a contact point)
+    /// Primary relation type on the unit — the ownership relation if any, else the latest
+    /// (null when the person is only a contact point)
     /// </summary>
     public int? RelationType { get; set; }
 
     /// <summary>
-    /// Claim type derived from the relation: 1 = Ownership, 2 = Occupancy (null when not a claimant)
+    /// Claim type of the primary relation: 1 = Ownership, 2 = Occupancy (null when not a claimant)
     /// </summary>
     public int? ClaimType { get; set; }
 
+    /// <summary>
+    /// Primary relation id
+    /// </summary>
     public Guid? RelationId { get; set; }
+
+    /// <summary>
+    /// All active relations of the person on the unit (a person may e.g. own and occupy)
+    /// </summary>
+    public List<DesignatedRelationDto> Relations { get; set; } = new();
+}
+
+public class DesignatedRelationDto
+{
+    public Guid RelationId { get; set; }
+    public int RelationType { get; set; }
+    public int ClaimType { get; set; }
 }
