@@ -17,7 +17,8 @@ Every change below is **additive**: no existing request or response field was re
 5. [Household "empty property" flag](#5-household-empty-property-flag)
 6. [Import packages list — collector and buildings (PR #45)](#6-import-packages-list--collector-and-buildings-pr-45)
 7. [Permissions and audit log](#7-permissions-and-audit-log)
-8. [Change summary](#8-change-summary)
+8. [Bug fix — changing a user's role](#8-bug-fix--changing-a-users-role)
+9. [Change summary](#9-change-summary)
 
 ---
 
@@ -195,7 +196,7 @@ Every 401 from the auth pipeline now carries `errorCode` and headers:
 | `errorCode` | Header | Meaning | Client action |
 |-------------|--------|---------|---------------|
 | `TOKEN_EXPIRED` | `Token-Expired: true` | Access token expired | Refresh once, retry the request; if refresh fails → login |
-| `SESSION_REVOKED` | `WWW-Authenticate: Bearer error="invalid_token"…` | Password changed/reset or account deactivated | Go to login (do **not** refresh) |
+| `SESSION_REVOKED` | `WWW-Authenticate: Bearer error="invalid_token"…` | Password changed/reset, role changed or account deactivated | Go to login (do **not** refresh) |
 | `TOKEN_INVALID` | same | Malformed / wrong signature | Go to login |
 | `AUTHENTICATION_REQUIRED` | `WWW-Authenticate: Bearer` | No token sent | Go to login |
 
@@ -350,7 +351,40 @@ New audit action types (see `docs/fromdashbord/AuditActionType-reference.md`):
 
 ---
 
-## 8. Change summary
+## 8. Bug fix — changing a user's role
+
+**Reported:** an administrator changed a user's role from DataManager to Administrator; the dashboard showed success, but the user still had DataManager permissions.
+
+**Root cause (backend):** `PUT /api/v1/users/{id}` with a new `role` returned `200` and a DTO showing the new role, but the database save failed silently and was rolled back. The new permission rows were saved as UPDATEs of non-existent rows, and the error was swallowed. Nothing — neither the role nor the permissions — was stored. Reloading the user (`GET /api/v1/users/{id}`) showed the old role. The bug is fixed on the backend; **no dashboard change is required for the save itself.** Role changes made before this fix were never applied: redo them.
+
+**Behaviour after the fix:**
+
+```
+PUT /api/v1/users/{id}
+{ "userId": "{id}", "role": 6 }
+→ 200 UserDto { "role": 6, ... }        (now really persisted)
+```
+
+| Effect | Detail |
+|--------|--------|
+| Role and role permissions | Saved together. Permissions only in the old role are revoked, permissions only in the new role are granted, shared ones stay |
+| User's sessions | **End immediately** (`401 SESSION_REVOKED` on their next call). The role is carried inside the token, so the user must log in again to get the new role and menus |
+| Failure | Now an error status (`500`/`409`) instead of a fake `200` |
+
+Role codes: FieldCollector 1, FieldSupervisor 2, OfficeClerk 3, DataManager 4, Analyst 5, Administrator 6.
+
+**Dashboard actions:**
+
+1. After a successful role change, **re-fetch the user** (`GET /api/v1/users/{id}`) and render from that response, not from the form state. That way any future save problem is visible immediately.
+2. Show a hint after saving: "The user will be signed out and must log in again for the new role to apply."
+3. If the administrator changes **their own** role, their session ends as well: handle the next `401 SESSION_REVOKED` by going to the login page.
+4. Do not derive admin menus from a role cached at login if the user may have been changed while logged in; the session is revoked anyway, so the next login carries the right role.
+
+**Related fix:** the bulk import endpoints `POST /api/v1/administrative-divisions/import`, `POST /api/v1/Buildings/import-bulk` and `POST /api/v1/Neighborhoods/import-bulk` required a role named "Admin" that does not exist, so they returned `403` for everyone. They are now available to **Administrator**.
+
+---
+
+## 9. Change summary
 
 | Area | Endpoint / field | Change |
 |------|------------------|--------|
@@ -370,3 +404,5 @@ New audit action types (see `docs/fromdashbord/AuditActionType-reference.md`):
 | Households | `isEmptyProperty`, `emptyPropertyJustification` | New fields |
 | Import | packages list `collectorName`, `buildings` | New fields (PR #45) |
 | Permissions | 8004, 9021, 9022 | New |
+| Users | `PUT /users/{id}` role change | **Bug fixed** — now persisted; user's sessions end |
+| Import | admin bulk imports (divisions, buildings, neighborhoods) | **Bug fixed** — reachable by Administrator |

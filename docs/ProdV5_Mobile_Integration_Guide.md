@@ -161,7 +161,7 @@ Use `accessTokenExpiresInSeconds` instead of comparing `accessTokenExpiry` with 
 | `errorCode` | Action |
 |-------------|--------|
 | `TOKEN_EXPIRED` (also header `Token-Expired: true`) | Refresh once (`POST /api/v1/auth/refresh`), retry |
-| `SESSION_REVOKED` | Password was changed/reset by an admin or the account was deactivated → go to login. **Do not delete unsynced survey data.** |
+| `SESSION_REVOKED` | Password was changed/reset, the role was changed, or the account was deactivated → go to login. **Do not delete unsynced survey data.** |
 | `TOKEN_INVALID`, `AUTHENTICATION_REQUIRED` | Login |
 
 Other changes:

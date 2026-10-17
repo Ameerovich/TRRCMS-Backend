@@ -88,7 +88,7 @@ void ScheduleSession(int expiresInSeconds, int warningSeconds)
 | `errorCode` | Extra header | Action |
 |-------------|--------------|--------|
 | `TOKEN_EXPIRED` | `Token-Expired: true` | Refresh once and retry; if refresh fails → login |
-| `SESSION_REVOKED` | `WWW-Authenticate: Bearer error="invalid_token", …` | Login directly (password changed/reset or account deactivated) |
+| `SESSION_REVOKED` | `WWW-Authenticate: Bearer error="invalid_token", …` | Login directly (password changed/reset, role changed or account deactivated) |
 | `TOKEN_INVALID` | same | Login |
 | `AUTHENTICATION_REQUIRED` | `WWW-Authenticate: Bearer` | Login |
 
@@ -274,13 +274,9 @@ Other roles get `403`. OfficeClerk also gained `Buildings_Create` / `Buildings_U
 
 ## 10. QGIS plugin — session handling
 
-`qgis-plugin/trrcms_building_register/api_client.py` already refreshes once on a 401 and retries. To meet the requirement:
+See the dedicated **`ProdV5_QGIS_Integration_Guide.md`** (session warning/renew/re-login with code for `api_client.py` and `plugin.py`, PR #46 permissions, test checklist).
 
-1. Keep `accessTokenExpiresInSeconds` and `sessionExpiryWarningSeconds` from login/refresh.
-2. Start a `QTimer` for `expiresIn - warning` seconds; on timeout show `QMessageBox.question(...)` "ستنتهي الجلسة خلال {n} ثانية. متابعة؟". On **Yes** call `refresh_token()` and restart the timer from the new response; on **No** or on expiry clear the tokens and open the login dialog.
-3. In `_request`, read the 401 body: refresh only for `errorCode == "TOKEN_EXPIRED"`; for `SESSION_REVOKED` / `TOKEN_INVALID` open the login dialog directly instead of raising "Session expired".
-4. After a successful refresh store the new refresh token (single-use) and never refresh twice concurrently.
-5. Handle `403` on landmark/street writes and deletes with a "not permitted for your role" message (PR #46).
+Also relevant to the desktop: changing a user's **role** now ends that user's sessions (`401 SESSION_REVOKED`) so the next login carries the new role — handle it like a password reset (section 2.4).
 
 ---
 
