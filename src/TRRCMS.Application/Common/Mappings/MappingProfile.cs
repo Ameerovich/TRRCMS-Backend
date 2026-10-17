@@ -157,6 +157,8 @@ public class MappingProfile : Profile
        // Basic info
        .ForMember(dest => dest.HouseholdSize, opt => opt.MapFrom(src => src.HouseholdSize))
        .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
+       .ForMember(dest => dest.IsEmptyProperty, opt => opt.MapFrom(src => src.IsEmptyProperty))
+       .ForMember(dest => dest.EmptyPropertyJustification, opt => opt.MapFrom(src => src.EmptyPropertyJustification))
 
        // Occupancy information
        .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? (int?)src.OccupancyNature : null))

@@ -404,7 +404,9 @@ public class StagingService : IStagingService
                 disabledCount: GetNullableInt(reader, "disabled_count"),
                 occupancyNature: GetNullableEnum<OccupancyNature>(reader, "occupancy_nature", "occupancy_nature"),
                 occupancyStartDate: GetNullableDateTime(reader, "occupancy_start_date"),
-                notes: GetNullableString(reader, "notes"));
+                notes: GetNullableString(reader, "notes"),
+                isEmptyProperty: GetBool(reader, "is_empty_property", false),
+                emptyPropertyJustification: GetNullableString(reader, "empty_property_justification")?.Trim());
 
             entities.Add(entity);
         }

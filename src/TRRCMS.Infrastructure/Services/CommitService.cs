@@ -1028,7 +1028,9 @@ public class CommitService : ICommitService
                     occupancyNature: staging.OccupancyNature.HasValue ? (OccupancyNature)staging.OccupancyNature.Value : null,
                     occupancyStartDate: staging.OccupancyStartDate,
                     notes: staging.Notes,
-                    createdByUserId: userId);
+                    createdByUserId: userId,
+                    isEmptyProperty: staging.IsEmptyProperty,
+                    emptyPropertyJustification: staging.EmptyPropertyJustification);
 
                 await _unitOfWork.Households.AddAsync(household, ct);
 

@@ -30,6 +30,16 @@ public class HouseholdDto
     /// <summary>Notes/observations (ملاحظات)</summary>
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// عقار فارغ - the unit was found empty during the field survey (tablet imports only; read-only)
+    /// </summary>
+    public bool IsEmptyProperty { get; set; }
+
+    /// <summary>
+    /// مبرر العقار الفارغ - why the unit was found empty
+    /// </summary>
+    public string? EmptyPropertyJustification { get; set; }
+
     // ==================== COMPOSITION (all ungendered, all optional) ====================
 
     /// <summary>Total males across all ages (عدد الذكور)</summary>

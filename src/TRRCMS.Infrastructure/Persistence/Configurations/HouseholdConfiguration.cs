@@ -60,6 +60,16 @@ public class HouseholdConfiguration : IEntityTypeConfiguration<Household>
             .HasMaxLength(2000)
             .HasComment("ملاحظات - Household notes");
 
+        builder.Property(h => h.IsEmptyProperty)
+            .IsRequired()
+            .HasDefaultValue(false)
+            .HasComment("عقار فارغ - Unit found empty during the field survey (tablet only)");
+
+        builder.Property(h => h.EmptyPropertyJustification)
+            .IsRequired(false)
+            .HasMaxLength(2000)
+            .HasComment("مبرر العقار الفارغ - Why the unit was found empty");
+
         builder.Property(h => h.CreatedAtUtc)
             .IsRequired()
             .HasComment("Creation timestamp (UTC)");

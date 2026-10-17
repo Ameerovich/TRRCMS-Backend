@@ -225,7 +225,26 @@ public class DataConsistencyValidator : IStagingValidator
         var warnings = new List<string>();
 
         if (h.OriginalPropertyUnitId == Guid.Empty) errors.Add("OriginalPropertyUnitId is required");
-        if (h.HouseholdSize <= 0) errors.Add("HouseholdSize must be > 0");
+
+        // An empty property unit legitimately reports no members (household_size = 0)
+        if (h.HouseholdSize < 0 || (h.HouseholdSize == 0 && !h.IsEmptyProperty))
+            errors.Add("HouseholdSize must be > 0");
+
+        if (h.IsEmptyProperty)
+        {
+            // Warning, not error: rejecting the household would lose the "found empty" signal itself
+            if (string.IsNullOrWhiteSpace(h.EmptyPropertyJustification))
+                warnings.Add("Property unit reported empty without a justification (empty_property_justification)");
+            if (h.HouseholdSize > 0)
+                warnings.Add($"Property unit reported empty but HouseholdSize is {h.HouseholdSize}");
+        }
+        else if (!string.IsNullOrWhiteSpace(h.EmptyPropertyJustification))
+        {
+            warnings.Add("empty_property_justification is set but is_empty_property is 0; the justification is kept");
+        }
+
+        if (h.EmptyPropertyJustification is { Length: > 2000 })
+            errors.Add("EmptyPropertyJustification must not exceed 2000 characters");
         if ((h.MaleCount ?? 0) < 0 || (h.FemaleCount ?? 0) < 0) errors.Add("Gender counts cannot be negative");
 
         return (errors, warnings);
