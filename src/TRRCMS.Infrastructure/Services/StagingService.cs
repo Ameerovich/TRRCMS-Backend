@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Mappings;
 using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Entities.Staging;
 using TRRCMS.Domain.Enums;
@@ -423,6 +424,8 @@ public class StagingService : IStagingService
     {
         if (!await TableExistsAsync(connection, "person_property_relations", ct)) return 0;
 
+        var claimHints = await ReadClaimHintsAsync(connection, ct);
+
         var entities = new List<StagingPersonPropertyRelation>();
         using var cmd = connection.CreateCommand();
         cmd.CommandText = "SELECT * FROM person_property_relations";
@@ -430,12 +433,17 @@ public class StagingService : IStagingService
 
         while (await reader.ReadAsync(ct))
         {
+            var personId = GetGuid(reader, "person_id");
+            var propertyUnitId = GetGuid(reader, "property_unit_id");
+            claimHints.TryGetValue((personId, propertyUnitId), out var claimHint);
+
             var entity = StagingPersonPropertyRelation.Create(
                 importPackageId: packageId,
                 originalEntityId: GetGuid(reader, "id"),
-                originalPersonId: GetGuid(reader, "person_id"),
-                originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
-                relationType: GetEnum<RelationType>(reader, "relation_type", "relation_type"),
+                originalPersonId: personId,
+                originalPropertyUnitId: propertyUnitId,
+                relationType: ResolveRelationType(
+                    GetEnum<RelationType>(reader, "relation_type", "relation_type"), claimHint?.ClaimType),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
                 notes: GetNullableString(reader, "notes"),
                 occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
@@ -453,6 +461,55 @@ public class StagingService : IStagingService
         _logger.LogDebug("Staged {Count} person-property relations", entities.Count);
         return entities.Count;
     }
+
+    /// <summary>
+    /// The tablet's claim form asks for the claim type (ownership / occupancy) and writes it to
+    /// claims.claim_type; the matching person_property_relations row may carry relation_type = 0
+    /// (seen in app 1.0.19 packages) or a value that contradicts it. Claims are keyed by
+    /// (primary_claimant_id, property_unit_id), the same pair that identifies the relation.
+    /// </summary>
+    private async Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), ClaimHint>> ReadClaimHintsAsync(
+        SqliteConnection connection, CancellationToken ct)
+    {
+        var hints = new Dictionary<(Guid, Guid), ClaimHint>();
+        if (!await TableExistsAsync(connection, "claims", ct)) return hints;
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT * FROM claims";
+        using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            var claimantId = GetNullableGuid(reader, "primary_claimant_id");
+            if (!claimantId.HasValue) continue;
+
+            hints.TryAdd((claimantId.Value, GetGuid(reader, "property_unit_id")), new ClaimHint(
+                GetNullableEnum<ClaimType>(reader, "claim_type", "claim_type"),
+                GetNullableString(reader, "claim_description")));
+        }
+        return hints;
+    }
+
+    /// <summary>
+    /// Keep the relation consistent with the claim type chosen on the tablet: when relation_type is
+    /// missing/invalid, or maps to the other claim type, use the default relation for that claim type
+    /// (Ownership → Owner, Occupancy → Occupant).
+    /// </summary>
+    private RelationType ResolveRelationType(RelationType packageValue, ClaimType? claimType)
+    {
+        var isValid = _vocabService.IsValidCode("relation_type", (int)packageValue);
+        if (!claimType.HasValue)
+            return packageValue;
+        if (isValid && ClaimTypeRelationMapper.IsCompatible(packageValue, claimType.Value))
+            return packageValue;
+
+        var resolved = ClaimTypeRelationMapper.ToDefaultRelationType(claimType.Value);
+        _logger.LogInformation(
+            "relation_type {PackageValue} {Reason} claim_type {ClaimType}; staged as {Resolved}",
+            (int)packageValue, isValid ? "contradicts" : "is invalid for", claimType.Value, resolved);
+        return resolved;
+    }
+
+    private sealed record ClaimHint(ClaimType? ClaimType, string? ClaimDescription);
 
     private async Task<int> StageClaimsAsync(
         SqliteConnection connection, Guid packageId, CancellationToken ct)

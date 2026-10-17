@@ -1343,8 +1343,12 @@ public class CommitService : ICommitService
 
         if (approved.Count == 0) return;
 
-        // Pre-load staging relations for CaseStatus resolution by RelationType
-        var stagingRelations = await _stagingRelationRepo.GetApprovedForCommitAsync(importPackageId, ct);
+        // Pre-load staging relations for CaseStatus resolution by RelationType.
+        // Relations are committed before claims, so GetApprovedForCommitAsync (which skips
+        // already-committed rows) would return nothing here and ownership claims never closed.
+        var stagingRelations = (await _stagingRelationRepo.GetByPackageIdAsync(importPackageId, ct))
+            .Where(r => r.IsApprovedForCommit)
+            .ToList();
         var relationByPersonAndUnit = stagingRelations
             .GroupBy(r => (r.OriginalPersonId, r.OriginalPropertyUnitId))
             .ToDictionary(g => g.Key, g => g.First());

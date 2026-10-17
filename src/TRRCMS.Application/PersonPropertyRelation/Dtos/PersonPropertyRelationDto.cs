@@ -1,3 +1,5 @@
+using TRRCMS.Application.Common.Mappings;
+
 namespace TRRCMS.Application.PersonPropertyRelations.Dtos;
 
 /// <summary>
@@ -13,6 +15,14 @@ public class PersonPropertyRelationDto
     /// نوع العلاقة - Returned as integer: Owner=1, Occupant=2, Tenant=3, Guest=4, Heir=5, Other=99
     /// </summary>
     public int RelationType { get; set; }
+
+    /// <summary>
+    /// نوع الادعاء - claim type derived from <see cref="RelationType"/>: OwnershipClaim=1 (Owner, Heir),
+    /// OccupancyClaim=2 (every other relation type, including admin-added ones).
+    /// Bind the desktop "نوع الادعاء" dropdown to this field and the claim_type vocabulary (2 options);
+    /// send it back as ClaimType on link/update.
+    /// </summary>
+    public int ClaimType => (int)ClaimTypeRelationMapper.ToClaimType((Domain.Enums.RelationType)RelationType);
 
     // ==================== NEW FIELDS FOR OFFICE SURVEY ====================
 
