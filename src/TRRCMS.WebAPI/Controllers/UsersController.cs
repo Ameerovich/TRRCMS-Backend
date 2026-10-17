@@ -591,6 +591,7 @@ public class UsersController : ControllerBase
     /// <response code="404">User not found</response>
     [HttpPost("{id:guid}/reset-password")]
     [Authorize(Policy = "CanResetUserPasswords")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ProducesResponseType(typeof(ResetUserPasswordResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

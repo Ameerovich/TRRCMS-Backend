@@ -131,6 +131,19 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
+    // Anonymous endpoint that writes to the admin queue: much stricter than login
+    var forgotPasswordPermits = builder.Configuration.GetValue("RateLimiting:ForgotPasswordPermitLimit", 3);
+    var forgotPasswordWindow = TimeSpan.FromMinutes(
+        builder.Configuration.GetValue("RateLimiting:ForgotPasswordWindowMinutes", 10));
+    options.AddPolicy("forgot-password", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = forgotPasswordPermits,
+                Window = forgotPasswordWindow,
+                QueueLimit = 0
+            }));
 });
 
 builder.Services.AddHealthChecks()

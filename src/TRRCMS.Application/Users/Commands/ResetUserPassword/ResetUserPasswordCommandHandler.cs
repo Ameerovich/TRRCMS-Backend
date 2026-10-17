@@ -45,7 +45,8 @@ public class ResetUserPasswordCommandHandler : IRequestHandler<ResetUserPassword
 
         if (request.UserId == currentUserId)
             throw new ValidationException(
-                "Administrators cannot reset their own password here. Use change-password instead.");
+                "Administrators cannot reset their own password here. Use change-password instead.",
+                "Message_CannotResetOwnPassword");
 
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken)
             ?? throw new NotFoundException($"User with ID {request.UserId} not found");

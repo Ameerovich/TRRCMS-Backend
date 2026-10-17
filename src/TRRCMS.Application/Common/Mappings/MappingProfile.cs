@@ -218,6 +218,13 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.SourceRelationId, opt => opt.Ignore());
 
         // User mappings - Base DTO
+        CreateMap<User, PasswordResetRequestDto>()
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => (int)src.Role))
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()))
+            .ForMember(dest => dest.RequestedAtUtc, opt => opt.MapFrom(src => src.PasswordResetRequestedAtUtc ?? default))
+            .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.PasswordResetRequestNote));
+
         CreateMap<User, UserDto>()
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => (int)src.Role))
             .ForMember(dest => dest.SupervisorName, opt => opt.MapFrom(src =>

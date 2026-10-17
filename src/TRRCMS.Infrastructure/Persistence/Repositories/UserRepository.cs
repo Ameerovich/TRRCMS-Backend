@@ -103,6 +103,29 @@ public class UserRepository : IUserRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.Distinct().ToList();
+        if (idList.Count == 0) return new List<User>();
+
+        return await _context.Users
+            .AsNoTracking()
+            .Where(u => idList.Contains(u.Id) && !u.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<(string SecurityStamp, bool IsActive)?> GetSessionStateAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        var state = await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId && !u.IsDeleted)
+            .Select(u => new { u.SecurityStamp, u.IsActive })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return state == null ? null : (state.SecurityStamp, state.IsActive);
+    }
+
     public async Task<List<User>> GetWithPendingPasswordResetRequestAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Users

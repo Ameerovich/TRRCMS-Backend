@@ -14,6 +14,7 @@ namespace TRRCMS.Application.Users.Commands.ActivateUser;
 public class ActivateUserCommandHandler : IRequestHandler<ActivateUserCommand, UserDto>
 {
     private readonly IUserRepository _userRepository;
+    private readonly ISessionValidator _sessionValidator;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
@@ -22,8 +23,10 @@ public class ActivateUserCommandHandler : IRequestHandler<ActivateUserCommand, U
         IUserRepository userRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService,
-        IMapper mapper)
+        IMapper mapper,
+        ISessionValidator sessionValidator)
     {
+        _sessionValidator = sessionValidator;
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
@@ -54,6 +57,7 @@ public class ActivateUserCommandHandler : IRequestHandler<ActivateUserCommand, U
         // the state change silently while still returning 200 OK with a stale DTO.
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
+        _sessionValidator.Invalidate(user.Id);
 
         // Audit logging
         await _auditService.LogActionAsync(

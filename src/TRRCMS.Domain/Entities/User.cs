@@ -324,14 +324,23 @@ public class User : BaseAuditableEntity
 
     /// <summary>
     /// Record a "forgot password" request for an administrator to handle.
-    /// Repeated requests refresh the timestamp and note instead of stacking.
+    /// The endpoint is anonymous, so a pending request is never overwritten or moved back in the
+    /// queue by later calls; a note is only added when the pending request has none.
+    /// Returns true when a new request was opened.
     /// </summary>
-    public void RequestPasswordReset(string? note)
+    public bool RequestPasswordReset(string? note)
     {
+        var trimmed = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+
+        if (PasswordResetRequestedAtUtc.HasValue)
+        {
+            PasswordResetRequestNote ??= trimmed;
+            return false;
+        }
+
         PasswordResetRequestedAtUtc = DateTime.UtcNow;
-        PasswordResetRequestNote = string.IsNullOrWhiteSpace(note)
-            ? null
-            : note.Trim()[..Math.Min(note.Trim().Length, 500)];
+        PasswordResetRequestNote = trimmed;
+        return true;
     }
 
     /// <summary>

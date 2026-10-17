@@ -68,6 +68,7 @@
   <!-- ── Auth ───────────────────────────────────────────────────── -->
   <data name="Username_Required"><value>اسم المستخدم مطلوب</value></data>
   <data name="Username_MaxLength50"><value>اسم المستخدم لا يمكن أن يتجاوز 50 حرف</value></data>
+  <data name="Note_MaxLength500"><value>الملاحظة لا يمكن أن تتجاوز 500 حرف</value></data>
   <data name="Username_Length3to50"><value>اسم المستخدم يجب أن يكون بين 3 و50 حرف</value></data>
   <data name="Username_InvalidChars"><value>اسم المستخدم يمكن أن يحتوي فقط على أحرف وأرقام وشرطات سفلية</value></data>
   <data name="Password_Required"><value>كلمة المرور مطلوبة</value></data>

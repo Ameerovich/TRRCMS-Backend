@@ -2,6 +2,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Auth.Commands.ChangePassword;
 using TRRCMS.Application.Auth.Commands.Login;
 using TRRCMS.Application.Auth.Commands.RefreshToken;
@@ -43,12 +44,18 @@ public class AuthController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IStringLocalizer<ErrorMessages> _errorLocalizer;
 
-    public AuthController(IMediator mediator, ILogger<AuthController> logger, IConfiguration configuration)
+    public AuthController(
+        IMediator mediator,
+        ILogger<AuthController> logger,
+        IConfiguration configuration,
+        IStringLocalizer<ErrorMessages> errorLocalizer)
     {
         _mediator = mediator;
         _logger = logger;
         _configuration = configuration;
+        _errorLocalizer = errorLocalizer;
     }
 
     /// <summary>
@@ -255,9 +262,10 @@ public class AuthController : ControllerBase
     /// the user must login again to receive a full-access token.
     ///
     /// **After Success:**
-    /// - All existing tokens are invalidated (SecurityStamp is regenerated)
-    /// - `mustChangePassword` is set to `false`
-    /// - User must login again with new password to get full access
+    /// - Every OTHER session of the user ends (security stamp rotated, old refresh token revoked)
+    /// - The response carries a fresh token pair for THIS session (same fields as `/refresh`):
+    ///   replace the stored access/refresh tokens and continue — no re-login needed
+    /// - `mustChangePassword` is set to `false` (first-login restricted flow: the returned tokens are full tokens)
     /// 
     /// **Example request:**
     /// ```json
@@ -272,7 +280,15 @@ public class AuthController : ControllerBase
     /// **Example success response:**
     /// ```json
     /// {
-    ///   "message": "Password changed successfully. Please login again with your new password."
+    ///   "success": true,
+    ///   "message": "Password changed successfully. Other sessions were signed out; this session continues with the returned tokens.",
+    ///   "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    ///   "refreshToken": "bmV3IHJlZnJlc2ggdG9rZW4...",
+    ///   "accessTokenExpiry": "2026-10-17T15:45:00Z",
+    ///   "refreshTokenExpiry": "2026-10-24T15:30:00Z",
+    ///   "serverTimeUtc": "2026-10-17T15:15:00Z",
+    ///   "accessTokenExpiresInSeconds": 1800,
+    ///   "sessionExpiryWarningSeconds": 60
     /// }
     /// ```
     /// </remarks>
@@ -286,11 +302,12 @@ public class AuthController : ControllerBase
     /// <response code="500">Server error during password change.</response>
     [HttpPost("change-password")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ChangePasswordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<ActionResult<ChangePasswordResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         // Get current user ID from JWT claims
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
@@ -316,13 +333,17 @@ public class AuthController : ControllerBase
             request.CurrentPassword,
             request.NewPassword,
             request.ConfirmPassword,
-            currentUserId);
+            currentUserId)
+        {
+            DeviceId = User.FindFirst("device_id")?.Value
+        };
 
-        await _mediator.Send(command);
+        var result = await _mediator.Send(command);
 
         _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
 
-        return Ok(new { message = "Password changed successfully. Please login again with your new password." });
+        result.Message = "Password changed successfully. Other sessions were signed out; this session continues with the returned tokens.";
+        return Ok(result);
     }
 
     /// <summary>
@@ -378,7 +399,8 @@ public class AuthController : ControllerBase
     /// password and gives it to the user out of band; the user must change it at next login.
     ///
     /// The response is **always** 202 with the same message, whether or not the username exists,
-    /// so the endpoint cannot be used to discover accounts. Rate-limited like login.
+    /// so the endpoint cannot be used to discover accounts. A pending request is never overwritten
+    /// by later calls. Rate-limited to 3 requests per 10 minutes per IP.
     ///
     /// **Example request:**
     /// ```json
@@ -390,17 +412,14 @@ public class AuthController : ControllerBase
     /// <response code="429">Too many requests</response>
     [HttpPost("forgot-password")]
     [AllowAnonymous]
-    [EnableRateLimiting("auth")]
+    [EnableRateLimiting("forgot-password")]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult> ForgotPassword([FromBody] RequestPasswordResetCommand request)
+    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
-        await _mediator.Send(request);
+        await _mediator.Send(new RequestPasswordResetCommand { Username = request.Username, Note = request.Note });
 
-        return Accepted(new
-        {
-            message = "If this account exists, your request was sent to the system administrator, who will contact you with a temporary password."
-        });
+        return Accepted(new { message = _errorLocalizer["Message_PasswordResetRequestAccepted"].Value });
     }
 
     /// <summary>

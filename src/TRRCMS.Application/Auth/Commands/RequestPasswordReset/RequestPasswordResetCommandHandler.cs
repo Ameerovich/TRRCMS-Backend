@@ -26,21 +26,20 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
         var username = request.Username.Trim();
         var user = await _userRepository.GetByUsernameAsync(username, cancellationToken);
 
-        // Unknown usernames get the same response as known ones (no account enumeration)
+        // Unknown usernames get the same response as known ones (no account enumeration).
+        // Anonymous input: log it sanitised and do not persist an audit row for it.
         if (user == null)
         {
-            _logger.LogWarning("Password reset requested for unknown username {Username}", username);
-            await _auditService.LogSecurityActionAsync(
-                AuditActionType.PasswordResetRequested,
-                $"Password reset requested for unknown username '{username}'",
-                isSecuritySensitive: true,
-                cancellationToken);
+            _logger.LogWarning("Password reset requested for unknown username {Username}", Sanitize(username));
             return Unit.Value;
         }
 
-        user.RequestPasswordReset(request.Note);
+        var opened = user.RequestPasswordReset(request.Note);
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
+
+        if (!opened)
+            return Unit.Value; // repeat while pending: nothing new for the audit trail
 
         await _auditService.LogActionAsync(
             actionType: AuditActionType.PasswordResetRequested,
@@ -51,5 +50,11 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
             cancellationToken: cancellationToken);
 
         return Unit.Value;
+    }
+
+    private static string Sanitize(string value)
+    {
+        var printable = new string(value.Where(c => !char.IsControl(c)).ToArray());
+        return printable.Length <= 50 ? printable : printable[..50] + "…";
     }
 }

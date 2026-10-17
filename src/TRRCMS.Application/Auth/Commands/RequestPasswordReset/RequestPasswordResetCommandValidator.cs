@@ -10,9 +10,9 @@ public class RequestPasswordResetCommandValidator : LocalizedValidator<RequestPa
     {
         RuleFor(x => x.Username)
             .NotEmpty().WithMessage(L("Username_Required"))
-            .MaximumLength(100);
+            .MaximumLength(50).WithMessage(L("Username_MaxLength50"));
 
         RuleFor(x => x.Note)
-            .MaximumLength(500);
+            .MaximumLength(500).WithMessage(L("Note_MaxLength500"));
     }
 }

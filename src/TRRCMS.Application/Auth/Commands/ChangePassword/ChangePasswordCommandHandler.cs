@@ -1,4 +1,6 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Configuration;
+using TRRCMS.Application.Auth.Dtos;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -9,7 +11,7 @@ namespace TRRCMS.Application.Auth.Commands.ChangePassword;
 /// <summary>
 /// Handler for changing user password
 /// </summary>
-public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, bool>
+public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, ChangePasswordResponse>
 {
     private readonly IUserRepository _userRepository;
     private readonly ISessionValidator _sessionValidator;
@@ -17,6 +19,8 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
     private readonly IAuditService _auditService;
     private readonly ISecurityPolicyRepository _securityPolicyRepository;
     private readonly ILogger<ChangePasswordCommandHandler> _logger;
+    private readonly ITokenService _tokenService;
+    private readonly IConfiguration _configuration;
 
     public ChangePasswordCommandHandler(
         IUserRepository userRepository,
@@ -24,6 +28,8 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         IAuditService auditService,
         ISecurityPolicyRepository securityPolicyRepository,
         ILogger<ChangePasswordCommandHandler> logger,
+        ITokenService tokenService,
+        IConfiguration configuration,
         ISessionValidator sessionValidator)
     {
         _sessionValidator = sessionValidator;
@@ -32,9 +38,11 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         _auditService = auditService;
         _securityPolicyRepository = securityPolicyRepository;
         _logger = logger;
+        _tokenService = tokenService;
+        _configuration = configuration;
     }
 
-    public async Task<bool> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
+    public async Task<ChangePasswordResponse> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
         // Confirmation match and password-policy strength are enforced by ChangePasswordCommandValidator.
 
@@ -82,6 +90,19 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         int expiryDays = activePolicy?.PasswordPolicy.ExpiryDays ?? 0;
         user.SetPasswordExpiry(expiryDays, request.ModifiedByUserId);
 
+        // Step 8: every other session ended with the stamp rotation; the caller's continues
+        // on a fresh token pair (issued with the new stamp, same lifetime rules as login).
+        int accessTokenMinutes = activePolicy?.SessionLockoutPolicy.SessionTimeoutMinutes
+            ?? int.Parse(_configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
+        int refreshTokenDays = int.Parse(_configuration["JwtSettings:RefreshTokenExpirationDays"] ?? "7");
+
+        var accessToken = _tokenService.GenerateAccessToken(
+            user, request.DeviceId, isPasswordChangeOnly: false, overrideExpirationMinutes: accessTokenMinutes);
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        var accessTokenExpiry = DateTime.UtcNow.AddMinutes(accessTokenMinutes);
+        var refreshTokenExpiry = DateTime.UtcNow.AddDays(refreshTokenDays);
+        user.UpdateRefreshToken(refreshToken, refreshTokenExpiry);
+
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
         _sessionValidator.Invalidate(user.Id);
@@ -92,6 +113,13 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
             isSecuritySensitive: true,
             cancellationToken);
 
-        return true;
+        return new ChangePasswordResponse
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            AccessTokenExpiry = accessTokenExpiry,
+            RefreshTokenExpiry = refreshTokenExpiry,
+            SessionExpiryWarningSeconds = SessionSettings.GetExpiryWarningSeconds(_configuration)
+        };
     }
 }

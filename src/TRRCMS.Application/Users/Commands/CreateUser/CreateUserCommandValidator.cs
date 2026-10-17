@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.Application.Common.Localization;
+using TRRCMS.Application.Common.Security;
 using TRRCMS.Application;
 using TRRCMS.Domain.Enums;
 using TRRCMS.Domain.ValueObjects;
@@ -84,19 +85,7 @@ public class CreateUserCommandValidator : LocalizedValidator<CreateUserCommand>
         var active = await _securityPolicyRepository.GetActiveAsync(cancellationToken);
         var policy = active?.PasswordPolicy ?? PasswordPolicy.Default();
 
-        if (password.Length < policy.MinLength)
-            ctx.AddFailure("Password", L("Password_MinLength", policy.MinLength));
-
-        if (policy.RequireUppercase && !Regex.IsMatch(password, "[A-Z]"))
-            ctx.AddFailure("Password", L("Password_RequireUpper"));
-
-        if (policy.RequireLowercase && !Regex.IsMatch(password, "[a-z]"))
-            ctx.AddFailure("Password", L("Password_RequireLower"));
-
-        if (policy.RequireDigit && !Regex.IsMatch(password, "[0-9]"))
-            ctx.AddFailure("Password", L("Password_RequireDigit"));
-
-        if (policy.RequireSpecialCharacter && !Regex.IsMatch(password, "[^a-zA-Z0-9]"))
-            ctx.AddFailure("Password", L("Password_RequireSpecial"));
+        foreach (var (key, args) in PasswordPolicyRules.GetViolations(password, policy))
+            ctx.AddFailure("Password", L(key, args));
     }
 }
