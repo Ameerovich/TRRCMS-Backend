@@ -8,7 +8,7 @@ public class EvidenceDto
     public Guid Id { get; set; }
 
     /// <summary>
-    /// نوع الدليل - Returned as integer: IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, etc.
+    /// نوع الوثيقة الداعمة للادعاء (Claim Supporting Document Type, vocabulary evidence_type) - Returned as integer: IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, etc.
     /// </summary>
     public int EvidenceType { get; set; }
     public string Description { get; set; } = string.Empty;

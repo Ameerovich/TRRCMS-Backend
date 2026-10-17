@@ -47,8 +47,9 @@ public static class VocabularySeedData
         Ext<RelationType>("relation_type", "نوع العلاقة", "Relation Type", "Relations"),
 
         // Legal
-        Ext<DocumentType>("document_type", "نوع الوثيقة", "Document Type", "Legal"),
-        Ext<EvidenceType>("evidence_type", "نوع الدليل", "Evidence Type", "Legal"),
+        // Display names renamed for clarity (existing DBs: migration RenameDocumentAndEvidenceTypeVocabularies)
+        Ext<DocumentType>("document_type", "نوع وثيقة إثبات الشخصية", "Personal Identification Document Type", "Legal"),
+        Ext<EvidenceType>("evidence_type", "نوع الوثيقة الداعمة للادعاء", "Claim Supporting Document Type", "Legal"),
 
         // ── System-locked (isSystemVocabulary=true) ───────────────────────────────
         // Major versions (new codes) are blocked via API.
