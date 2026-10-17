@@ -42,8 +42,11 @@ public class PersonDesignationService : IPersonDesignationService
     {
         if (persons.Count == 0) return;
 
-        var claimants = await _relationRepository.GetPersonIdsWithActiveRelationsAsync(
-            persons.Select(p => p.Id), survey.PropertyUnitId, cancellationToken);
+        // No unit linked yet: nobody can hold a claim on "the survey's unit"
+        var claimants = survey.PropertyUnitId.HasValue
+            ? await _relationRepository.GetPersonIdsWithActiveRelationsAsync(
+                persons.Select(p => p.Id), survey.PropertyUnitId.Value, cancellationToken)
+            : new HashSet<Guid>();
 
         foreach (var dto in persons)
         {
