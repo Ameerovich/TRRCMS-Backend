@@ -185,6 +185,12 @@ No desktop change needed. After the migration, re-open the affected cases to ver
 
 ---
 
+### 5.1 Claims list fix — one claim per relation
+
+`GET /api/v1/Claims` returned `400` ("An item with the same key has already been added") whenever a person had more than one relation on the same unit (e.g. owner and occupant). Fixed — no desktop change needed. The contract is unchanged; `sourceRelationId` / `evidenceIds` / `hasEvidence` now always refer to the claimant's relation whose claim type matches the claim (`claimType` 1 → Owner/Heir relation, 2 → other types). Such a person has two claims, each with its own relation and evidence, and `PUT /api/v1/Claims/{id}` edits only that claim's relation. List, detail (`GET /Claims/{id}`) and summaries return the same `sourceRelationId`.
+
+---
+
 ## 6. Contact Point / Rights Claimant designations
 
 Client requirement: when several persons exist in a case, the desk operator must see who to call.
@@ -290,6 +296,7 @@ Also relevant to the desktop: changing a user's **role** now ends that user's se
 | 3 | Passwords | Store tokens returned by change-password; add "Forgot password?" |
 | 4 | Claim type | Dropdown from `claim_type` vocab; read `claimType`; save `claimType` |
 | 5 | Description/notes | None (backend fix + migration) |
+| 5.1 | Claims list | None — 400 fixed; `sourceRelationId` = relation matching the claim type |
 | 6 | Designations | Badges; case persons panel; `POST /contact-point` |
 | 7 | Empty property | Read-only notice in household info |
 | 8 | Vocabularies | No hard-coded lists/titles; new dictionary names |

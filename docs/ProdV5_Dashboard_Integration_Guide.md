@@ -17,7 +17,7 @@ Every change below is **additive**: no existing request or response field was re
 5. [Household "empty property" flag](#5-household-empty-property-flag)
 6. [Import packages list — collector and buildings (PR #45)](#6-import-packages-list--collector-and-buildings-pr-45)
 7. [Permissions and audit log](#7-permissions-and-audit-log)
-8. [Bug fix — changing a user's role](#8-bug-fix--changing-a-users-role)
+8. [Bug fixes — role change, claims list, admin imports](#8-bug-fix--changing-a-users-role)
 9. [Change summary](#9-change-summary)
 
 ---
@@ -380,6 +380,19 @@ Role codes: FieldCollector 1, FieldSupervisor 2, OfficeClerk 3, DataManager 4, A
 3. If the administrator changes **their own** role, their session ends as well: handle the next `401 SESSION_REVOKED` by going to the login page.
 4. Do not derive admin menus from a role cached at login if the user may have been changed while logged in; the session is revoked anyway, so the next login carries the right role.
 
+**Related fix — claims list failed with `400` ("An item with the same key has already been added")**
+
+`GET /api/v1/Claims` failed for every request as soon as the data contained a person with more than one relation on the same unit (for example owner **and** occupant). This was not new in ProdV5: such data already existed. The list now returns `200`.
+
+The response contract is unchanged. These fields now follow one documented rule:
+
+| Field | Meaning |
+|-------|---------|
+| `sourceRelationId` | The relation the claim belongs to: the claimant's active relation on the unit whose claim type equals the claim's `claimType` (ownership claim → Owner/Heir relation, occupancy claim → other relation types). If several match, the latest one created up to the claim's creation |
+| `evidenceIds` / `hasEvidence` | Evidence of that relation |
+
+So a person who owns and occupies a unit has **two claims, each with its own `sourceRelationId` and evidence**. The same rule is used by `GET /api/v1/Claims/{id}`, `GET /api/v1/Claims/summaries` and `PUT /api/v1/Claims/{id}`: editing the occupancy claim updates the occupancy relation, never the owner relation. List, detail and summaries always agree.
+
 **Related fix:** the bulk import endpoints `POST /api/v1/administrative-divisions/import`, `POST /api/v1/Buildings/import-bulk` and `POST /api/v1/Neighborhoods/import-bulk` required a role named "Admin" that does not exist, so they returned `403` for everyone. They are now available to **Administrator**.
 
 ---
@@ -406,3 +419,4 @@ Role codes: FieldCollector 1, FieldSupervisor 2, OfficeClerk 3, DataManager 4, A
 | Permissions | 8004, 9021, 9022 | New |
 | Users | `PUT /users/{id}` role change | **Bug fixed** — now persisted; user's sessions end |
 | Import | admin bulk imports (divisions, buildings, neighborhoods) | **Bug fixed** — reachable by Administrator |
+| Claims | `GET /Claims` (list) | **Bug fixed** — no more 400 when a person has several relations on a unit; `sourceRelationId`/`evidenceIds` = the relation matching the claim type |
