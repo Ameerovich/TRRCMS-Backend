@@ -172,7 +172,8 @@ public class SurveysController : ControllerBase
     /// - fromDate/toDate: Date range filter for survey date
     /// - referenceCode: Search by reference code (partial match)
     /// - contactPersonName: Search by contact person name (partial match)
-    /// 
+    /// - surveyType: Filter by survey type (Field = 1, Office = 2); all types when omitted
+    ///
     /// **Sorting Options**:
     /// - SurveyDate (default), ReferenceCode, Status, CreatedAtUtc
     /// - Direction: asc or desc (default: desc)
@@ -193,6 +194,7 @@ public class SurveysController : ControllerBase
     /// <param name="toDate">Filter surveys up to this date</param>
     /// <param name="referenceCode">Search by reference code (partial match)</param>
     /// <param name="contactPersonName">Search by contact person name (partial match)</param>
+    /// <param name="surveyType">Filter by survey type (Field = 1, Office = 2); all types when omitted</param>
     /// <param name="page">Page number (default: 1)</param>
     /// <param name="pageSize">Items per page (default: 20, max: 100)</param>
     /// <param name="sortBy">Sort field (SurveyDate, ReferenceCode, Status, CreatedAtUtc)</param>
@@ -214,6 +216,7 @@ public class SurveysController : ControllerBase
         [FromQuery] DateTime? toDate = null,
         [FromQuery] string? referenceCode = null,
         [FromQuery] string? contactPersonName = null,
+        [FromQuery] SurveyType? surveyType = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string sortBy = "SurveyDate",
@@ -228,6 +231,7 @@ public class SurveysController : ControllerBase
             ToDate = toDate,
             ReferenceCode = referenceCode,
             ContactPersonName = contactPersonName,
+            SurveyType = surveyType,
             Page = page,
             PageSize = pageSize,
             SortBy = sortBy,

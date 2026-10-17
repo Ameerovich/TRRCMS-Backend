@@ -113,6 +113,7 @@ public class SurveyRepository : ISurveyRepository
         DateTime? toDate = null,
         string? referenceCode = null,
         string? contactPersonName = null,
+        SurveyType? surveyType = null,
         int page = 1,
         int pageSize = 20,
         string sortBy = "SurveyDate",
@@ -125,6 +126,11 @@ public class SurveyRepository : ISurveyRepository
             .Where(s => !s.IsDeleted);
 
         // Apply filters
+        if (surveyType.HasValue)
+        {
+            query = query.Where(s => s.Type == surveyType.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SurveyStatus>(status, true, out var statusEnum))
         {
             query = query.Where(s => s.Status == statusEnum);

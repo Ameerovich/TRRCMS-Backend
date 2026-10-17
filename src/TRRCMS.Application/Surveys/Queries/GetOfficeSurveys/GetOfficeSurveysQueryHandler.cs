@@ -44,6 +44,7 @@ public class GetOfficeSurveysQueryHandler : IRequestHandler<GetOfficeSurveysQuer
             toDate: request.ToDate,
             referenceCode: request.ReferenceCode,
             contactPersonName: request.ContactPersonName,
+            surveyType: request.SurveyType,
             page: request.Page,
             pageSize: request.PageSize,
             sortBy: request.SortBy,

@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Surveys.Dtos;
+using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Surveys.Queries.GetOfficeSurveys;
 
@@ -43,6 +44,11 @@ public class GetOfficeSurveysQuery : IRequest<GetOfficeSurveysResponse>
     /// Search by contact person name
     /// </summary>
     public string? ContactPersonName { get; set; }
+
+    /// <summary>
+    /// Filter by survey type (Field or Office); all types when null
+    /// </summary>
+    public SurveyType? SurveyType { get; set; }
 
     /// <summary>
     /// Page number (1-based)
