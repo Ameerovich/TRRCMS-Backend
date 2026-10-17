@@ -59,6 +59,21 @@ public class SurveyRepository : ISurveyRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<HashSet<Guid>> GetContactPersonIdsAsync(
+        IEnumerable<Guid> personIds, Guid? excludeSurveyId = null, CancellationToken cancellationToken = default)
+    {
+        var ids = personIds.Distinct().ToList();
+        if (ids.Count == 0) return new HashSet<Guid>();
+
+        var query = _context.Surveys
+            .Where(s => s.ContactPersonId != null && ids.Contains(s.ContactPersonId.Value) && !s.IsDeleted);
+        if (excludeSurveyId.HasValue)
+            query = query.Where(s => s.Id != excludeSurveyId.Value);
+
+        var result = await query.Select(s => s.ContactPersonId!.Value).Distinct().ToListAsync(cancellationToken);
+        return result.ToHashSet();
+    }
+
     public async Task<Survey> AddAsync(Survey survey, CancellationToken cancellationToken = default)
     {
         await _context.Surveys.AddAsync(survey, cancellationToken);

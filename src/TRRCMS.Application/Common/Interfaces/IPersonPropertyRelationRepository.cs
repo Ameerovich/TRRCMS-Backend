@@ -15,6 +15,12 @@ public interface IPersonPropertyRelationRepository
     Task<IEnumerable<PersonPropertyRelation>> GetByPropertyUnitIdWithEvidencesAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
     Task<IEnumerable<PersonPropertyRelation>> GetBySurveyIdWithEvidencesAsync(Guid surveyId, CancellationToken cancellationToken = default);
     Task<IEnumerable<PersonPropertyRelation>> GetActiveRelationsByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Of the given persons, those with at least one active relation (i.e. rights claimants),
+    /// optionally restricted to one property unit.
+    /// </summary>
+    Task<HashSet<Guid>> GetPersonIdsWithActiveRelationsAsync(
+        IEnumerable<Guid> personIds, Guid? propertyUnitId = null, CancellationToken cancellationToken = default);
     Task<PersonPropertyRelation?> GetByPersonAndPropertyUnitAsync(Guid personId, Guid propertyUnitId, CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<PersonPropertyRelation> AddAsync(PersonPropertyRelation relation, CancellationToken cancellationToken = default);

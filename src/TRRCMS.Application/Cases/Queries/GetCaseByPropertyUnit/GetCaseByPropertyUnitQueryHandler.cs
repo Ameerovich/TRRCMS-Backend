@@ -7,9 +7,11 @@ namespace TRRCMS.Application.Cases.Queries.GetCaseByPropertyUnit;
 public class GetCaseByPropertyUnitQueryHandler : IRequestHandler<GetCaseByPropertyUnitQuery, CaseDto?>
 {
     private readonly ICaseRepository _caseRepository;
+    private readonly IPersonDesignationService _designationService;
 
-    public GetCaseByPropertyUnitQueryHandler(ICaseRepository caseRepository)
+    public GetCaseByPropertyUnitQueryHandler(ICaseRepository caseRepository, IPersonDesignationService designationService)
     {
+        _designationService = designationService;
         _caseRepository = caseRepository ?? throw new ArgumentNullException(nameof(caseRepository));
     }
 
@@ -35,6 +37,7 @@ public class GetCaseByPropertyUnitQueryHandler : IRequestHandler<GetCaseByProper
             PersonPropertyRelationCount = caseEntity.PersonPropertyRelations.Count,
             SurveyIds = caseEntity.Surveys.Select(s => s.Id).ToList(),
             ClaimIds = caseEntity.Claims.Select(c => c.Id).ToList(),
+            Persons = await _designationService.GetPropertyUnitPersonsAsync(caseEntity.PropertyUnitId, cancellationToken),
             CreatedAtUtc = caseEntity.CreatedAtUtc,
             LastModifiedAtUtc = caseEntity.LastModifiedAtUtc
         };

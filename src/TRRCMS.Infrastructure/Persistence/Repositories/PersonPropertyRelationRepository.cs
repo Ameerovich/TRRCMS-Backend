@@ -82,6 +82,21 @@ public class PersonPropertyRelationRepository : IPersonPropertyRelationRepositor
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<HashSet<Guid>> GetPersonIdsWithActiveRelationsAsync(
+        IEnumerable<Guid> personIds, Guid? propertyUnitId = null, CancellationToken cancellationToken = default)
+    {
+        var ids = personIds.Distinct().ToList();
+        if (ids.Count == 0) return new HashSet<Guid>();
+
+        var query = _context.Set<PersonPropertyRelation>()
+            .Where(r => ids.Contains(r.PersonId) && r.IsActive && !r.IsDeleted);
+        if (propertyUnitId.HasValue)
+            query = query.Where(r => r.PropertyUnitId == propertyUnitId.Value);
+
+        var result = await query.Select(r => r.PersonId).Distinct().ToListAsync(cancellationToken);
+        return result.ToHashSet();
+    }
+
     public async Task<IEnumerable<PersonPropertyRelation>> GetActiveRelationsByPersonIdAsync(Guid personId, CancellationToken cancellationToken = default)
     {
         return await _context.Set<PersonPropertyRelation>()

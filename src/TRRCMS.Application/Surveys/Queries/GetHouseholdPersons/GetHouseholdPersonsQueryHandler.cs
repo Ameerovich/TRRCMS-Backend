@@ -17,13 +17,16 @@ public class GetHouseholdPersonsQueryHandler : IRequestHandler<GetHouseholdPerso
     private readonly IPersonRepository _personRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
+    private readonly IPersonDesignationService _designationService;
 
     public GetHouseholdPersonsQueryHandler(
         ISurveyRepository surveyRepository,
         IPersonRepository personRepository,
         ICurrentUserService currentUserService,
-        IMapper mapper)
+        IMapper mapper,
+        IPersonDesignationService designationService)
     {
+        _designationService = designationService;
         _surveyRepository = surveyRepository ?? throw new ArgumentNullException(nameof(surveyRepository));
         _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -69,7 +72,9 @@ public class GetHouseholdPersonsQueryHandler : IRequestHandler<GetHouseholdPerso
             }
         }
 
-        // Map to DTOs
-        return _mapper.Map<List<PersonDto>>(personList);
+        // Map to DTOs with Contact Point / Rights Claimant designations for this survey
+        var dtos = _mapper.Map<List<PersonDto>>(personList);
+        await _designationService.ApplyForSurveyAsync(dtos, survey, cancellationToken);
+        return dtos;
     }
 }

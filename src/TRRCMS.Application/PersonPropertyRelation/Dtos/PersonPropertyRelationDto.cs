@@ -36,6 +36,12 @@ public class PersonPropertyRelationDto
     public string? Notes { get; set; }
     public bool IsActive { get; set; }
 
+    /// <summary>
+    /// جهة الاتصال - true when this relation's person is the survey's contact point.
+    /// Only populated by survey-scoped endpoints; the person is always a Rights Claimant (has this relation).
+    /// </summary>
+    public bool IsContactPoint { get; set; }
+
     // Audit fields
     public DateTime CreatedAtUtc { get; set; }
     public Guid CreatedBy { get; set; }

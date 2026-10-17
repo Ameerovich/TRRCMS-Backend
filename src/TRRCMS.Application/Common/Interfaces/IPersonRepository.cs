@@ -22,6 +22,10 @@ namespace TRRCMS.Application.Common.Interfaces
         /// </summary>
         Task<List<Person>> GetByHouseholdIdAsync(Guid householdId, CancellationToken cancellationToken = default);
         /// <summary>
+        /// Get non-deleted persons by ids (missing ids are skipped)
+        /// </summary>
+        Task<List<Person>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
+        /// <summary>
         /// Get person by National ID
         /// </summary>
         Task<Person?> GetByNationalIdAsync(string nationalId, CancellationToken cancellationToken = default);

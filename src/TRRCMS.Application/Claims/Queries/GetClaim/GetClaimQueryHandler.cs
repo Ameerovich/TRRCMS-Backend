@@ -15,13 +15,19 @@ public class GetClaimQueryHandler : IRequestHandler<GetClaimQuery, ClaimDto?>
     private readonly IPersonPropertyRelationRepository _relationRepository;
     private readonly IEvidenceRelationRepository _evidenceRelationRepository;
     private readonly IMapper _mapper;
+    private readonly ISurveyRepository _surveyRepository;
+    private readonly IPersonDesignationService _designationService;
 
     public GetClaimQueryHandler(
         IClaimRepository claimRepository,
         IPersonPropertyRelationRepository relationRepository,
         IEvidenceRelationRepository evidenceRelationRepository,
-        IMapper mapper)
+        IMapper mapper,
+        ISurveyRepository surveyRepository,
+        IPersonDesignationService designationService)
     {
+        _surveyRepository = surveyRepository;
+        _designationService = designationService;
         _claimRepository = claimRepository ?? throw new ArgumentNullException(nameof(claimRepository));
         _relationRepository = relationRepository ?? throw new ArgumentNullException(nameof(relationRepository));
         _evidenceRelationRepository = evidenceRelationRepository ?? throw new ArgumentNullException(nameof(evidenceRelationRepository));
@@ -50,6 +56,20 @@ public class GetClaimQueryHandler : IRequestHandler<GetClaimQuery, ClaimDto?>
                 .GetActiveByRelationIdAsync(relation.Id, cancellationToken);
             dto.EvidenceIds = activeLinks.Select(er => er.EvidenceId).ToList();
             dto.HasEvidence = dto.EvidenceIds.Count > 0 || (claim.Evidences != null && claim.Evidences.Any());
+        }
+
+        var survey = claim.OriginatingSurveyId.HasValue
+            ? await _surveyRepository.GetByIdAsync(claim.OriginatingSurveyId.Value, cancellationToken)
+            : null;
+        if (survey?.ContactPersonId == null)
+        {
+            survey = (await _surveyRepository.GetByPropertyUnitAsync(claim.PropertyUnitId, cancellationToken))
+                .FirstOrDefault(s => s.ContactPersonId.HasValue);
+        }
+        if (survey != null)
+        {
+            dto.ContactPoint = await _designationService.GetContactPointAsync(survey, cancellationToken);
+            dto.PrimaryClaimantIsContactPoint = dto.ContactPoint?.PersonId == claim.PrimaryClaimantId;
         }
 
         return dto;

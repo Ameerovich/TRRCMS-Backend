@@ -98,6 +98,7 @@ public static class ServiceCollectionExtensions
         // ── File storage & audit ─────────────────────────────────────
         services.AddScoped<IFileStorageService, FileStorageService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<IPersonDesignationService, PersonDesignationService>();
         services.AddScoped<IClaimNumberGenerator, ClaimNumberGenerator>();
         services.AddScoped<ICaseNumberGenerator, CaseNumberGenerator>();
         services.AddScoped<ISurveyReferenceCodeGenerator, SurveyReferenceCodeGenerator>();

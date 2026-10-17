@@ -1,3 +1,4 @@
+using TRRCMS.Application.Persons.Dtos;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Cases.Dtos;
@@ -26,6 +27,13 @@ public class CaseDto
     // Related entity IDs
     public List<Guid> SurveyIds { get; set; } = new();
     public List<Guid> ClaimIds { get; set; } = new();
+
+    /// <summary>
+    /// Everyone linked to the case's property unit with their designations
+    /// (Contact Point / Rights Claimant) and phone numbers — contact points first —
+    /// so the desk operator knows who to call.
+    /// </summary>
+    public List<DesignatedPersonDto> Persons { get; set; } = new();
 
     // Audit
     public DateTime CreatedAtUtc { get; set; }

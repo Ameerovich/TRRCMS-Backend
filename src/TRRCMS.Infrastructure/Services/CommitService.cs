@@ -1277,6 +1277,11 @@ public class CommitService : ICommitService
                         if (!string.IsNullOrWhiteSpace(stagingContact.MotherNameArabic))
                             fullName += $" ({stagingContact.MotherNameArabic})";
                         survey.SetContactPerson(productionContactPersonId, fullName, userId);
+
+                        // surveys.contact_person_id is authoritative: keep persons.is_contact_person in sync
+                        var contactPerson = await _unitOfWork.Persons.GetByIdAsync(productionContactPersonId, ct);
+                        if (contactPerson is { IsContactPerson: false })
+                            contactPerson.SetAsContactPerson(true, userId);
                     }
                 }
 
