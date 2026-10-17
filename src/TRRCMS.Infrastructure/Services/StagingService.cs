@@ -1,6 +1,8 @@
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Entities.Staging;
 using TRRCMS.Domain.Enums;
 
@@ -343,11 +345,7 @@ public class StagingService : IStagingService
 
         while (await reader.ReadAsync(ct))
         {
-            // Convert year_of_birth (int) to DateTime for staging alignment with production
-            int? yearOfBirth = GetNullableInt(reader, "year_of_birth");
-            DateTime? dateOfBirth = yearOfBirth.HasValue
-                ? new DateTime(yearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-                : null;
+            var dateOfBirth = ReadDateOfBirth(reader);
 
             var entity = StagingPerson.Create(
                 importPackageId: packageId,
@@ -977,6 +975,31 @@ public class StagingService : IStagingService
         var value = reader[column];
         if (value is DBNull || value == null) return DateTime.UtcNow;
         return DateTime.TryParse(value.ToString(), out var result) ? result.ToUniversalTime() : DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// persons.date_of_birth (TEXT, "yyyy-MM-dd", schema 1.10+) carries the full date entered on the
+    /// tablet and wins; older packages only have persons.year_of_birth (INTEGER), stored as Jan 1st.
+    /// </summary>
+    private DateTime? ReadDateOfBirth(SqliteDataReader reader)
+    {
+        var raw = GetNullableString(reader, "date_of_birth")?.Trim();
+        if (!string.IsNullOrEmpty(raw))
+        {
+            if (DateTime.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var dateOnly))
+                return Person.NormalizeDateOfBirth(dateOnly);
+
+            if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dateTime))
+                return Person.NormalizeDateOfBirth(dateTime);
+
+            _logger.LogWarning("Unparseable persons.date_of_birth '{Value}' — falling back to year_of_birth", raw);
+        }
+
+        var yearOfBirth = GetNullableInt(reader, "year_of_birth");
+        return yearOfBirth is >= 1 and <= 9999
+            ? new DateTime(yearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            : null;
     }
 
     private static DateTime? GetNullableDateTime(SqliteDataReader reader, string column)

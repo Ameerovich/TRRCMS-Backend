@@ -36,7 +36,8 @@ public class Person : BaseAuditableEntity
 
     /// <summary>
     /// Date of birth (تاريخ الميلاد)
-    /// Can store full date or year-only (stored as January 1st of that year)
+    /// A calendar date stored as UTC midnight (see <see cref="NormalizeDateOfBirth"/>).
+    /// Year-only values (older .uhc packages) are stored as January 1st of that year.
     /// </summary>
     public DateTime? DateOfBirth { get; private set; }
     /// <summary>
@@ -165,7 +166,7 @@ public class Person : BaseAuditableEntity
             FatherNameArabic = fatherNameArabic,
             MotherNameArabic = motherNameArabic,
             NationalId = string.IsNullOrWhiteSpace(nationalId) ? null : nationalId.Trim(),
-            DateOfBirth = dateOfBirth,
+            DateOfBirth = NormalizeDateOfBirth(dateOfBirth),
             Gender = gender,
             Nationality = nationality,
             Email = email,
@@ -197,7 +198,7 @@ public class Person : BaseAuditableEntity
         FatherNameArabic = fatherNameArabic;
         MotherNameArabic = motherNameArabic;
         NationalId = string.IsNullOrWhiteSpace(nationalId) ? null : nationalId.Trim();
-        DateOfBirth = dateOfBirth;
+        DateOfBirth = NormalizeDateOfBirth(dateOfBirth);
         Gender = gender;
         Nationality = nationality;
         MarkAsModified(modifiedByUserId);
@@ -229,7 +230,7 @@ public class Person : BaseAuditableEntity
         Guid modifiedByUserId)
     {
         NationalId = string.IsNullOrWhiteSpace(nationalId) ? null : nationalId.Trim();
-        DateOfBirth = dateOfBirth;
+        DateOfBirth = NormalizeDateOfBirth(dateOfBirth);
         Gender = gender;
         Nationality = nationality;
         MarkAsModified(modifiedByUserId);
@@ -304,6 +305,27 @@ public class Person : BaseAuditableEntity
     /// <summary>
     /// Get full Arabic name (computed property for display)
     /// </summary>
+    /// <summary>
+    /// A date of birth is a calendar date, not an instant. Clients send it in many shapes
+    /// ("1990-05-12", "1990-05-12T00:00:00Z", or local midnight converted to UTC such as
+    /// "1990-05-11T21:00:00Z" from a +03:00 desktop); storing those as-is shifts the day
+    /// when read back in another time zone. Normalise to the intended date at UTC midnight:
+    /// values without a zone keep their calendar date; zoned values are rounded to the
+    /// nearest UTC midnight, which recovers the local date for any offset within ±12h.
+    /// </summary>
+    public static DateTime? NormalizeDateOfBirth(DateTime? value)
+    {
+        if (!value.HasValue)
+            return null;
+
+        var v = value.Value;
+        var date = v.Kind == DateTimeKind.Unspecified
+            ? v.Date
+            : v.ToUniversalTime().AddHours(12).Date;
+
+        return DateTime.SpecifyKind(date, DateTimeKind.Utc);
+    }
+
     public string GetFullNameArabic()
     {
         var parts = new List<string> { FirstNameArabic, FatherNameArabic, FamilyNameArabic };
