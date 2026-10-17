@@ -439,17 +439,31 @@ public class StagingService : IStagingService
             var propertyUnitId = GetGuid(reader, "property_unit_id");
             claimHints.TryGetValue((personId, propertyUnitId), out var claimHint);
 
+            var packageRelationType = GetEnum<RelationType>(reader, "relation_type", "relation_type");
+            var relationType = ResolveRelationType(packageRelationType, claimHint?.ClaimType);
+            var ownershipShare = GetNullableDecimal(reader, "ownership_share");
+            if (relationType != packageRelationType)
+            {
+                // Re-typed to match the claim: an ownership relation needs a share (take the claim's),
+                // an occupancy relation must not carry one
+                ownershipShare = ClaimTypeRelationMapper.ToClaimType(relationType) == ClaimType.OwnershipClaim
+                    ? ownershipShare ?? claimHint?.OwnershipShare
+                    : null;
+            }
+
+            var explicitDetails = GetNullableString(reader, "contract_details");
+
             var entity = StagingPersonPropertyRelation.Create(
                 importPackageId: packageId,
                 originalEntityId: GetGuid(reader, "id"),
                 originalPersonId: personId,
                 originalPropertyUnitId: propertyUnitId,
-                relationType: ResolveRelationType(
-                    GetEnum<RelationType>(reader, "relation_type", "relation_type"), claimHint?.ClaimType),
-                ownershipShare: GetNullableDecimal(reader, "ownership_share"),
+                relationType: relationType,
+                ownershipShare: ownershipShare,
                 // "الوصف" on the desktop claim form is the relation's ContractDetails; the tablet
-                // writes it to claims.claim_description (an explicit contract_details column wins)
-                contractDetails: Truncate(GetNullableString(reader, "contract_details") ?? claimHint?.ClaimDescription, 2000),
+                // writes it to claims.claim_description (a non-blank contract_details column wins)
+                contractDetails: Truncate(
+                    string.IsNullOrWhiteSpace(explicitDetails) ? claimHint?.ClaimDescription : explicitDetails, 2000),
                 notes: GetNullableString(reader, "notes"),
                 occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
                 hasEvidence: GetBool(reader, "has_evidence", false));
@@ -487,9 +501,16 @@ public class StagingService : IStagingService
             var claimantId = GetNullableGuid(reader, "primary_claimant_id");
             if (!claimantId.HasValue) continue;
 
+            // Only the two claim types the relation mapping understands; anything else (0, unknown codes)
+            // is left for claim validation to report and must not influence the relation
+            var claimType = GetNullableEnum<ClaimType>(reader, "claim_type", "claim_type");
+            if (claimType is not (ClaimType.OwnershipClaim or ClaimType.OccupancyClaim))
+                claimType = null;
+
             hints.TryAdd((claimantId.Value, GetGuid(reader, "property_unit_id")), new ClaimHint(
-                GetNullableEnum<ClaimType>(reader, "claim_type", "claim_type"),
-                GetNullableString(reader, "claim_description")));
+                claimType,
+                GetNullableString(reader, "claim_description"),
+                GetNullableDecimal(reader, "ownership_share")));
         }
         return hints;
     }
@@ -514,7 +535,7 @@ public class StagingService : IStagingService
         return resolved;
     }
 
-    private sealed record ClaimHint(ClaimType? ClaimType, string? ClaimDescription);
+    private sealed record ClaimHint(ClaimType? ClaimType, string? ClaimDescription, decimal? OwnershipShare);
 
     private static string? Truncate(string? value, int maxLength)
         => value is { Length: > 0 } && value.Length > maxLength ? value[..maxLength] : value;
