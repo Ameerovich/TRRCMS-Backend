@@ -37,11 +37,11 @@ public class GetAllClaimsQueryHandler : IRequestHandler<GetAllClaimsQuery, Paged
         // Apply filtering based on provided parameters
         if (request.PropertyUnitId.HasValue)
         {
-            var claim = await _claimRepository.GetByPropertyUnitIdAsync(
+            // A unit can carry several claims (several claimants, or one person owning and occupying)
+            claims = await _claimRepository.GetListByPropertyUnitIdAsync(
                 request.PropertyUnitId.Value,
                 cancellationToken
             );
-            claims = claim != null ? new[] { claim } : Array.Empty<Domain.Entities.Claim>();
         }
         else if (request.PrimaryClaimantId.HasValue)
         {
