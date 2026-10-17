@@ -187,7 +187,7 @@ No desktop change needed. After the migration, re-open the affected cases to ver
 
 ### 5.1 Claims list fix — one claim per relation
 
-`GET /api/v1/Claims` returned `400` ("An item with the same key has already been added") whenever a person had more than one relation on the same unit (e.g. owner and occupant). Fixed — no desktop change needed. The contract is unchanged; `sourceRelationId` / `evidenceIds` / `hasEvidence` now always refer to the claimant's relation whose claim type matches the claim (`claimType` 1 → Owner/Heir relation, 2 → other types). Such a person has two claims, each with its own relation and evidence, and `PUT /api/v1/Claims/{id}` edits only that claim's relation. List, detail (`GET /Claims/{id}`) and summaries return the same `sourceRelationId`.
+`GET /api/v1/Claims` returned `400` ("An item with the same key has already been added") whenever a person had more than one relation on the same unit (e.g. owner and occupant). Fixed — no desktop change needed. The contract is unchanged; `sourceRelationId` / `evidenceIds` / `hasEvidence` now always refer to the claimant's relation whose claim type matches the claim (`claimType` 1 → Owner/Heir relation, 2 → other types). Such a person has two claims, each with its own relation and evidence, and `PUT /api/v1/Claims/{id}` edits only that claim's relation. List, detail (`GET /Claims/{id}`) and summaries return the same `sourceRelationId`. `GET /api/v1/Claims?PropertyUnitId=...` now returns every claim of the unit (it returned only the first one).
 
 ---
 

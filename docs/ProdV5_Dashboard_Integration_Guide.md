@@ -393,6 +393,8 @@ The response contract is unchanged. These fields now follow one documented rule:
 
 So a person who owns and occupies a unit has **two claims, each with its own `sourceRelationId` and evidence**. The same rule is used by `GET /api/v1/Claims/{id}`, `GET /api/v1/Claims/summaries` and `PUT /api/v1/Claims/{id}`: editing the occupancy claim updates the occupancy relation, never the owner relation. List, detail and summaries always agree.
 
+Also fixed: `GET /api/v1/Claims?PropertyUnitId=...` returned only the **first** claim of the unit. It now returns every claim on the unit (paged as usual).
+
 **Related fix:** the bulk import endpoints `POST /api/v1/administrative-divisions/import`, `POST /api/v1/Buildings/import-bulk` and `POST /api/v1/Neighborhoods/import-bulk` required a role named "Admin" that does not exist, so they returned `403` for everyone. They are now available to **Administrator**.
 
 ---
@@ -420,3 +422,4 @@ So a person who owns and occupies a unit has **two claims, each with its own `so
 | Users | `PUT /users/{id}` role change | **Bug fixed** — now persisted; user's sessions end |
 | Import | admin bulk imports (divisions, buildings, neighborhoods) | **Bug fixed** — reachable by Administrator |
 | Claims | `GET /Claims` (list) | **Bug fixed** — no more 400 when a person has several relations on a unit; `sourceRelationId`/`evidenceIds` = the relation matching the claim type |
+| Claims | `GET /Claims?PropertyUnitId=` | **Bug fixed** — returns all claims of the unit (was only the first) |
