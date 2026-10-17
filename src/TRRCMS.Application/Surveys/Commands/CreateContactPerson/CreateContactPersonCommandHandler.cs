@@ -78,8 +78,11 @@ public class CreateContactPersonCommandHandler : IRequestHandler<CreateContactPe
         // Mark as contact person
         person.SetAsContactPerson(true, currentUserId);
 
-        // Link to survey
+        // Link to survey (replacing any previous contact point)
+        var previousContactId = survey.ContactPersonId;
         survey.SetContactPerson(person.Id, person.GetContactPersonFullName(), currentUserId);
+        await ContactPointFlagSync.ReleasePreviousContactAsync(
+            _unitOfWork, previousContactId, person.Id, survey.Id, currentUserId, cancellationToken);
 
         // Save
         await _unitOfWork.Persons.AddAsync(person, cancellationToken);

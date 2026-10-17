@@ -82,6 +82,13 @@ public class StagingHouseholdConfiguration : IEntityTypeConfiguration<StagingHou
         builder.Property(h => h.Notes)
             .HasMaxLength(2000);
 
+        builder.Property(h => h.IsEmptyProperty)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        // No max length: over-long values are reported by validation instead of failing the insert
+        builder.Property(h => h.EmptyPropertyJustification);
+
         builder.Property(h => h.RowVersion)
             .IsRowVersion();
 

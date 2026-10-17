@@ -1,6 +1,7 @@
 using MediatR;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Mappings;
 using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.PersonPropertyRelations.Dtos;
 using TRRCMS.Domain.Entities;
@@ -59,9 +60,12 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
             request.PersonId, request.PropertyUnitId, cancellationToken);
         if (existingRelation != null)
             throw new ValidationException($"Person is already linked with relation type: {existingRelation.RelationType}");
-
+        var effectiveRelationType = request.RelationType.HasValue
+            ? (RelationType)request.RelationType.Value
+            : ClaimTypeRelationMapper.ToDefaultRelationType(
+                (ClaimType)request.ClaimType!.Value);
         // Business validations
-        if ((RelationType)request.RelationType == RelationType.Owner)
+        if (effectiveRelationType == RelationType.Owner)
         {
             if (!request.OwnershipShare.HasValue || request.OwnershipShare <= 0)
                 throw new ValidationException("Ownership share is required for Owner type and must be > 0");
@@ -73,7 +77,7 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
         var relation = PersonPropertyRelation.Create(
             request.PersonId,
             request.PropertyUnitId,
-            (RelationType)request.RelationType,
+            effectiveRelationType,
             request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : (OccupancyType?)null,
             request.HasEvidence,
             currentUserId,
@@ -81,7 +85,7 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
 
         // Update with additional details using simplified signature
         relation.UpdateRelationDetails(
-            (RelationType)request.RelationType,
+            effectiveRelationType,
             request.OccupancyType.HasValue ? (OccupancyType)request.OccupancyType.Value : (OccupancyType?)null,
             request.HasEvidence,
             request.OwnershipShare,
@@ -95,7 +99,7 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
         // Audit log
         await _auditService.LogActionAsync(
             AuditActionType.Create,
-            $"Linked person {person.GetFullNameArabic()} to property unit {propertyUnit.UnitIdentifier} as {(RelationType)request.RelationType}",
+            $"Linked person {person.GetFullNameArabic()} to property unit {propertyUnit.UnitIdentifier} as {effectiveRelationType}",
             "PersonPropertyRelation",
             relation.Id,
             $"{person.GetFullNameArabic()} - {propertyUnit.UnitIdentifier}",
@@ -105,7 +109,10 @@ public class LinkPersonToPropertyUnitCommandHandler : IRequestHandler<LinkPerson
                 relation.Id,
                 request.PersonId,
                 request.PropertyUnitId,
-                RelationType = ((RelationType)request.RelationType).ToString(),
+                RelationType = effectiveRelationType.ToString(),
+                ClaimType = request.ClaimType.HasValue
+                    ? ((ClaimType)request.ClaimType.Value).ToString()
+                    : null,
                 OccupancyType = request.OccupancyType.HasValue ? ((OccupancyType)request.OccupancyType.Value).ToString() : null,
                 request.HasEvidence,
                 request.OwnershipShare

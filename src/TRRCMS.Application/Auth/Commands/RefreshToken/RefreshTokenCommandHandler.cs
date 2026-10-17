@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using TRRCMS.Application.Auth;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Auth.Dtos;
@@ -111,6 +112,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, R
         // Step 7: Return new tokens
         return new RefreshTokenResponse
         {
+            SessionExpiryWarningSeconds = SessionSettings.GetExpiryWarningSeconds(_configuration),
             AccessToken = newAccessToken,
             RefreshToken = newRefreshToken,
             AccessTokenExpiry = accessTokenExpiry,

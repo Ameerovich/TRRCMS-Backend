@@ -29,8 +29,8 @@ public class CreateEvidenceCommandValidator : LocalizedValidator<CreateEvidenceC
     {
         // ==================== REQUIRED FIELDS ====================
 
+        // Extensible vocabulary: validate against the vocabulary, not the enum range
         RuleFor(x => x.EvidenceType)
-            .IsInEnum().WithMessage(L("EvidenceType_NotRecognized"))
             .Must(v => vocabService.IsValidCode("evidence_type", (int)v))
             .WithMessage(L("EvidenceType_NotRecognized"));
 

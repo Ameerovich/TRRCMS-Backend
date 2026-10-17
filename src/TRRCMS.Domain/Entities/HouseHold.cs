@@ -42,6 +42,17 @@ public class Household : BaseAuditableEntity
     /// <summary>Household notes (ملاحظات).</summary>
     public string? Notes { get; private set; }
 
+    /// <summary>
+    /// عقار فارغ — the field collector found the property unit empty during the survey.
+    /// Set only by tablet (.uhc) imports; read-only on the desktop.
+    /// </summary>
+    public bool IsEmptyProperty { get; private set; }
+
+    /// <summary>
+    /// مبرر كون العقار فارغاً — why the unit was found empty (required on the tablet when IsEmptyProperty).
+    /// </summary>
+    public string? EmptyPropertyJustification { get; private set; }
+
     public virtual PropertyUnit PropertyUnit { get; private set; } = null!;
     public virtual ICollection<Person> Members { get; private set; }
 
@@ -65,10 +76,16 @@ public class Household : BaseAuditableEntity
         OccupancyNature? occupancyNature,
         DateTime? occupancyStartDate,
         string? notes,
-        Guid createdByUserId)
+        Guid createdByUserId,
+        bool isEmptyProperty = false,
+        string? emptyPropertyJustification = null)
     {
         var household = new Household
         {
+            IsEmptyProperty = isEmptyProperty,
+            EmptyPropertyJustification = string.IsNullOrWhiteSpace(emptyPropertyJustification)
+                ? null
+                : emptyPropertyJustification.Trim(),
             PropertyUnitId = propertyUnitId,
             HouseholdSize = householdSize,
             MaleCount = maleCount,

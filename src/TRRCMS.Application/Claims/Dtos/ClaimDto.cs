@@ -65,4 +65,17 @@ public class ClaimDto
     /// Primary claimant name (optional for list views)
     /// </summary>
     public string? PrimaryClaimantName { get; set; }
+
+    // ==================== DESIGNATIONS ====================
+
+    /// <summary>
+    /// The contact point (جهة الاتصال) of the claim's originating survey (or the unit's latest survey).
+    /// Populated by GET /claims/{id} only.
+    /// </summary>
+    public Persons.Dtos.DesignatedPersonDto? ContactPoint { get; set; }
+
+    /// <summary>
+    /// True when the primary claimant is also the contact point
+    /// </summary>
+    public bool PrimaryClaimantIsContactPoint { get; set; }
 }

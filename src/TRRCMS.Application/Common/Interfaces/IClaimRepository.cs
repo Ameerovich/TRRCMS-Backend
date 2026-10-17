@@ -45,6 +45,12 @@ public interface IClaimRepository
     Task<Claim?> GetByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Every claim on a unit (a unit can have several claimants / claims), with claimant, unit and evidences
+    /// loaded for list display, newest submission first.
+    /// </summary>
+    Task<List<Claim>> GetListByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get all claims for a property unit (used by PropertyUnit merge to re-point all claims).
     /// Unlike <see cref="GetByPropertyUnitIdAsync"/> which returns a single match,
     /// this returns all claims — a property unit may have multiple claims.

@@ -6,7 +6,8 @@
 public class ChangePasswordRequest
 {
     /// <summary>
-    /// User ID whose password is being changed
+    /// User ID whose password is being changed. Optional — defaults to the authenticated user;
+    /// when supplied it must equal the authenticated user's id.
     /// </summary>
     public Guid UserId { get; set; }
 

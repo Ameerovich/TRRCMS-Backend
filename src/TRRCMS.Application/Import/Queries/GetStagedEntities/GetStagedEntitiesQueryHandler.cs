@@ -122,7 +122,9 @@ public class GetStagedEntitiesQueryHandler
                 ValidationStatus = h.ValidationStatus.ToString(),
                 IsApprovedForCommit = h.IsApprovedForCommit,
                 CommittedEntityId = h.CommittedEntityId,
-                DisplayInfo = $"Size: {h.HouseholdSize}",
+                DisplayInfo = h.IsEmptyProperty
+                    ? $"Empty property (عقار فارغ): {h.EmptyPropertyJustification ?? "-"}"
+                    : $"Size: {h.HouseholdSize}",
                 ParentOriginalEntityId = h.OriginalPropertyUnitId,
                 ValidationErrors = h.ValidationErrors,
                 ValidationWarnings = h.ValidationWarnings

@@ -46,6 +46,12 @@ public class StagingHousehold : BaseStagingEntity
     /// <summary>Additional notes.</summary>
     public string? Notes { get; private set; }
 
+    /// <summary>households.is_empty_property — unit found empty during the field survey (schema 1.10+)</summary>
+    public bool IsEmptyProperty { get; private set; }
+
+    /// <summary>households.empty_property_justification (schema 1.10+)</summary>
+    public string? EmptyPropertyJustification { get; private set; }
+
     /// <summary>EF Core constructor.</summary>
     private StagingHousehold() : base()
     {
@@ -67,10 +73,14 @@ public class StagingHousehold : BaseStagingEntity
         int? disabledCount = null,
         OccupancyNature? occupancyNature = null,
         DateTime? occupancyStartDate = null,
-        string? notes = null)
+        string? notes = null,
+        bool isEmptyProperty = false,
+        string? emptyPropertyJustification = null)
     {
         var entity = new StagingHousehold
         {
+            IsEmptyProperty = isEmptyProperty,
+            EmptyPropertyJustification = emptyPropertyJustification,
             OriginalPropertyUnitId = originalPropertyUnitId,
             HouseholdSize = householdSize,
             MaleCount = maleCount,

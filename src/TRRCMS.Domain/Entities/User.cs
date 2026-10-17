@@ -119,6 +119,18 @@ public class User : BaseAuditableEntity
     /// Password expiry date (if password expiration is enforced)
     /// </summary>
     public DateTime? PasswordExpiryDate { get; private set; }
+
+    /// <summary>
+    /// When the user asked (from the login screen) for an administrator to reset their password.
+    /// Null = no pending request. Cleared when the password is reset/changed or the request is dismissed.
+    /// </summary>
+    public DateTime? PasswordResetRequestedAtUtc { get; private set; }
+
+    /// <summary>
+    /// Optional free-text note the user left with the reset request (e.g. how to reach them)
+    /// </summary>
+    public string? PasswordResetRequestNote { get; private set; }
+
     /// <summary>
     /// Tablet device ID assigned to this user (for field collectors)
     /// </summary>
@@ -284,7 +296,66 @@ public class User : BaseAuditableEntity
         FailedLoginAttempts = 0; // Reset failed attempts
         IsLockedOut = false; // Unlock if locked
         LockoutEndDate = null;
+        ClearRefreshToken(); // Other sessions must re-login
+        ClearPasswordResetRequest();
         MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Administrator sets a temporary password for this user.
+    /// The user must change it at next login, all existing sessions are invalidated
+    /// and any pending reset request is resolved.
+    /// </summary>
+    public void ResetPassword(string temporaryPasswordHash, string temporaryPasswordSalt, Guid resetByUserId)
+    {
+        PasswordHash = temporaryPasswordHash;
+        PasswordSalt = temporaryPasswordSalt;
+        LastPasswordChangeDate = DateTime.UtcNow;
+        MustChangePassword = true;
+        PasswordExpiryDate = null; // Re-stamped when the user sets their own password
+        SecurityStamp = Guid.NewGuid().ToString();
+        FailedLoginAttempts = 0;
+        IsLockedOut = false;
+        LockoutEndDate = null;
+        ClearRefreshToken();
+        ClearPasswordResetRequest();
+        MarkAsModified(resetByUserId);
+    }
+
+    /// <summary>
+    /// Record a "forgot password" request for an administrator to handle.
+    /// The endpoint is anonymous, so a pending request is never overwritten or moved back in the
+    /// queue by later calls; a note is only added when the pending request has none.
+    /// Returns true when a new request was opened.
+    /// </summary>
+    public bool RequestPasswordReset(string? note)
+    {
+        var trimmed = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+
+        if (PasswordResetRequestedAtUtc.HasValue)
+        {
+            PasswordResetRequestNote ??= trimmed;
+            return false;
+        }
+
+        PasswordResetRequestedAtUtc = DateTime.UtcNow;
+        PasswordResetRequestNote = trimmed;
+        return true;
+    }
+
+    /// <summary>
+    /// Administrator dismisses a pending reset request without changing the password
+    /// </summary>
+    public void DismissPasswordResetRequest(Guid dismissedByUserId)
+    {
+        ClearPasswordResetRequest();
+        MarkAsModified(dismissedByUserId);
+    }
+
+    private void ClearPasswordResetRequest()
+    {
+        PasswordResetRequestedAtUtc = null;
+        PasswordResetRequestNote = null;
     }
 
     /// <summary>
@@ -374,6 +445,11 @@ public class User : BaseAuditableEntity
                 HasDesktopAccess = true;
                 break;
         }
+
+        // The role is embedded in issued JWTs (role claim, role-based [Authorize]); end existing
+        // sessions so the user logs in again with a token that carries the new role.
+        SecurityStamp = Guid.NewGuid().ToString();
+        ClearRefreshToken();
 
         MarkAsModified(modifiedByUserId);
     }

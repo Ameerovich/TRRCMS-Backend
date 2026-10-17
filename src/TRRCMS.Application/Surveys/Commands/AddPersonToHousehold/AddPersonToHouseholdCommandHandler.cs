@@ -91,8 +91,11 @@ public class AddPersonToHouseholdCommandHandler : IRequestHandler<AddPersonToHou
         // Set as contact person and link to survey
         if (request.IsContactPerson)
         {
+            var previousContactId = survey.ContactPersonId;
             person.SetAsContactPerson(true, currentUserId);
             survey.SetContactPerson(person.Id, person.GetContactPersonFullName(), currentUserId);
+            await ContactPointFlagSync.ReleasePreviousContactAsync(
+                _unitOfWork, previousContactId, person.Id, survey.Id, currentUserId, cancellationToken);
         }
 
         // Save to repository

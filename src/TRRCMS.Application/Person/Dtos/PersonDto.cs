@@ -70,9 +70,16 @@ public class PersonDto
 
 
     /// <summary>
-    /// Whether this person is the contact person for a survey
+    /// جهة الاتصال - Contact Point: the person interviewed, to be contacted in the future.
+    /// In a survey endpoint this means "contact person of THIS survey"; elsewhere "of any survey".
     /// </summary>
     public bool IsContactPerson { get; set; }
+
+    /// <summary>
+    /// صاحب حق - Rights Claimant: the person has an active person–property relation (a rights claim).
+    /// In a survey endpoint this is scoped to the survey's property unit. A person can be both.
+    /// </summary>
+    public bool IsRightsClaimant { get; set; }
 
 
     /// <summary>

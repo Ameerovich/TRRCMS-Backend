@@ -157,6 +157,8 @@ public class MappingProfile : Profile
        // Basic info
        .ForMember(dest => dest.HouseholdSize, opt => opt.MapFrom(src => src.HouseholdSize))
        .ForMember(dest => dest.Notes, opt => opt.MapFrom(src => src.Notes))
+       .ForMember(dest => dest.IsEmptyProperty, opt => opt.MapFrom(src => src.IsEmptyProperty))
+       .ForMember(dest => dest.EmptyPropertyJustification, opt => opt.MapFrom(src => src.EmptyPropertyJustification))
 
        // Occupancy information
        .ForMember(dest => dest.OccupancyNature, opt => opt.MapFrom(src => src.OccupancyNature.HasValue ? (int?)src.OccupancyNature : null))
@@ -216,6 +218,13 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.SourceRelationId, opt => opt.Ignore());
 
         // User mappings - Base DTO
+        CreateMap<User, PasswordResetRequestDto>()
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(src => (int)src.Role))
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role.ToString()))
+            .ForMember(dest => dest.RequestedAtUtc, opt => opt.MapFrom(src => src.PasswordResetRequestedAtUtc ?? default))
+            .ForMember(dest => dest.Note, opt => opt.MapFrom(src => src.PasswordResetRequestNote));
+
         CreateMap<User, UserDto>()
             .ForMember(dest => dest.Role, opt => opt.MapFrom(src => (int)src.Role))
             .ForMember(dest => dest.SupervisorName, opt => opt.MapFrom(src =>
@@ -293,10 +302,12 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Evidence, opt => opt.Ignore())
             .ForMember(dest => dest.DataSummary, opt => opt.Ignore());
 
-            // ImportPackage
+        // ImportPackage
         CreateMap<ImportPackage, ImportPackageDto>()
-           .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
-           .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()));
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => (int)src.Status))
+            .ForMember(dest => dest.SuccessRate, opt => opt.MapFrom(src => src.GetSuccessRate()))
+            .ForMember(dest => dest.CollectorName, opt => opt.Ignore())
+            .ForMember(dest => dest.Buildings, opt => opt.Ignore());
 
         // Administrative Hierarchy mappings — pCode is the OCHA wire form (SY02, SY0200, ...).
         CreateMap<Governorate, GovernorateDto>()

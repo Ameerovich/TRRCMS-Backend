@@ -1566,6 +1566,36 @@ public class SurveysController : ControllerBase
     }
 
     /// <summary>
+    /// Designate an existing person as the survey's contact point
+    /// تعيين جهة الاتصال
+    /// </summary>
+    /// <remarks>
+    /// Replaces the survey's current contact point (جهة الاتصال) with an existing person of the survey —
+    /// a member of a household on the survey's property unit, or a person linked to that unit.
+    /// A contact point can also be a rights claimant (صاحب حق); the designations are independent.
+    ///
+    /// **Required Permission**: Surveys_EditOwn (CanEditOwnSurveys). Draft surveys only.
+    ///
+    /// **Example request:** `{ "personId": "3fa85f64-5717-4562-b3fc-2c963f66afa6" }`
+    ///
+    /// Returns the person with `isContactPerson = true` and `isRightsClaimant` for this survey's unit.
+    /// </remarks>
+    /// <response code="200">Contact point set</response>
+    /// <response code="400">Survey is not Draft, or the person is not part of the survey</response>
+    /// <response code="404">Survey or person not found</response>
+    [HttpPost("{surveyId}/contact-point")]
+    [Authorize(Policy = "CanEditOwnSurveys")]
+    [ProducesResponseType(typeof(PersonDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PersonDto>> SetContactPoint(
+        Guid surveyId, [FromBody] TRRCMS.Application.Surveys.Commands.SetSurveyContactPoint.SetSurveyContactPointCommand command)
+    {
+        command.SurveyId = surveyId;
+        return Ok(await _mediator.Send(command));
+    }
+
+    /// <summary>
     /// Add person to household in survey context (Office Survey workflow)
     /// </summary>
     /// <remarks>
@@ -2734,7 +2764,7 @@ public class SurveysController : ControllerBase
         if (!string.IsNullOrEmpty(evidenceType))
         {
             // Try parse as int first (e.g., "1", "5")
-            if (int.TryParse(evidenceType, out var intValue) && Enum.IsDefined(typeof(EvidenceType), intValue))
+            if (int.TryParse(evidenceType, out var intValue))
             {
                 parsedType = (EvidenceType)intValue;
             }

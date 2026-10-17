@@ -29,6 +29,12 @@ public class UpdatePersonPropertyRelationCommand : IRequest<PersonPropertyRelati
     public int? RelationType { get; set; }
 
     /// <summary>
+    /// نوع الادعاء - OwnershipClaim=1, OccupancyClaim=2
+    /// Optional compatibility field for claim-based clients.
+    /// </summary>
+    public int? ClaimType { get; set; }
+
+    /// <summary>
     /// نوع الإشغال - OwnerOccupied=1, TenantOccupied=2, FamilyOccupied=3, etc.
     /// </summary>
     public int? OccupancyType { get; set; }

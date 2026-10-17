@@ -2,9 +2,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using TRRCMS.Application.Auth.Commands.ChangePassword;
 using TRRCMS.Application.Auth.Commands.Login;
 using TRRCMS.Application.Auth.Commands.RefreshToken;
+using TRRCMS.Application.Auth.Commands.RequestPasswordReset;
 using TRRCMS.Application.Auth.Dtos;
 using TRRCMS.WebAPI.Middleware;
 
@@ -41,11 +43,19 @@ public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
+    private readonly IConfiguration _configuration;
+    private readonly IStringLocalizer<ErrorMessages> _errorLocalizer;
 
-    public AuthController(IMediator mediator, ILogger<AuthController> logger)
+    public AuthController(
+        IMediator mediator,
+        ILogger<AuthController> logger,
+        IConfiguration configuration,
+        IStringLocalizer<ErrorMessages> errorLocalizer)
     {
         _mediator = mediator;
         _logger = logger;
+        _configuration = configuration;
+        _errorLocalizer = errorLocalizer;
     }
 
     /// <summary>
@@ -252,9 +262,10 @@ public class AuthController : ControllerBase
     /// the user must login again to receive a full-access token.
     ///
     /// **After Success:**
-    /// - All existing tokens are invalidated (SecurityStamp is regenerated)
-    /// - `mustChangePassword` is set to `false`
-    /// - User must login again with new password to get full access
+    /// - Every OTHER session of the user ends (security stamp rotated, old refresh token revoked)
+    /// - The response carries a fresh token pair for THIS session (same fields as `/refresh`):
+    ///   replace the stored access/refresh tokens and continue — no re-login needed
+    /// - `mustChangePassword` is set to `false` (first-login restricted flow: the returned tokens are full tokens)
     /// 
     /// **Example request:**
     /// ```json
@@ -269,7 +280,15 @@ public class AuthController : ControllerBase
     /// **Example success response:**
     /// ```json
     /// {
-    ///   "message": "Password changed successfully. Please login again with your new password."
+    ///   "success": true,
+    ///   "message": "Password changed successfully. Other sessions were signed out; this session continues with the returned tokens.",
+    ///   "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    ///   "refreshToken": "bmV3IHJlZnJlc2ggdG9rZW4...",
+    ///   "accessTokenExpiry": "2026-10-17T15:45:00Z",
+    ///   "refreshTokenExpiry": "2026-10-24T15:30:00Z",
+    ///   "serverTimeUtc": "2026-10-17T15:15:00Z",
+    ///   "accessTokenExpiresInSeconds": 1800,
+    ///   "sessionExpiryWarningSeconds": 60
     /// }
     /// ```
     /// </remarks>
@@ -283,11 +302,12 @@ public class AuthController : ControllerBase
     /// <response code="500">Server error during password change.</response>
     [HttpPost("change-password")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ChangePasswordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<ActionResult<ChangePasswordResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         // Get current user ID from JWT claims
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
@@ -302,23 +322,104 @@ public class AuthController : ControllerBase
         }
 
         // User can only change their own password
-        if (request.UserId != currentUserId)
+        // userId in the body is optional; when sent it must be the caller's own id
+        if (request.UserId != Guid.Empty && request.UserId != currentUserId)
         {
             return Forbid();
         }
 
         var command = new ChangePasswordCommand(
-            request.UserId,
+            currentUserId,
             request.CurrentPassword,
             request.NewPassword,
             request.ConfirmPassword,
-            currentUserId);
+            currentUserId)
+        {
+            DeviceId = User.FindFirst("device_id")?.Value
+        };
 
-        await _mediator.Send(command);
+        var result = await _mediator.Send(command);
 
         _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
 
-        return Ok(new { message = "Password changed successfully. Please login again with your new password." });
+        result.Message = "Password changed successfully. Other sessions were signed out; this session continues with the returned tokens.";
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Current session timing
+    /// </summary>
+    /// <remarks>
+    /// Returns when the access token used for this call expires, by the **server** clock.
+    /// Clients use it to (re)schedule the "session about to expire" warning, e.g. after waking
+    /// from sleep. Calling it does not extend the session — use `POST /refresh` to renew.
+    ///
+    /// **Example response:**
+    /// ```json
+    /// {
+    ///   "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "username": "clerk01",
+    ///   "accessTokenExpiry": "2026-10-17T15:30:00Z",
+    ///   "serverTimeUtc": "2026-10-17T15:21:12Z",
+    ///   "accessTokenExpiresInSeconds": 528,
+    ///   "sessionExpiryWarningSeconds": 60,
+    ///   "mustChangePassword": false
+    /// }
+    /// ```
+    /// </remarks>
+    /// <response code="200">Session is valid</response>
+    /// <response code="401">Expired (errorCode TOKEN_EXPIRED) or revoked (SESSION_REVOKED)</response>
+    [HttpGet("session")]
+    [Authorize]
+    [ProducesResponseType(typeof(SessionInfoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public ActionResult<SessionInfoResponse> GetSession()
+    {
+        var expClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Exp)?.Value;
+        var expiry = long.TryParse(expClaim, out var exp)
+            ? DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime
+            : DateTime.UtcNow;
+
+        return Ok(new SessionInfoResponse
+        {
+            UserId = Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty,
+            Username = User.Identity?.Name ?? string.Empty,
+            AccessTokenExpiry = expiry,
+            SessionExpiryWarningSeconds = TRRCMS.Application.Auth.SessionSettings.GetExpiryWarningSeconds(_configuration),
+            MustChangePassword = User.FindFirst("must_change_password")?.Value == "true"
+        });
+    }
+
+    /// <summary>
+    /// Ask an administrator to reset your password ("forgot password")
+    /// </summary>
+    /// <remarks>
+    /// Anonymous. Queues a reset request that administrators see in
+    /// `GET /api/v1/users/password-reset-requests`. The administrator then sets a temporary
+    /// password and gives it to the user out of band; the user must change it at next login.
+    ///
+    /// The response is **always** 202 with the same message, whether or not the username exists,
+    /// so the endpoint cannot be used to discover accounts. A pending request is never overwritten
+    /// by later calls. Rate-limited to 3 requests per 10 minutes per IP.
+    ///
+    /// **Example request:**
+    /// ```json
+    /// { "username": "clerk01", "note": "Call me on extension 214" }
+    /// ```
+    /// </remarks>
+    /// <response code="202">Request recorded (or silently ignored for unknown usernames)</response>
+    /// <response code="400">Username missing / note too long</response>
+    /// <response code="429">Too many requests</response>
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [EnableRateLimiting("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        await _mediator.Send(new RequestPasswordResetCommand { Username = request.Username, Note = request.Note });
+
+        return Accepted(new { message = _errorLocalizer["Message_PasswordResetRequestAccepted"].Value });
     }
 
     /// <summary>

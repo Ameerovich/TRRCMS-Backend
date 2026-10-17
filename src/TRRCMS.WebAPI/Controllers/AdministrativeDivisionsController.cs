@@ -352,7 +352,7 @@ public class AdministrativeDivisionsController : ControllerBase
     /// <response code="401">Not authenticated</response>
     /// <response code="403">Not authorized (admin only)</response>
     [HttpPost("import")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Administrator")]
     [ProducesResponseType(typeof(ImportAdministrativeHierarchyResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

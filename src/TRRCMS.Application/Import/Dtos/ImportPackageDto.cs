@@ -20,6 +20,10 @@ public class ImportPackageDto
     public DateTime PackageExportedDate { get; set; }
     public Guid ExportedByUserId { get; set; }
     public string? DeviceId { get; set; }
+    // ==================== DISPLAY METADATA ====================
+    public string? CollectorName { get; set; }
+
+    public List<ImportPackageBuildingDto> Buildings { get; set; } = new();
 
     // ==================== STATUS ====================
 
@@ -90,4 +94,17 @@ public class ImportPackageDto
 
     public DateTime CreatedAtUtc { get; set; }
     public DateTime? LastModifiedAtUtc { get; set; }
+}
+/// <summary>
+/// Lightweight building information extracted from an import package
+/// for displaying meaningful package details in the client.
+/// </summary>
+public class ImportPackageBuildingDto
+{
+    public string BuildingNumber { get; set; } = string.Empty;
+    public string? GovernorateName { get; set; }
+    public string? DistrictName { get; set; }
+    public string? SubDistrictName { get; set; }
+    public string? CommunityName { get; set; }
+    public string? NeighborhoodName { get; set; }
 }

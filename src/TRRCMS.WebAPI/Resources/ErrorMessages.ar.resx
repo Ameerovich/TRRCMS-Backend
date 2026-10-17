@@ -93,11 +93,20 @@
   <data name="Message_MustChangePassword" xml:space="preserve">
     <value>يجب تغيير كلمة المرور قبل المتابعة. يرجى تسجيل الدخول وتغيير كلمة المرور.</value>
   </data>
+  <data name="Message_CannotResetOwnPassword" xml:space="preserve">
+    <value>لا يمكنك إعادة تعيين كلمة مرورك من هنا. استخدم تغيير كلمة المرور بدلاً من ذلك.</value>
+  </data>
+  <data name="Message_PasswordResetRequestAccepted" xml:space="preserve">
+    <value>إذا كان هذا الحساب موجوداً فقد أُرسل طلبك إلى مدير النظام، وسيتواصل معك بكلمة مرور مؤقتة.</value>
+  </data>
   <data name="Message_CurrentPasswordIncorrect" xml:space="preserve">
     <value>كلمة المرور الحالية غير صحيحة.</value>
   </data>
   <data name="Message_AuthenticationRequired" xml:space="preserve">
     <value>المصادقة مطلوبة. يرجى تسجيل الدخول مجدداً.</value>
+  </data>
+  <data name="Message_SessionRevoked" xml:space="preserve">
+    <value>انتهت الجلسة (تم تغيير كلمة المرور أو تعطيل الحساب). يرجى تسجيل الدخول مجدداً.</value>
   </data>
   <data name="Message_TokenExpired" xml:space="preserve">
     <value>انتهت صلاحية الجلسة. يرجى تسجيل الدخول مجدداً.</value>

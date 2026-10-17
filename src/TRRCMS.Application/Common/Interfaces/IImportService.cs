@@ -1,3 +1,4 @@
+using TRRCMS.Application.Import.Dtos;
 using TRRCMS.Application.Import.Models;
 
 namespace TRRCMS.Application.Common.Interfaces;
@@ -74,6 +75,20 @@ public interface IImportService
     /// <returns>Parsed manifest data.</returns>
     /// <exception cref="InvalidOperationException">Thrown if manifest table is missing or corrupt.</exception>
     Task<ManifestData> ParseManifestAsync(string uhcFilePath, CancellationToken cancellationToken = default);
+
+
+    /// <summary>
+    /// Reads lightweight building metadata from the .uhc package for display purposes.
+    /// This does not stage or import package data.
+    /// </summary>
+    /// <param name="uhcFilePath">File system path to the .uhc package.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>
+    /// Building numbers and location metadata found in the package.
+    /// </returns>
+    Task<IReadOnlyList<ImportPackageBuildingDto>> ReadBuildingSummariesAsync(
+    string uhcFilePath,
+    CancellationToken cancellationToken = default);
 
 
     /// <summary>

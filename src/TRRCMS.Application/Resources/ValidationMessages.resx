@@ -68,6 +68,7 @@
   <!-- ── Auth ───────────────────────────────────────────────────── -->
   <data name="Username_Required"><value>Username is required</value></data>
   <data name="Username_MaxLength50"><value>Username cannot exceed 50 characters</value></data>
+  <data name="Note_MaxLength500"><value>Note cannot exceed 500 characters</value></data>
   <data name="Username_Length3to50"><value>Username must be between 3 and 50 characters</value></data>
   <data name="Username_InvalidChars"><value>Username can only contain letters, numbers, and underscores</value></data>
   <data name="Password_Required"><value>Password is required</value></data>

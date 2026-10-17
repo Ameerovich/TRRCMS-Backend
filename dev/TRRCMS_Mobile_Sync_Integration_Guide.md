@@ -23,6 +23,21 @@
 
 ---
 
+## Changelog — v2.2 (October 17, 2026) — server ProdV5
+
+> **Mobile team: review all items marked with `>>> CHANGED v2.2` in this document.**
+> Full details and examples: `docs/ProdV5_Mobile_Integration_Guide.md`. All new columns are optional; v1.9/v2.1 packages import unchanged.
+
+| Change | Section | Impact |
+|--------|---------|--------|
+| `persons.date_of_birth` (TEXT, `yyyy-MM-dd`) — full date of birth; wins over `year_of_birth` | 3.2, 8 | **Required to fix V2 Bug 1** (day/month lost on import) |
+| `households.is_empty_property` (INTEGER 0/1) + `households.empty_property_justification` (TEXT) — unit found empty during the survey; `household_size = 0` allowed when empty | 3.2, 8 | New feature |
+| `person_property_relations.relation_type` must agree with `claims.claim_type`; `0`/invalid/contradicting values are aligned to the claim by the server | 3.2 | Fixes V2 Bug 2; send a valid code anyway |
+| `person_property_relations.notes` must carry the notes typed in the claim form; optional `contract_details` (TEXT) for the description (else `claims.claim_description` is used) | 3.2, 8 | Fixes V2 Bug 3 |
+| `relation_type`, `occupancy_type`, `evidence_type`, `building_type` vocabularies are now extensible; `survey_source` is system | 6 | Never hard-code these lists |
+
+---
+
 ## Changelog — v2.1 (May 6, 2026)
 
 > **Mobile team: review all items marked with `>>> CHANGED v2.1` in this document.**
@@ -478,7 +493,8 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `father_name_arabic` | TEXT | Yes | اسم الأب |
 | `mother_name_arabic` | TEXT | No | اسم الأم |
 | `national_id` | TEXT | No | National ID / document number |
-| `year_of_birth` | INTEGER | No | Year of birth |
+| `year_of_birth` | INTEGER | No | Year of birth (keep sending it alongside `date_of_birth`) |
+| `date_of_birth` | TEXT | No | `>>> CHANGED v2.2` — Full date of birth, `yyyy-MM-dd` (calendar date, no time zone). Wins over `year_of_birth`; without it the server stores 1 January of `year_of_birth`. |
 | `email` | TEXT | No | Email address |
 | `mobile_number` | TEXT | No | Mobile phone |
 | `phone_number` | TEXT | No | Landline phone |
@@ -510,6 +526,8 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `occupancy_nature` | INTEGER | No | Vocabulary code from `occupancy_nature` |
 | `occupancy_start_date` | TEXT | No | `>>> NEW v1.9` — ISO-8601 datetime (UTC) when the household started occupying this unit |
 | `notes` | TEXT | No | Additional notes |
+| `is_empty_property` | INTEGER | No | `>>> CHANGED v2.2` — `1` when the property unit was found empty during the field survey (default `0`). `household_size` may then be `0`. |
+| `empty_property_justification` | TEXT | No | `>>> CHANGED v2.2` — Why the unit was found empty (required by the app when `is_empty_property = 1`, max 2000 chars; missing → validation warning) |
 
 > `>>> CHANGED v1.9` — **Removed columns** (do NOT include in v1.9 packages): `male_child_count`, `female_child_count`, `male_elderly_count`, `female_elderly_count`, `male_disabled_count`, `female_disabled_count`.
 > `>>> CHANGED v1.7` — `occupancy_type` removed. The server ignores it if present.
@@ -521,11 +539,12 @@ Building-level photos and documents (e.g., front photo, damage photo). Linked to
 | `id` | TEXT (UUID) | Yes | Primary key |
 | `person_id` | TEXT (UUID) | Yes | FK → `persons.id` |
 | `property_unit_id` | TEXT (UUID) | Yes | FK → `property_units.id` |
-| `relation_type` | INTEGER | Yes | Vocabulary code from `relation_type` |
+| `relation_type` | INTEGER | Yes | Vocabulary code from `relation_type`. `>>> CHANGED v2.2` — must agree with the claim type of the same person/unit (Owner/Heir ↔ ownership claim, others ↔ occupancy claim); `0` or a contradicting value is replaced by the server with Owner (1) / Occupant (2) according to `claims.claim_type` |
 | `ownership_share` | REAL | No | Ownership share in Syrian cadastral units (0–2400). `>>> CHANGED v1.8` |
 | `occupancy_type` | INTEGER | No | `>>> CHANGED v1.6` — Vocabulary code from `occupancy_type` |
 | `has_evidence` | INTEGER | No | `>>> CHANGED v1.6` — `1` if evidence documents are attached, `0` otherwise (default: `0`) |
-| `notes` | TEXT | No | Additional notes |
+| `notes` | TEXT | No | `>>> CHANGED v2.2` — The notes ("ملاحظاتك") typed in the claim form. Shown on the desktop claim info. |
+| `contract_details` | TEXT | No | `>>> CHANGED v2.2` — Claim description ("الوصف"), max 2000 chars. When absent/blank the server uses `claims.claim_description`. |
 
 #### `claims`
 
@@ -1040,6 +1059,7 @@ CREATE TABLE persons (
     mother_name_arabic    TEXT,
     national_id           TEXT,
     year_of_birth         INTEGER,
+    date_of_birth         TEXT,             -- >>> CHANGED v2.2: 'yyyy-MM-dd'
     email                 TEXT,
     mobile_number         TEXT,
     phone_number          TEXT,
@@ -1064,7 +1084,9 @@ CREATE TABLE households (
     disabled_count        INTEGER,          -- >>> NEW v1.9: ungendered total (replaces male/female_disabled_count)
     occupancy_nature      INTEGER,
     occupancy_start_date  TEXT,             -- >>> NEW v1.9: ISO-8601 UTC move-in date
-    notes                 TEXT
+    notes                 TEXT,
+    is_empty_property     INTEGER DEFAULT 0, -- >>> CHANGED v2.2: unit found empty
+    empty_property_justification TEXT        -- >>> CHANGED v2.2
 );
 
 -- >>> CHANGED v1.6: added occupancy_type, has_evidence
@@ -1076,7 +1098,8 @@ CREATE TABLE person_property_relations (
     ownership_share          REAL,
     occupancy_type           INTEGER,              -- >>> CHANGED v1.6
     has_evidence             INTEGER DEFAULT 0,    -- >>> CHANGED v1.6
-    notes                    TEXT
+    notes                    TEXT,                 -- >>> CHANGED v2.2: claim-form notes
+    contract_details         TEXT                  -- >>> CHANGED v2.2: optional description
 );
 
 -- >>> CHANGED v1.6: claim_type TEXT→INTEGER, added originating_survey_id

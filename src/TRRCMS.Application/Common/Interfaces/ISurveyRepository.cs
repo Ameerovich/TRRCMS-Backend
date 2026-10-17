@@ -36,6 +36,13 @@ public interface ISurveyRepository
     Task<List<Survey>> GetByContactPersonIdAsync(Guid contactPersonId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Of the given persons, those that are the contact person of at least one non-deleted survey
+    /// (optionally ignoring one survey).
+    /// </summary>
+    Task<HashSet<Guid>> GetContactPersonIdsAsync(
+        IEnumerable<Guid> personIds, Guid? excludeSurveyId = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Add new survey
     /// </summary>
     Task<Survey> AddAsync(Survey survey, CancellationToken cancellationToken = default);

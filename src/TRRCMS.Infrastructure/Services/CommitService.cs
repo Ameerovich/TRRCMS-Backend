@@ -1028,7 +1028,9 @@ public class CommitService : ICommitService
                     occupancyNature: staging.OccupancyNature.HasValue ? (OccupancyNature)staging.OccupancyNature.Value : null,
                     occupancyStartDate: staging.OccupancyStartDate,
                     notes: staging.Notes,
-                    createdByUserId: userId);
+                    createdByUserId: userId,
+                    isEmptyProperty: staging.IsEmptyProperty,
+                    emptyPropertyJustification: staging.EmptyPropertyJustification);
 
                 await _unitOfWork.Households.AddAsync(household, ct);
 
@@ -1277,6 +1279,11 @@ public class CommitService : ICommitService
                         if (!string.IsNullOrWhiteSpace(stagingContact.MotherNameArabic))
                             fullName += $" ({stagingContact.MotherNameArabic})";
                         survey.SetContactPerson(productionContactPersonId, fullName, userId);
+
+                        // surveys.contact_person_id is authoritative: keep persons.is_contact_person in sync
+                        var contactPerson = await _unitOfWork.Persons.GetByIdAsync(productionContactPersonId, ct);
+                        if (contactPerson is { IsContactPerson: false })
+                            contactPerson.SetAsContactPerson(true, userId);
                     }
                 }
 
@@ -1338,8 +1345,12 @@ public class CommitService : ICommitService
 
         if (approved.Count == 0) return;
 
-        // Pre-load staging relations for CaseStatus resolution by RelationType
-        var stagingRelations = await _stagingRelationRepo.GetApprovedForCommitAsync(importPackageId, ct);
+        // Pre-load staging relations for CaseStatus resolution by RelationType.
+        // Relations are committed before claims, so GetApprovedForCommitAsync (which skips
+        // already-committed rows) would return nothing here and ownership claims never closed.
+        var stagingRelations = (await _stagingRelationRepo.GetByPackageIdAsync(importPackageId, ct))
+            .Where(r => r.IsApprovedForCommit)
+            .ToList();
         var relationByPersonAndUnit = stagingRelations
             .GroupBy(r => (r.OriginalPersonId, r.OriginalPropertyUnitId))
             .ToDictionary(g => g.Key, g => g.First());

@@ -30,11 +30,12 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpPost("change-password")]
     [Authorize]
-    [ProducesResponseType(typeof(MessageResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ChangePasswordResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MessageResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<ActionResult<ChangePasswordResponse>> ChangePassword([FromBody] ChangePasswordRequest request)
     {
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var currentUserId))
@@ -47,23 +48,28 @@ public class AuthController : ControllerBase
             });
         }
 
-        if (request.UserId != currentUserId)
+        // userId in the body is optional; when sent it must be the caller's own id
+        if (request.UserId != Guid.Empty && request.UserId != currentUserId)
         {
             return Forbid();
         }
 
         var command = new ChangePasswordCommand(
-            request.UserId,
+            currentUserId,
             request.CurrentPassword,
             request.NewPassword,
             request.ConfirmPassword,
-            currentUserId);
+            currentUserId)
+        {
+            DeviceId = User.FindFirst("device_id")?.Value
+        };
 
-        await _mediator.Send(command);
+        var result = await _mediator.Send(command);
 
         _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
 
-        return Ok(MessageResponse.Ok("Password changed successfully. Please login again with your new password."));
+        result.Message = "Password changed successfully. Other sessions were signed out; this session continues with the returned tokens.";
+        return Ok(result);
     }
 
     /// <summary>

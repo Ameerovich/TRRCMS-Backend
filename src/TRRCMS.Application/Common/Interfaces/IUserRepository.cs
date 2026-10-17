@@ -7,6 +7,7 @@ public interface IUserRepository
 {
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<User>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default);
     Task<User> AddAsync(User user, CancellationToken cancellationToken = default);
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
@@ -14,11 +15,18 @@ public interface IUserRepository
     Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default);
     Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task<User?> GetByRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lightweight read of what the per-request session check needs (no tracking, no entity).
+    /// Null when the user does not exist or is deleted.
+    /// </summary>
+    Task<(string SecurityStamp, bool IsActive)?> GetSessionStateAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken = default);
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
 
     Task<List<User>> GetByRoleAsync(UserRole role, CancellationToken cancellationToken = default);
     Task<List<User>> GetActiveUsersAsync(CancellationToken cancellationToken = default);
+    Task<List<User>> GetWithPendingPasswordResetRequestAsync(CancellationToken cancellationToken = default);
     Task<List<User>> GetUsersByRoleAsync(UserRole role, bool activeOnly = true, CancellationToken cancellationToken = default);
 
     Task<List<User>> GetSuperviseesByIdAsync(Guid supervisorId, CancellationToken cancellationToken = default);

@@ -140,7 +140,7 @@ public class SurveysController : ControllerBase
         EvidenceType? parsedType = null;
         if (!string.IsNullOrEmpty(evidenceType))
         {
-            if (int.TryParse(evidenceType, out var intValue) && Enum.IsDefined(typeof(EvidenceType), intValue))
+            if (int.TryParse(evidenceType, out var intValue))
             {
                 parsedType = (EvidenceType)intValue;
             }

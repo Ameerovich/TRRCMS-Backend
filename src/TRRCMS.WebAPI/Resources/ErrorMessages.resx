@@ -93,11 +93,20 @@
   <data name="Message_MustChangePassword" xml:space="preserve">
     <value>You must change your password before continuing. Please login and change your password.</value>
   </data>
+  <data name="Message_CannotResetOwnPassword" xml:space="preserve">
+    <value>You cannot reset your own password here. Use change-password instead.</value>
+  </data>
+  <data name="Message_PasswordResetRequestAccepted" xml:space="preserve">
+    <value>If this account exists, your request was sent to the system administrator, who will contact you with a temporary password.</value>
+  </data>
   <data name="Message_CurrentPasswordIncorrect" xml:space="preserve">
     <value>Current password is incorrect.</value>
   </data>
   <data name="Message_AuthenticationRequired" xml:space="preserve">
     <value>Authentication required. Please login again.</value>
+  </data>
+  <data name="Message_SessionRevoked" xml:space="preserve">
+    <value>Your session has ended (password changed or account deactivated). Please login again.</value>
   </data>
   <data name="Message_TokenExpired" xml:space="preserve">
     <value>Your session has expired. Please login again.</value>

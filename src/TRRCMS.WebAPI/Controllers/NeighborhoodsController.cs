@@ -459,7 +459,7 @@ public class NeighborhoodsController : ControllerBase
     /// <response code="401">Not authenticated.</response>
     /// <response code="403">User lacks the required role.</response>
     [HttpPost("import-bulk")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Administrator")]
     [ProducesResponseType(typeof(NeighborhoodImportSummary), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

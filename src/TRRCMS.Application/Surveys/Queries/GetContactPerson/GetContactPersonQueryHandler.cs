@@ -12,12 +12,15 @@ public class GetContactPersonQueryHandler : IRequestHandler<GetContactPersonQuer
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
+    private readonly IPersonDesignationService _designationService;
 
     public GetContactPersonQueryHandler(
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IMapper mapper)
+        IMapper mapper,
+        IPersonDesignationService designationService)
     {
+        _designationService = designationService;
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -44,6 +47,8 @@ public class GetContactPersonQueryHandler : IRequestHandler<GetContactPersonQuer
         var person = await _unitOfWork.Persons.GetByIdAsync(survey.ContactPersonId.Value, cancellationToken)
             ?? throw new NotFoundException($"Contact person with ID {survey.ContactPersonId.Value} not found");
 
-        return _mapper.Map<PersonDto>(person);
+        var dto = _mapper.Map<PersonDto>(person);
+        await _designationService.ApplyForSurveyAsync(new[] { dto }, survey, cancellationToken);
+        return dto;
     }
 }

@@ -49,7 +49,23 @@ public class UserRepository : IUserRepository
             _context.Users.Attach(user);
         }
 
-        await Task.CompletedTask;
+        // Permissions granted through the aggregate (user.GrantPermission) are new rows whose Guid
+        // key is set in the constructor, so change detection treats them as existing rows and issues
+        // UPDATEs that affect 0 rows (DbUpdateConcurrencyException, whole save rolled back).
+        // Rows not yet in the database are registered as inserts.
+        if (user.Permissions.Count > 0)
+        {
+            var persistedIds = (await _context.Set<UserPermission>()
+                    .IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .Where(p => p.UserId == user.Id)
+                    .Select(p => p.Id)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            foreach (var permission in user.Permissions.Where(p => !persistedIds.Contains(p.Id)))
+                _context.Entry(permission).State = EntityState.Added;
+        }
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -100,6 +116,37 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .Where(u => u.IsActive && !u.IsDeleted)
             .OrderBy(u => u.FullNameArabic)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.Distinct().ToList();
+        if (idList.Count == 0) return new List<User>();
+
+        return await _context.Users
+            .AsNoTracking()
+            .Where(u => idList.Contains(u.Id) && !u.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<(string SecurityStamp, bool IsActive)?> GetSessionStateAsync(
+        Guid userId, CancellationToken cancellationToken = default)
+    {
+        var state = await _context.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId && !u.IsDeleted)
+            .Select(u => new { u.SecurityStamp, u.IsActive })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return state == null ? null : (state.SecurityStamp, state.IsActive);
+    }
+
+    public async Task<List<User>> GetWithPendingPasswordResetRequestAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Where(u => u.PasswordResetRequestedAtUtc != null && !u.IsDeleted)
+            .OrderBy(u => u.PasswordResetRequestedAtUtc)
             .ToListAsync(cancellationToken);
     }
 

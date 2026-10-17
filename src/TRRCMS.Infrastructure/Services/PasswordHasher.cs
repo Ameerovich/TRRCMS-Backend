@@ -46,26 +46,12 @@ public class PasswordHasher : IPasswordHasher
 
         try
         {
-            Console.WriteLine("=== PASSWORD VERIFICATION ===");
-            Console.WriteLine($"Password: {password}");
-            Console.WriteLine($"Hash: {hash.Substring(0, Math.Min(30, hash.Length))}...");
-            Console.WriteLine($"Hash Length: {hash.Length}");
-
-            bool result = BCrypt.Net.BCrypt.Verify(password, hash);
-
-            Console.WriteLine($"Verification Result: {result}");
-            Console.WriteLine("=========================");
-
-            return result;
+            return BCrypt.Net.BCrypt.Verify(password, hash);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            // ⚠️ NOW WE CAN SEE THE ERROR!
-            Console.WriteLine("=== BCrypt VERIFICATION ERROR ===");
-            Console.WriteLine($"Exception Type: {ex.GetType().Name}");
-            Console.WriteLine($"Exception Message: {ex.Message}");
-            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-            Console.WriteLine("================================");
+            // Malformed/legacy hash — treat as a failed verification.
+            // Never log the password or hash.
             return false;
         }
     }

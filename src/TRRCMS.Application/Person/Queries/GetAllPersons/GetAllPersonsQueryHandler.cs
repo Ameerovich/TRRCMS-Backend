@@ -13,11 +13,14 @@ public class GetAllPersonsQueryHandler : IRequestHandler<GetAllPersonsQuery, Pag
 {
     private readonly IPersonRepository _personRepository;
     private readonly IMapper _mapper;
+    private readonly IPersonDesignationService _designationService;
 
     public GetAllPersonsQueryHandler(
         IPersonRepository personRepository,
-        IMapper mapper)
+        IMapper mapper,
+        IPersonDesignationService designationService)
     {
+        _designationService = designationService;
         _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
@@ -26,6 +29,8 @@ public class GetAllPersonsQueryHandler : IRequestHandler<GetAllPersonsQuery, Pag
     {
         var persons = await _personRepository.GetAllAsync(cancellationToken);
         var dtos = _mapper.Map<List<PersonDto>>(persons);
-        return PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
+        var page = PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
+        await _designationService.ApplyAsync(page.Items.ToList(), cancellationToken);
+        return page;
     }
 }

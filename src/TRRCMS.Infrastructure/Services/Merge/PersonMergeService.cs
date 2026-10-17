@@ -477,8 +477,13 @@ public class PersonMergeService : IMergeService
         var surveys = await _surveyRepository.GetByContactPersonIdAsync(discardedPersonId, ct);
         if (surveys.Count > 0)
         {
-            var masterContactName = (await _personRepository.GetByIdAsync(masterPersonId, ct))
-                ?.GetContactPersonFullName() ?? string.Empty;
+            var master = await _personRepository.GetByIdAsync(masterPersonId, ct);
+            var masterContactName = master?.GetContactPersonFullName() ?? string.Empty;
+            if (master is { IsContactPerson: false })
+            {
+                master.SetAsContactPerson(true, masterPersonId);
+                await _personRepository.UpdateAsync(master, ct);
+            }
             foreach (var survey in surveys)
             {
                 survey.SetContactPerson(masterPersonId, masterContactName, masterPersonId);

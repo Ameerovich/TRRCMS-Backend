@@ -278,6 +278,8 @@ public class AuditLog : BaseEntity
             AuditActionType.Logout => true,
             AuditActionType.LoginFailed => true,
             AuditActionType.PasswordChange => true,
+            AuditActionType.PasswordReset => true,
+            AuditActionType.PasswordResetRequested => true,
             AuditActionType.PermissionGranted => true,
             AuditActionType.PermissionRevoked => true,
             AuditActionType.AccessDenied => true,

@@ -173,6 +173,18 @@ public enum AuditActionType
     /// </summary>
     [ArabicLabel("رفض الوصول")]
     AccessDenied = 46,
+
+    /// <summary>
+    /// Password reset by an administrator (إعادة تعيين كلمة المرور)
+    /// </summary>
+    [ArabicLabel("إعادة تعيين كلمة المرور")]
+    PasswordReset = 47,
+
+    /// <summary>
+    /// User asked an administrator to reset their password (طلب إعادة تعيين كلمة المرور)
+    /// </summary>
+    [ArabicLabel("طلب إعادة تعيين كلمة المرور")]
+    PasswordResetRequested = 48,
     /// <summary>
     /// System configuration changed (تغيير إعدادات النظام)
     /// </summary>

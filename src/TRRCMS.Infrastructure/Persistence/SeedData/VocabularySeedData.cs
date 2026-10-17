@@ -25,8 +25,10 @@ public static class VocabularySeedData
     {
         // ── Extensible (isSystemVocabulary=false) ─────────────────────────────────
         // Admins can add new codes via a major version through the API.
-        // Values are stored as plain integers and never branched on in backend logic —
-        // safe to extend without any code changes.
+        // Values are stored as plain integers and validated through IVocabularyValidationService,
+        // never through enum ranges. Where backend logic does reference specific codes
+        // (relation_type Owner/Heir → ownership claim, Owner → ownership share required),
+        // admin-added codes fall into the default branch (occupancy claim, no share required).
 
         // Demographics
         Ext<Nationality>("nationality", "الجنسية", "Nationality", "Demographics"),
@@ -38,12 +40,16 @@ public static class VocabularySeedData
         Ext<TenureContractType>("tenure_contract_type", "نوع عقد الإشغال", "Tenure Contract Type", "Property"),
         Ext<PropertyUnitType>("property_unit_type", "نوع الوحدة العقارية", "Property Unit Type", "Property"),
         Ext<PropertyUnitStatus>("property_unit_status", "حالة الوحدة العقارية", "Property Unit Status", "Property"),
+        Ext<BuildingType>("building_type", "نوع البناء", "Building Type", "Property"),
+        Ext<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", "Property"),
+
+        // Relations
+        Ext<RelationType>("relation_type", "نوع العلاقة", "Relation Type", "Relations"),
 
         // Legal
-        Ext<DocumentType>("document_type", "نوع الوثيقة", "Document Type", "Legal"),
-
-        // Survey
-        Ext<SurveySource>("survey_source", "مصدر الاستطلاع", "Survey Source", "Survey"),
+        // Display names renamed for clarity (existing DBs: migration RenameDocumentAndEvidenceTypeVocabularies)
+        Ext<DocumentType>("document_type", "نوع وثيقة إثبات الشخصية", "Personal Identification Document Type", "Legal"),
+        Ext<EvidenceType>("evidence_type", "نوع الوثيقة الداعمة للادعاء", "Claim Supporting Document Type", "Legal"),
 
         // ── System-locked (isSystemVocabulary=true) ───────────────────────────────
         // Major versions (new codes) are blocked via API.
@@ -52,18 +58,12 @@ public static class VocabularySeedData
 
         Def<Gender>("gender", "الجنس", "Gender", "Demographics"),
 
-        Def<BuildingType>("building_type", "نوع البناء", "Building Type", "Property"),
-        Def<OccupancyType>("occupancy_type", "نوع الإشغال", "Occupancy Type", "Property"),
-
-        Def<RelationType>("relation_type", "نوع العلاقة", "Relation Type", "Relations"),
-
-        Def<EvidenceType>("evidence_type", "نوع الدليل", "Evidence Type", "Legal"),
-
         Def<ClaimType>("claim_type", "نوع المطالبة", "Claim Type", "Claims"),
         Def<CaseStatus>("case_status", "حالة الحالة", "Case Status", "Claims"),
         Def<ClaimSource>("claim_source", "مصدر المطالبة", "Claim Source", "Claims"),
 
         Def<SurveyType>("survey_type", "نوع الاستطلاع", "Survey Type", "Survey"),
+        Def<SurveySource>("survey_source", "مصدر الاستطلاع", "Survey Source", "Survey"),
         Def<SurveyStatus>("survey_status", "حالة الاستطلاع", "Survey Status", "Survey"),
 
         Def<TransferStatus>("transfer_status", "حالة النقل", "Transfer Status", "Operations"),

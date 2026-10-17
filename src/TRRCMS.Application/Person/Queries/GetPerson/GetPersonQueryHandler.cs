@@ -12,11 +12,14 @@ public class GetPersonQueryHandler : IRequestHandler<GetPersonQuery, PersonDto?>
 {
     private readonly IPersonRepository _personRepository;
     private readonly IMapper _mapper;
+    private readonly IPersonDesignationService _designationService;
 
     public GetPersonQueryHandler(
         IPersonRepository personRepository,
-        IMapper mapper)
+        IMapper mapper,
+        IPersonDesignationService designationService)
     {
+        _designationService = designationService;
         _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
@@ -30,6 +33,8 @@ public class GetPersonQueryHandler : IRequestHandler<GetPersonQuery, PersonDto?>
             return null;
         }
 
-        return _mapper.Map<PersonDto>(person);
+        var dto = _mapper.Map<PersonDto>(person);
+        await _designationService.ApplyAsync(new[] { dto }, cancellationToken);
+        return dto;
     }
 }

@@ -1538,6 +1538,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasComment("عدد كبار السن - Number of elderly");
 
+                    b.Property<string>("EmptyPropertyJustification")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasComment("مبرر العقار الفارغ - Why the unit was found empty");
+
                     b.Property<int?>("FemaleCount")
                         .HasColumnType("integer")
                         .HasComment("عدد الإناث - Total females (all ages)");
@@ -1551,6 +1556,12 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasComment("Soft delete flag");
+
+                    b.Property<bool>("IsEmptyProperty")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasComment("عقار فارغ - Unit found empty during the field survey (tablet only)");
 
                     b.Property<DateTime?>("LastModifiedAtUtc")
                         .HasColumnType("timestamp with time zone")
@@ -3244,6 +3255,9 @@ namespace TRRCMS.Infrastructure.Migrations
                     b.Property<int?>("ElderlyCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("EmptyPropertyJustification")
+                        .HasColumnType("text");
+
                     b.Property<int?>("FemaleCount")
                         .HasColumnType("integer");
 
@@ -3254,6 +3268,11 @@ namespace TRRCMS.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<bool>("IsApprovedForCommit")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsEmptyProperty")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false);
@@ -4398,6 +4417,13 @@ namespace TRRCMS.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
+
+                    b.Property<string>("PasswordResetRequestNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("PasswordResetRequestedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordSalt")
                         .IsRequired()

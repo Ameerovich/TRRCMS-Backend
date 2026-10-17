@@ -83,6 +83,17 @@ public class ClaimRepository : IClaimRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<Claim>> GetListByPropertyUnitIdAsync(Guid propertyUnitId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .Include(c => c.PropertyUnit)
+            .Include(c => c.PrimaryClaimant)
+            .Include(c => c.Evidences)
+            .Where(c => c.PropertyUnitId == propertyUnitId)
+            .OrderByDescending(c => c.SubmittedDate)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IEnumerable<Claim>> GetByPrimaryClaimantIdAsync(Guid personId, CancellationToken cancellationToken = default)
     {
         return await _context.Claims

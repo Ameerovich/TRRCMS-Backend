@@ -1,6 +1,9 @@
+using System.Globalization;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Mappings;
+using TRRCMS.Domain.Entities;
 using TRRCMS.Domain.Entities.Staging;
 using TRRCMS.Domain.Enums;
 
@@ -343,11 +346,7 @@ public class StagingService : IStagingService
 
         while (await reader.ReadAsync(ct))
         {
-            // Convert year_of_birth (int) to DateTime for staging alignment with production
-            int? yearOfBirth = GetNullableInt(reader, "year_of_birth");
-            DateTime? dateOfBirth = yearOfBirth.HasValue
-                ? new DateTime(yearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-                : null;
+            var dateOfBirth = ReadDateOfBirth(reader);
 
             var entity = StagingPerson.Create(
                 importPackageId: packageId,
@@ -405,7 +404,9 @@ public class StagingService : IStagingService
                 disabledCount: GetNullableInt(reader, "disabled_count"),
                 occupancyNature: GetNullableEnum<OccupancyNature>(reader, "occupancy_nature", "occupancy_nature"),
                 occupancyStartDate: GetNullableDateTime(reader, "occupancy_start_date"),
-                notes: GetNullableString(reader, "notes"));
+                notes: GetNullableString(reader, "notes"),
+                isEmptyProperty: GetBool(reader, "is_empty_property", false),
+                emptyPropertyJustification: GetNullableString(reader, "empty_property_justification")?.Trim());
 
             entities.Add(entity);
         }
@@ -425,6 +426,8 @@ public class StagingService : IStagingService
     {
         if (!await TableExistsAsync(connection, "person_property_relations", ct)) return 0;
 
+        var claimHints = await ReadClaimHintsAsync(connection, ct);
+
         var entities = new List<StagingPersonPropertyRelation>();
         using var cmd = connection.CreateCommand();
         cmd.CommandText = "SELECT * FROM person_property_relations";
@@ -432,13 +435,35 @@ public class StagingService : IStagingService
 
         while (await reader.ReadAsync(ct))
         {
+            var personId = GetGuid(reader, "person_id");
+            var propertyUnitId = GetGuid(reader, "property_unit_id");
+            claimHints.TryGetValue((personId, propertyUnitId), out var claimHint);
+
+            var packageRelationType = GetEnum<RelationType>(reader, "relation_type", "relation_type");
+            var relationType = ResolveRelationType(packageRelationType, claimHint?.ClaimType);
+            var ownershipShare = GetNullableDecimal(reader, "ownership_share");
+            if (relationType != packageRelationType)
+            {
+                // Re-typed to match the claim: an ownership relation needs a share (take the claim's),
+                // an occupancy relation must not carry one
+                ownershipShare = ClaimTypeRelationMapper.ToClaimType(relationType) == ClaimType.OwnershipClaim
+                    ? ownershipShare ?? claimHint?.OwnershipShare
+                    : null;
+            }
+
+            var explicitDetails = GetNullableString(reader, "contract_details");
+
             var entity = StagingPersonPropertyRelation.Create(
                 importPackageId: packageId,
                 originalEntityId: GetGuid(reader, "id"),
-                originalPersonId: GetGuid(reader, "person_id"),
-                originalPropertyUnitId: GetGuid(reader, "property_unit_id"),
-                relationType: GetEnum<RelationType>(reader, "relation_type", "relation_type"),
-                ownershipShare: GetNullableDecimal(reader, "ownership_share"),
+                originalPersonId: personId,
+                originalPropertyUnitId: propertyUnitId,
+                relationType: relationType,
+                ownershipShare: ownershipShare,
+                // "الوصف" on the desktop claim form is the relation's ContractDetails; the tablet
+                // writes it to claims.claim_description (a non-blank contract_details column wins)
+                contractDetails: Truncate(
+                    string.IsNullOrWhiteSpace(explicitDetails) ? claimHint?.ClaimDescription : explicitDetails, 2000),
                 notes: GetNullableString(reader, "notes"),
                 occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
                 hasEvidence: GetBool(reader, "has_evidence", false));
@@ -455,6 +480,65 @@ public class StagingService : IStagingService
         _logger.LogDebug("Staged {Count} person-property relations", entities.Count);
         return entities.Count;
     }
+
+    /// <summary>
+    /// The tablet's claim form asks for the claim type (ownership / occupancy) and writes it to
+    /// claims.claim_type; the matching person_property_relations row may carry relation_type = 0
+    /// (seen in app 1.0.19 packages) or a value that contradicts it. Claims are keyed by
+    /// (primary_claimant_id, property_unit_id), the same pair that identifies the relation.
+    /// </summary>
+    private async Task<Dictionary<(Guid PersonId, Guid PropertyUnitId), ClaimHint>> ReadClaimHintsAsync(
+        SqliteConnection connection, CancellationToken ct)
+    {
+        var hints = new Dictionary<(Guid, Guid), ClaimHint>();
+        if (!await TableExistsAsync(connection, "claims", ct)) return hints;
+
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT * FROM claims";
+        using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            var claimantId = GetNullableGuid(reader, "primary_claimant_id");
+            if (!claimantId.HasValue) continue;
+
+            // Only the two claim types the relation mapping understands; anything else (0, unknown codes)
+            // is left for claim validation to report and must not influence the relation
+            var claimType = GetNullableEnum<ClaimType>(reader, "claim_type", "claim_type");
+            if (claimType is not (ClaimType.OwnershipClaim or ClaimType.OccupancyClaim))
+                claimType = null;
+
+            hints.TryAdd((claimantId.Value, GetGuid(reader, "property_unit_id")), new ClaimHint(
+                claimType,
+                GetNullableString(reader, "claim_description"),
+                GetNullableDecimal(reader, "ownership_share")));
+        }
+        return hints;
+    }
+
+    /// <summary>
+    /// Keep the relation consistent with the claim type chosen on the tablet: when relation_type is
+    /// missing/invalid, or maps to the other claim type, use the default relation for that claim type
+    /// (Ownership → Owner, Occupancy → Occupant).
+    /// </summary>
+    private RelationType ResolveRelationType(RelationType packageValue, ClaimType? claimType)
+    {
+        var isValid = _vocabService.IsValidCode("relation_type", (int)packageValue);
+        if (!claimType.HasValue)
+            return packageValue;
+        if (isValid && ClaimTypeRelationMapper.IsCompatible(packageValue, claimType.Value))
+            return packageValue;
+
+        var resolved = ClaimTypeRelationMapper.ToDefaultRelationType(claimType.Value);
+        _logger.LogInformation(
+            "relation_type {PackageValue} {Reason} claim_type {ClaimType}; staged as {Resolved}",
+            (int)packageValue, isValid ? "contradicts" : "is invalid for", claimType.Value, resolved);
+        return resolved;
+    }
+
+    private sealed record ClaimHint(ClaimType? ClaimType, string? ClaimDescription, decimal? OwnershipShare);
+
+    private static string? Truncate(string? value, int maxLength)
+        => value is { Length: > 0 } && value.Length > maxLength ? value[..maxLength] : value;
 
     private async Task<int> StageClaimsAsync(
         SqliteConnection connection, Guid packageId, CancellationToken ct)
@@ -977,6 +1061,31 @@ public class StagingService : IStagingService
         var value = reader[column];
         if (value is DBNull || value == null) return DateTime.UtcNow;
         return DateTime.TryParse(value.ToString(), out var result) ? result.ToUniversalTime() : DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// persons.date_of_birth (TEXT, "yyyy-MM-dd", schema 1.10+) carries the full date entered on the
+    /// tablet and wins; older packages only have persons.year_of_birth (INTEGER), stored as Jan 1st.
+    /// </summary>
+    private DateTime? ReadDateOfBirth(SqliteDataReader reader)
+    {
+        var raw = GetNullableString(reader, "date_of_birth")?.Trim();
+        if (!string.IsNullOrEmpty(raw))
+        {
+            if (DateTime.TryParseExact(raw, "yyyy-MM-dd", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var dateOnly))
+                return Person.NormalizeDateOfBirth(dateOnly);
+
+            if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dateTime))
+                return Person.NormalizeDateOfBirth(dateTime);
+
+            _logger.LogWarning("Unparseable persons.date_of_birth '{Value}' — falling back to year_of_birth", raw);
+        }
+
+        var yearOfBirth = GetNullableInt(reader, "year_of_birth");
+        return yearOfBirth is >= 1 and <= 9999
+            ? new DateTime(yearOfBirth.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            : null;
     }
 
     private static DateTime? GetNullableDateTime(SqliteDataReader reader, string column)

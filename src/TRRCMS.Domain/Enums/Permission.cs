@@ -121,13 +121,13 @@ public enum Permission
     Buildings_View = 4000,
 
     /// <summary>
-    /// Create buildings (Data Manager, Admin)
+    /// Create buildings (Office Clerk, Data Manager, Admin)
     /// </summary>
     [ArabicLabel("إنشاء مبنى")]
     Buildings_Create = 4001,
 
     /// <summary>
-    /// Update building details (Data Manager, Admin)
+    /// Update building details (Office Clerk, Data Manager, Admin)
     /// </summary>
     [ArabicLabel("تعديل مبنى")]
     Buildings_Update = 4002,
@@ -292,6 +292,12 @@ public enum Permission
     Users_Deactivate = 8003,
 
     /// <summary>
+    /// Reset another user's password and handle "forgot password" requests (Admin only)
+    /// </summary>
+    [ArabicLabel("إعادة تعيين كلمة مرور مستخدم")]
+    Users_ResetPassword = 8004,
+
+    /// <summary>
     /// Manage roles and permissions (Admin only)
     /// </summary>
     [ArabicLabel("إدارة الأدوار")]
@@ -355,6 +361,19 @@ public enum Permission
     /// </summary>
     [ArabicLabel("إدارة المعالم")]
     Landmarks_Manage = 9020,
+    /// <summary>
+    /// Create and update map reference data such as landmarks and streets
+    /// (Office Clerk, Data Manager, Administrator)
+    /// </summary>
+    [ArabicLabel("تعديل بيانات الخريطة")]
+    MapReferenceData_Write = 9021,
+
+    /// <summary>
+    /// Delete map reference data such as landmarks and streets
+    /// (Data Manager, Administrator)
+    /// </summary>
+    [ArabicLabel("حذف بيانات الخريطة")]
+    MapReferenceData_Delete = 9022,
 
     /// <summary>
     /// View reports catalog and metadata (Administrator, DataManager, FieldSupervisor, Analyst)

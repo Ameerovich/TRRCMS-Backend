@@ -28,7 +28,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// 3. Optionally create Document record linking to Evidence
 /// 4. Link Evidence to Person, Claim, or PersonPropertyRelation
 /// 
-/// **EvidenceType Values (نوع الدليل):**
+/// **EvidenceType Values (نوع الوثيقة الداعمة للادعاء — Claim Supporting Document Type):**
 /// 
 /// | Value | Name | Arabic | Description |
 /// |-------|------|--------|-------------|

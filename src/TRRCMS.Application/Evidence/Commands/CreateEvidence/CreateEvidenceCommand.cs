@@ -10,7 +10,7 @@ namespace TRRCMS.Application.Evidences.Commands.CreateEvidence;
 public class CreateEvidenceCommand : IRequest<EvidenceDto>
 {
     /// <summary>
-    /// نوع الدليل - IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, etc.
+    /// نوع الوثيقة الداعمة للادعاء (Claim Supporting Document Type, vocabulary evidence_type) - IdentificationDocument=1, OwnershipDeed=2, RentalContract=3, etc.
     /// </summary>
     public EvidenceType EvidenceType { get; set; }
 

@@ -62,7 +62,10 @@ public class GetRelationsForPropertyUnitInSurveyQueryHandler
         var relations = await _relationRepository.GetByPropertyUnitIdWithEvidencesAsync(
             request.PropertyUnitId, cancellationToken);
 
-        return relations.Select(MapToDto).ToList();
+        var dtos = relations.Select(MapToDto).ToList();
+        foreach (var dto in dtos)
+            dto.IsContactPoint = survey.ContactPersonId == dto.PersonId;
+        return dtos;
     }
 
     /// <summary>

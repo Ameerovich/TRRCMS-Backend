@@ -1,4 +1,6 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Configuration;
+using TRRCMS.Application.Auth.Dtos;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Common.Exceptions;
 using TRRCMS.Application.Common.Interfaces;
@@ -9,43 +11,42 @@ namespace TRRCMS.Application.Auth.Commands.ChangePassword;
 /// <summary>
 /// Handler for changing user password
 /// </summary>
-public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, bool>
+public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, ChangePasswordResponse>
 {
     private readonly IUserRepository _userRepository;
+    private readonly ISessionValidator _sessionValidator;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditService _auditService;
     private readonly ISecurityPolicyRepository _securityPolicyRepository;
     private readonly ILogger<ChangePasswordCommandHandler> _logger;
+    private readonly ITokenService _tokenService;
+    private readonly IConfiguration _configuration;
 
     public ChangePasswordCommandHandler(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IAuditService auditService,
         ISecurityPolicyRepository securityPolicyRepository,
-        ILogger<ChangePasswordCommandHandler> logger)
+        ILogger<ChangePasswordCommandHandler> logger,
+        ITokenService tokenService,
+        IConfiguration configuration,
+        ISessionValidator sessionValidator)
     {
+        _sessionValidator = sessionValidator;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _auditService = auditService;
         _securityPolicyRepository = securityPolicyRepository;
         _logger = logger;
+        _tokenService = tokenService;
+        _configuration = configuration;
     }
 
-    public async Task<bool> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
+    public async Task<ChangePasswordResponse> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
     {
-        // Step 1: Validate that new password and confirmation match
-        if (request.NewPassword != request.ConfirmPassword)
-        {
-            throw new ArgumentException("New password and confirmation password do not match.");
-        }
+        // Confirmation match and password-policy strength are enforced by ChangePasswordCommandValidator.
 
-        // Step 2: Validate password strength (minimum requirements)
-        if (request.NewPassword.Length < 8)
-        {
-            throw new ArgumentException("Password must be at least 8 characters long.");
-        }
-
-        // Step 3: Find user
+        // Step 1: Find user
         var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
 
         if (user == null)
@@ -75,13 +76,13 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         if (isSamePassword)
         {
-            throw new ArgumentException("New password must be different from the current password.");
+            throw new ValidationException("New password must be different from the current password.");
         }
 
         // Step 6: Hash new password
         string newPasswordHash = _passwordHasher.HashPassword(request.NewPassword, out string newSalt);
 
-        // Step 7: Update user password (this invalidates all existing tokens via SecurityStamp)
+        // Step 7: Update user password (rotates SecurityStamp and revokes the refresh token, ending other sessions)
         user.ChangePassword(newPasswordHash, newSalt, request.ModifiedByUserId);
 
         // Step 7b: Re-stamp password expiry from the active SecurityPolicy (0 days = never expires).
@@ -89,8 +90,22 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         int expiryDays = activePolicy?.PasswordPolicy.ExpiryDays ?? 0;
         user.SetPasswordExpiry(expiryDays, request.ModifiedByUserId);
 
+        // Step 8: every other session ended with the stamp rotation; the caller's continues
+        // on a fresh token pair (issued with the new stamp, same lifetime rules as login).
+        int accessTokenMinutes = activePolicy?.SessionLockoutPolicy.SessionTimeoutMinutes
+            ?? int.Parse(_configuration["JwtSettings:AccessTokenExpirationMinutes"] ?? "15");
+        int refreshTokenDays = int.Parse(_configuration["JwtSettings:RefreshTokenExpirationDays"] ?? "7");
+
+        var accessToken = _tokenService.GenerateAccessToken(
+            user, request.DeviceId, isPasswordChangeOnly: false, overrideExpirationMinutes: accessTokenMinutes);
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        var accessTokenExpiry = DateTime.UtcNow.AddMinutes(accessTokenMinutes);
+        var refreshTokenExpiry = DateTime.UtcNow.AddDays(refreshTokenDays);
+        user.UpdateRefreshToken(refreshToken, refreshTokenExpiry);
+
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
+        _sessionValidator.Invalidate(user.Id);
 
         await _auditService.LogSecurityActionAsync(
             AuditActionType.PasswordChange,
@@ -98,6 +113,13 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
             isSecuritySensitive: true,
             cancellationToken);
 
-        return true;
+        return new ChangePasswordResponse
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            AccessTokenExpiry = accessTokenExpiry,
+            RefreshTokenExpiry = refreshTokenExpiry,
+            SessionExpiryWarningSeconds = SessionSettings.GetExpiryWarningSeconds(_configuration)
+        };
     }
 }

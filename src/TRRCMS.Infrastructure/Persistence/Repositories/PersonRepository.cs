@@ -60,6 +60,16 @@ namespace TRRCMS.Infrastructure.Persistence.Repositories
 
             return (items, total);
         }
+        public async Task<List<Person>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
+        {
+            var idList = ids.Distinct().ToList();
+            if (idList.Count == 0) return new List<Person>();
+
+            return await _context.Persons
+                .Where(p => idList.Contains(p.Id) && !p.IsDeleted)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<List<Person>> GetByHouseholdIdAsync(Guid householdId, CancellationToken cancellationToken = default)
         {
             return await _context.Persons

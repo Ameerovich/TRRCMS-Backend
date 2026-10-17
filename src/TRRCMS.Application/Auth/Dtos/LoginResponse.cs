@@ -81,4 +81,21 @@ public class LoginResponse
     /// Whether user must change password on next login
     /// </summary>
     public bool MustChangePassword { get; set; }
+
+    /// <summary>
+    /// Server clock when this response was produced (UTC). Together with
+    /// <see cref="AccessTokenExpiresInSeconds"/> lets clients schedule the expiry warning
+    /// without trusting their own clock (devices are often skewed).
+    /// </summary>
+    public DateTime ServerTimeUtc { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Seconds until the access token expires, by the server clock
+    /// </summary>
+    public int AccessTokenExpiresInSeconds => Math.Max(0, (int)(AccessTokenExpiry - ServerTimeUtc).TotalSeconds);
+
+    /// <summary>
+    /// Show the "session about to expire — renew?" warning this many seconds before expiry
+    /// </summary>
+    public int SessionExpiryWarningSeconds { get; set; } = SessionSettings.DefaultExpiryWarningSeconds;
 }

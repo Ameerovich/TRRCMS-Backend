@@ -1,5 +1,6 @@
 using MediatR;
 using TRRCMS.Application.Common.Interfaces;
+using TRRCMS.Application.Common.Services;
 using TRRCMS.Application.Surveys.Dtos;
 using TRRCMS.Domain.Enums;
 
@@ -61,7 +62,7 @@ public class GetClaimSummariesQueryHandler
 
         var relationLookup = allRelations
             .GroupBy(r => (r.PersonId, r.PropertyUnitId))
-            .ToDictionary(g => g.Key, g => g.First());
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         // 5. Batch-load Surveys linked to these claims (Survey.ClaimId → Survey)
         var claimIds = claims.Select(c => c.Id).ToList();
@@ -76,9 +77,8 @@ public class GetClaimSummariesQueryHandler
             var propertyUnit = claim.PropertyUnit;
 
             // Find the PersonPropertyRelation that generated this claim
-            relationLookup.TryGetValue(
-                (claim.PrimaryClaimantId, claim.PropertyUnitId),
-                out var sourceRelation);
+            var sourceRelation = ClaimSourceRelationResolver.Resolve(
+                claim, relationLookup.GetValueOrDefault((claim.PrimaryClaimantId, claim.PropertyUnitId)));
 
             // Get linked survey (if any)
             surveyByClaimId.TryGetValue(claim.Id, out var linkedSurvey);
