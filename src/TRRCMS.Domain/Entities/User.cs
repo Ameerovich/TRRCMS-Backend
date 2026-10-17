@@ -446,6 +446,11 @@ public class User : BaseAuditableEntity
                 break;
         }
 
+        // The role is embedded in issued JWTs (role claim, role-based [Authorize]); end existing
+        // sessions so the user logs in again with a token that carries the new role.
+        SecurityStamp = Guid.NewGuid().ToString();
+        ClearRefreshToken();
+
         MarkAsModified(modifiedByUserId);
     }
 

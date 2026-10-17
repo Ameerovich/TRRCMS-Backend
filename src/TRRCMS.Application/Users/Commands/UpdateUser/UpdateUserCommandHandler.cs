@@ -19,13 +19,16 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserD
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
     private readonly IMapper _mapper;
+    private readonly ISessionValidator _sessionValidator;
 
     public UpdateUserCommandHandler(
         IUserRepository userRepository,
         ICurrentUserService currentUserService,
         IAuditService auditService,
-        IMapper mapper)
+        IMapper mapper,
+        ISessionValidator sessionValidator)
     {
+        _sessionValidator = sessionValidator;
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _auditService = auditService ?? throw new ArgumentNullException(nameof(auditService));
@@ -98,9 +101,12 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserD
             user.UpdateRole(request.Role.Value, currentUserId);
             changedFields.Add("Role");
 
-            // Revoke old role permissions
-            var oldPermissions = PermissionSeeder.GetDefaultPermissionsForRole(oldRole);
-            foreach (var permission in oldPermissions)
+            // Swap role defaults: only permissions that differ between the two roles change.
+            // Permissions shared by both roles stay untouched (no revoke + re-grant churn).
+            var oldPermissions = PermissionSeeder.GetDefaultPermissionsForRole(oldRole).ToHashSet();
+            var newPermissions = PermissionSeeder.GetDefaultPermissionsForRole(request.Role.Value).ToHashSet();
+
+            foreach (var permission in oldPermissions.Except(newPermissions))
             {
                 user.RevokePermission(
                     permission,
@@ -109,8 +115,6 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserD
                 );
             }
 
-            // Grant new role permissions
-            var newPermissions = PermissionSeeder.GetDefaultPermissionsForRole(request.Role.Value);
             user.GrantPermissions(
                 newPermissions,
                 grantedBy: currentUserId,
@@ -120,8 +124,12 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, UserD
             changedFields.Add("Permissions");
         }
 
-        // Save changes
+        // Save changes explicitly. AuditService.LogActionAsync swallows its own exceptions, so relying
+        // on its SaveChanges to flush the user update returned 200 with an unsaved role change.
         await _userRepository.UpdateAsync(user, cancellationToken);
+        await _userRepository.SaveChangesAsync(cancellationToken);
+        if (changedFields.Contains("Role"))
+            _sessionValidator.Invalidate(user.Id);
 
         // Store new values for audit
         var newValues = new

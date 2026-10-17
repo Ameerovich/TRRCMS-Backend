@@ -49,7 +49,23 @@ public class UserRepository : IUserRepository
             _context.Users.Attach(user);
         }
 
-        await Task.CompletedTask;
+        // Permissions granted through the aggregate (user.GrantPermission) are new rows whose Guid
+        // key is set in the constructor, so change detection treats them as existing rows and issues
+        // UPDATEs that affect 0 rows (DbUpdateConcurrencyException, whole save rolled back).
+        // Rows not yet in the database are registered as inserts.
+        if (user.Permissions.Count > 0)
+        {
+            var persistedIds = (await _context.Set<UserPermission>()
+                    .IgnoreQueryFilters()
+                    .AsNoTracking()
+                    .Where(p => p.UserId == user.Id)
+                    .Select(p => p.Id)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            foreach (var permission in user.Permissions.Where(p => !persistedIds.Contains(p.Id)))
+                _context.Entry(permission).State = EntityState.Added;
+        }
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

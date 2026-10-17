@@ -86,9 +86,7 @@ public class UserPermission : BaseAuditableEntity
     public void Revoke(Guid revokedBy, string reason)
     {
         IsActive = false;
-        GrantReason = string.IsNullOrWhiteSpace(GrantReason)
-            ? $"[Revoked]: {reason}"
-            : $"{GrantReason}\n[Revoked]: {reason}";
+        AppendReason($"[Revoked]: {reason}");
         MarkAsModified(revokedBy);
     }
 
@@ -98,10 +96,28 @@ public class UserPermission : BaseAuditableEntity
     public void Reactivate(Guid reactivatedBy, string reason)
     {
         IsActive = true;
-        GrantReason = string.IsNullOrWhiteSpace(GrantReason)
-            ? $"[Reactivated]: {reason}"
-            : $"{GrantReason}\n[Reactivated]: {reason}";
+        AppendReason($"[Reactivated]: {reason}");
         MarkAsModified(reactivatedBy);
+    }
+
+    /// <summary>GrantReason column length (see UserPermissionConfiguration)</summary>
+    public const int GrantReasonMaxLength = 500;
+
+    /// <summary>
+    /// Keep a short grant/revoke history in GrantReason. The column is limited, so the oldest
+    /// entries are dropped once it is full (the audit log keeps the complete history).
+    /// </summary>
+    private void AppendReason(string entry)
+    {
+        var history = string.IsNullOrWhiteSpace(GrantReason) ? entry : $"{GrantReason}\n{entry}";
+        while (history.Length > GrantReasonMaxLength)
+        {
+            var firstBreak = history.IndexOf('\n');
+            history = firstBreak < 0
+                ? history[^GrantReasonMaxLength..]
+                : history[(firstBreak + 1)..];
+        }
+        GrantReason = history;
     }
 
     /// <summary>
