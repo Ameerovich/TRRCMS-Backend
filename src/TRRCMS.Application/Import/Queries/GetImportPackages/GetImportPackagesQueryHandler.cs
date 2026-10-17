@@ -35,6 +35,9 @@ public class GetImportPackagesQueryHandler
         GetImportPackagesQuery request,
         CancellationToken cancellationToken)
     {
+        var page = PagedQuery.ClampPageNumber(request.Page);
+        var pageSize = PagedQuery.ClampPageSize(request.PageSize);
+
         var (packages, totalCount) = await _repository.SearchAsync(
             status: request.Status,
             exportedByUserId: request.ExportedByUserId,
@@ -42,15 +45,17 @@ public class GetImportPackagesQueryHandler
             importedAfter: request.ImportedAfter,
             importedBefore: request.ImportedBefore,
             searchTerm: request.SearchTerm,
-            page: PagedQuery.ClampPageNumber(request.Page),
-            pageSize: PagedQuery.ClampPageSize(request.PageSize),
+            page: page,
+            pageSize: pageSize,
             sortBy: request.SortBy,
             sortDescending: request.SortDescending,
             cancellationToken: cancellationToken);
 
         var items = _mapper.Map<List<ImportPackageDto>>(packages);
 
-        var users = await _userRepository.GetAllAsync(cancellationToken);
+        // Only the users this page refers to (not every user entity, with credentials)
+        var users = await _userRepository.GetByIdsAsync(
+            packages.Select(ResolveCollectorId).OfType<Guid>(), cancellationToken);
 
         var userNames = users.ToDictionary(
             user => user.Id,
@@ -86,7 +91,7 @@ public class GetImportPackagesQueryHandler
                         cancellationToken))
                     .ToList();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 _logger.LogWarning(
                     ex,
@@ -99,8 +104,8 @@ public class GetImportPackagesQueryHandler
         {
             Items = items,
             TotalCount = totalCount,
-            Page = request.Page,
-            PageSize = request.PageSize
+            Page = page,
+            PageSize = pageSize
         };
     }
 

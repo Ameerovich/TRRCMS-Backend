@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TRRCMS.Application.Common.Interfaces;
@@ -25,15 +26,18 @@ public class ImportService : IImportService
     private readonly ImportPipelineSettings _settings;
     private readonly ILogger<ImportService> _logger;
     private readonly IVocabularyVersionProvider _vocabularyVersionProvider;
+    private readonly IMemoryCache _cache;
 
     public ImportService(
         IOptions<ImportPipelineSettings> settings,
         ILogger<ImportService> logger,
-        IVocabularyVersionProvider vocabularyVersionProvider)
+        IVocabularyVersionProvider vocabularyVersionProvider,
+        IMemoryCache cache)
     {
         _settings = settings.Value;
         _logger = logger;
         _vocabularyVersionProvider = vocabularyVersionProvider;
+        _cache = cache;
     }
 
     public async Task<string> ComputeChecksumAsync(
@@ -287,6 +291,20 @@ public class ImportService : IImportService
         if (!File.Exists(uhcFilePath))
             return Array.Empty<ImportPackageBuildingDto>();
 
+        // Package files are immutable once uploaded; the list endpoint asks for the same
+        // summaries on every page load, so read each file once (keyed on path + mtime).
+        var cacheKey = $"uhc-building-summaries:{uhcFilePath}:{File.GetLastWriteTimeUtc(uhcFilePath).Ticks}";
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<ImportPackageBuildingDto>? cached) && cached != null)
+            return cached;
+
+        var summaries = await ReadBuildingSummariesFromFileAsync(uhcFilePath, cancellationToken);
+        _cache.Set(cacheKey, summaries, new MemoryCacheEntryOptions { SlidingExpiration = TimeSpan.FromMinutes(30) });
+        return summaries;
+    }
+
+    private static async Task<IReadOnlyList<ImportPackageBuildingDto>> ReadBuildingSummariesFromFileAsync(
+        string uhcFilePath, CancellationToken cancellationToken)
+    {
         var connectionString = new SqliteConnectionStringBuilder
         {
             DataSource = uhcFilePath,
