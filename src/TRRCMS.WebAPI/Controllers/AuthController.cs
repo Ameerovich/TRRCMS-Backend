@@ -42,11 +42,13 @@ public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<AuthController> _logger;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(IMediator mediator, ILogger<AuthController> logger)
+    public AuthController(IMediator mediator, ILogger<AuthController> logger, IConfiguration configuration)
     {
         _mediator = mediator;
         _logger = logger;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -321,6 +323,50 @@ public class AuthController : ControllerBase
         _logger.LogInformation("User {UserId} changed password successfully", currentUserId);
 
         return Ok(new { message = "Password changed successfully. Please login again with your new password." });
+    }
+
+    /// <summary>
+    /// Current session timing
+    /// </summary>
+    /// <remarks>
+    /// Returns when the access token used for this call expires, by the **server** clock.
+    /// Clients use it to (re)schedule the "session about to expire" warning, e.g. after waking
+    /// from sleep. Calling it does not extend the session — use `POST /refresh` to renew.
+    ///
+    /// **Example response:**
+    /// ```json
+    /// {
+    ///   "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "username": "clerk01",
+    ///   "accessTokenExpiry": "2026-10-17T15:30:00Z",
+    ///   "serverTimeUtc": "2026-10-17T15:21:12Z",
+    ///   "accessTokenExpiresInSeconds": 528,
+    ///   "sessionExpiryWarningSeconds": 60,
+    ///   "mustChangePassword": false
+    /// }
+    /// ```
+    /// </remarks>
+    /// <response code="200">Session is valid</response>
+    /// <response code="401">Expired (errorCode TOKEN_EXPIRED) or revoked (SESSION_REVOKED)</response>
+    [HttpGet("session")]
+    [Authorize]
+    [ProducesResponseType(typeof(SessionInfoResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    public ActionResult<SessionInfoResponse> GetSession()
+    {
+        var expClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Exp)?.Value;
+        var expiry = long.TryParse(expClaim, out var exp)
+            ? DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime
+            : DateTime.UtcNow;
+
+        return Ok(new SessionInfoResponse
+        {
+            UserId = Guid.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty,
+            Username = User.Identity?.Name ?? string.Empty,
+            AccessTokenExpiry = expiry,
+            SessionExpiryWarningSeconds = TRRCMS.Application.Auth.SessionSettings.GetExpiryWarningSeconds(_configuration),
+            MustChangePassword = User.FindFirst("must_change_password")?.Value == "true"
+        });
     }
 
     /// <summary>

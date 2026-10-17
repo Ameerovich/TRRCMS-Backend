@@ -12,6 +12,7 @@ namespace TRRCMS.Application.Auth.Commands.ChangePassword;
 public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, bool>
 {
     private readonly IUserRepository _userRepository;
+    private readonly ISessionValidator _sessionValidator;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuditService _auditService;
     private readonly ISecurityPolicyRepository _securityPolicyRepository;
@@ -22,8 +23,10 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         IPasswordHasher passwordHasher,
         IAuditService auditService,
         ISecurityPolicyRepository securityPolicyRepository,
-        ILogger<ChangePasswordCommandHandler> logger)
+        ILogger<ChangePasswordCommandHandler> logger,
+        ISessionValidator sessionValidator)
     {
+        _sessionValidator = sessionValidator;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _auditService = auditService;
@@ -81,6 +84,7 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
 
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
+        _sessionValidator.Invalidate(user.Id);
 
         await _auditService.LogSecurityActionAsync(
             AuditActionType.PasswordChange,

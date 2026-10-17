@@ -99,6 +99,9 @@
   <data name="Message_AuthenticationRequired" xml:space="preserve">
     <value>المصادقة مطلوبة. يرجى تسجيل الدخول مجدداً.</value>
   </data>
+  <data name="Message_SessionRevoked" xml:space="preserve">
+    <value>انتهت الجلسة (تم تغيير كلمة المرور أو تعطيل الحساب). يرجى تسجيل الدخول مجدداً.</value>
+  </data>
   <data name="Message_TokenExpired" xml:space="preserve">
     <value>انتهت صلاحية الجلسة. يرجى تسجيل الدخول مجدداً.</value>
   </data>

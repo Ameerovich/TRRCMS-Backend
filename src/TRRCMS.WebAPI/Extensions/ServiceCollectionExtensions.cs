@@ -189,6 +189,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITokenService, TokenService>();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddMemoryCache();
+        services.AddScoped<ISessionValidator, SessionValidator>();
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
         // ── JWT Bearer authentication ────────────────────────────────
@@ -234,6 +236,30 @@ public static class ServiceCollectionExtensions
                     return Task.CompletedTask;
                 },
 
+                // A signature-valid, unexpired token is still rejected when the session was
+                // revoked: password changed/reset (security stamp rotated) or user deactivated.
+                OnTokenValidated = async ctx =>
+                {
+                    var userIdValue = ctx.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                    if (!Guid.TryParse(userIdValue, out var userId))
+                    {
+                        ctx.HttpContext.Items["JwtAuthFailureReason"] = "Message_TokenInvalid";
+                        ctx.Fail("Token has no user id");
+                        return;
+                    }
+
+                    var validator = ctx.HttpContext.RequestServices.GetRequiredService<ISessionValidator>();
+                    var failureKey = await validator.ValidateAsync(
+                        userId,
+                        ctx.Principal!.FindFirst("security_stamp")?.Value,
+                        ctx.HttpContext.RequestAborted);
+                    if (failureKey != null)
+                    {
+                        ctx.HttpContext.Items["JwtAuthFailureReason"] = failureKey;
+                        ctx.Fail("Session revoked");
+                    }
+                },
+
                 OnChallenge = async ctx =>
                 {
                     ctx.HandleResponse();
@@ -249,13 +275,30 @@ public static class ServiceCollectionExtensions
                         .GetRequiredService<IStringLocalizer<ErrorMessages>>();
                     bool isArabic = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ar";
 
+                    // Machine-readable reason so clients can tell "expired, try refresh"
+                    // from "revoked, go to login" without parsing localized text.
+                    var errorCode = messageKey switch
+                    {
+                        "Message_TokenExpired" => "TOKEN_EXPIRED",
+                        "Message_SessionRevoked" => "SESSION_REVOKED",
+                        "Message_TokenInvalid" => "TOKEN_INVALID",
+                        _ => "AUTHENTICATION_REQUIRED"
+                    };
+
                     var response = new ErrorResponse
                     {
                         Status = StatusCodes.Status401Unauthorized,
                         Title = localizer["Title_Unauthorized"].Value,
                         Message = localizer[messageKey].Value,
-                        Detail = isArabic ? ctx.AuthenticateFailure?.Message : null
+                        Detail = isArabic ? ctx.AuthenticateFailure?.Message : null,
+                        ErrorCode = errorCode
                     };
+
+                    ctx.Response.Headers.WWWAuthenticate = errorCode == "AUTHENTICATION_REQUIRED"
+                        ? "Bearer"
+                        : $"Bearer error=\"invalid_token\", error_description=\"{errorCode}\"";
+                    if (errorCode == "TOKEN_EXPIRED")
+                        ctx.Response.Headers["Token-Expired"] = "true";
 
                     ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     ctx.Response.ContentType = "application/json";

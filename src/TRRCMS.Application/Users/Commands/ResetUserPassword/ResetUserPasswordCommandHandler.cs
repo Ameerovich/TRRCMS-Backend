@@ -16,6 +16,7 @@ namespace TRRCMS.Application.Users.Commands.ResetUserPassword;
 public class ResetUserPasswordCommandHandler : IRequestHandler<ResetUserPasswordCommand, ResetUserPasswordResultDto>
 {
     private readonly IUserRepository _userRepository;
+    private readonly ISessionValidator _sessionValidator;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ISecurityPolicyRepository _securityPolicyRepository;
     private readonly ICurrentUserService _currentUserService;
@@ -26,8 +27,10 @@ public class ResetUserPasswordCommandHandler : IRequestHandler<ResetUserPassword
         IPasswordHasher passwordHasher,
         ISecurityPolicyRepository securityPolicyRepository,
         ICurrentUserService currentUserService,
-        IAuditService auditService)
+        IAuditService auditService,
+        ISessionValidator sessionValidator)
     {
+        _sessionValidator = sessionValidator;
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _securityPolicyRepository = securityPolicyRepository;
@@ -64,6 +67,7 @@ public class ResetUserPasswordCommandHandler : IRequestHandler<ResetUserPassword
 
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _userRepository.SaveChangesAsync(cancellationToken);
+        _sessionValidator.Invalidate(user.Id);
 
         // Never log the password itself
         await _auditService.LogActionAsync(

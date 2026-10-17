@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using TRRCMS.Application.Auth;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using TRRCMS.Application.Auth.Dtos;
@@ -160,6 +161,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
 
             return new LoginResponse
             {
+                SessionExpiryWarningSeconds = SessionSettings.GetExpiryWarningSeconds(_configuration),
                 UserId = user.Id,
                 Username = user.Username,
                 FullNameArabic = user.FullNameArabic,
@@ -225,6 +227,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, LoginResponse>
         // Step 10: Build and return response
         return new LoginResponse
         {
+            SessionExpiryWarningSeconds = SessionSettings.GetExpiryWarningSeconds(_configuration),
             UserId = user.Id,
             Username = user.Username,
             FullNameArabic = user.FullNameArabic,

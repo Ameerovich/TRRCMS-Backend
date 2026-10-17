@@ -95,7 +95,8 @@ if (builder.Environment.IsDevelopment())
         {
             policy.AllowAnyOrigin()
                   .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .AllowAnyHeader()
+                  .WithExposedHeaders("Token-Expired", "WWW-Authenticate");
         });
     });
 }
@@ -112,7 +113,8 @@ else
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
-                  .AllowCredentials();
+                  .AllowCredentials()
+                  .WithExposedHeaders("Token-Expired", "WWW-Authenticate");
         });
     });
 }
