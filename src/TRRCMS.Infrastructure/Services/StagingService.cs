@@ -445,6 +445,9 @@ public class StagingService : IStagingService
                 relationType: ResolveRelationType(
                     GetEnum<RelationType>(reader, "relation_type", "relation_type"), claimHint?.ClaimType),
                 ownershipShare: GetNullableDecimal(reader, "ownership_share"),
+                // "الوصف" on the desktop claim form is the relation's ContractDetails; the tablet
+                // writes it to claims.claim_description (an explicit contract_details column wins)
+                contractDetails: Truncate(GetNullableString(reader, "contract_details") ?? claimHint?.ClaimDescription, 2000),
                 notes: GetNullableString(reader, "notes"),
                 occupancyType: GetNullableEnum<OccupancyType>(reader, "occupancy_type", "occupancy_type"),
                 hasEvidence: GetBool(reader, "has_evidence", false));
@@ -510,6 +513,9 @@ public class StagingService : IStagingService
     }
 
     private sealed record ClaimHint(ClaimType? ClaimType, string? ClaimDescription);
+
+    private static string? Truncate(string? value, int maxLength)
+        => value is { Length: > 0 } && value.Length > maxLength ? value[..maxLength] : value;
 
     private async Task<int> StageClaimsAsync(
         SqliteConnection connection, Guid packageId, CancellationToken ct)
