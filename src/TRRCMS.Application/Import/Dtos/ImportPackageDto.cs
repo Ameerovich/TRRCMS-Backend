@@ -107,4 +107,10 @@ public class ImportPackageBuildingDto
     public string? SubDistrictName { get; set; }
     public string? CommunityName { get; set; }
     public string? NeighborhoodName { get; set; }
+
+    /// <summary>
+    /// Display name of the supervisor who assigned this building to the package's
+    /// field collector (أسند المبنى); null when no matching assignment exists.
+    /// </summary>
+    public string? AssignedByName { get; set; }
 }

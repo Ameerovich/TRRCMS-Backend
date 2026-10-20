@@ -88,7 +88,9 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             household.DisabledCount,
             household.OccupancyNature,
             household.OccupancyStartDate,
-            household.Notes
+            household.Notes,
+            household.IsEmptyProperty,
+            household.EmptyPropertyJustification
         });
 
         // Update basic info if any basic field provided
@@ -127,6 +129,18 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             );
         }
 
+        // Empty-unit flag: a blank justification keeps the stored one (e.g. from a tablet import);
+        // unticking clears it.
+        if (request.IsEmptyProperty.HasValue)
+        {
+            household.SetEmptyProperty(
+                isEmptyProperty: request.IsEmptyProperty.Value,
+                justification: string.IsNullOrWhiteSpace(request.EmptyPropertyJustification)
+                    ? household.EmptyPropertyJustification
+                    : request.EmptyPropertyJustification,
+                modifiedByUserId: currentUserId);
+        }
+
         await _unitOfWork.Households.UpdateAsync(household, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -142,7 +156,9 @@ public class UpdateHouseholdInSurveyCommandHandler : IRequestHandler<UpdateHouse
             household.DisabledCount,
             household.OccupancyNature,
             household.OccupancyStartDate,
-            household.Notes
+            household.Notes,
+            household.IsEmptyProperty,
+            household.EmptyPropertyJustification
         });
 
         var householdIdentifier = $"Household {household.Id.ToString()[..8]}";

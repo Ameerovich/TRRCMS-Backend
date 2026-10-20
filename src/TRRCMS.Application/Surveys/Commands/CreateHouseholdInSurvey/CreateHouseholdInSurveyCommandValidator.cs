@@ -20,7 +20,21 @@ public class CreateHouseholdInSurveyCommandValidator : LocalizedValidator<Create
 
         RuleFor(x => x.HouseholdSize)
             .GreaterThan(0).WithMessage(L("HouseholdSize_AtLeast1"))
-            .LessThanOrEqualTo(50).WithMessage(L("HouseholdSize_Max50"));
+            .LessThanOrEqualTo(50).WithMessage(L("HouseholdSize_Max50"))
+            .When(x => !x.IsEmptyProperty);
+
+        // Empty unit (المقسم فارغ): size and every provided count must be 0.
+        // HouseholdSize is required on create, so unlike update it is always checked.
+        RuleFor(x => x)
+            .Must(x => x.HouseholdSize == 0 &&
+                       AllZero(x.MaleCount, x.FemaleCount, x.AdultCount, x.ChildCount, x.ElderlyCount, x.DisabledCount))
+            .WithMessage(L("EmptyProperty_CountsMustBeZero"))
+            .When(x => x.IsEmptyProperty);
+
+        RuleFor(x => x.EmptyPropertyJustification)
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrEmpty(x.EmptyPropertyJustification))
+            .WithMessage(L("EmptyPropertyJustification_MaxLength2000"));
 
         RuleFor(x => x.MaleCount!.Value)
             .GreaterThanOrEqualTo(0).WithMessage(L("Male_NonNegative"))
@@ -52,36 +66,39 @@ public class CreateHouseholdInSurveyCommandValidator : LocalizedValidator<Create
             .LessThanOrEqualTo(50).WithMessage(L("DisabledCount_Max50"))
             .When(x => x.DisabledCount.HasValue);
 
-        // Cross-field checks
-        // When both gender counts are present they must sum exactly to HouseholdSize;
-        // when only one is present the partial sum must not exceed it.
-        RuleFor(x => x)
-            .Must(x => x.MaleCount!.Value + x.FemaleCount!.Value == x.HouseholdSize)
-            .WithMessage(L("Gender_SumMustEqualHouseholdSize"))
-            .When(x => x.MaleCount.HasValue && x.FemaleCount.HasValue);
+        // Cross-field checks — occupied units only (an empty unit is covered by the rule above)
+        When(x => !x.IsEmptyProperty, () =>
+        {
+            // When both gender counts are present they must sum exactly to HouseholdSize;
+            // when only one is present the partial sum must not exceed it.
+            RuleFor(x => x)
+                .Must(x => x.MaleCount!.Value + x.FemaleCount!.Value == x.HouseholdSize)
+                .WithMessage(L("Gender_SumMustEqualHouseholdSize"))
+                .When(x => x.MaleCount.HasValue && x.FemaleCount.HasValue);
 
-        RuleFor(x => x)
-            .Must(x => (x.MaleCount ?? 0) + (x.FemaleCount ?? 0) <= x.HouseholdSize)
-            .WithMessage(L("Gender_SumExceedsHouseholdSize"))
-            .When(x => (x.MaleCount.HasValue || x.FemaleCount.HasValue) && !(x.MaleCount.HasValue && x.FemaleCount.HasValue));
+            RuleFor(x => x)
+                .Must(x => (x.MaleCount ?? 0) + (x.FemaleCount ?? 0) <= x.HouseholdSize)
+                .WithMessage(L("Gender_SumExceedsHouseholdSize"))
+                .When(x => (x.MaleCount.HasValue || x.FemaleCount.HasValue) && !(x.MaleCount.HasValue && x.FemaleCount.HasValue));
 
-        // When all three age counts are present they must sum exactly to HouseholdSize;
-        // when only some are present the partial sum must not exceed it.
-        RuleFor(x => x)
-            .Must(x => x.AdultCount!.Value + x.ChildCount!.Value + x.ElderlyCount!.Value == x.HouseholdSize)
-            .WithMessage(L("Age_SumMustEqualHouseholdSize"))
-            .When(x => x.AdultCount.HasValue && x.ChildCount.HasValue && x.ElderlyCount.HasValue);
+            // When all three age counts are present they must sum exactly to HouseholdSize;
+            // when only some are present the partial sum must not exceed it.
+            RuleFor(x => x)
+                .Must(x => x.AdultCount!.Value + x.ChildCount!.Value + x.ElderlyCount!.Value == x.HouseholdSize)
+                .WithMessage(L("Age_SumMustEqualHouseholdSize"))
+                .When(x => x.AdultCount.HasValue && x.ChildCount.HasValue && x.ElderlyCount.HasValue);
 
-        RuleFor(x => x)
-            .Must(x => (x.AdultCount ?? 0) + (x.ChildCount ?? 0) + (x.ElderlyCount ?? 0) <= x.HouseholdSize)
-            .WithMessage(L("Age_SumExceedsHouseholdSize"))
-            .When(x => (x.AdultCount.HasValue || x.ChildCount.HasValue || x.ElderlyCount.HasValue) &&
-                       !(x.AdultCount.HasValue && x.ChildCount.HasValue && x.ElderlyCount.HasValue));
+            RuleFor(x => x)
+                .Must(x => (x.AdultCount ?? 0) + (x.ChildCount ?? 0) + (x.ElderlyCount ?? 0) <= x.HouseholdSize)
+                .WithMessage(L("Age_SumExceedsHouseholdSize"))
+                .When(x => (x.AdultCount.HasValue || x.ChildCount.HasValue || x.ElderlyCount.HasValue) &&
+                           !(x.AdultCount.HasValue && x.ChildCount.HasValue && x.ElderlyCount.HasValue));
 
-        RuleFor(x => x)
-            .Must(x => (x.DisabledCount ?? 0) <= x.HouseholdSize)
-            .WithMessage(L("Disabled_ExceedsHouseholdSize"))
-            .When(x => x.DisabledCount.HasValue);
+            RuleFor(x => x)
+                .Must(x => (x.DisabledCount ?? 0) <= x.HouseholdSize)
+                .WithMessage(L("Disabled_ExceedsHouseholdSize"))
+                .When(x => x.DisabledCount.HasValue);
+        });
 
         // Occupancy Nature — validate against vocabulary
         RuleFor(x => x.OccupancyNature)
@@ -99,4 +116,6 @@ public class CreateHouseholdInSurveyCommandValidator : LocalizedValidator<Create
             .When(x => !string.IsNullOrEmpty(x.Notes))
             .WithMessage(L("Notes_MaxLength2000"));
     }
+
+    private static bool AllZero(params int?[] counts) => counts.All(c => c is null or 0);
 }

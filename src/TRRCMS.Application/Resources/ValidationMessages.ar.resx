@@ -219,6 +219,8 @@
   <!-- ── Household ───────────────────────────────────────────────── -->
   <data name="HouseholdSize_AtLeast1"><value>عدد أفراد الأسرة يجب أن يكون 1 على الأقل</value></data>
   <data name="HouseholdSize_Max50"><value>عدد أفراد الأسرة يجب ألا يتجاوز 50</value></data>
+  <data name="EmptyProperty_CountsMustBeZero"><value>عند تحديد المقسم كفارغ يجب أن تكون جميع الأعداد صفراً</value></data>
+  <data name="EmptyPropertyJustification_MaxLength2000"><value>مبرر كون المقسم فارغاً يجب ألا يتجاوز 2000 حرف</value></data>
   <data name="Male_NonNegative"><value>عدد الذكور لا يمكن أن يكون سالباً</value></data>
   <data name="Male_Max50"><value>عدد الذكور يجب ألا يتجاوز 50</value></data>
   <data name="Female_NonNegative"><value>عدد الإناث لا يمكن أن يكون سالباً</value></data>

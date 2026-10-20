@@ -22,6 +22,12 @@ public class UpdateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     public int? OccupancyNature { get; set; }
     public DateTime? OccupancyStartDate { get; set; }
 
+    /// <summary>The unit is empty (المقسم فارغ); null = keep current. When true, every provided count must be 0</summary>
+    public bool? IsEmptyProperty { get; set; }
+
+    /// <summary>Why the unit is empty; null/blank keeps the stored justification while the unit stays empty</summary>
+    public string? EmptyPropertyJustification { get; set; }
+
     public int? MaleCount { get; set; }
     public int? FemaleCount { get; set; }
     public int? AdultCount { get; set; }

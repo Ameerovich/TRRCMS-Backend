@@ -402,4 +402,33 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
 
         return results.Select(r => (r.UserId, r.Assigned, r.Completed)).ToList();
     }
+
+    public async Task<List<(string BuildingCode, Guid FieldCollectorId, Guid? AssignedByUserId)>> GetLatestAssignersAsync(
+        IReadOnlyCollection<string> buildingCodes,
+        IReadOnlyCollection<Guid> fieldCollectorIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (buildingCodes.Count == 0 || fieldCollectorIds.Count == 0)
+            return new List<(string, Guid, Guid?)>();
+
+        // No IsActive filter: the assignment is often closed by the time the package is listed
+        var rows = await _context.BuildingAssignments
+            .AsNoTracking()
+            .Where(ba => buildingCodes.Contains(ba.Building.BuildingId) &&
+                         fieldCollectorIds.Contains(ba.FieldCollectorId))
+            .Select(ba => new
+            {
+                BuildingCode = ba.Building.BuildingId,
+                ba.FieldCollectorId,
+                ba.AssignedByUserId,
+                ba.AssignedDate
+            })
+            .ToListAsync(cancellationToken);
+
+        return rows
+            .GroupBy(r => (r.BuildingCode, r.FieldCollectorId))
+            .Select(g => g.MaxBy(r => r.AssignedDate)!)
+            .Select(r => (r.BuildingCode, r.FieldCollectorId, r.AssignedByUserId))
+            .ToList();
+    }
 }

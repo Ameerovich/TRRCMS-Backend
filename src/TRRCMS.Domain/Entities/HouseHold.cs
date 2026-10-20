@@ -12,7 +12,7 @@ public class Household : BaseAuditableEntity
     /// <summary>Foreign key to property unit.</summary>
     public Guid PropertyUnitId { get; private set; }
 
-    /// <summary>Total household members (عدد الأفراد) — required, 1–50.</summary>
+    /// <summary>Total household members (عدد الأفراد) — 1–50, or 0 when <see cref="IsEmptyProperty"/>.</summary>
     public int HouseholdSize { get; private set; }
 
     /// <summary>Total males across all ages (عدد الذكور).</summary>
@@ -43,8 +43,8 @@ public class Household : BaseAuditableEntity
     public string? Notes { get; private set; }
 
     /// <summary>
-    /// عقار فارغ — the field collector found the property unit empty during the survey.
-    /// Set only by tablet (.uhc) imports; read-only on the desktop.
+    /// عقار فارغ — the property unit was found empty (no occupants); all counts are 0.
+    /// Set by tablet (.uhc) imports and by the desktop survey household endpoints.
     /// </summary>
     public bool IsEmptyProperty { get; private set; }
 
@@ -148,6 +148,18 @@ public class Household : BaseAuditableEntity
     public void UpdateNotes(string? notes, Guid modifiedByUserId)
     {
         Notes = notes;
+        MarkAsModified(modifiedByUserId);
+    }
+
+    /// <summary>
+    /// Mark the unit as empty (or occupied). Clearing the flag also clears the justification.
+    /// </summary>
+    public void SetEmptyProperty(bool isEmptyProperty, string? justification, Guid modifiedByUserId)
+    {
+        IsEmptyProperty = isEmptyProperty;
+        EmptyPropertyJustification = isEmptyProperty && !string.IsNullOrWhiteSpace(justification)
+            ? justification.Trim()
+            : null;
         MarkAsModified(modifiedByUserId);
     }
 }

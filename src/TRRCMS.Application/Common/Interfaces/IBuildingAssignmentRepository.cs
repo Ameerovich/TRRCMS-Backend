@@ -171,6 +171,17 @@ public interface IBuildingAssignmentRepository
     Task<List<(Guid UserId, int Assigned, int Completed)>> GetCountsByFieldCollectorAsync(
         DateTime? from = null, DateTime? to = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// For each (17-digit building code, field collector) pair among the given codes and
+    /// collectors, the supervisor who made the latest assignment (by AssignedDate).
+    /// Includes completed and inactive assignments. Single query — used to label the
+    /// import packages list.
+    /// </summary>
+    Task<List<(string BuildingCode, Guid FieldCollectorId, Guid? AssignedByUserId)>> GetLatestAssignersAsync(
+        IReadOnlyCollection<string> buildingCodes,
+        IReadOnlyCollection<Guid> fieldCollectorIds,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>

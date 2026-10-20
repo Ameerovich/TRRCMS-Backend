@@ -183,12 +183,9 @@ public class StagingService : IStagingService
             var neighCode  = GetString(reader, "neighborhood_code");
             var bldNumber  = GetString(reader, "building_number");
 
-            // Mobile app may store the entity UUID in building_id instead of the
-            // 17-digit composite code. Validate and fall back to computing from parts.
-            var rawBuildingId = GetNullableString(reader, "building_id");
-            var buildingId = IsValid17DigitCode(rawBuildingId)
-                ? rawBuildingId
-                : ComputeBuildingId(govCode, distCode, subCode, commCode, neighCode, bldNumber);
+            var buildingId = ResolveBuildingCode(
+                GetNullableString(reader, "building_id"),
+                govCode, distCode, subCode, commCode, neighCode, bldNumber);
 
             var entity = StagingBuilding.Create(
                 importPackageId: packageId,
@@ -989,6 +986,17 @@ public class StagingService : IStagingService
         if (value is DBNull || value == null) return null;
         return Guid.TryParse(value.ToString(), out var result) ? result : null;
     }
+
+    /// <summary>
+    /// The 17-digit building code of a .uhc building row. The mobile app may store the
+    /// entity UUID in building_id instead of the composite code, so validate it and fall
+    /// back to computing the code from its parts.
+    /// </summary>
+    internal static string? ResolveBuildingCode(
+        string? rawBuildingId, string gov, string dist, string sub, string comm, string neigh, string num) =>
+        IsValid17DigitCode(rawBuildingId)
+            ? rawBuildingId
+            : ComputeBuildingId(gov, dist, sub, comm, neigh, num);
 
     private static bool IsValid17DigitCode(string? value) =>
         value != null && value.Length == 17 && value.All(char.IsDigit);

@@ -217,6 +217,8 @@
   <!-- ── Household ───────────────────────────────────────────────── -->
   <data name="HouseholdSize_AtLeast1"><value>Household size must be at least 1</value></data>
   <data name="HouseholdSize_Max50"><value>Household size must not exceed 50</value></data>
+  <data name="EmptyProperty_CountsMustBeZero"><value>When the property unit is marked empty, household size and all counts must be 0</value></data>
+  <data name="EmptyPropertyJustification_MaxLength2000"><value>Empty property justification cannot exceed 2000 characters</value></data>
   <data name="Male_NonNegative"><value>Male count cannot be negative</value></data>
   <data name="Male_Max50"><value>Male count must not exceed 50</value></data>
   <data name="Female_NonNegative"><value>Female count cannot be negative</value></data>
