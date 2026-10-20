@@ -14,8 +14,14 @@ public class CreateHouseholdInSurveyCommand : IRequest<HouseholdDto>
     /// <summary>Property unit ID (if not using survey's linked property unit)</summary>
     public Guid? PropertyUnitId { get; set; }
 
-    /// <summary>Total household size (عدد الأفراد) — required, 1–50</summary>
+    /// <summary>Total household size (عدد الأفراد) — required, 1–50 (0 when IsEmptyProperty)</summary>
     public int HouseholdSize { get; set; }
+
+    /// <summary>The unit is empty (المقسم فارغ) — HouseholdSize and every count must be 0</summary>
+    public bool IsEmptyProperty { get; set; }
+
+    /// <summary>Why the unit is empty — optional, max 2000</summary>
+    public string? EmptyPropertyJustification { get; set; }
 
     /// <summary>Notes/observations (ملاحظات)</summary>
     public string? Notes { get; set; }

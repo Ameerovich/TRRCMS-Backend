@@ -284,17 +284,18 @@ public class ImportService : IImportService
 
         return manifest;
     }
-    public async Task<IReadOnlyList<ImportPackageBuildingDto>> ReadBuildingSummariesAsync(
+    public async Task<IReadOnlyList<UhcBuildingSummary>> ReadBuildingSummariesAsync(
     string uhcFilePath,
     CancellationToken cancellationToken = default)
     {
         if (!File.Exists(uhcFilePath))
-            return Array.Empty<ImportPackageBuildingDto>();
+            return Array.Empty<UhcBuildingSummary>();
 
         // Package files are immutable once uploaded; the list endpoint asks for the same
         // summaries on every page load, so read each file once (keyed on path + mtime).
-        var cacheKey = $"uhc-building-summaries:{uhcFilePath}:{File.GetLastWriteTimeUtc(uhcFilePath).Ticks}";
-        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<ImportPackageBuildingDto>? cached) && cached != null)
+        // Only raw file data is cached — names and assignments are resolved per request.
+        var cacheKey = $"uhc-building-summaries-v2:{uhcFilePath}:{File.GetLastWriteTimeUtc(uhcFilePath).Ticks}";
+        if (_cache.TryGetValue(cacheKey, out IReadOnlyList<UhcBuildingSummary>? cached) && cached != null)
             return cached;
 
         var summaries = await ReadBuildingSummariesFromFileAsync(uhcFilePath, cancellationToken);
@@ -302,7 +303,7 @@ public class ImportService : IImportService
         return summaries;
     }
 
-    private static async Task<IReadOnlyList<ImportPackageBuildingDto>> ReadBuildingSummariesFromFileAsync(
+    private static async Task<IReadOnlyList<UhcBuildingSummary>> ReadBuildingSummariesFromFileAsync(
         string uhcFilePath, CancellationToken cancellationToken)
     {
         var connectionString = new SqliteConnectionStringBuilder
@@ -323,7 +324,7 @@ public class ImportService : IImportService
             Convert.ToInt32(await tableCmd.ExecuteScalarAsync(cancellationToken));
 
         if (tableExists == 0)
-            return Array.Empty<ImportPackageBuildingDto>();
+            return Array.Empty<UhcBuildingSummary>();
 
         var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -341,7 +342,7 @@ public class ImportService : IImportService
         }
 
         if (!columns.Contains("building_number"))
-            return Array.Empty<ImportPackageBuildingDto>();
+            return Array.Empty<UhcBuildingSummary>();
 
         string ColumnOrNull(string columnName) =>
             columns.Contains(columnName)
@@ -357,38 +358,59 @@ public class ImportService : IImportService
             {ColumnOrNull("district_name")},
             {ColumnOrNull("sub_district_name")},
             {ColumnOrNull("community_name")},
-            {ColumnOrNull("neighborhood_name")}
+            {ColumnOrNull("neighborhood_name")},
+            {ColumnOrNull("building_id")},
+            {ColumnOrNull("governorate_code")},
+            {ColumnOrNull("district_code")},
+            {ColumnOrNull("sub_district_code")},
+            {ColumnOrNull("community_code")},
+            {ColumnOrNull("neighborhood_code")}
         FROM buildings
         ORDER BY rowid
         """;
 
-        var result = new List<ImportPackageBuildingDto>();
+        var result = new List<UhcBuildingSummary>();
 
         using var reader =
             await cmd.ExecuteReaderAsync(cancellationToken);
 
+        // Columns may be declared TEXT or INTEGER depending on the app version
+        string? Text(int ordinal) =>
+            reader.IsDBNull(ordinal) ? null : Convert.ToString(reader.GetValue(ordinal));
+
         while (await reader.ReadAsync(cancellationToken))
         {
-            var buildingNumber =
-                reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+            var buildingNumber = Text(0) ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(buildingNumber))
                 continue;
 
-            result.Add(new ImportPackageBuildingDto
-            {
-                BuildingNumber = buildingNumber,
-                GovernorateName =
-                    reader.IsDBNull(1) ? null : reader.GetString(1),
-                DistrictName =
-                    reader.IsDBNull(2) ? null : reader.GetString(2),
-                SubDistrictName =
-                    reader.IsDBNull(3) ? null : reader.GetString(3),
-                CommunityName =
-                    reader.IsDBNull(4) ? null : reader.GetString(4),
-                NeighborhoodName =
-                    reader.IsDBNull(5) ? null : reader.GetString(5)
-            });
+            var governorateCode = Text(7);
+            var districtCode = Text(8);
+            var subDistrictCode = Text(9);
+            var communityCode = Text(10);
+            var neighborhoodCode = Text(11);
+
+            result.Add(new UhcBuildingSummary(
+                BuildingNumber: buildingNumber,
+                BuildingCode: StagingService.ResolveBuildingCode(
+                    Text(6),
+                    governorateCode ?? string.Empty,
+                    districtCode ?? string.Empty,
+                    subDistrictCode ?? string.Empty,
+                    communityCode ?? string.Empty,
+                    neighborhoodCode ?? string.Empty,
+                    buildingNumber),
+                GovernorateCode: governorateCode,
+                DistrictCode: districtCode,
+                SubDistrictCode: subDistrictCode,
+                CommunityCode: communityCode,
+                NeighborhoodCode: neighborhoodCode,
+                GovernorateName: Text(1),
+                DistrictName: Text(2),
+                SubDistrictName: Text(3),
+                CommunityName: Text(4),
+                NeighborhoodName: Text(5)));
         }
 
         return result;

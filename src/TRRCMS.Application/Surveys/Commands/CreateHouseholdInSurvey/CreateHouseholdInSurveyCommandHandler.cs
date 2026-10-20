@@ -102,7 +102,9 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
             occupancyNature: request.OccupancyNature.HasValue ? (OccupancyNature)request.OccupancyNature.Value : (OccupancyNature?)null,
             occupancyStartDate: request.OccupancyStartDate,
             notes: request.Notes,
-            createdByUserId: currentUserId
+            createdByUserId: currentUserId,
+            isEmptyProperty: request.IsEmptyProperty,
+            emptyPropertyJustification: request.EmptyPropertyJustification
         );
 
         // Save household
@@ -124,6 +126,7 @@ public class CreateHouseholdInSurveyCommandHandler : IRequestHandler<CreateHouse
                 household.HouseholdSize,
                 household.MaleCount,
                 household.FemaleCount,
+                household.IsEmptyProperty,
                 request.SurveyId,
                 SurveyReferenceCode = survey.ReferenceCode
             }),

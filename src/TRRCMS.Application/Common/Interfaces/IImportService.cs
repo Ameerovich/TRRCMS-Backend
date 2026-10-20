@@ -84,9 +84,10 @@ public interface IImportService
     /// <param name="uhcFilePath">File system path to the .uhc package.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>
-    /// Building numbers and location metadata found in the package.
+    /// Building numbers, 17-digit building codes, administrative codes and any
+    /// location names found in the package (names are often NULL in tablet packages).
     /// </returns>
-    Task<IReadOnlyList<ImportPackageBuildingDto>> ReadBuildingSummariesAsync(
+    Task<IReadOnlyList<UhcBuildingSummary>> ReadBuildingSummariesAsync(
     string uhcFilePath,
     CancellationToken cancellationToken = default);
 
