@@ -32,6 +32,8 @@ public class GetAllCasesQueryHandler : IRequestHandler<GetAllCasesQuery, ListRes
             Id = c.Id,
             CaseNumber = c.CaseNumber,
             PropertyUnitId = c.PropertyUnitId,
+            BuildingCode = c.PropertyUnit?.Building?.BuildingId,
+            UnitIdentifier = c.PropertyUnit?.UnitIdentifier,
             Status = (int)c.Status,
             StatusName = c.Status.ToString(),
             OpenedDate = c.OpenedDate,

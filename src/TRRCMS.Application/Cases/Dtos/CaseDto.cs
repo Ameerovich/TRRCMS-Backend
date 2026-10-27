@@ -48,6 +48,17 @@ public class CaseSummaryDto
     public Guid Id { get; set; }
     public string CaseNumber { get; set; } = string.Empty;
     public Guid PropertyUnitId { get; set; }
+
+    /// <summary>
+    /// 17-digit building code (Building.BuildingId) of the case's property unit.
+    /// </summary>
+    public string? BuildingCode { get; set; }
+
+    /// <summary>
+    /// Unit identifier within the building (e.g. "Apt 1").
+    /// </summary>
+    public string? UnitIdentifier { get; set; }
+
     public int Status { get; set; }
     public string StatusName { get; set; } = string.Empty;
     public DateTime OpenedDate { get; set; }
