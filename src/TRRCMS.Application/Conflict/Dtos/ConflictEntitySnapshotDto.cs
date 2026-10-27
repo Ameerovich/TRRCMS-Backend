@@ -35,6 +35,12 @@ public class ConflictEntitySnapshotDto
     public PersonDto? Person { get; set; }
 
     /// <summary>
+    /// Unit + building the person is linked to. Populated only when <see cref="EntityType"/>
+    /// is "Person" and a unit could be resolved; null otherwise.
+    /// </summary>
+    public PersonLocationDto? PersonLocation { get; set; }
+
+    /// <summary>
     /// Populated when <see cref="EntityType"/> is "PropertyUnit".
     /// </summary>
     public PropertyUnitDto? PropertyUnit { get; set; }
