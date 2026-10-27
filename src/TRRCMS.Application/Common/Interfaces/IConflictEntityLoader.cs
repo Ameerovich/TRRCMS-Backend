@@ -32,4 +32,14 @@ public interface IConflictEntityLoader
     Task<ConflictEntitySnapshotDto> LoadSecondEntityAsync(
         ConflictResolution conflict,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Fill <c>PersonLocation</c> on both person snapshots: the unit both persons are
+    /// linked to when there is one, otherwise each person's own unit by priority
+    /// (household, then property relations). No-op for non-person snapshots.
+    /// </summary>
+    Task PopulatePersonLocationsAsync(
+        ConflictEntitySnapshotDto first,
+        ConflictEntitySnapshotDto second,
+        CancellationToken cancellationToken);
 }
