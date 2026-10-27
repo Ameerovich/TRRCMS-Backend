@@ -51,6 +51,7 @@ public class CaseRepository : ICaseRepository
             .Include(c => c.Surveys)
             .Include(c => c.Claims)
             .Include(c => c.PropertyUnit)
+                .ThenInclude(pu => pu.Building)
             .Where(c => !c.IsDeleted);
 
         if (status.HasValue)
@@ -59,8 +60,7 @@ public class CaseRepository : ICaseRepository
         if (!string.IsNullOrWhiteSpace(buildingCode))
         {
             var normalizedCode = buildingCode.Replace("-", "");
-            query = query.Include(c => c.PropertyUnit.Building)
-                .Where(c => c.PropertyUnit.Building.BuildingId == normalizedCode);
+            query = query.Where(c => c.PropertyUnit.Building.BuildingId == normalizedCode);
         }
         else if (buildingId.HasValue)
         {
