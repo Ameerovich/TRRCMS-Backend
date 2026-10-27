@@ -86,6 +86,8 @@ public class GetConflictDetailsQueryHandler
 
         dto.FirstEntity = await _entityLoader.LoadFirstEntityAsync(conflict, cancellationToken);
         dto.SecondEntity = await _entityLoader.LoadSecondEntityAsync(conflict, cancellationToken);
+        await _entityLoader.PopulatePersonLocationsAsync(
+            dto.FirstEntity, dto.SecondEntity, cancellationToken);
 
         return dto;
     }

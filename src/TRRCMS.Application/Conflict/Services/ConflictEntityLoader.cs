@@ -25,9 +25,6 @@ public class ConflictEntityLoader : IConflictEntityLoader
 
     private const string WithinBatchSuffix = "_WithinBatch";
 
-    private const string LocationSourceHousehold = "Household";
-    private const string LocationSourceRelation = "Relation";
-
     private readonly IUnitOfWork _unitOfWork;
     private readonly IStagingRepository<StagingPerson> _stagingPersons;
     private readonly IStagingRepository<StagingPropertyUnit> _stagingPropertyUnits;
@@ -126,9 +123,6 @@ public class ConflictEntityLoader : IConflictEntityLoader
                 {
                     snapshot.Person = _mapper.Map<PersonDto>(row);
                     PopulateStagingMetadata(snapshot, row);
-                    snapshot.PersonLocation = await TryLoadLocationAsync(
-                        () => LoadStagingPersonLocationAsync(importPackageId.Value, row, ct),
-                        originalEntityId);
                 }
                 break;
             }
@@ -181,12 +175,7 @@ public class ConflictEntityLoader : IConflictEntityLoader
             {
                 var row = await _unitOfWork.Persons.GetByIdAsync(entityId, ct);
                 if (row is not null)
-                {
                     snapshot.Person = _mapper.Map<PersonDto>(row);
-                    snapshot.PersonLocation = await TryLoadLocationAsync(
-                        () => LoadProductionPersonLocationAsync(row, ct),
-                        entityId);
-                }
                 break;
             }
             case EntityPropertyUnit:
@@ -213,130 +202,164 @@ public class ConflictEntityLoader : IConflictEntityLoader
         return snapshot;
     }
 
+    public async Task PopulatePersonLocationsAsync(
+        ConflictEntitySnapshotDto first,
+        ConflictEntitySnapshotDto second,
+        CancellationToken cancellationToken)
+    {
+        var firstUnits = await TryLoadPersonUnitsAsync(first, cancellationToken);
+        var secondUnits = await TryLoadPersonUnitsAsync(second, cancellationToken);
+
+        // A unit both persons are linked to is the strongest evidence for the
+        // reviewer, so it wins over each side's own priority order.
+        foreach (var unit in firstUnits)
+        {
+            var match = secondUnits.FirstOrDefault(other => IsSameUnit(unit, other));
+            if (match is not null)
+            {
+                first.PersonLocation = unit;
+                second.PersonLocation = match;
+                return;
+            }
+        }
+
+        first.PersonLocation = firstUnits.FirstOrDefault();
+        second.PersonLocation = secondUnits.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Staging and production units have different ids, so the same physical unit
+    /// is matched on building code + unit identifier.
+    /// </summary>
+    private static bool IsSameUnit(PersonLocationDto a, PersonLocationDto b)
+        => !string.IsNullOrWhiteSpace(a.BuildingCode)
+           && !string.IsNullOrWhiteSpace(a.UnitIdentifier)
+           && string.Equals(a.BuildingCode.Trim(), b.BuildingCode?.Trim(), StringComparison.OrdinalIgnoreCase)
+           && string.Equals(a.UnitIdentifier.Trim(), b.UnitIdentifier?.Trim(), StringComparison.OrdinalIgnoreCase);
+
     /// <summary>
     /// Location is supplementary: a failure to resolve it must never fail the conflict
-    /// details response, so errors are logged and the location is left null.
+    /// details response, so errors are logged and the person gets no units.
     /// </summary>
-    private async Task<PersonLocationDto?> TryLoadLocationAsync(
-        Func<Task<PersonLocationDto?>> load,
-        Guid personId)
+    private async Task<List<PersonLocationDto>> TryLoadPersonUnitsAsync(
+        ConflictEntitySnapshotDto snapshot,
+        CancellationToken ct)
     {
+        var person = snapshot.Person;
+        if (person is null)
+            return new List<PersonLocationDto>();
+
         try
         {
-            return await load();
+            return snapshot.Source == SourceStaging
+                ? await LoadStagingPersonUnitsAsync(snapshot.ImportPackageId, person, ct)
+                : await LoadProductionPersonUnitsAsync(person, ct);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Could not resolve unit/building for person {PersonId}; location left empty.",
-                personId);
-            return null;
+                "Could not resolve units for person {PersonId}; location left empty.",
+                person.Id);
+            return new List<PersonLocationDto>();
         }
     }
 
     /// <summary>
-    /// Household unit first; falls back to the person's relations in the same package
-    /// (mirrors CommitService, which infers household membership from relations when the
-    /// mobile package does not set persons.household_id).
+    /// Units of a staging person in priority order: household unit first, then the
+    /// person's relations in the same package (mirrors CommitService, which infers
+    /// household membership from relations when the mobile package does not set
+    /// persons.household_id). For staging DTOs, Id/HouseholdId are the original ids.
     /// </summary>
-    private async Task<PersonLocationDto?> LoadStagingPersonLocationAsync(
-        Guid importPackageId,
-        StagingPerson person,
+    private async Task<List<PersonLocationDto>> LoadStagingPersonUnitsAsync(
+        Guid? importPackageId,
+        PersonDto person,
         CancellationToken ct)
     {
-        var relatedUnitIds = (await _stagingRelations.GetByPackageIdAsync(importPackageId, ct))
-            .Where(r => r.OriginalPersonId == person.OriginalEntityId)
-            .Select(r => r.OriginalPropertyUnitId)
-            .Distinct()
-            .ToList();
+        var locations = new List<PersonLocationDto>();
+        if (importPackageId is not Guid packageId)
+            return locations;
 
-        Guid? unitId = null;
-        var source = LocationSourceHousehold;
-        if (person.OriginalHouseholdId is Guid householdId)
+        var unitIds = new List<Guid>();
+        if (person.HouseholdId is Guid householdId)
         {
             var household = await _stagingHouseholds.GetByPackageAndOriginalIdAsync(
-                importPackageId, householdId, ct);
-            unitId = household?.OriginalPropertyUnitId;
+                packageId, householdId, ct);
+            if (household is not null)
+                unitIds.Add(household.OriginalPropertyUnitId);
         }
-        if (unitId is null && relatedUnitIds.Count > 0)
+        unitIds.AddRange((await _stagingRelations.GetByPackageIdAsync(packageId, ct))
+            .Where(r => r.OriginalPersonId == person.Id)
+            .Select(r => r.OriginalPropertyUnitId));
+
+        foreach (var unitId in unitIds.Distinct())
         {
-            unitId = relatedUnitIds[0];
-            source = LocationSourceRelation;
+            var unit = await _stagingPropertyUnits.GetByPackageAndOriginalIdAsync(
+                packageId, unitId, ct);
+            if (unit is null)
+                continue;
+
+            var building = await _stagingBuildings.GetByPackageAndOriginalIdAsync(
+                packageId, unit.OriginalBuildingId, ct);
+
+            locations.Add(new PersonLocationDto
+            {
+                BuildingCode = building is null
+                    ? null
+                    : building.BuildingId ?? $"{building.GovernorateCode}{building.DistrictCode}" +
+                      $"{building.SubDistrictCode}{building.CommunityCode}" +
+                      $"{building.NeighborhoodCode}{building.BuildingNumber}",
+                CommunityName = NameOrCode(building?.CommunityName, building?.CommunityCode),
+                NeighborhoodName = NameOrCode(building?.NeighborhoodName, building?.NeighborhoodCode),
+                UnitIdentifier = unit.UnitIdentifier,
+                UnitType = (int)unit.UnitType,
+                FloorNumber = unit.FloorNumber
+            });
         }
-        if (unitId is null)
-            return null;
 
-        var unit = await _stagingPropertyUnits.GetByPackageAndOriginalIdAsync(
-            importPackageId, unitId.Value, ct);
-        if (unit is null)
-            return null;
-
-        var building = await _stagingBuildings.GetByPackageAndOriginalIdAsync(
-            importPackageId, unit.OriginalBuildingId, ct);
-
-        return new PersonLocationDto
-        {
-            BuildingCode = building is null
-                ? null
-                : building.BuildingId ?? $"{building.GovernorateCode}{building.DistrictCode}" +
-                  $"{building.SubDistrictCode}{building.CommunityCode}" +
-                  $"{building.NeighborhoodCode}{building.BuildingNumber}",
-            CommunityName = NameOrCode(building?.CommunityName, building?.CommunityCode),
-            NeighborhoodName = NameOrCode(building?.NeighborhoodName, building?.NeighborhoodCode),
-            UnitIdentifier = unit.UnitIdentifier,
-            UnitType = (int)unit.UnitType,
-            FloorNumber = unit.FloorNumber,
-            Source = source,
-            OtherUnitsCount = relatedUnitIds.Count(id => id != unitId.Value)
-        };
+        return locations;
     }
 
     /// <summary>
-    /// Household unit first; falls back to the person's most recent active relation.
+    /// Units of a production person in priority order: household unit first, then
+    /// active relations, most recent first.
     /// </summary>
-    private async Task<PersonLocationDto?> LoadProductionPersonLocationAsync(
-        Person person,
+    private async Task<List<PersonLocationDto>> LoadProductionPersonUnitsAsync(
+        PersonDto person,
         CancellationToken ct)
     {
-        var relatedUnitIds = (await _unitOfWork.PersonPropertyRelations
-                .GetActiveRelationsByPersonIdAsync(person.Id, ct))
-            .OrderByDescending(r => r.CreatedAtUtc)
-            .Select(r => r.PropertyUnitId)
-            .Distinct()
-            .ToList();
-
-        Guid? unitId = null;
-        var source = LocationSourceHousehold;
+        var unitIds = new List<Guid>();
         if (person.HouseholdId is Guid householdId)
         {
             var household = await _unitOfWork.Households.GetByIdAsync(householdId, ct);
-            unitId = household?.PropertyUnitId;
+            if (household is not null)
+                unitIds.Add(household.PropertyUnitId);
         }
-        if (unitId is null && relatedUnitIds.Count > 0)
+        unitIds.AddRange((await _unitOfWork.PersonPropertyRelations
+                .GetActiveRelationsByPersonIdAsync(person.Id, ct))
+            .OrderByDescending(r => r.CreatedAtUtc)
+            .Select(r => r.PropertyUnitId));
+
+        var locations = new List<PersonLocationDto>();
+        foreach (var unitId in unitIds.Distinct())
         {
-            unitId = relatedUnitIds[0];
-            source = LocationSourceRelation;
+            var unit = await _unitOfWork.PropertyUnits.GetByIdAsync(unitId, ct);
+            if (unit is null)
+                continue;
+
+            var building = await _unitOfWork.Buildings.GetByIdAsync(unit.BuildingId, ct);
+
+            locations.Add(new PersonLocationDto
+            {
+                BuildingCode = building?.BuildingId,
+                CommunityName = NameOrCode(building?.CommunityName, building?.CommunityCode),
+                NeighborhoodName = NameOrCode(building?.NeighborhoodName, building?.NeighborhoodCode),
+                UnitIdentifier = unit.UnitIdentifier,
+                UnitType = (int)unit.UnitType,
+                FloorNumber = unit.FloorNumber
+            });
         }
-        if (unitId is null)
-            return null;
 
-        var unit = await _unitOfWork.PropertyUnits.GetByIdAsync(unitId.Value, ct);
-        if (unit is null)
-            return null;
-
-        var building = await _unitOfWork.Buildings.GetByIdAsync(unit.BuildingId, ct);
-
-        return new PersonLocationDto
-        {
-            BuildingCode = building?.BuildingId,
-            CommunityName = NameOrCode(building?.CommunityName, building?.CommunityCode),
-            NeighborhoodName = NameOrCode(building?.NeighborhoodName, building?.NeighborhoodCode),
-            UnitIdentifier = unit.UnitIdentifier,
-            UnitType = (int)unit.UnitType,
-            FloorNumber = unit.FloorNumber,
-            Source = source,
-            OtherUnitsCount = relatedUnitIds.Count(id => id != unitId.Value)
-        };
+        return locations;
     }
 
     private static string? NameOrCode(string? name, string? code)

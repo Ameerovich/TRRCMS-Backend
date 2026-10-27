@@ -5,9 +5,10 @@ namespace TRRCMS.Application.Conflicts.Dtos;
 /// and its building. Lets the reviewer see whether the two records belong to the same place
 /// before deciding to merge or keep separate.
 ///
-/// The unit is resolved from the person's household first; when the person has no household
-/// (absent owner, heir, or a mobile package that did not set <c>persons.household_id</c>),
-/// it falls back to the person's property relations.
+/// When both persons are linked to the same unit (building code + unit identifier), that
+/// unit is shown on both sides. Otherwise each side shows its own unit: the household unit
+/// first, falling back to the person's property relations (absent owner, heir, or a mobile
+/// package that did not set <c>persons.household_id</c>).
 /// </summary>
 public class PersonLocationDto
 {
@@ -34,14 +35,4 @@ public class PersonLocationDto
     public int? UnitType { get; set; }
 
     public int? FloorNumber { get; set; }
-
-    /// <summary>
-    /// "Household" or "Relation" — how the unit was resolved.
-    /// </summary>
-    public string Source { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Number of other distinct units the person is linked to (via relations) besides this one.
-    /// </summary>
-    public int OtherUnitsCount { get; set; }
 }
