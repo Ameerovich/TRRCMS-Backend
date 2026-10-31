@@ -8,6 +8,7 @@ using TRRCMS.Application.Auth.Commands.Login;
 using TRRCMS.Application.Auth.Commands.RefreshToken;
 using TRRCMS.Application.Auth.Commands.RequestPasswordReset;
 using TRRCMS.Application.Auth.Dtos;
+using TRRCMS.Application.Common.Interfaces;
 using TRRCMS.WebAPI.Middleware;
 
 namespace TRRCMS.WebAPI.Controllers;
@@ -45,17 +46,20 @@ public class AuthController : ControllerBase
     private readonly ILogger<AuthController> _logger;
     private readonly IConfiguration _configuration;
     private readonly IStringLocalizer<ErrorMessages> _errorLocalizer;
+    private readonly ICurrentUserService _currentUserService;
 
     public AuthController(
         IMediator mediator,
         ILogger<AuthController> logger,
         IConfiguration configuration,
-        IStringLocalizer<ErrorMessages> errorLocalizer)
+        IStringLocalizer<ErrorMessages> errorLocalizer,
+        ICurrentUserService currentUserService)
     {
         _mediator = mediator;
         _logger = logger;
         _configuration = configuration;
         _errorLocalizer = errorLocalizer;
+        _currentUserService = currentUserService;
     }
 
     /// <summary>
@@ -471,7 +475,7 @@ public class AuthController : ControllerBase
     /// Get current authenticated user information
     /// </summary>
     /// <remarks>
-    /// Returns information about the currently authenticated user from the JWT token claims.
+    /// Returns identity claims and the current effective permissions from the database.
     /// 
     /// **Use Case**: All authenticated users - Profile/session verification
     /// 
@@ -481,7 +485,8 @@ public class AuthController : ControllerBase
     /// - Debug authentication issues
     /// - Display current user info in UI
     /// 
-    /// **Note:** This extracts data from the JWT token, not from the database.
+    /// **Note:** Identity data comes from the JWT; effective permissions are loaded
+    /// from the database so grants, revocations and expirations are respected.
     /// For full user profile, use the Users API.
     /// 
     /// **Example success response:**
@@ -491,6 +496,7 @@ public class AuthController : ControllerBase
     ///   "username": "fieldcollector1",
     ///   "role": "FieldCollector",
     ///   "email": "ahmed@trrcms.com",
+    ///   "permissions": [4000, 8500],
     ///   "claims": [
     ///     { "type": "nameid", "value": "3fa85f64-5717-4562-b3fc-2c963f66afa6" },
     ///     { "type": "unique_name", "value": "fieldcollector1" },
@@ -508,7 +514,7 @@ public class AuthController : ControllerBase
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public ActionResult<object> GetCurrentUser()
+    public async Task<ActionResult<object>> GetCurrentUser(CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
         var usernameClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Name);
@@ -520,12 +526,22 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
+        var currentUser = await _currentUserService.GetCurrentUserAsync(cancellationToken);
+        if (currentUser == null || !currentUser.IsActive)
+        {
+            return Unauthorized();
+        }
+
         return Ok(new
         {
             userId = userIdClaim.Value,
             username = usernameClaim.Value,
             role = roleClaim?.Value,
             email = emailClaim?.Value,
+            permissions = currentUser.GetActivePermissions()
+                .Select(permission => (int)permission)
+                .OrderBy(permission => permission)
+                .ToArray(),
             claims = User.Claims.Select(c => new { c.Type, c.Value })
         });
     }
