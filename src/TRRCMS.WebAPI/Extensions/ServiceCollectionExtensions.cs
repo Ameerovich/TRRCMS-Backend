@@ -411,8 +411,10 @@ public static class ServiceCollectionExtensions
                 policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_Create)));
             options.AddPolicy("CanViewSurveys", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_View)));
+            // Surveys_ViewAll covers own surveys too; handlers still scope access for ViewOwn-only users.
             options.AddPolicy("CanViewOwnSurveys", policy =>
-                policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_ViewOwn)));
+                policy.Requirements.Add(PermissionRequirement.RequireAny(
+                    Permission.Surveys_ViewOwn, Permission.Surveys_ViewAll)));
             options.AddPolicy("CanViewAllSurveys", policy =>
                 policy.Requirements.Add(new PermissionRequirement(Permission.Surveys_ViewAll)));
             options.AddPolicy("CanEditOwnSurveys", policy =>

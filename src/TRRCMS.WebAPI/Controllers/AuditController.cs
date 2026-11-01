@@ -19,7 +19,7 @@ namespace TRRCMS.WebAPI.Controllers;
 ///   GET /api/v1/audit/stats        — aggregated counts over a window (overview cards / charts)
 ///   GET /api/v1/audit/entity/{type}/{id} — full history for a specific entity
 ///
-/// All endpoints require Administrator or DataManager role.
+/// All endpoints require the Audit_ViewAll permission (CanViewAuditLogs policy).
 ///
 /// Wire contract notes:
 ///   - List endpoints return <see cref="PagedResult{T}"/> with items + totalCount + paging metadata.
@@ -32,7 +32,7 @@ namespace TRRCMS.WebAPI.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v1/audit")]
-[Authorize(Roles = "Administrator,DataManager")]
+[Authorize(Policy = "CanViewAuditLogs")]
 public class AuditController : ControllerBase
 {
     private readonly IMediator _mediator;
