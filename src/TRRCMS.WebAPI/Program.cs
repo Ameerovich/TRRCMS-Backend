@@ -1,5 +1,7 @@
+using System.IO.Compression;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using TRRCMS.WebAPI.Extensions;
@@ -153,6 +155,15 @@ builder.Services.AddHealthChecks()
         name: "postgresql",
         tags: new[] { "db", "sql", "postgresql" });
 
+// Map responses are large, repetitive JSON. Compression is applied to those routes only (see below).
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+    options.Level = CompressionLevel.Fastest);
+
 var app = builder.Build();
 
 // ── Reporting subsystem bootstrap (QuestPDF license + Arabic font) ──
@@ -196,6 +207,9 @@ app.UseMiddleware<TRRCMS.WebAPI.Middleware.IpFilterMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TRRCMS.WebAPI.Middleware.MustChangePasswordMiddleware>();
+app.UseWhen(
+    context => context.Request.Path.StartsWithSegments("/api/v2/buildings/map"),
+    branch => branch.UseResponseCompression());
 app.UseStaticFiles();
 app.MapHealthChecks("/health");
 app.MapControllers();

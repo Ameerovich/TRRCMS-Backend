@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TRRCMS.Application.Buildings.Dtos;
+using TRRCMS.Application.Buildings.Queries.GetBuildingMapGrid;
 using TRRCMS.Application.Buildings.Queries.GetBuildingsForMap;
 using TRRCMS.Application.Common.Models;
 
@@ -34,5 +35,21 @@ public class BuildingsController : ControllerBase
     {
         var buildings = await _mediator.Send(query);
         return Ok(ListResponse<BuildingMapDto>.From(buildings));
+    }
+
+    /// <summary>
+    /// Get building counts per grid cell for low-zoom map display.
+    /// </summary>
+    [HttpPost("map/grid")]
+    [Authorize(Policy = "CanViewAllBuildings")]
+    [ProducesResponseType(typeof(ListResponse<BuildingMapGridCellDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<ListResponse<BuildingMapGridCellDto>>> GetBuildingMapGrid(
+        [FromBody] GetBuildingMapGridQuery query)
+    {
+        var cells = await _mediator.Send(query);
+        return Ok(ListResponse<BuildingMapGridCellDto>.From(cells));
     }
 }
