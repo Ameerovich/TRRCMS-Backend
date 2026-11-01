@@ -158,6 +158,7 @@
   <data name="NorthEastLng_GreaterThanSouthWest"><value>NorthEast Longitude must be greater than SouthWest Longitude</value></data>
   <data name="MaxResults_GreaterThanZero"><value>MaxResults must be greater than 0</value></data>
   <data name="MaxResults_Max50000"><value>MaxResults cannot exceed 50,000 for performance reasons</value></data>
+  <data name="CellSizeDegrees_Range"><value>CellSizeDegrees must be between 0.0001 and 1</value></data>
   <data name="PolygonOrCoords_Required"><value>Either PolygonWkt or Coordinates (minimum 3 points) must be provided</value></data>
   <data name="PolygonWkt_InvalidFormat"><value>PolygonWkt must be a valid POLYGON WKT format</value></data>
   <data name="PolygonWkt_MaxLength10000"><value>PolygonWkt must not exceed 10,000 characters</value></data>

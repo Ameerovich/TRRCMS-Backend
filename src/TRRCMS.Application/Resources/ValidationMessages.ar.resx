@@ -160,6 +160,7 @@
   <data name="NorthEastLng_GreaterThanSouthWest"><value>خط طول الشمال الشرقي يجب أن يكون أكبر من خط طول الجنوب الغربي</value></data>
   <data name="MaxResults_GreaterThanZero"><value>الحد الأقصى للنتائج يجب أن يكون أكبر من 0</value></data>
   <data name="MaxResults_Max50000"><value>الحد الأقصى للنتائج لا يمكن أن يتجاوز 50,000 لأسباب تتعلق بالأداء</value></data>
+  <data name="CellSizeDegrees_Range"><value>حجم الخلية يجب أن يكون بين 0.0001 و 1</value></data>
   <data name="PolygonOrCoords_Required"><value>يجب توفير PolygonWkt أو الإحداثيات (3 نقاط على الأقل)</value></data>
   <data name="PolygonWkt_InvalidFormat"><value>PolygonWkt يجب أن يكون بصيغة POLYGON WKT صالحة</value></data>
   <data name="PolygonWkt_MaxLength10000"><value>PolygonWkt يجب ألا يتجاوز 10,000 حرف</value></data>

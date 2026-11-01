@@ -45,4 +45,11 @@ public class GetBuildingsForMapQuery : IRequest<List<BuildingMapDto>>
     /// Default: 10000
     /// </summary>
     public int MaxResults { get; set; } = 10000;
+
+    /// <summary>
+    /// Include BuildingGeometryWkt in the response.
+    /// Marker-only clients can turn this off to reduce the payload.
+    /// Default: true
+    /// </summary>
+    public bool IncludeGeometry { get; set; } = true;
 }

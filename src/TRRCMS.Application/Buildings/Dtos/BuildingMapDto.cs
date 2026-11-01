@@ -34,6 +34,11 @@ public class BuildingMapDto
     }
 
     /// <summary>
+    /// Building number within the neighborhood, used as the marker label
+    /// </summary>
+    public string BuildingNumber { get; set; } = string.Empty;
+
+    /// <summary>
     /// GPS Latitude
     /// </summary>
     public decimal? Latitude { get; set; }
@@ -81,6 +86,12 @@ public class BuildingMapDto
     /// Whether this building has ever been assigned to a field collector
     /// </summary>
     public bool IsAssigned { get; set; }
+
+    /// <summary>
+    /// Whether this building currently has an active field assignment.
+    /// Unlike IsAssigned, this turns false again when the assignment is cancelled or completed.
+    /// </summary>
+    public bool HasActiveAssignment { get; set; }
 
     /// <summary>
     /// Whether this building is locked (import pipeline will not update it)

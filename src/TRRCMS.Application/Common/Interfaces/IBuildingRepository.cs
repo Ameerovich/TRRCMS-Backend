@@ -1,4 +1,5 @@
 ﻿using TRRCMS.Domain.Entities;
+using TRRCMS.Application.Buildings.Dtos;
 using TRRCMS.Domain.Enums;
 
 namespace TRRCMS.Application.Common.Interfaces;
@@ -96,7 +97,7 @@ public interface IBuildingRepository
     /// Find buildings within a bounding box (optimized for map display)
     /// Uses PostGIS spatial index
     /// </summary>
-    Task<List<Building>> GetBuildingsInBoundingBoxAsync(
+    Task<List<BuildingMapDto>> GetMapBuildingsInBoundingBoxAsync(
         decimal minLatitude,
         decimal maxLatitude,
         decimal minLongitude,
@@ -104,6 +105,18 @@ public interface IBuildingRepository
         BuildingType? buildingType = null,
         BuildingStatus? status = null,
         int maxResults = 10000,
+        bool includeGeometry = true,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Count buildings per fixed grid cell, by the building's stored coordinates.
+    /// </summary>
+    Task<List<BuildingMapGridCellDto>> GetMapGridInBoundingBoxAsync(
+        decimal minLatitude,
+        decimal maxLatitude,
+        decimal minLongitude,
+        decimal maxLongitude,
+        double cellSizeDegrees,
         CancellationToken cancellationToken = default);
 
     /// <summary>
