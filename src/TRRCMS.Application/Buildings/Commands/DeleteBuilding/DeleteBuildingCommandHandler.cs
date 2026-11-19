@@ -61,12 +61,14 @@ public class DeleteBuildingCommandHandler : IRequestHandler<DeleteBuildingComman
         if (building.IsDeleted)
             throw new ValidationException("Building is already deleted");
 
-        // Validate survey status
+        // Validate survey status: every survey on the building must still be a Draft.
+        // (Checking only the first one let a building with a Draft listed first and a
+        // Finalized survey behind it be deleted, cascading the finalized field data.)
         var surveys = await _surveyRepository.GetByBuildingAsync(request.BuildingId, cancellationToken);
-        var activeSurvey = surveys.FirstOrDefault(s => !s.IsDeleted);
+        var blockingSurvey = surveys.FirstOrDefault(s => !s.IsDeleted && s.Status != SurveyStatus.Draft);
 
-        if (activeSurvey != null && activeSurvey.Status != SurveyStatus.Draft)
-            throw new ValidationException($"Cannot delete building. Survey status is {activeSurvey.Status}. Only surveys in Draft status can be modified.");
+        if (blockingSurvey != null)
+            throw new ValidationException($"Cannot delete building. Survey status is {blockingSurvey.Status}. Only surveys in Draft status can be modified.");
 
         // CASCADE DELETE all property units and their descendants
         var propertyUnits = await _propertyUnitRepository.GetByBuildingIdAsync(request.BuildingId, cancellationToken);

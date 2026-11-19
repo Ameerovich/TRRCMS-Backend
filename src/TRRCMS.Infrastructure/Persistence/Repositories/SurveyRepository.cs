@@ -315,4 +315,29 @@ public class SurveyRepository : ISurveyRepository
 
         return results.Select(r => (r.UserId, r.Completed, r.Draft, r.Total)).ToList();
     }
+
+    public async Task<List<(Guid UserId, SurveyType Type, int Completed, int Draft, int Total)>> GetCountsByCollectorAndTypeAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Surveys.Where(s => !s.IsDeleted && s.Status != SurveyStatus.Cancelled);
+        if (from.HasValue) query = query.Where(s => s.CreatedAtUtc >= from.Value);
+        if (to.HasValue) query = query.Where(s => s.CreatedAtUtc <= to.Value);
+
+        var results = await query
+            .GroupBy(s => new { s.FieldCollectorId, s.Type })
+            .Select(g => new
+            {
+                UserId = g.Key.FieldCollectorId,
+                g.Key.Type,
+                Completed = g.Count(s => s.Status == SurveyStatus.Finalized
+                                      || s.Status == SurveyStatus.Obstructed
+                                      || s.Status == SurveyStatus.Archived),
+                Draft = g.Count(s => s.Status == SurveyStatus.Draft),
+                Total = g.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.UserId, r.Type, r.Completed, r.Draft, r.Total)).ToList();
+    }
 }

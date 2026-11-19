@@ -403,6 +403,39 @@ public class BuildingAssignmentRepository : IBuildingAssignmentRepository
         return results.Select(r => (r.UserId, r.Assigned, r.Completed)).ToList();
     }
 
+    public async Task<List<(Guid UserId, int Assigned, int Completed)>> GetSurveyedCountsByFieldCollectorAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.BuildingAssignments.AsQueryable();
+        if (from.HasValue) query = query.Where(ba => ba.AssignedDate >= from.Value);
+        if (to.HasValue) query = query.Where(ba => ba.AssignedDate <= to.Value);
+
+        var results = await query
+            .Select(ba => new
+            {
+                ba.FieldCollectorId,
+                Done = ba.ActualCompletionDate.HasValue
+                    || _context.Surveys.Any(s =>
+                        !s.IsDeleted
+                        && s.BuildingId == ba.BuildingId
+                        && s.FieldCollectorId == ba.FieldCollectorId
+                        && (s.Status == SurveyStatus.Finalized
+                            || s.Status == SurveyStatus.Obstructed
+                            || s.Status == SurveyStatus.Archived))
+            })
+            .GroupBy(x => x.FieldCollectorId)
+            .Select(g => new
+            {
+                UserId = g.Key,
+                Assigned = g.Count(),
+                Completed = g.Count(x => x.Done)
+            })
+            .ToListAsync(cancellationToken);
+
+        return results.Select(r => (r.UserId, r.Assigned, r.Completed)).ToList();
+    }
+
     public async Task<List<(string BuildingCode, Guid FieldCollectorId, Guid? AssignedByUserId)>> GetLatestAssignersAsync(
         IReadOnlyCollection<string> buildingCodes,
         IReadOnlyCollection<Guid> fieldCollectorIds,

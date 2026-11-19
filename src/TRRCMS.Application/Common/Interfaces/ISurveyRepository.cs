@@ -135,4 +135,14 @@ public interface ISurveyRepository
     Task<List<(Guid UserId, int Completed, int Draft, int Total)>> GetCountsByCollectorAsync(
         DateTime? from = null, DateTime? to = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Personnel dashboard counts grouped by collector AND survey type, so each role is
+    /// measured on the surveys it works on (field collectors: Field, office clerks: Office —
+    /// the same scope the desktop lists). Cancelled surveys are left out of every count;
+    /// Completed = Finalized, Obstructed or Archived.
+    /// </summary>
+    Task<List<(Guid UserId, SurveyType Type, int Completed, int Draft, int Total)>> GetCountsByCollectorAndTypeAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
 }

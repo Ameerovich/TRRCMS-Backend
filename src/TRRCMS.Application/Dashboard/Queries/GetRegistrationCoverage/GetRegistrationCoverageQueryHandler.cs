@@ -21,6 +21,7 @@ public sealed class GetRegistrationCoverageQueryHandler
     {
         var totalPersons = await _uow.Persons.GetTotalCountAsync(cancellationToken);
         var totalHouseholds = await _uow.Households.GetTotalCountAsync(cancellationToken);
+        var totalHouseholdMembers = await _uow.Households.GetTotalMembersCountAsync(cancellationToken);
         var genderCounts = await _uow.Persons.GetGenderCountsAsync(cancellationToken);
         var withNationalId = await _uow.Persons.GetCountWithNationalIdAsync(cancellationToken);
 
@@ -33,6 +34,8 @@ public sealed class GetRegistrationCoverageQueryHandler
 
         var caseStatusCounts = await _uow.Claims.GetCaseStatusCountsAsync(cancellationToken);
         var claimTypeCounts = await _uow.Claims.GetClaimTypeCountsAsync(cancellationToken);
+        var totalClaims = await _uow.Claims.GetTotalCountAsync(cancellationToken);
+        var claimsWithDocuments = await _uow.Claims.GetCountWithDocumentsAsync(cancellationToken);
 
         var totalEvidence = await _uow.Evidences.GetTotalCountAsync(cancellationToken);
 
@@ -40,6 +43,7 @@ public sealed class GetRegistrationCoverageQueryHandler
         {
             TotalPersons = totalPersons,
             TotalHouseholds = totalHouseholds,
+            TotalHouseholdMembers = totalHouseholdMembers,
             PersonsByGender = genderCounts.ToDictionary(
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),
             PersonsWithNationalId = withNationalId,
@@ -54,6 +58,8 @@ public sealed class GetRegistrationCoverageQueryHandler
             ClaimsClosed = caseStatusCounts.GetValueOrDefault(CaseStatus.Closed, 0),
             ClaimsByType = claimTypeCounts.ToDictionary(
                 kvp => kvp.Key.ToString(), kvp => kvp.Value),
+            ClaimsWithAllDocuments = claimsWithDocuments,
+            ClaimsMissingDocuments = Math.Max(0, totalClaims - claimsWithDocuments),
             TotalEvidenceItems = totalEvidence,
             GeneratedAtUtc = DateTime.UtcNow
         };

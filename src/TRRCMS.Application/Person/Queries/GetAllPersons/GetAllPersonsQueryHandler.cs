@@ -29,8 +29,24 @@ public class GetAllPersonsQueryHandler : IRequestHandler<GetAllPersonsQuery, Pag
     {
         var persons = await _personRepository.GetAllAsync(cancellationToken);
         var dtos = _mapper.Map<List<PersonDto>>(persons);
+
+        var term = request.Search?.Trim();
+        if (!string.IsNullOrEmpty(term))
+            dtos = dtos.Where(p => Matches(p, term)).ToList();
+
         var page = PaginatedList.FromEnumerable(dtos, request.PageNumber, request.PageSize);
         await _designationService.ApplyAsync(page.Items.ToList(), cancellationToken);
         return page;
+    }
+
+    private static bool Matches(PersonDto p, string term)
+    {
+        bool Has(string? value) =>
+            !string.IsNullOrEmpty(value) && value.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+        return Has(p.FirstNameArabic) || Has(p.FatherNameArabic) || Has(p.FamilyNameArabic)
+            || Has(p.MotherNameArabic) || Has(p.FullNameArabic)
+            || Has(p.NationalId) || Has(p.MobileNumber) || Has(p.PhoneNumber)
+            || Has(p.Id.ToString());
     }
 }

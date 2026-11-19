@@ -189,6 +189,23 @@ public class ClaimRepository : IClaimRepository
             .ToDictionaryAsync(x => x.CaseStatus, x => x.Count, cancellationToken);
     }
 
+    public async Task<int> GetCountWithDocumentsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Claims
+            .Where(c =>
+                _context.Evidences.Any(e =>
+                    e.ClaimId == c.Id && !e.IsDeleted
+                    && e.FilePath != null && e.FilePath != "")
+                || _context.EvidenceRelations.Any(er =>
+                    er.IsActive
+                    && !er.Evidence.IsDeleted
+                    && er.Evidence.FilePath != null && er.Evidence.FilePath != ""
+                    && !er.PersonPropertyRelation.IsDeleted
+                    && er.PersonPropertyRelation.PersonId == c.PrimaryClaimantId
+                    && er.PersonPropertyRelation.PropertyUnitId == c.PropertyUnitId))
+            .CountAsync(cancellationToken);
+    }
+
     public async Task<Dictionary<ClaimType, int>> GetClaimTypeCountsAsync(
         CancellationToken cancellationToken = default)
     {

@@ -119,6 +119,12 @@ public interface IClaimRepository
     Task<Dictionary<ClaimType, int>> GetClaimTypeCountsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Count claims backed by at least one evidence document that has a file: linked to the
+    /// claim's source relation (same claimant and property unit) or attached to the claim itself.
+    /// </summary>
+    Task<int> GetCountWithDocumentsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Get monthly creation counts for time-series trends.
     /// </summary>
     Task<List<(int Year, int Month, int Count)>> GetMonthlyCreationCountsAsync(

@@ -1345,16 +1345,6 @@ public class CommitService : ICommitService
 
         if (approved.Count == 0) return;
 
-        // Pre-load staging relations for CaseStatus resolution by RelationType.
-        // Relations are committed before claims, so GetApprovedForCommitAsync (which skips
-        // already-committed rows) would return nothing here and ownership claims never closed.
-        var stagingRelations = (await _stagingRelationRepo.GetByPackageIdAsync(importPackageId, ct))
-            .Where(r => r.IsApprovedForCommit)
-            .ToList();
-        var relationByPersonAndUnit = stagingRelations
-            .GroupBy(r => (r.OriginalPersonId, r.OriginalPropertyUnitId))
-            .ToDictionary(g => g.Key, g => g.First());
-
         for (var i = 0; i < approved.Count; i++)
         {
             var staging = approved[i];
@@ -1406,17 +1396,14 @@ public class CommitService : ICommitService
                 // Claims from tablet → set lifecycle to Submitted
                 claim.Submit(userId, userId);
 
-                // Set CaseStatus based on the generating PersonPropertyRelation's RelationType
-                if (staging.OriginalPrimaryClaimantId.HasValue &&
-                    relationByPersonAndUnit.TryGetValue(
-                        (staging.OriginalPrimaryClaimantId.Value, staging.OriginalPropertyUnitId),
-                        out var stagingRelation))
+                // CaseStatus follows the claim's type, as everywhere else in the system
+                // (Ownership → Closed, Occupancy → Open). It used to be derived separately
+                // from the staging relation, so a package whose claim type and relation
+                // disagreed (or whose relation was not found) produced Ownership claims
+                // left Open.
+                if (claim.ClaimType == ClaimType.OwnershipClaim)
                 {
-                    if (stagingRelation.RelationType == RelationType.Owner ||
-                        stagingRelation.RelationType == RelationType.Heir)
-                    {
-                        claim.CloseCase(userId);
-                    }
+                    claim.CloseCase(userId);
                 }
 
                 await _unitOfWork.Claims.AddAsync(claim, ct);
