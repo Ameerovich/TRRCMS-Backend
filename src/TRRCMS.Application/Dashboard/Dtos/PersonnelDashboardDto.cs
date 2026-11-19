@@ -10,10 +10,9 @@ public sealed class PersonnelDashboardDto
     public List<UserWorkloadDto> OfficeClerks { get; set; } = new();
 
     /// <summary>
-    /// Surveys outside the two lists above: owned by users of other roles (supervisor,
-    /// data manager, admin, inactive users), or of the other survey type than the owner's
-    /// role (e.g. a field survey attributed to an office clerk by an import). One row per
-    /// user, so no draft is left uncounted.
+    /// Surveys owned by users outside the two lists above: administrators, data managers,
+    /// and the rare supervisor / analyst / inactive user. One row per user (with
+    /// <see cref="UserWorkloadDto.Role"/>), so no draft is left uncounted.
     /// </summary>
     public List<UserWorkloadDto> Others { get; set; } = new();
 
@@ -36,6 +35,14 @@ public sealed class UserWorkloadDto
 
     public int SurveysCompleted { get; set; }
     public int SurveysDraft { get; set; }
+
+    /// <summary>
+    /// Field collectors / office clerks only: surveys of the OTHER type recorded under this
+    /// user (office surveys for a collector, field surveys for a clerk — e.g. attributed by an
+    /// import). Not included in the main counts, which match what the desktop lists.
+    /// </summary>
+    public int OtherTypeSurveysTotal { get; set; }
+    public int OtherTypeSurveysDraft { get; set; }
     public int TotalSurveys { get; set; }
 
     /// <summary>

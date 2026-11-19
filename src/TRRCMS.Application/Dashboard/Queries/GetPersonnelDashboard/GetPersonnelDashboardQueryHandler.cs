@@ -26,7 +26,8 @@ public sealed class GetPersonnelDashboardQueryHandler
         var officeClerks = await _uow.Users.GetUsersByRoleAsync(UserRole.OfficeClerk, activeOnly: true, cancellationToken);
         // Counts per (user, survey type): each role is measured on the survey type it works
         // on, matching what the desktop lists for that user (an office clerk sees only his
-        // office surveys). Anything outside that scope is reported under Others.
+        // office surveys). Surveys of the other type stay on the same row (OtherType*);
+        // users outside both lists are reported under Others.
         var surveyCounts = await _uow.Surveys.GetCountsByCollectorAndTypeAsync(from, to, cancellationToken);
         var buildingAssignmentCounts = await _uow.BuildingAssignments.GetSurveyedCountsByFieldCollectorAsync(from, to, cancellationToken);
 
@@ -45,6 +46,7 @@ public sealed class GetPersonnelDashboardQueryHandler
         var fieldCollectorWorkloads = fieldCollectors.Select(user =>
         {
             var surveys = Take(user.Id, SurveyType.Field);
+            var otherType = Take(user.Id, SurveyType.Office);
             var hasBuildings = buildingCountsByUser.TryGetValue(user.Id, out var buildingCounts);
 
             return new UserWorkloadDto
@@ -55,6 +57,8 @@ public sealed class GetPersonnelDashboardQueryHandler
                 SurveysCompleted = surveys.Completed,
                 SurveysDraft = surveys.Draft,
                 TotalSurveys = surveys.Total,
+                OtherTypeSurveysTotal = otherType.Total,
+                OtherTypeSurveysDraft = otherType.Draft,
                 AssignedBuildings = hasBuildings ? buildingCounts.Assigned : 0,
                 CompletedBuildings = hasBuildings ? buildingCounts.Completed : 0
             };
@@ -63,6 +67,7 @@ public sealed class GetPersonnelDashboardQueryHandler
         var officeClerkWorkloads = officeClerks.Select(user =>
         {
             var surveys = Take(user.Id, SurveyType.Office);
+            var otherType = Take(user.Id, SurveyType.Field);
 
             return new UserWorkloadDto
             {
@@ -71,7 +76,9 @@ public sealed class GetPersonnelDashboardQueryHandler
                 FullName = user.FullNameArabic,
                 SurveysCompleted = surveys.Completed,
                 SurveysDraft = surveys.Draft,
-                TotalSurveys = surveys.Total
+                TotalSurveys = surveys.Total,
+                OtherTypeSurveysTotal = otherType.Total,
+                OtherTypeSurveysDraft = otherType.Draft
             };
         }).ToList();
 
