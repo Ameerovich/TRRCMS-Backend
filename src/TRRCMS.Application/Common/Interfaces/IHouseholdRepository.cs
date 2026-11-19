@@ -47,4 +47,10 @@ public interface IHouseholdRepository
     /// Get total count of households (excluding soft-deleted).
     /// </summary>
     Task<int> GetTotalCountAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sum of HouseholdSize over all households (excluding soft-deleted): the population
+    /// the households report, unlike the count of individually registered persons.
+    /// </summary>
+    Task<int> GetTotalMembersCountAsync(CancellationToken cancellationToken = default);
 }

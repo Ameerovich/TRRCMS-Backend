@@ -173,6 +173,15 @@ public interface IBuildingAssignmentRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Personnel dashboard variant: an assignment also counts as completed when its field
+    /// collector has a completed survey (Finalized, Obstructed or Archived) on the building,
+    /// since assignments are never marked completed when surveys come in.
+    /// </summary>
+    Task<List<(Guid UserId, int Assigned, int Completed)>> GetSurveyedCountsByFieldCollectorAsync(
+        DateTime? from = null, DateTime? to = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// For each (17-digit building code, field collector) pair among the given codes and
     /// collectors, the supervisor who made the latest assignment (by AssignedDate).
     /// Includes completed and inactive assignments. Single query — used to label the

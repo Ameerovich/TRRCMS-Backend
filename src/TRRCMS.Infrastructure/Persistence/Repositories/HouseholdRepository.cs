@@ -74,4 +74,11 @@ public class HouseholdRepository : IHouseholdRepository
     {
         return await _context.Households.Where(h => !h.IsDeleted).CountAsync(cancellationToken);
     }
+
+    public async Task<int> GetTotalMembersCountAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Households
+            .Where(h => !h.IsDeleted)
+            .SumAsync(h => h.HouseholdSize, cancellationToken);
+    }
 }
